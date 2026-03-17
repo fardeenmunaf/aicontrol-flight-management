@@ -13,15 +13,15 @@
     <name>AISafe LAPR4</name>
 
     <modules>
-        <module>exemplo.app.backoffice.console</module>
-        <module>exemplo.app.user.console</module>
-        <module>exemplo.app.other.console</module>
-        <module>exemplo.app.common.console</module>
-        <module>exemplo.app.bootstrap</module>
-        <module>exemplo.bootstrappers</module>
-        <module>exemplo.core</module>
-        <module>exemplo.infrastructure.application</module>
-        <module>exemplo.persistence.impl</module>
+        <module>eapli.base/exemplo.app.backoffice.console</module>
+        <module>eapli.base/exemplo.app.user.console</module>
+        <module>eapli.base/exemplo.app.other.console</module>
+        <module>eapli.base/exemplo.app.common.console</module>
+        <module>eapli.base/exemplo.app.bootstrap</module>
+        <module>eapli.base/exemplo.bootstrappers</module>
+        <module>eapli.base/exemplo.core</module>
+        <module>eapli.base/exemplo.infrastructure.application</module>
+        <module>eapli.base/exemplo.persistence.impl</module>
     </modules>
 
     <properties>
