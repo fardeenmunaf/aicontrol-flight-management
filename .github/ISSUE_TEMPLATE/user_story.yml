@@ -1,0 +1,29 @@
+name: "User Story"
+description: "Request or describe a new task to do"
+title: "USXX - "
+labels: ["User Story"]
+body:
+  - type: textarea
+    id: user-story
+    attributes:
+      label: "User Story"
+      description: "As a [user], I want [feature] so that [benefit]"
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: "Acceptance Criteria"
+      description: "List the conditions of satisfaction, As [user], i want [x] and it makes [y]"
+  - type: textarea
+    id: done-concept
+    attributes:
+      label: "Done Concept"
+      description: "Describe concept of done to everyone know when this task is completed"
+    validations:
+      required: true
+  - type: textarea
+    id: test-cases
+    attributes:
+      label: "Test Cases"
+      description: "Describe test cases to validate this feature"

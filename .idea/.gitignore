@@ -1,0 +1,38 @@
+# Default IntelliJ IDEA (mantém os teus)
+!/shelf/
+!/workspace.xml
+!/queries/
+/dataSources/
+/dataSources.local.xml
+
+# MAVEN (NFR05) - CRÍTICO
+target/
+/pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Java compilados
+*.jar
+*.war
+*.class
+*.ear
+
+# Logs e DBs (NFR08)
+*.log
+h2*.db
+*.db
+
+# OS generated
+.DS_Store
+Thumbs.db
+/copilot.data.migration.agent.xml
+/copilot.data.migration.ask.xml
+/copilot.data.migration.ask2agent.xml
+/copilot.data.migration.edit.xml
+/vcs.xml
+/workspace.xml

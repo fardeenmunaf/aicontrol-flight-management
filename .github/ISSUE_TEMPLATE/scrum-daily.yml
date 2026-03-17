@@ -1,0 +1,16 @@
+name: "Scrum Daily Meeting"
+description: "Template for Scrum daily meeting notes"
+title: "Daily Meeting #X"
+body:
+  - type: textarea
+    id: Date
+    attributes:
+      label: "Date"
+      description: "Date of the meeting"
+    validations:
+      required: true
+  - type: textarea
+    id: discussion-points
+    attributes:
+      label: "Discussion Points"
+      description: "Record the main discussion topics from the meeting"
