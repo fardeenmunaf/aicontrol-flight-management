@@ -1,0 +1,275 @@
+@startuml
+skinparam packageStyle rectangle
+skinparam shadowing false
+hide circle
+hide methods
+
+title AlSafe Domain Model - Aggregate Boundaries
+
+' --- AGGREGATES ---
+
+package "Identity & Access" <<Aggregate>> #ADD8E6 {
+  class User {
+    email
+    name
+    phoneNumber
+    activeSecurityClearanceExpiry
+    skillsAssessmentDueDate
+    status
+  }
+
+  class Pilot {
+    status
+  }
+
+  class Role {
+    designation
+  }
+}
+
+package "Company Management" <<Aggregate>> #90EE90 {
+  class AirTransportCompany {
+    name
+    iataCode
+    icaoCode
+  }
+}
+
+package "Airspace & Topography" <<Aggregate>> #FFFFE0 {
+  class AirControlArea {
+    areaCode
+    minimumRequiredArrivalFuel
+    geographicBoundaries
+  }
+
+  class Airport {
+    name
+    town
+    country
+    iataCode
+    icaoCode
+    elevation
+  }
+
+  class Coordinates {
+    latitude
+    longitude
+  }
+
+  class Node {
+    designation
+  }
+}
+
+package "Aviation Catalog" <<Aggregate>> #FFB6C1 {
+  class AircraftModel {
+    modelId
+    maker
+    type
+    emptyWeight
+    maximumTakeOffWeight
+    maximumZeroFuelWeight
+    maximumFuelCapacity
+    serviceCeiling
+    cruiseSpeed
+    wingArea
+    wingSpan
+    dragCoefficient
+    liftCoefficient
+  }
+
+  class EngineModel {
+    name
+    maker
+    type
+    power
+    fuelType
+    efficiency
+    thrustSeaLevelStopped
+    thrustSeaLevelCruise
+    thrustSpecificFuelConsumption
+  }
+
+  class FuelProperties {
+    type
+    density
+    specificEnergy
+  }
+}
+
+package "Fleet" <<Aggregate>> #E0FFFF {
+  class Aircraft {
+    registrationNumber
+    registrationCountry
+    operationalStatus
+    flightCrewCount
+  }
+
+  class CabinConfiguration {
+    firstClassSeats
+    businessClassSeats
+    economyClassSeats
+  }
+}
+
+package "Flight Planning" <<Aggregate>> #F08080 {
+  class FlightRoute {
+    designation
+    activeFrom
+    activeUntil
+  }
+
+  class Flight {
+    flightDesignator
+    type
+    scheduledDepartureTime
+    scheduledArrivalTime
+  }
+
+  class FlightPlan {
+    departureDateTime
+    fuelQuantity
+    passengerLoad
+    cargoLoad
+    status
+  }
+
+  class FlightLeg {
+    sequenceNumber
+    departureTime
+    arrivalTime
+    fuelQuantity
+  }
+
+  class Segment {
+    windDirection
+    windSpeed
+  }
+
+  class AltitudeSlot {
+    minimumAltitude
+    maximumAltitude
+    width
+  }
+}
+
+package "Simulation Engine" <<Aggregate>> #A16885 {
+  class Simulation {
+    startDateTime
+    endDateTime
+    geographicArea
+    safetyThresholds
+    performanceSettings
+    status
+  }
+
+  class AircraftPosition {
+    timestamp
+    altitude
+  }
+
+  class VelocityVector {
+    speed
+    direction
+  }
+
+  class SafetyViolation {
+    timestamp
+    severity
+  }
+
+  class SimulationReport {
+    totalFlights
+    validationResult
+    generatedAt
+  }
+
+  class WeatherData {
+    date
+    windSpeed
+    windDirection
+  }
+}
+
+' --- RELATIONSHIPS (Cross-Aggregate and Internal) ---
+
+' Identity
+Pilot --|> User
+User "1" --> "1..*" Role : has >
+
+' Topography internal
+Airport "1" *-- "1" Coordinates : located at >
+Node "1" *-- "1" Coordinates : located at >
+AirControlArea "1" --> "1..*" Airport : manages >
+
+' Cross-Aggregate: Company Operations
+AirTransportCompany "1" --> "0..*" User : employs >
+AirTransportCompany "1" --> "0..*" FlightRoute : operates >
+AirTransportCompany "1" --> "0..*" Aircraft : owns >
+
+' Aviation Catalog internal
+AircraftModel "1" --> "1..*" EngineModel : certifies >
+EngineModel "1..*" --> "1" FuelProperties : consumes >
+
+' Cross-Aggregate: Pilot Certifications
+Pilot "0..*" --> "1..*" AircraftModel : certified to fly >
+
+' Fleet internal
+Aircraft "1" *-- "1" CabinConfiguration : configured with >
+' Cross-Aggregate: Fleet to Catalog
+Aircraft "1" --> "1" AircraftModel : is of type >
+
+' Flight Planning internal
+FlightRoute "1" --> "0..*" Flight : instantiates >
+Flight "1" --> "1" FlightPlan : executed by >
+FlightPlan "1" *-- "1..*" FlightLeg : composed of >
+FlightLeg "1" *-- "1..*" Segment : follows >
+Segment "1" *-- "1..*" AltitudeSlot : contains >
+
+' Cross-Aggregate: Flight Planning connections
+FlightPlan "1" --> "1" Aircraft : allocates >
+FlightPlan "1" --> "1" Pilot : piloted by >
+FlightLeg "1" --> "1" Airport : departs from >
+FlightLeg "1" --> "1" Airport : arrives at >
+Segment "1" --> "1" Node : begins at >
+Segment "1" --> "1" Node : ends at >
+
+' Simulation internal
+Simulation "1" *-- "0..*" AircraftPosition : generates >
+Simulation "1" *-- "0..*" SafetyViolation : detects >
+Simulation "1" --> "1" SimulationReport : produces >
+AircraftPosition "1" *-- "1" VelocityVector : includes >
+SafetyViolation "1" --> "2..*" VelocityVector : records >
+
+' Cross-Aggregate: Simulation connections
+Simulation "1" --> "1" AirControlArea : runs in >
+Simulation "1" --> "1..*" Flight : tracks >
+Simulation "1" --> "0..*" WeatherData : incorporates >
+AircraftPosition "1" --> "1" Aircraft : tracks >
+SafetyViolation "1" --> "2..*" Aircraft : involves >
+
+note bottom of Segment
+Segment is part of Flight Planning Aggregate because it has a composition relation with FlightLeg
+end note
+
+note right of Pilot
+Pilot inherits from User to combine system
+access credentials with domain-specific flight status
+end note
+
+note right of CabinConfiguration
+Modeled as a Value Object intrinsically tied
+to the lifecycle of a specific Aircraft
+end note
+
+note right of FlightPlan
+Acts as the execution blueprint, coordinating
+the routing (FlightLeg), Aircraft, and Pilot allocation
+end note
+
+note right of VelocityVector
+Value Object capturing the instantaneous
+movement state of an aircraft during simulation
+end note
+
+@enduml
