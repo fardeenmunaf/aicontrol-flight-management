@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '0 2 * * *'  # nightly às 02:00 UTC
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
           cache: maven
 
       - name: Build, test and verify with Maven
-        run: mvn -B clean verify jacoco:report
+        run: mvn -B clean verify
 
       - name: Upload JaCoCo report
         uses: actions/upload-artifact@v4

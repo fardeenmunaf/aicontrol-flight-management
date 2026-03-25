@@ -3,6 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>pt.uc.dei.a2223</groupId>
@@ -12,23 +13,64 @@
 
     <name>AISafe LAPR4</name>
 
-    <modules>
-        <module>eapli.base/exemplo.app.backoffice.console</module>
-        <module>eapli.base/exemplo.app.user.console</module>
-        <module>eapli.base/exemplo.app.other.console</module>
-        <module>eapli.base/exemplo.app.common.console</module>
-        <module>eapli.base/exemplo.app.bootstrap</module>
-        <module>eapli.base/exemplo.bootstrappers</module>
-        <module>eapli.base/exemplo.core</module>
-        <module>eapli.base/exemplo.infrastructure.application</module>
-        <module>eapli.base/exemplo.persistence.impl</module>
-    </modules>
+    <!-- Sem <modules>: Maven só trata este projeto raiz
+         e ignora completamente eapli.base e o resto. -->
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <jacoco.version>0.8.12</jacoco.version>
+        <lombok.version>1.18.30</lombok.version>
     </properties>
 
-    <!-- resto: dependências comuns, plugins do professor -->
+    <dependencies>
+        <!-- Podes deixar vazio se não tiveres código neste módulo raiz -->
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Compiler -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- JaCoCo básico (gera relatório em target/site/jacoco/) -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Surefire (testes) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
+        </plugins>
+    </build>
 </project>
