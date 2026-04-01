@@ -4,6 +4,8 @@
 !/queries/
 /dataSources/
 /dataSources.local.xml
+.idea/
+*.iml
 
 # MAVEN (NFR05) - CRÍTICO
 target/
