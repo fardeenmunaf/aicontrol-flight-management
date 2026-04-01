@@ -2,104 +2,104 @@
 
 **Terms, Expressions and Acronyms (TEA) must be organized alphabetically.**
 
-| **_TEA_** (EN) | **_TEA_** (PT) | **_Description_** (EN) |
-|:--|:--|:--|
-| **Actor** | **Ator** | External role that interacts with the system, such as Admin, Backoffice Operator, Pilot, Flight Control Operator, or Weather Person. |
-| **Admin** | **Administrador** | System actor responsible for registering and managing backoffice users and directly managing Flight Control Operator access. |
-| **Aggregate** | **Agregado** | DDD concept representing a cluster of domain objects treated as a single unit with a clear boundary and a root entity that enforces its invariants. |
-| **Aggregate Root** | **Raiz do Agregado** | The single entry-point entity of an aggregate responsible for enforcing all invariants and controlling access to the aggregate's internal objects. |
-| **Air Control Area** | **Área de Controlo Aéreo** | Defined region of airspace with a unique code, geographic boundaries, and a minimum required arrival fuel. Manages one or more airports. |
-| **Air Control Simulation** | **Simulação de Controlo Aéreo** | Simulation combining all active flights in a given area, used to detect potential safety violations such as aircraft in close proximity. |
-| **Aircraft** | **Aeronave** | Individual aircraft of a specific model, identified by a unique registration number and country, with an operational status and a flight crew count. |
-| **Aircraft Model** | **Modelo de Aeronave** | Technical specification of a motorised commercial aircraft type, including weight limits, fuel capacity, service ceiling, cruise speed, and aerodynamic coefficients. |
-| **Aircraft Position** | **Posição da Aeronave** | Recorded state of an aircraft at a specific simulation timestamp, including altitude and an associated velocity vector. |
-| **Airport** | **Aeroporto** | Physical location for aircraft departure and arrival, identified by name, town, country, IATA code, ICAO code, coordinates, and elevation above sea level. |
-| **Air Transport Company** | **Empresa de Transporte Aéreo** | Organisation identified by name, IATA code, and ICAO code that employs collaborators, owns aircraft, and operates flight routes. |
+| **_TEA_** (EN) | **_TEA_** (PT)                                 | **_Description_** (EN) |
+|:--|:-----------------------------------------------|:--|
+| **Actor** | **Ator**                                       | External role that interacts with the system, such as Admin, Backoffice Operator, Pilot, Flight Control Operator, or Weather Person. |
+| **Admin** | **Administrador**                              | System actor responsible for registering and managing backoffice users and directly managing Flight Control Operator access. |
+| **Aggregate** | **Agregado**                                   | DDD concept representing a cluster of domain objects treated as a single unit with a clear boundary and a root entity that enforces its invariants. |
+| **Aggregate Root** | **Raiz do Agregado**                           | The single entry-point entity of an aggregate responsible for enforcing all invariants and controlling access to the aggregate's internal objects. |
+| **Air Control Area** | **Área de Controlo Aéreo**                     | Defined region of airspace with a unique code, geographic boundaries, and a minimum required arrival fuel. Manages one or more airports. |
+| **Air Control Simulation** | **Simulação de Controlo Aéreo**                | Simulation combining all active flights in a given area, used to detect potential safety violations such as aircraft in close proximity. |
+| **Aircraft** | **Avião**                                      | Individual aircraft of a specific model, identified by a unique registration number and country, with an operational status and a flight crew count. |
+| **Aircraft Model** | **Modelo do Avião**                            | Technical specification of a motorised commercial aircraft type, including weight limits, fuel capacity, service ceiling, cruise speed, and aerodynamic coefficients. |
+| **Aircraft Position** | **Posição do Avião**                           | Recorded state of an aircraft at a specific simulation timestamp, including altitude and an associated velocity vector. |
+| **Airport** | **Aeroporto**                                  | Physical location for aircraft departure and arrival, identified by name, town, country, IATA code, ICAO code, coordinates, and elevation above sea level. |
+| **Air Transport Company** | **Empresa de Transporte Aéreo**                | Organisation identified by name, IATA code, and ICAO code that employs collaborators, owns aircraft, and operates flight routes. |
 | **Air Transport Company Collaborator** | **Colaborador de Empresa de Transporte Aéreo** | System actor employed by an air transport company, responsible for registering aircraft, managing flight routes, and managing pilots. Abbreviated as ATCC. |
-| **Altitude Slot** | **Slot de Altitude** | Available altitude window within a segment, defined by minimum altitude, maximum altitude, and width. |
-| **ANTLR** | **ANTLR** | Tool used to define formal grammars and perform lexical and syntactic analysis of the Flight DSL. Generates parsers and lexers from grammar definitions. |
-| **AR** | **AR** | Acronym for _Aspect Ratio_. Aerodynamic property calculated as wingspan squared divided by wing area, used in drag coefficient computation. |
-| **AST** | **AST** | Acronym for _Abstract Syntax Tree_. Internal tree-based representation produced from DSL parsing, used for semantic validation and domain object construction. |
-| **ATCC** | **ATCC** | Acronym for _Air Transport Company Collaborator_. |
-| **Authentication** | **Autenticação** | Process of verifying a user's identity before granting access to the system. |
-| **Authorization** | **Autorização** | Mechanism that determines which operations a user may perform based on their assigned role. |
-| **Backoffice Operator** | **Operador de Backoffice** | System actor responsible for registering and maintaining base system data such as aircraft models, airports, air control areas, and air transport companies. |
-| **Bootstrap** | **Bootstrap** | Process of initialising the system with essential base data at startup, required for several user stories. |
-| **C** | **C** | Programming language used to implement the flight simulation engine, including process management, pipes, signals, and shared memory. |
-| **Cabin Configuration** | **Configuração de Cabine** | Value object defining the seat distribution of an aircraft across first class, business class, and economy class. |
-| **Cd** | **Cd** | Symbol for _Drag Coefficient_. Dimensionless aerodynamic value modelling the resistance force on an aircraft during flight. |
-| **Charter Flight** | **Voo Charter** | Flight type scheduled for a specific actual date, as opposed to a regular flight operating on recurring days of the week. |
-| **Cl** | **Cl** | Symbol for _Lift Coefficient_. Dimensionless aerodynamic value modelling the upward lift force generated by an aircraft's wings. |
-| **Code Coverage** | **Cobertura de Código** | Measure indicating the percentage of source code executed by automated tests. Domain and controller packages must not fall below 90% coverage. |
-| **Coordinates** | **Coordenadas** | Value object representing a geographic position through latitude and longitude. Associated with airports and navigation nodes. |
-| **Cruise Speed** | **Velocidade de Cruzeiro** | Standard operating speed of an aircraft model used in flight simulation and range calculations. |
-| **DDD** | **DDD** | Acronym for _Domain-Driven Design_. Design approach used to manage domain complexity through aggregates, entities, value objects, and invariants. |
-| **Decommission** | **Descomissionar** | Action of permanently retiring an aircraft from a company's fleet. A decommissioned aircraft cannot have new flights created for it. |
-| **Domain Model** | **Modelo de Domínio** | Conceptual model identifying the main domain concepts, their attributes, and the relationships between them, organised using DDD. |
-| **Draft** | **Rascunho** | Initial status of a flight plan upon creation, remaining until the plan is successfully validated. |
-| **Drag Force** | **Força de Arrasto** | Aerodynamic resistance force acting against an aircraft's motion through the air, computed using Cd, wing area, air density, and velocity. |
-| **DSL** | **DSL** | Acronym for _Domain-Specific Language_. Formal textual language used in AISafe to describe flight plans, processed through lexical, syntactic, and semantic validation using ANTLR. |
-| **Engine Model** | **Modelo de Motor** | Technical specification of an engine, including power, fuel type, efficiency, thrust at sea level, and thrust specific fuel consumption. |
-| **Entity** | **Entidade** | Distinct domain concept with a unique identity that persists over time, such as Aircraft, Airport, Flight, or Pilot. |
-| **Eurocontrol** | **Eurocontrol** | European organisation for the safety of air navigation, cited as an example of a flight control entity that is a potential client of AISafe. |
-| **FAA** | **FAA** | Acronym for _Federal Aviation Administration_. US aviation authority cited as an example of a flight control entity client of the AISafe system. |
-| **FCO** | **FCO** | Acronym for _Flight Control Operator_. |
-| **Flight** | **Voo** | Concrete scheduled trip with a unique designator, type, and scheduled departure and arrival times. Instantiated from a flight route. |
-| **Flight Control Operator** | **Operador de Controlo de Voo** | System actor responsible for testing flight plans and simulating air traffic control in a defined geographic area. Abbreviated as FCO. |
-| **Flight Crew** | **Tripulação de Voo** | Number of crew members required to operate a specific aircraft, stored as part of the aircraft's information. |
-| **Flight Designator** | **Designador de Voo** | Unique flight identifier in the format _xxnnnna_, combining airline designator, numeric flight number, and an optional operational suffix. |
-| **Flight Leg** | **Perna de Voo** | Single non-stop journey between two airports within a flight plan, containing departure, arrival, route, segments, and fuel information. |
-| **Flight Plan** | **Plano de Voo** | Execution blueprint for a flight specifying departure date and time, fuel quantity, passenger and cargo load, allocated aircraft, and assigned pilot. Status is set to draft until validated. |
-| **Flight Route** | **Rota de Voo** | Named route operated by an air transport company, valid between two dates, from which individual flights are instantiated. |
-| **Fuel Properties** | **Propriedades do Combustível** | Value object describing the physical characteristics of a fuel type, including density and specific energy. |
-| **IATA** | **IATA** | Acronym for _International Air Transport Association_. Standard used to identify airlines and airports with 2-letter codes. |
-| **ICAO** | **ICAO** | Acronym for _International Civil Aviation Organisation_. Standard used to identify airlines and airports with 4-letter codes. |
-| **Invariant** | **Invariante** | Business rule that an aggregate must always enforce to maintain consistency, used to justify aggregate boundaries in DDD. |
-| **Java** | **Java** | Main programming language required for the application implementation, used across all system modules. |
-| **JaCoCo** | **JaCoCo** | Java code coverage tool used to generate coverage reports from test execution. Domain and controller packages must not fall below 90% coverage. |
-| **Javadoc** | **Javadoc** | Java documentation tool required to generate technical documentation from source code annotations. |
-| **JET A-1** | **JET A-1** | Most widely used jet fuel type, with a density of 0.804 kg/l and a specific energy of 42.80 MJ/kg, used as the default fuel in the system. |
-| **JUnit 5** | **JUnit 5** | Testing framework required for implementing unit tests throughout the project. |
-| **Lift Force** | **Força de Sustentação** | Aerodynamic upward force acting on an aircraft, computed using Cl, wing area, air density, and velocity. |
-| **Maker** | **Fabricante** | Manufacturer of an aircraft or engine model, identified by name and country, stored in the system as base reference data. |
-| **Motorisation** | **Motorização** | Type of propulsion system of an aircraft model (e.g. turboprop, turbofan, turbojet, ramjet, electric propeller). |
-| **MTOW** | **MTOW** | Acronym for _Maximum Take-Off Weight_. Maximum allowable total weight of an aircraft at the moment of take-off. |
-| **MZFW** | **MZFW** | Acronym for _Maximum Zero Fuel Weight_. Maximum allowable weight of an aircraft excluding usable fuel. |
-| **Node** | **Nó** | Navigation point in the airspace network with a designation and geographic coordinates, used as the start or end of a flight segment. |
-| **Operational Status** | **Estado Operacional** | Current status of an aircraft or pilot within the system, indicating whether they are active and available for assignment. |
-| **Pilot** | **Piloto** | Specialised system user certified to fly one or more aircraft models, responsible for creating and validating flight plans. Inherits access credentials from User. |
-| **Pipe** | **Pipe** | Inter-process communication mechanism used in simulation to transmit position updates from individual flight processes to the main control process. |
-| **PlantUML** | **PlantUML** | Diagramming tool used for generating UML diagrams. Diagram source files must be stored in the repository. |
-| **Process** | **Processo** | Independent OS execution unit used in simulation. Each flight is launched as a separate process communicating via pipes and signals. |
-| **RDBMS** | **SGBDR** | Acronym for _Relational Database Management System_. Required for the final system deployment to persist domain data. |
-| **Registration Number** | **Número de Registo** | Unique identifier assigned to an individual aircraft, used to distinguish it from all other aircraft in the system. |
-| **Regular Flight** | **Voo Regular** | Flight type that operates on recurring days of the week, as opposed to a charter flight with a specific date. |
-| **Repository Pattern** | **Padrão de Repositório** | Design pattern used to abstract data access, separating domain logic from persistence concerns. Used throughout the EAPLI framework. |
-| **Role** | **Papel** | Function or permission profile assigned to a user in the system (e.g. Admin, Pilot, Backoffice Operator, Flight Control Operator, Weather Person). |
-| **Safety Violation** | **Violação de Segurança** | Event detected during simulation where aircraft proximity or behaviour breaches defined safety thresholds, recorded with timestamp, positions, and severity level. |
-| **Scrum** | **Scrum** | Agile framework required for managing team work through sprints, a product backlog, and defined roles. |
-| **Security Clearance** | **Habilitação de Segurança** | Active credential required for all AISafe users that automatically expires at a given date and must be renewed periodically. |
-| **Segment** | **Segmento** | Linear path connecting two nodes, characterised by start and end coordinates, altitude slots, slot widths, and wind direction and speed. |
-| **Semantic Validation** | **Validação Semântica** | Post-syntactic validation phase that checks the coherence of a DSL flight plan against domain rules, such as airport code formats, positive fuel quantities, and leg sequence consistency. |
-| **Service Ceiling** | **Teto de Serviço** | Maximum altitude at which an aircraft can sustain level flight under standard atmospheric conditions. |
-| **Shared Memory** | **Memória Partilhada** | Inter-process communication mechanism used in simulation to efficiently share aircraft position data between the parent process and child flight processes. |
-| **Signal** | **Sinal** | OS mechanism used in simulation to notify flight processes of safety violations or to trigger early termination of a process. |
-| **Simulation** | **Simulação** | Controlled execution of an airspace model over a defined geographic area and time period, tracking all flights and detecting safety violations using flight physics. |
-| **Simulation Report** | **Relatório de Simulação** | Document produced at the end of a simulation summarising total flights, safety violation events, and overall validation result. |
-| **Skills Assessment** | **Avaliação de Competências** | Periodic evaluation required by regulation every 5 years for all AISafe system users, tracked and manageable by Admin or Backoffice Operator. |
-| **Sprint** | **Sprint** | Fixed development timebox used in Scrum to organise and deliver increments of work. The project has three sprints with defined GitHub commit deadlines. |
-| **TAS** | **TAS** | Acronym for _True Air Speed_. Speed of an aircraft relative to the surrounding air mass, used in range estimation calculations. |
-| **TCP** | **TCP** | Acronym for _Transmission Control Protocol_. Network protocol used for remote client-server communication for Weather Person, Pilot, and Air Transport Company Collaborator remote access. |
-| **Thrust** | **Impulso** | Force produced by an engine propelling the aircraft forward, provided by the manufacturer at sea level for stopped and cruise conditions, decreasing with altitude. |
-| **TSFC** | **TSFC** | Acronym for _Thrust Specific Fuel Consumption_. Measure of an engine's fuel efficiency relative to thrust output, expressed in grams per second per kN. |
-| **Unit Test** | **Teste Unitário** | Automated test that verifies the behaviour of an individual method or class. Domain and controller packages must maintain at least 90% code coverage. |
-| **User** | **Utilizador** | Person registered in the system with a valid email, name, and phone number, requiring authentication and an active security clearance to use any functionality. |
-| **User Story** | **User Story** | Requirement statement written from a user perspective describing a goal and the expected value, in the format _As [actor], I want [goal] so that [reason]_. |
-| **Value Object** | **Objeto de Valor** | Domain concept with no unique identity, defined entirely by its attributes, such as Coordinates, Cabin Configuration, Fuel Properties, or Velocity Vector. |
-| **Velocity Vector** | **Vetor de Velocidade** | Value object capturing the instantaneous movement state of an aircraft during simulation, defined by speed and direction. |
-| **Vendor Lock-in** | **Dependência de Fornecedor** | Risk of being tied to a specific technology or supplier. AISafe mitigates this by using a DSL for flight plan descriptions instead of proprietary formats. |
-| **Weather Data** | **Dados Meteorológicos** | Meteorological information including date, wind speed, and wind direction, registered for a specific air control area and incorporated into simulations. |
-| **Weather Person** | **Responsável Meteorológico** | System actor responsible for registering and importing weather data for specific air control areas, including via remote TCP access. |
-| **Wing Area** | **Área da Asa** | Physical surface area of an aircraft's wings in square metres, used in lift and drag force calculations. |
-| **Wing Span** | **Envergadura** | Total width of an aircraft's wings from tip to tip, used together with wing area to compute the aspect ratio. |
-| **...** | **...** | ... |
+| **Altitude Slot** | **Altitude Relativa**                          | Available altitude window within a segment, defined by minimum altitude, maximum altitude, and width. |
+| **ANTLR** | **ANTLR**                                      | Tool used to define formal grammars and perform lexical and syntactic analysis of the Flight DSL. Generates parsers and lexers from grammar definitions. |
+| **AR** | **AR**                                         | Acronym for _Aspect Ratio_. Aerodynamic property calculated as wingspan squared divided by wing area, used in drag coefficient computation. |
+| **AST** | **AST**                                        | Acronym for _Abstract Syntax Tree_. Internal tree-based representation produced from DSL parsing, used for semantic validation and domain object construction. |
+| **ATCC** | **ATCC**                                       | Acronym for _Air Transport Company Collaborator_. |
+| **Authentication** | **Autenticação**                               | Process of verifying a user's identity before granting access to the system. |
+| **Authorization** | **Autorização**                                | Mechanism that determines which operations a user may perform based on their assigned role. |
+| **Backoffice Operator** | **Operador de Backoffice**                     | System actor responsible for registering and maintaining base system data such as aircraft models, airports, air control areas, and air transport companies. |
+| **Bootstrap** | **Bootstrap**                                  | Process of initialising the system with essential base data at startup, required for several user stories. |
+| **C** | **C**                                          | Programming language used to implement the flight simulation engine, including process management, pipes, signals, and shared memory. |
+| **Cabin Configuration** | **Configuração de Cabine**                     | Value object defining the seat distribution of an aircraft across first class, business class, and economy class. |
+| **Cd** | **Cd**                                         | Symbol for _Drag Coefficient_. Dimensionless aerodynamic value modelling the resistance force on an aircraft during flight. |
+| **Charter Flight** | **Voo Charter**                                | Flight type scheduled for a specific actual date, as opposed to a regular flight operating on recurring days of the week. |
+| **Cl** | **Cl**                                         | Symbol for _Lift Coefficient_. Dimensionless aerodynamic value modelling the upward lift force generated by an aircraft's wings. |
+| **Code Coverage** | **Cobertura de Código**                        | Measure indicating the percentage of source code executed by automated tests. Domain and controller packages must not fall below 90% coverage. |
+| **Coordinates** | **Coordenadas**                                | Value object representing a geographic position through latitude and longitude. Associated with airports and navigation nodes. |
+| **Cruise Speed** | **Velocidade de Cruzeiro**                     | Standard operating speed of an aircraft model used in flight simulation and range calculations. |
+| **DDD** | **DDD**                                        | Acronym for _Domain-Driven Design_. Design approach used to manage domain complexity through aggregates, entities, value objects, and invariants. |
+| **Decommission** | **Descomissionar**                             | Action of permanently retiring an aircraft from a company's fleet. A decommissioned aircraft cannot have new flights created for it. |
+| **Domain Model** | **Modelo de Domínio**                          | Conceptual model identifying the main domain concepts, their attributes, and the relationships between them, organised using DDD. |
+| **Draft** | **Rascunho**                                   | Initial status of a flight plan upon creation, remaining until the plan is successfully validated. |
+| **Drag Force** | **Força de Arrasto**                           | Aerodynamic resistance force acting against an aircraft's motion through the air, computed using Cd, wing area, air density, and velocity. |
+| **DSL** | **DSL**                                        | Acronym for _Domain-Specific Language_. Formal textual language used in AISafe to describe flight plans, processed through lexical, syntactic, and semantic validation using ANTLR. |
+| **Engine Model** | **Modelo de Motor**                            | Technical specification of an engine, including power, fuel type, efficiency, thrust at sea level, and thrust specific fuel consumption. |
+| **Entity** | **Entidade**                                   | Distinct domain concept with a unique identity that persists over time, such as Aircraft, Airport, Flight, or Pilot. |
+| **Eurocontrol** | **Eurocontrol**                                | European organisation for the safety of air navigation, cited as an example of a flight control entity that is a potential client of AISafe. |
+| **FAA** | **FAA**                                        | Acronym for _Federal Aviation Administration_. US aviation authority cited as an example of a flight control entity client of the AISafe system. |
+| **FCO** | **FCO**                                        | Acronym for _Flight Control Operator_. |
+| **Flight** | **Voo**                                        | Concrete scheduled trip with a unique designator, type, and scheduled departure and arrival times. Instantiated from a flight route. |
+| **Flight Control Operator** | **Operador de Controlo de Voo**                | System actor responsible for testing flight plans and simulating air traffic control in a defined geographic area. Abbreviated as FCO. |
+| **Flight Crew** | **Tripulação de Voo**                          | Number of crew members required to operate a specific aircraft, stored as part of the aircraft's information. |
+| **Flight Designator** | **Designador de Voo**                          | Unique flight identifier in the format _xxnnnna_, combining airline designator, numeric flight number, and an optional operational suffix. |
+| **Flight Leg** | **Escal**                                      | Single non-stop journey between two airports within a flight plan, containing departure, arrival, route, segments, and fuel information. |
+| **Flight Plan** | **Plano de Voo**                               | Execution blueprint for a flight specifying departure date and time, fuel quantity, passenger and cargo load, allocated aircraft, and assigned pilot. Status is set to draft until validated. |
+| **Flight Route** | **Rota de Voo**                                | Named route operated by an air transport company, valid between two dates, from which individual flights are instantiated. |
+| **Fuel Properties** | **Propriedades do Combustível**                | Value object describing the physical characteristics of a fuel type, including density and specific energy. |
+| **IATA** | **IATA**                                       | Acronym for _International Air Transport Association_. Standard used to identify airlines and airports with 2-letter codes. |
+| **ICAO** | **ICAO**                                       | Acronym for _International Civil Aviation Organisation_. Standard used to identify airlines and airports with 4-letter codes. |
+| **Invariant** | **Invariante**                                 | Business rule that an aggregate must always enforce to maintain consistency, used to justify aggregate boundaries in DDD. |
+| **Java** | **Java**                                       | Main programming language required for the application implementation, used across all system modules. |
+| **JaCoCo** | **JaCoCo**                                     | Java code coverage tool used to generate coverage reports from test execution. Domain and controller packages must not fall below 90% coverage. |
+| **Javadoc** | **Javadoc**                                    | Java documentation tool required to generate technical documentation from source code annotations. |
+| **JET A-1** | **JET A-1**                                    | Most widely used jet fuel type, with a density of 0.804 kg/l and a specific energy of 42.80 MJ/kg, used as the default fuel in the system. |
+| **JUnit 5** | **JUnit 5**                                    | Testing framework required for implementing unit tests throughout the project. |
+| **Lift Force** | **Força de Sustentação**                       | Aerodynamic upward force acting on an aircraft, computed using Cl, wing area, air density, and velocity. |
+| **Maker** | **Fabricante**                                 | Manufacturer of an aircraft or engine model, identified by name and country, stored in the system as base reference data. |
+| **Motorisation** | **Motorização**                                | Type of propulsion system of an aircraft model (e.g. turboprop, turbofan, turbojet, ramjet, electric propeller). |
+| **MTOW** | **MTOW**                                       | Acronym for _Maximum Take-Off Weight_. Maximum allowable total weight of an aircraft at the moment of take-off. |
+| **MZFW** | **MZFW**                                       | Acronym for _Maximum Zero Fuel Weight_. Maximum allowable weight of an aircraft excluding usable fuel. |
+| **Node** | **Nó**                                         | Navigation point in the airspace network with a designation and geographic coordinates, used as the start or end of a flight segment. |
+| **Operational Status** | **Estado Operacional**                         | Current status of an aircraft or pilot within the system, indicating whether they are active and available for assignment. |
+| **Pilot** | **Piloto**                                     | Specialised system user certified to fly one or more aircraft models, responsible for creating and validating flight plans. Inherits access credentials from User. |
+| **Pipe** | **Pipe**                                       | Inter-process communication mechanism used in simulation to transmit position updates from individual flight processes to the main control process. |
+| **PlantUML** | **PlantUML**                                   | Diagramming tool used for generating UML diagrams. Diagram source files must be stored in the repository. |
+| **Process** | **Processo**                                   | Independent OS execution unit used in simulation. Each flight is launched as a separate process communicating via pipes and signals. |
+| **RDBMS** | **SGBDR**                                      | Acronym for _Relational Database Management System_. Required for the final system deployment to persist domain data. |
+| **Registration Number** | **Número de Registo**                          | Unique identifier assigned to an individual aircraft, used to distinguish it from all other aircraft in the system. |
+| **Regular Flight** | **Voo Regular**                                | Flight type that operates on recurring days of the week, as opposed to a charter flight with a specific date. |
+| **Repository Pattern** | **Padrão de Repositório**                      | Design pattern used to abstract data access, separating domain logic from persistence concerns. Used throughout the EAPLI framework. |
+| **Role** | **Papel**                                      | Function or permission profile assigned to a user in the system (e.g. Admin, Pilot, Backoffice Operator, Flight Control Operator, Weather Person). |
+| **Safety Violation** | **Violação de Segurança**                      | Event detected during simulation where aircraft proximity or behaviour breaches defined safety thresholds, recorded with timestamp, positions, and severity level. |
+| **Scrum** | **Scrum**                                      | Agile framework required for managing team work through sprints, a product backlog, and defined roles. |
+| **Security Clearance** | **Habilitação de Segurança**                   | Active credential required for all AISafe users that automatically expires at a given date and must be renewed periodically. |
+| **Segment** | **Segmento**                                   | Linear path connecting two nodes, characterised by start and end coordinates, altitude slots, slot widths, and wind direction and speed. |
+| **Semantic Validation** | **Validação Semântica**                        | Post-syntactic validation phase that checks the coherence of a DSL flight plan against domain rules, such as airport code formats, positive fuel quantities, and leg sequence consistency. |
+| **Service Ceiling** | **Altitude máxima**                            | Maximum altitude at which an aircraft can sustain level flight under standard atmospheric conditions. |
+| **Shared Memory** | **Memória Partilhada**                         | Inter-process communication mechanism used in simulation to efficiently share aircraft position data between the parent process and child flight processes. |
+| **Signal** | **Sinal**                                      | OS mechanism used in simulation to notify flight processes of safety violations or to trigger early termination of a process. |
+| **Simulation** | **Simulação**                                  | Controlled execution of an airspace model over a defined geographic area and time period, tracking all flights and detecting safety violations using flight physics. |
+| **Simulation Report** | **Relatório de Simulação**                     | Document produced at the end of a simulation summarising total flights, safety violation events, and overall validation result. |
+| **Skills Assessment** | **Avaliação de Competências**                  | Periodic evaluation required by regulation every 5 years for all AISafe system users, tracked and manageable by Admin or Backoffice Operator. |
+| **Sprint** | **Sprint**                                     | Fixed development timebox used in Scrum to organise and deliver increments of work. The project has three sprints with defined GitHub commit deadlines. |
+| **TAS** | **TAS**                                        | Acronym for _True Air Speed_. Speed of an aircraft relative to the surrounding air mass, used in range estimation calculations. |
+| **TCP** | **TCP**                                        | Acronym for _Transmission Control Protocol_. Network protocol used for remote client-server communication for Weather Person, Pilot, and Air Transport Company Collaborator remote access. |
+| **Thrust** | **Impulso**                                    | Force produced by an engine propelling the aircraft forward, provided by the manufacturer at sea level for stopped and cruise conditions, decreasing with altitude. |
+| **TSFC** | **TSFC**                                       | Acronym for _Thrust Specific Fuel Consumption_. Measure of an engine's fuel efficiency relative to thrust output, expressed in grams per second per kN. |
+| **Unit Test** | **Teste Unitário**                             | Automated test that verifies the behaviour of an individual method or class. Domain and controller packages must maintain at least 90% code coverage. |
+| **User** | **Utilizador**                                 | Person registered in the system with a valid email, name, and phone number, requiring authentication and an active security clearance to use any functionality. |
+| **User Story** | **User Story**                                 | Requirement statement written from a user perspective describing a goal and the expected value, in the format _As [actor], I want [goal] so that [reason]_. |
+| **Value Object** | **Objeto de Valor**                            | Domain concept with no unique identity, defined entirely by its attributes, such as Coordinates, Cabin Configuration, Fuel Properties, or Velocity Vector. |
+| **Velocity Vector** | **Vetor de Velocidade**                        | Value object capturing the instantaneous movement state of an aircraft during simulation, defined by speed and direction. |
+| **Vendor Lock-in** | **Dependência de Fornecedor**                  | Risk of being tied to a specific technology or supplier. AISafe mitigates this by using a DSL for flight plan descriptions instead of proprietary formats. |
+| **Weather Data** | **Dados Meteorológicos**                       | Meteorological information including date, wind speed, and wind direction, registered for a specific air control area and incorporated into simulations. |
+| **Weather Person** | **Responsável Meteorológico**                  | System actor responsible for registering and importing weather data for specific air control areas, including via remote TCP access. |
+| **Wing Area** | **Área da Asa**                                | Physical surface area of an aircraft's wings in square metres, used in lift and drag force calculations. |
+| **Wing Span** | **Envergadura**                                | Total width of an aircraft's wings from tip to tip, used together with wing area to compute the aspect ratio. |
+| **...** | **...**                                        | ... |
