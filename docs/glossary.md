@@ -68,6 +68,7 @@
 | **Node** | **Nó**                                         | Navigation point in the airspace network with a designation and geographic coordinates, used as the start or end of a flight segment. |
 | **Operational Status** | **Estado Operacional**                         | Current status of an aircraft or pilot within the system, indicating whether they are active and available for assignment. |
 | **Pilot** | **Piloto**                                     | Specialised system user certified to fly one or more aircraft models, responsible for creating and validating flight plans. Inherits access credentials from User. |
+| Pilot Certification | Certificação de Piloto | Association between a Pilot and one or more Aircraft Models that the pilot is qualified to operate, enforced as a domain invariant preventing uncertified assignments. |
 | **Pipe** | **Pipe**                                       | Inter-process communication mechanism used in simulation to transmit position updates from individual flight processes to the main control process. |
 | **PlantUML** | **PlantUML**                                   | Diagramming tool used for generating UML diagrams. Diagram source files must be stored in the repository. |
 | **Process** | **Processo**                                   | Independent OS execution unit used in simulation. Each flight is launched as a separate process communicating via pipes and signals. |
