@@ -38,3 +38,7 @@ Thumbs.db
 /copilot.data.migration.edit.xml
 /vcs.xml
 /workspace.xml
+.idea
+
+# Outros
+*.pdf
