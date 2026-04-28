@@ -20,3 +20,8 @@ This module contains all **domain layer** code shared across the entire applicat
 ## Notes
 
 All other modules depend on this one. No UI, no persistence implementation, no framework-specific code belongs here.
+
+## TODO
+
+- Add unit tests for SimulationId and VelocityVector (equality and validation) once aisafe.core test conventions are established.
+- Simulation references shared IDs (AirControlAreaId, FlightId, WeatherDataId, AircraftId) that are implemented by another team; compilation will fail until those classes land.
