@@ -32,8 +32,6 @@ import java.util.Set;
 import org.junit.Test;
 
 import eapli.exemplo.usermanagement.domain.ExemploRoles;
-import eapli.exemplo.utentemanagement.domain.Utente;
-import eapli.exemplo.utentemanagement.domain.UtenteBuilder;
 import eapli.framework.infrastructure.authz.domain.model.NilPasswordPolicy;
 import eapli.framework.infrastructure.authz.domain.model.PlainTextEncoder;
 import eapli.framework.infrastructure.authz.domain.model.Role;
