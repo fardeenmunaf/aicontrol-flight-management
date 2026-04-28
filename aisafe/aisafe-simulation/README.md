@@ -4,7 +4,7 @@
 
 ## Purpose
 
-This module implements the **air control simulation engine entirely in C**, as required by the SCOMP component of the project (US105–US106). It simulates multiple flights simultaneously, detects safety violations, and communicates results back to the Java application.
+This module implements the **air control simulation engine entirely in C**, as required by the SCOMP component of the project (US100–US114). It simulates multiple flights simultaneously, detects safety violations, and communicates results back to the Java application.
 
 ### Responsibilities
 - Spawn one **child process per active flight plan** using `fork()`
