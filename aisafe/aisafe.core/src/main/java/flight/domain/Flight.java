@@ -1,0 +1,85 @@
+package flight.domain;
+
+import java.time.Instant;
+
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Version;
+
+import eapli.framework.domain.model.AggregateRoot;
+import eapli.framework.domain.model.DomainEntities;
+import eapli.framework.strings.util.StringPredicates;
+import eapli.framework.validations.Preconditions;
+import shared.domain.FlightId;
+
+@Entity
+public class Flight implements AggregateRoot<FlightId> {
+
+    private static final long serialVersionUID = 1L;
+
+    @Version
+    private Long version;
+
+    @EmbeddedId
+    private FlightId flightId;
+
+    private String flightDesignator;
+    private FlightType type;
+    private Instant scheduledDepartureTime;
+    private Instant scheduledArrivalTime;
+
+    public Flight(final FlightId flightId, final String flightDesignator, final FlightType type, final Instant scheduledDepartureTime, final Instant scheduledArrivalTime) {
+        Preconditions.noneNull(flightId, type, scheduledDepartureTime, scheduledArrivalTime);
+        if (StringPredicates.isNullOrEmpty(flightDesignator)) {
+            throw new IllegalArgumentException("Flight designator should neither be null nor empty");
+        }
+        if (scheduledArrivalTime.isBefore(scheduledDepartureTime)) {
+            throw new IllegalArgumentException("Scheduled arrival time must be after departure time");
+        }
+        this.flightId = flightId;
+        this.flightDesignator = flightDesignator;
+        this.type = type;
+        this.scheduledDepartureTime = scheduledDepartureTime;
+        this.scheduledArrivalTime = scheduledArrivalTime;
+    }
+
+    protected Flight() {
+        // for ORM
+    }
+
+    @Override
+    public FlightId identity() {
+        return flightId;
+    }
+
+    @Override
+    public boolean sameAs(final Object other) {
+        return DomainEntities.areEqual(this, other);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        return DomainEntities.areEqual(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return DomainEntities.hashCode(this);
+    }
+
+    public String flightDesignator() {
+        return flightDesignator;
+    }
+
+    public FlightType type() {
+        return type;
+    }
+
+    public Instant scheduledDepartureTime() {
+        return scheduledDepartureTime;
+    }
+
+    public Instant scheduledArrivalTime() {
+        return scheduledArrivalTime;
+    }
+}
