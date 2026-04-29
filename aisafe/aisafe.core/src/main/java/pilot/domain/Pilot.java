@@ -3,47 +3,48 @@ package pilot.domain;
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.persistence.Embedded;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Version;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
-import shared.domain.AircraftModelId;
-import shared.domain.PilotId;
-import shared.domain.UserId;
+import aircraftmodel.domain.AircraftModel;
+import user.domain.User;
 
 @Entity
-public class Pilot implements AggregateRoot<PilotId> {
+public class Pilot implements AggregateRoot<Long> {
 
     private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
 
     @Version
     private Long version;
 
-    @EmbeddedId
-    private PilotId pilotId;
-
-    @Embedded
-    private UserId userId;
+    @OneToOne(optional = false)
+    private User user;
 
     @Enumerated(EnumType.STRING)
     private PilotStatus status;
 
-    @ElementCollection
-    private Set<AircraftModelId> certifiedAircraftModelIds = new HashSet<>();
+    @ManyToMany
+    private Set<AircraftModel> certifiedAircraftModels = new HashSet<>();
 
-    public Pilot(final PilotId pilotId, final UserId userId, final PilotStatus status, final Set<AircraftModelId> certifiedAircraftModelIds) {
-        Preconditions.noneNull(pilotId, userId, status, certifiedAircraftModelIds);
-        this.pilotId = pilotId;
-        this.userId = userId;
+    public Pilot(final User user, final PilotStatus status, final Set<AircraftModel> certifiedAircraftModels) {
+        Preconditions.noneNull(user, status, certifiedAircraftModels);
+        this.user = user;
         this.status = status;
-        this.certifiedAircraftModelIds.addAll(certifiedAircraftModelIds);
+        this.certifiedAircraftModels.addAll(certifiedAircraftModels);
     }
 
     protected Pilot() {
@@ -51,8 +52,8 @@ public class Pilot implements AggregateRoot<PilotId> {
     }
 
     @Override
-    public PilotId identity() {
-        return pilotId;
+    public Long identity() {
+        return id;
     }
 
     @Override
@@ -70,15 +71,15 @@ public class Pilot implements AggregateRoot<PilotId> {
         return DomainEntities.hashCode(this);
     }
 
-    public UserId userId() {
-        return userId;
+    public User user() {
+        return user;
     }
 
     public PilotStatus status() {
         return status;
     }
 
-    public Set<AircraftModelId> certifiedAircraftModelIds() {
-        return new HashSet<>(certifiedAircraftModelIds);
+    public Set<AircraftModel> certifiedAircraftModels() {
+        return new HashSet<>(certifiedAircraftModels);
     }
 }

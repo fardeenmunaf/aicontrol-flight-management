@@ -5,32 +5,33 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Version;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
-import shared.domain.AirControlAreaId;
-import shared.domain.FlightId;
-import shared.domain.WeatherDataId;
+import flight.domain.Flight;
+import weatherData.domain.WeatherData;
 
 @Entity
-public class Simulation implements AggregateRoot<SimulationId> {
+public class Simulation implements AggregateRoot<Long> {
 
     private static final long serialVersionUID = 1L;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+
     @Version
     private Long version;
-
-    @EmbeddedId
-    private SimulationId simulationId;
 
     private Instant startDateTime;
     private Instant endDateTime;
@@ -42,17 +43,14 @@ public class Simulation implements AggregateRoot<SimulationId> {
     @Enumerated(EnumType.STRING)
     private SimulationStatus status;
 
-    @Embedded
-    // TODO: AirControlAreaId will be implemented by another team; compilation will fail until then.
-    private AirControlAreaId airControlAreaId;
+    // TODO: AirControlArea aggregate is not implemented yet.
+    // private AirControlArea airControlArea;
 
-    @ElementCollection
-    // TODO: FlightId will be implemented by another team; compilation will fail until then.
-    private Set<FlightId> trackedFlights = new HashSet<>();
+    @ManyToMany
+    private Set<Flight> trackedFlights = new HashSet<>();
 
-    @ElementCollection
-    // TODO: WeatherDataId will be implemented by another team; compilation will fail until then.
-    private Set<WeatherDataId> capturedWeatherDataIds = new HashSet<>();
+    @ManyToMany
+    private Set<WeatherData> capturedWeatherData = new HashSet<>();
 
     @OneToMany(mappedBy = "simulation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AircraftPosition> aircraftPositions = new HashSet<>();
@@ -60,24 +58,22 @@ public class Simulation implements AggregateRoot<SimulationId> {
     @OneToMany(mappedBy = "simulation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<SafetyViolation> safetyViolations = new HashSet<>();
 
-    public Simulation(final SimulationId simulationId, final Instant startDateTime, final Instant endDateTime, final SimulationStatus status, final AirControlAreaId airControlAreaId) {
-        Preconditions.noneNull(simulationId, status, airControlAreaId);
+    public Simulation(final Instant startDateTime, final Instant endDateTime, final SimulationStatus status) {
+        Preconditions.noneNull(status);
         if (startDateTime != null && endDateTime != null && endDateTime.isBefore(startDateTime)) {
             throw new IllegalArgumentException("End time must be after start time");
         }
-        this.simulationId = simulationId;
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
         this.status = status;
-        this.airControlAreaId = airControlAreaId;
     }
 
     protected Simulation() {
         // for ORM
     }
 
-    public SimulationId identity() {
-        return simulationId;
+    public Long identity() {
+        return id;
     }
 
     @Override
@@ -107,15 +103,11 @@ public class Simulation implements AggregateRoot<SimulationId> {
         return endDateTime;
     }
 
-    public AirControlAreaId airControlAreaId() {
-        return airControlAreaId;
-    }
-
-    public Set<FlightId> trackedFlights() {
+    public Set<Flight> trackedFlights() {
         return new HashSet<>(trackedFlights);
     }
 
-    public Set<WeatherDataId> capturedWeatherDataIds() {
-        return new HashSet<>(capturedWeatherDataIds);
+    public Set<WeatherData> capturedWeatherData() {
+        return new HashSet<>(capturedWeatherData);
     }
 }

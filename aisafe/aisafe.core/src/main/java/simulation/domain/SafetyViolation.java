@@ -13,7 +13,6 @@ import jakarta.persistence.ManyToOne;
 
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
-import shared.domain.AircraftId;
 
 @Entity
 public class SafetyViolation {
@@ -31,23 +30,19 @@ public class SafetyViolation {
     @ElementCollection
     private Set<VelocityVector> recordedVectors = new HashSet<>();
 
-    @ElementCollection
-    // TODO: AircraftId will be implemented by another team; compilation will fail until then.
-    private Set<AircraftId> involvedAircraftIds = new HashSet<>();
+    // TODO: Aircraft aggregate is not implemented yet.
+    // @ElementCollection
+    // private Set<Aircraft> involvedAircraft = new HashSet<>();
 
-    public SafetyViolation(final Simulation simulation, final Instant timestamp, final String severity, final Set<VelocityVector> recordedVectors, final Set<AircraftId> involvedAircraftIds) {
-        Preconditions.noneNull(simulation, timestamp, severity, recordedVectors, involvedAircraftIds);
+    public SafetyViolation(final Simulation simulation, final Instant timestamp, final String severity, final Set<VelocityVector> recordedVectors) {
+        Preconditions.noneNull(simulation, timestamp, severity, recordedVectors);
         if (recordedVectors.size() < 2) {
             throw new IllegalArgumentException("At least two velocity vectors are required");
-        }
-        if (involvedAircraftIds.isEmpty()) {
-            throw new IllegalArgumentException("At least one aircraft is required");
         }
         this.simulation = simulation;
         this.timestamp = timestamp;
         this.severity = severity;
         this.recordedVectors.addAll(recordedVectors);
-        this.involvedAircraftIds.addAll(involvedAircraftIds);
     }
 
     protected SafetyViolation() {
@@ -80,7 +75,4 @@ public class SafetyViolation {
         return new HashSet<>(recordedVectors);
     }
 
-    public Set<AircraftId> involvedAircraftIds() {
-        return new HashSet<>(involvedAircraftIds);
-    }
 }

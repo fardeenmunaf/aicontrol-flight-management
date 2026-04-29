@@ -2,41 +2,42 @@ package flight.domain;
 
 import java.time.Instant;
 
-import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import jakarta.persistence.Version;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
-import shared.domain.FlightId;
 
 @Entity
-public class Flight implements AggregateRoot<FlightId> {
+public class Flight implements AggregateRoot<Long> {
 
     private static final long serialVersionUID = 1L;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long id;
+
     @Version
     private Long version;
-
-    @EmbeddedId
-    private FlightId flightId;
 
     private String flightDesignator;
     private FlightType type;
     private Instant scheduledDepartureTime;
     private Instant scheduledArrivalTime;
 
-    public Flight(final FlightId flightId, final String flightDesignator, final FlightType type, final Instant scheduledDepartureTime, final Instant scheduledArrivalTime) {
-        Preconditions.noneNull(flightId, type, scheduledDepartureTime, scheduledArrivalTime);
+    public Flight(final String flightDesignator, final FlightType type, final Instant scheduledDepartureTime, final Instant scheduledArrivalTime) {
+        Preconditions.noneNull(type, scheduledDepartureTime, scheduledArrivalTime);
         if (StringPredicates.isNullOrEmpty(flightDesignator)) {
             throw new IllegalArgumentException("Flight designator should neither be null nor empty");
         }
         if (scheduledArrivalTime.isBefore(scheduledDepartureTime)) {
             throw new IllegalArgumentException("Scheduled arrival time must be after departure time");
         }
-        this.flightId = flightId;
         this.flightDesignator = flightDesignator;
         this.type = type;
         this.scheduledDepartureTime = scheduledDepartureTime;
@@ -48,8 +49,8 @@ public class Flight implements AggregateRoot<FlightId> {
     }
 
     @Override
-    public FlightId identity() {
-        return flightId;
+    public Long identity() {
+        return id;
     }
 
     @Override

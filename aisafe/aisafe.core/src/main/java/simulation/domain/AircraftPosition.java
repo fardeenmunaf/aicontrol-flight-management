@@ -12,7 +12,6 @@ import jakarta.persistence.ManyToOne;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.domain.model.DomainEntity;
 import eapli.framework.validations.Preconditions;
-import shared.domain.AircraftId;
 
 @Entity
 public class AircraftPosition implements DomainEntity<Long> {
@@ -30,19 +29,17 @@ public class AircraftPosition implements DomainEntity<Long> {
     @Embedded
     private VelocityVector velocityVector;
 
-    @Embedded
-    // TODO: AircraftId will be implemented by another team; compilation will fail until then.
-    private AircraftId aircraftId;
+    // TODO: Aircraft aggregate is not implemented yet.
+    // private Aircraft aircraft;
 
-    public AircraftPosition(final Simulation simulation, final AircraftId aircraftId,
+    public AircraftPosition(final Simulation simulation,
             final Instant timestamp, final Double altitude,
             final VelocityVector velocityVector) {
-        Preconditions.noneNull(simulation, aircraftId, timestamp, altitude, velocityVector);
+        Preconditions.noneNull(simulation, timestamp, altitude, velocityVector);
         if (altitude < 0) {
             throw new IllegalArgumentException("Altitude must be non-negative");
         }
         this.simulation = simulation;
-        this.aircraftId = aircraftId;
         this.timestamp = timestamp;
         this.altitude = altitude;
         this.velocityVector = velocityVector;
@@ -74,10 +71,6 @@ public class AircraftPosition implements DomainEntity<Long> {
 
     public Simulation simulation() {
         return simulation;
-    }
-
-    public AircraftId aircraftId() {
-        return aircraftId;
     }
 
     public Instant timestamp() {
