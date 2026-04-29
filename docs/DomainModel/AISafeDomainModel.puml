@@ -18,9 +18,8 @@ package "User Aggregate" <<Aggregate>> #E6F3FF {
     status
   }
 
-  class UserId <<Value Object>>
 
-  class Role <<Entity>> {
+  class Role <<Enum>> {
     designation
   }
 }
@@ -30,11 +29,9 @@ package "Pilot Aggregate" <<Aggregate>> #EBD6FF {
     status
   }
 
-  class PilotId <<Value Object>>
-
   note right of Pilot
     Pilot is managed in its own aggregate and linked
-    to Identity & Access through UserId
+    to Identity & Access through User
   end note
 }
 
@@ -52,8 +49,6 @@ package "AirControlArea Aggregate" <<Aggregate>> #FFFFE6 {
     minimumRequiredArrivalFuel
     geographicBoundaries
   }
-
-  class AirControlAreaId <<Value Object>>
 }
 
 package "Airport Aggregate" <<Aggregate>> #FFF0E6 {
@@ -66,8 +61,6 @@ package "Airport Aggregate" <<Aggregate>> #FFF0E6 {
     elevation
   }
 
-  class AirportId <<Value Object>>
-
   class "Coordinates" as AirportCoordinates <<Value Object>> {
     latitude
     longitude
@@ -78,8 +71,6 @@ package "Node Aggregate" <<Aggregate>> #F0E6FF {
   class Node <<Aggregate Root>> {
     designation
   }
-
-  class NodeId <<Value Object>>
 
   class "Coordinates" as NodeCoordinates <<Value Object>> {
     latitude
@@ -103,9 +94,7 @@ package "AircraftModel Aggregate" <<Aggregate>> #FFE6E6 {
     liftCoefficient
   }
 
-  class AircraftModelId <<Value Object>>
-
-  class "Maker" as AircraftModelMaker <<Value Object>> {
+  class AircraftMaker <<Value Object>> {
     name
     country
   }
@@ -123,9 +112,7 @@ package "EngineModel Aggregate" <<Aggregate>> #FFDAB9 {
     thrustSpecificFuelConsumption
   }
 
-  class EngineModelId <<Value Object>>
-
-  class "Maker" as EngineModelMaker <<Value Object>> {
+  class EngineMaker <<Value Object>> {
     name
     country
   }
@@ -144,8 +131,6 @@ package "Aircraft Aggregate" <<Aggregate>> #E6FFFF {
     operationalStatus
     flightCrewCount
   }
-
-  class AircraftId <<Value Object>>
 
   class CabinConfiguration <<Value Object>> {
     firstClassSeats
@@ -166,7 +151,6 @@ package "FlightRoute Aggregate" <<Aggregate>> #FFE6F0 {
     activeUntil
   }
 
-  class FlightRouteId <<Value Object>>
 }
 
 package "Flight Aggregate" <<Aggregate>> #E6FFF0 {
@@ -177,7 +161,6 @@ package "Flight Aggregate" <<Aggregate>> #E6FFF0 {
     scheduledArrivalTime
   }
 
-  class FlightId <<Value Object>>
 }
 
 package "FlightPlan Aggregate" <<Aggregate>> #FFF5E6 {
@@ -188,8 +171,6 @@ package "FlightPlan Aggregate" <<Aggregate>> #FFF5E6 {
     cargoLoad
     status
   }
-
-  class FlightPlanId <<Value Object>>
 
   note right of FlightPlan
     Acts as the execution blueprint, coordinating
@@ -229,8 +210,6 @@ package "Simulation Aggregate" <<Aggregate>> #E6E6FF {
     status
   }
 
-  class SimulationId <<Value Object>>
-
   class AircraftPosition <<Entity>> {
     timestamp
     altitude
@@ -258,8 +237,6 @@ package "WeatherData Aggregate" <<Aggregate>> #EAF2F8 {
     windSpeed
     windDirection
   }
-
-  class WeatherDataId <<Value Object>>
 }
 
 package "SimulationReport Aggregate" <<Aggregate>> #D6EAF8 {
@@ -274,79 +251,65 @@ package "SimulationReport Aggregate" <<Aggregate>> #D6EAF8 {
 
 ' Identity
 User "1..*" --> "0..*" Role : assigned >
-User "1" *-- "1" UserId : identified by >
-Pilot "1" --> "1" UserId : account id >
-Pilot "1" *-- "1" PilotId : identified by >
+Pilot "1" --> "1" User : account id >
 
 ' Topography internal
-Airport "1" *-- "1" AirportId : identified by >
 Airport "1" *-- "1" AirportCoordinates : located at >
 Node "1" *-- "1" NodeCoordinates : located at >
-Node "1" *-- "1" NodeId : identified by >
-AirControlArea "1" *-- "1" AirControlAreaId : identified by >
-Airport "0..*" --> "1" AirControlAreaId : control area id >
+Airport "0..*" --> "1" AirControlArea : control area id >
 
 ' Cross-Aggregate: Company Operations
-AirTransportCompany "1" --> "0..*" UserId : employs >
-AirTransportCompany "1" --> "0..*" FlightRouteId : operates >
-AirTransportCompany "1" --> "0..*" AircraftId : owns >
+AirTransportCompany "1" --> "0..*" User : employs >
+AirTransportCompany "1" --> "0..*" FlightRoute : operates >
+AirTransportCompany "1" --> "0..*" Aircraft : owns >
 
 ' Engine Catalog internal
-EngineModel "1" *-- "1" EngineModelId : identified by >
 EngineModel "1" *-- "1" FuelProperties : defined by >
-EngineModel "1" *-- "1" EngineModelMaker : made by >
+EngineModel "1" *-- "1" EngineMaker : made by >
 
 ' Cross-Aggregate: Aircraft-Engine Compatibility
-AircraftModel "1..*" --> "1..*" EngineModelId : supports >
-AircraftModel "1" *-- "1" AircraftModelId : identified by >
-AircraftModel "1" *-- "1" AircraftModelMaker : made by >
+AircraftModel "1..*" --> "1..*" EngineModel : supports >
+AircraftModel "1" *-- "1" AircraftMaker : made by >
 
 ' Cross-Aggregate: Pilot Certifications
-Pilot "0..*" --> "1..*" AircraftModelId : certified for >
+Pilot "0..*" --> "1..*" AircraftModel : certified for >
 
 ' Fleet internal
-Aircraft "1" *-- "1" AircraftId : identified by >
 Aircraft "1" *-- "1" CabinConfiguration : configured with >
 
 ' Cross-Aggregate: Fleet to Catalog
-Aircraft "0..*" --> "1" AircraftModelId : is of type >
+Aircraft "0..*" --> "1" AircraftModel : is of type >
 
 ' Flight Planning internal & cross-aggregate
-FlightRoute "1" *-- "1" FlightRouteId : identified by >
-Flight "1" *-- "1" FlightId : identified by >
-FlightPlan "1" *-- "1" FlightPlanId : identified by >
-FlightRoute "1" --> "0..*" FlightId : schedules >
-Flight "1" --> "0..*" FlightPlanId : uses >
+FlightRoute "1" --> "0..*" Flight : schedules >
+Flight "1" --> "0..*" FlightPlan : uses >
 FlightPlan "1" *-- "1..*" FlightLeg : composed of >
 FlightLeg "1" *-- "1..*" Segment : follows >
 Segment "1" *-- "1..*" AltitudeSlot : contains >
 
 ' Cross-Aggregate: Flight Planning connections
-FlightPlan "0..*" --> "1" AircraftId : assigns >
-FlightPlan "0..*" --> "1" PilotId : assigns pilot >
-FlightLeg "1" --> "1" AirportId : departure id >
-FlightLeg "1" --> "1" AirportId : arrival id >
-Segment "1" --> "1" NodeId : start node id >
-Segment "1" --> "1" NodeId : end node id >
+FlightPlan "0..*" --> "1" Aircraft : assigns >
+FlightPlan "0..*" --> "1" Pilot : assigns pilot >
+FlightLeg "1" --> "1" Airport : departure id >
+FlightLeg "1" --> "1" Airport : arrival id >
+Segment "1" --> "1" Node : start node id >
+Segment "1" --> "1" Node : end node id >
 
 ' Simulation internal
-Simulation "1" *-- "1" SimulationId : identified by >
 Simulation "1" *-- "0..*" AircraftPosition : generates >
 Simulation "1" *-- "0..*" SafetyViolation : detects >
-Simulation "1" --> "0..*" WeatherDataId : captures >
+Simulation "1" --> "0..*" WeatherData : captures >
 AircraftPosition "1" *-- "1" VelocityVector : includes >
 SafetyViolation "1" *-- "2..*" VelocityVector : records vectors >
-AircraftPosition "0..*" --> "1" AircraftId : aircraft id >
-SafetyViolation "0..*" --> "2..*" AircraftId : involved aircraft ids >
+AircraftPosition "0..*" --> "1" Aircraft : aircraft id >
+SafetyViolation "0..*" --> "2..*" Aircraft : involved aircraft ids >
 
-' Weather internal
-WeatherData "1" *-- "1" WeatherDataId : identified by >
 
 ' Simulation reporting (separate lifecycle)
-SimulationReport "1" --> "1" SimulationId : for simulation >
+SimulationReport "1" --> "1" Simulation : for simulation >
 
 ' Cross-Aggregate: Simulation connections
-Simulation "1" --> "1" AirControlAreaId : runs in >
-Simulation "1" --> "1..*" FlightId : tracks >
+Simulation "1" --> "1" AirControlArea : runs in >
+Simulation "1" --> "1..*" Flight : tracks >
 
 @enduml
