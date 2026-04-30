@@ -8,7 +8,6 @@ This module handles infrastructure configurations and setup logic that support t
 
 - **Application Context**: Initializing and providing access to application settings (e.g., `Application.java`, `AppSettings.java`).
 - **Password Policies**: Implementations of security and password generation rules.
-- **Bootstrapping Services**: Infrastructure needed to support the loading of initial/test data.
 - **External Services Wiring**: Configuration and adapters for general external dependencies like messaging brokers or email clients, keeping the core domain clean.
 
 ## Dependencies

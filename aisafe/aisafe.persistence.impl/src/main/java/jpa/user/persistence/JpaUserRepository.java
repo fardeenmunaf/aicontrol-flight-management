@@ -1,4 +1,4 @@
-package user.persistence;
+package jpa.user.persistence;
 
 import eapli.framework.infrastructure.repositories.impl.jpa.JpaAutoTxRepository;
 
