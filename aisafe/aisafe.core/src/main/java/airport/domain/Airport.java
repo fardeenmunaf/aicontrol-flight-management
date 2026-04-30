@@ -1,42 +1,54 @@
 package airport.domain;
 
-import jakarta.persistence.Embedded;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Version;
-
+import aircontrolarea.domain.AirControlArea;
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
-import shared.domain.AirControlAreaId;
-import shared.domain.AirportId;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Version;
 
 @Entity
-public class Airport implements AggregateRoot<AirportId> {
+public class Airport implements AggregateRoot<Long> {
 
     private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Version
     private Long version;
 
-    @EmbeddedId
-    private AirportId airportId;
-
     private String name;
     private String town;
     private String country;
+
+    @Column(unique = true, nullable = false)
     private String iataCode;
+
+    @Column(unique = true, nullable = false)
     private String icaoCode;
+
     private Double elevation;
 
     @Embedded
     private AirportCoordinates coordinates;
 
-    private AirControlAreaId airControlAreaId;
+    @ManyToOne
+    private AirControlArea airControlArea;
+
+    protected Airport() {
+        // for ORM
+    }
 
     public Airport(
-            final AirportId airportId,
             final String name,
             final String town,
             final String country,
@@ -44,11 +56,9 @@ public class Airport implements AggregateRoot<AirportId> {
             final String icaoCode,
             final Double elevation,
             final AirportCoordinates coordinates,
-            final AirControlAreaId airControlAreaId) {
+            final AirControlArea airControlArea) {
 
-        Preconditions.noneNull(
-                airportId, name, town, country, iataCode, icaoCode,
-                elevation, coordinates, airControlAreaId);
+        Preconditions.noneNull(name, town, country, iataCode, icaoCode, elevation, coordinates, airControlArea);
 
         if (StringPredicates.isNullOrEmpty(name)) {
             throw new IllegalArgumentException("Airport name should neither be null nor empty");
@@ -69,7 +79,6 @@ public class Airport implements AggregateRoot<AirportId> {
             throw new IllegalArgumentException("Airport elevation should not be negative");
         }
 
-        this.airportId = airportId;
         this.name = name;
         this.town = town;
         this.country = country;
@@ -77,16 +86,12 @@ public class Airport implements AggregateRoot<AirportId> {
         this.icaoCode = icaoCode;
         this.elevation = elevation;
         this.coordinates = coordinates;
-        this.airControlAreaId = airControlAreaId;
-    }
-
-    protected Airport() {
-        // for ORM
+        this.airControlArea = airControlArea;
     }
 
     @Override
-    public AirportId identity() {
-        return airportId;
+    public Long identity() {
+        return id;
     }
 
     @Override
@@ -95,44 +100,12 @@ public class Airport implements AggregateRoot<AirportId> {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        return DomainEntities.areEqual(this, o);
+    public boolean equals(final Object other) {
+        return DomainEntities.areEqual(this, other);
     }
 
     @Override
     public int hashCode() {
         return DomainEntities.hashCode(this);
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public String town() {
-        return town;
-    }
-
-    public String country() {
-        return country;
-    }
-
-    public String iataCode() {
-        return iataCode;
-    }
-
-    public String icaoCode() {
-        return icaoCode;
-    }
-
-    public Double elevation() {
-        return elevation;
-    }
-
-    public AirportCoordinates coordinates() {
-        return coordinates;
-    }
-
-    public AirControlAreaId airControlAreaId() {
-        return airControlAreaId;
     }
 }

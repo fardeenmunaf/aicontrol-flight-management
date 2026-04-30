@@ -18,20 +18,23 @@ public class FuelProperties implements ValueObject {
     private Double density;
     private Double specificEnergy;
 
+    protected FuelProperties() {
+        // for ORM
+    }
+
     public FuelProperties(final FuelType type, final Double density, final Double specificEnergy) {
         Preconditions.noneNull(type, density, specificEnergy);
 
-        if (density <= 0 || specificEnergy <= 0) {
-            throw new IllegalArgumentException("Fuel properties numeric attributes must be greater than zero");
+        if (density <= 0) {
+            throw new IllegalArgumentException("Fuel density must be greater than zero");
+        }
+        if (specificEnergy <= 0) {
+            throw new IllegalArgumentException("Fuel specific energy must be greater than zero");
         }
 
         this.type = type;
         this.density = density;
         this.specificEnergy = specificEnergy;
-    }
-
-    protected FuelProperties() {
-        // for ORM
     }
 
     public FuelType type() {

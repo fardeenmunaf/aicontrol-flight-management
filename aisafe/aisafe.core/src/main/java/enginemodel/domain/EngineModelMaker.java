@@ -13,6 +13,10 @@ public class EngineModelMaker implements ValueObject {
     private String name;
     private String country;
 
+    protected EngineModelMaker() {
+        // for ORM
+    }
+
     public EngineModelMaker(final String name, final String country) {
         if (StringPredicates.isNullOrEmpty(name)) {
             throw new IllegalArgumentException("Maker name should neither be null nor empty");
@@ -23,10 +27,6 @@ public class EngineModelMaker implements ValueObject {
 
         this.name = name;
         this.country = country;
-    }
-
-    protected EngineModelMaker() {
-        // for ORM
     }
 
     public String name() {

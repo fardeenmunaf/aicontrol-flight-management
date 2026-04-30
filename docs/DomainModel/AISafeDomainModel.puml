@@ -80,7 +80,6 @@ package "Node Aggregate" <<Aggregate>> #F0E6FF {
 
 package "AircraftModel Aggregate" <<Aggregate>> #FFE6E6 {
   class AircraftModel <<Aggregate Root>> {
-    modelId
     type
     emptyWeight
     maximumTakeOffWeight

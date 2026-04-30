@@ -1,31 +1,32 @@
 package enginemodel.domain;
 
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.AttributeOverrides;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Version;
-
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
-import shared.domain.EngineModelId;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Version;
 
 @Entity
-public class EngineModel implements AggregateRoot<EngineModelId> {
+public class EngineModel implements AggregateRoot<Long> {
 
     private static final long serialVersionUID = 1L;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Version
     private Long version;
 
-    @EmbeddedId
-    private EngineModelId engineModelId;
-
+    @Column(unique = true, nullable = false)
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -38,22 +39,16 @@ public class EngineModel implements AggregateRoot<EngineModelId> {
     private Double thrustSpecificFuelConsumption;
 
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "name", column = @jakarta.persistence.Column(name = "maker_name")),
-            @AttributeOverride(name = "country", column = @jakarta.persistence.Column(name = "maker_country"))
-    })
     private EngineModelMaker maker;
 
     @Embedded
-    @AttributeOverrides({
-            @AttributeOverride(name = "type", column = @jakarta.persistence.Column(name = "fuel_type")),
-            @AttributeOverride(name = "density", column = @jakarta.persistence.Column(name = "fuel_density")),
-            @AttributeOverride(name = "specificEnergy", column = @jakarta.persistence.Column(name = "fuel_specific_energy"))
-    })
     private FuelProperties fuelProperties;
 
+    protected EngineModel() {
+        // for ORM
+    }
+
     public EngineModel(
-            final EngineModelId engineModelId,
             final String name,
             final EngineType type,
             final Double power,
@@ -65,9 +60,8 @@ public class EngineModel implements AggregateRoot<EngineModelId> {
             final FuelProperties fuelProperties) {
 
         Preconditions.noneNull(
-                engineModelId, name, type, power, efficiency,
-                thrustSeaLevelStopped, thrustSeaLevelCruise,
-                thrustSpecificFuelConsumption, maker, fuelProperties);
+                type, power, efficiency, thrustSeaLevelStopped,
+                thrustSeaLevelCruise, thrustSpecificFuelConsumption, maker, fuelProperties);
 
         if (StringPredicates.isNullOrEmpty(name)) {
             throw new IllegalArgumentException("Engine model name should neither be null nor empty");
@@ -78,7 +72,6 @@ public class EngineModel implements AggregateRoot<EngineModelId> {
             throw new IllegalArgumentException("Engine model numeric attributes must be greater than zero");
         }
 
-        this.engineModelId = engineModelId;
         this.name = name;
         this.type = type;
         this.power = power;
@@ -90,13 +83,9 @@ public class EngineModel implements AggregateRoot<EngineModelId> {
         this.fuelProperties = fuelProperties;
     }
 
-    protected EngineModel() {
-        // for ORM
-    }
-
     @Override
-    public EngineModelId identity() {
-        return engineModelId;
+    public Long identity() {
+        return id;
     }
 
     @Override
@@ -105,48 +94,12 @@ public class EngineModel implements AggregateRoot<EngineModelId> {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        return DomainEntities.areEqual(this, o);
+    public boolean equals(final Object other) {
+        return DomainEntities.areEqual(this, other);
     }
 
     @Override
     public int hashCode() {
         return DomainEntities.hashCode(this);
-    }
-
-    public String name() {
-        return name;
-    }
-
-    public EngineType type() {
-        return type;
-    }
-
-    public Double power() {
-        return power;
-    }
-
-    public Double efficiency() {
-        return efficiency;
-    }
-
-    public Double thrustSeaLevelStopped() {
-        return thrustSeaLevelStopped;
-    }
-
-    public Double thrustSeaLevelCruise() {
-        return thrustSeaLevelCruise;
-    }
-
-    public Double thrustSpecificFuelConsumption() {
-        return thrustSpecificFuelConsumption;
-    }
-
-    public EngineModelMaker maker() {
-        return maker;
-    }
-
-    public FuelProperties fuelProperties() {
-        return fuelProperties;
     }
 }
