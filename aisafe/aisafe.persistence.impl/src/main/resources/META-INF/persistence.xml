@@ -10,6 +10,8 @@
         <!-- Domain Entities -->
         <class>enginemodel.domain.EngineModel</class>
         <class>shared.domain.EngineModelId</class>
+        <class>user.domain.User</class>
+        <class>user.domain.UserId</class>
 
         <properties>
             <!-- JPA Properties -->
@@ -38,6 +40,10 @@
         <!-- Domain Entities -->
         <class>enginemodel.domain.EngineModel</class>
         <class>shared.domain.EngineModelId</class>
+
+        <class>user.domain.User</class>
+        <class>user.domain.UserId</class>
+
 
         <properties>
             <!-- JPA Properties -->
