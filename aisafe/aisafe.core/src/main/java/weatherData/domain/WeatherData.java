@@ -2,34 +2,34 @@ package weatherData.domain;
 
 import java.time.LocalDate;
 
-import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Version;
 
+import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
-import eapli.framework.domain.model.DomainEntity;
 import eapli.framework.validations.Preconditions;
-import shared.domain.WeatherDataId;
 
 @Entity
-public class WeatherData implements DomainEntity<Long> {
+public class WeatherData implements AggregateRoot<Long> {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Version
+    private Long version;
+
     private LocalDate date;
     private Double windSpeed;
     private Double windDirection;
 
-    @Embedded
-    private WeatherDataId weatherDataId;
-
-    public WeatherData(final LocalDate date, final Double windSpeed, final Double windDirection,
-            final WeatherDataId weatherDataId) {
-        Preconditions.noneNull(date, windSpeed, windDirection, weatherDataId);
+    public WeatherData(final LocalDate date, final Double windSpeed, final Double windDirection) {
+        Preconditions.noneNull(date, windSpeed, windDirection);
         if (windSpeed < 0) {
             throw new IllegalArgumentException("Wind speed must be non-negative");
         }
@@ -39,11 +39,20 @@ public class WeatherData implements DomainEntity<Long> {
         this.date = date;
         this.windSpeed = windSpeed;
         this.windDirection = windDirection;
-        this.weatherDataId = weatherDataId;
     }
 
     protected WeatherData() {
         // for ORM
+    }
+
+    @Override
+    public Long identity() {
+        return id;
+    }
+
+    @Override
+    public boolean sameAs(final Object other) {
+        return DomainEntities.areEqual(this, other);
     }
 
     @Override
@@ -56,16 +65,6 @@ public class WeatherData implements DomainEntity<Long> {
         return DomainEntities.hashCode(this);
     }
 
-    @Override
-    public boolean sameAs(final Object other) {
-        return DomainEntities.areEqual(this, other);
-    }
-
-    @Override
-    public Long identity() {
-        return id;
-    }
-
     public LocalDate date() {
         return date;
     }
@@ -76,9 +75,5 @@ public class WeatherData implements DomainEntity<Long> {
 
     public Double windDirection() {
         return windDirection;
-    }
-
-    public WeatherDataId weatherDataId() {
-        return weatherDataId;
     }
 }

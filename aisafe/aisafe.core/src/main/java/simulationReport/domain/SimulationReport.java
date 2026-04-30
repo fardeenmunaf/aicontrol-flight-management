@@ -2,33 +2,35 @@ package simulationReport.domain;
 
 import java.time.Instant;
 
-import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Version;
 
+import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
-import eapli.framework.domain.model.DomainEntity;
 import eapli.framework.validations.Preconditions;
-import shared.domain.SimulationId;
 
 @Entity
-public class SimulationReport implements DomainEntity<Long> {
+public class SimulationReport implements AggregateRoot<Long> {
+
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
+    @Version
+    private Long version;
+
     private Integer totalFlights;
     private String validationResult;
     private Instant generatedAt;
-
-    @Embedded
-    private SimulationId simulationId;
+    private Long simulationId;
 
     public SimulationReport(final Integer totalFlights, final String validationResult,
-            final Instant generatedAt, final SimulationId simulationId) {
+            final Instant generatedAt, final Long simulationId) {
         Preconditions.noneNull(totalFlights, validationResult, generatedAt, simulationId);
         if (totalFlights < 0) {
             throw new IllegalArgumentException("Total flights must be non-negative");
@@ -44,13 +46,8 @@ public class SimulationReport implements DomainEntity<Long> {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        return DomainEntities.areEqual(this, o);
-    }
-
-    @Override
-    public int hashCode() {
-        return DomainEntities.hashCode(this);
+    public Long identity() {
+        return id;
     }
 
     @Override
@@ -59,8 +56,13 @@ public class SimulationReport implements DomainEntity<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public boolean equals(final Object o) {
+        return DomainEntities.areEqual(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return DomainEntities.hashCode(this);
     }
 
     public Integer totalFlights() {
@@ -75,7 +77,7 @@ public class SimulationReport implements DomainEntity<Long> {
         return generatedAt;
     }
 
-    public SimulationId simulationId() {
+    public Long simulationId() {
         return simulationId;
     }
 }
