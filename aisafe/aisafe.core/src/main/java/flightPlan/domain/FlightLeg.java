@@ -39,11 +39,11 @@ public class FlightLeg implements DomainEntity<Long>, Serializable {
 
     // Cross-aggregate references to Airport — stored as plain IDs (DDD rule)
     @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "departure_airport_id"))
+    @AttributeOverride(name = "value", column = @Column(name = "departure_airport_id"))
     private AirportId departureAirportId;
 
     @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "arrival_airport_id"))
+    @AttributeOverride(name = "value", column = @Column(name = "arrival_airport_id"))
     private AirportId arrivalAirportId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)

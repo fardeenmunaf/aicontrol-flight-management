@@ -3,6 +3,7 @@ package pilot.domain;
 import java.util.HashSet;
 import java.util.Set;
 
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -10,14 +11,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Version;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
 import aircraftmodel.domain.AircraftModel;
-import user.domain.User;
+import shared.domain.UserId;
 
 @Entity
 public class Pilot implements AggregateRoot<Long> {
@@ -31,8 +31,8 @@ public class Pilot implements AggregateRoot<Long> {
     @Version
     private Long version;
 
-    @OneToOne(optional = false)
-    private User user;
+    @Embedded
+    private UserId userId;
 
     @Enumerated(EnumType.STRING)
     private PilotStatus status;
@@ -40,9 +40,9 @@ public class Pilot implements AggregateRoot<Long> {
     @ManyToMany
     private Set<AircraftModel> certifiedAircraftModels = new HashSet<>();
 
-    public Pilot(final User user, final PilotStatus status, final Set<AircraftModel> certifiedAircraftModels) {
-        Preconditions.noneNull(user, status, certifiedAircraftModels);
-        this.user = user;
+    public Pilot(final UserId userId, final PilotStatus status, final Set<AircraftModel> certifiedAircraftModels) {
+        Preconditions.noneNull(userId, status, certifiedAircraftModels);
+        this.userId = userId;
         this.status = status;
         this.certifiedAircraftModels.addAll(certifiedAircraftModels);
     }
@@ -71,8 +71,8 @@ public class Pilot implements AggregateRoot<Long> {
         return DomainEntities.hashCode(this);
     }
 
-    public User user() {
-        return user;
+    public UserId userId() {
+        return userId;
     }
 
     public PilotStatus status() {

@@ -1,5 +1,6 @@
 package node.domain;
 
+import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Version;
@@ -8,7 +9,7 @@ import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
-import org.yaml.snakeyaml.nodes.NodeId;
+import shared.domain.NodeId;
 
 @Entity
 public class Node implements AggregateRoot<NodeId> {
@@ -23,6 +24,7 @@ public class Node implements AggregateRoot<NodeId> {
 
     private String designation;
 
+    @Embedded
     private Coordinates coordinates;
 
     public Node(final NodeId nodeId, final String designation, final Coordinates coordinates) {
