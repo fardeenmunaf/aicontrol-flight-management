@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="3.0"
+    xmlns="https://jakarta.ee/xml/ns/persistence"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+
+    <persistence-unit name="aisafe-pu" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernateProvider</provider>
+
+        <!-- Domain Entities -->
+        <class>enginemodel.domain.EngineModel</class>
+        <class>shared.domain.EngineModelId</class>
+
+        <properties>
+            <!-- JPA Properties -->
+            <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver" />
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:aisafe;MODE=PostgreSQL" />
+            <property name="jakarta.persistence.jdbc.user" value="admin" />
+            <property name="jakarta.persistence.jdbc.password" value="admin" />
+
+            <!-- Hibernate Properties -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+            <property name="hibernate.format_sql" value="true" />
+            <property name="hibernate.use_sql_comments" value="true" />
+            <property name="hibernate.hbm2ddl.auto" value="update" />
+            <property name="hibernate.generate_statistics" value="false" />
+            <property name="hibernate.show_sql" value="false" />
+
+            <!-- Connection Pool -->
+            <property name="hibernate.hikari.maximumPoolSize" value="5" />
+        </properties>
+    </persistence-unit>
+
+    <!-- PostgreSQL Persistence Unit for Production -->
+    <persistence-unit name="aisafe-pu-postgres" transaction-type="RESOURCE_LOCAL">
+        <provider>org.hibernate.jpa.HibernateProvider</provider>
+
+        <!-- Domain Entities -->
+        <class>enginemodel.domain.EngineModel</class>
+        <class>shared.domain.EngineModelId</class>
+
+        <properties>
+            <!-- JPA Properties -->
+            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver" />
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/aisafe" />
+            <property name="jakarta.persistence.jdbc.user" value="aisafe_user" />
+            <property name="jakarta.persistence.jdbc.password" value="aisafe_password" />
+
+            <!-- Hibernate Properties -->
+            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
+            <property name="hibernate.format_sql" value="true" />
+            <property name="hibernate.use_sql_comments" value="true" />
+            <property name="hibernate.hbm2ddl.auto" value="validate" />
+            <property name="hibernate.generate_statistics" value="false" />
+            <property name="hibernate.show_sql" value="false" />
+
+            <!-- Connection Pool -->
+            <property name="hibernate.hikari.maximumPoolSize" value="20" />
+        </properties>
+    </persistence-unit>
+</persistence>

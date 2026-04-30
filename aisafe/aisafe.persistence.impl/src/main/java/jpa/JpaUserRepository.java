@@ -1,7 +1,6 @@
-package jpa.user.persistence;
+package jpa;
 
-import eapli.framework.infrastructure.repositories.impl.jpa.JpaAutoTxRepository;
-
+import eapli.framework.domain.repositories.TransactionalContext;
 import user.domain.User;
 import user.repository.UserRepository;
 
@@ -9,11 +8,15 @@ import java.util.Map;
 import java.util.Optional;
 
 public class JpaUserRepository
-        extends JpaAutoTxRepository<User, Long, Long>
+        extends BaseJpaRepositoryBase<User, Long, Long>
         implements UserRepository {
 
+    public JpaUserRepository(final TransactionalContext autoTx) {
+        super(autoTx, "id");
+    }
+
     public JpaUserRepository(final String persistenceUnitName) {
-        super(persistenceUnitName, "id");
+        super("id");
     }
 
     @Override
