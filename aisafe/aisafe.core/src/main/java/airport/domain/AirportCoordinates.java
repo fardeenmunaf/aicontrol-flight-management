@@ -3,6 +3,7 @@ package airport.domain;
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
+import eapli.framework.validations.Preconditions;
 
 @Embeddable
 public class AirportCoordinates implements ValueObject {
@@ -12,10 +13,13 @@ public class AirportCoordinates implements ValueObject {
     private Double latitude;
     private Double longitude;
 
+    protected AirportCoordinates() {
+        // for ORM
+    }
+
     public AirportCoordinates(final Double latitude, final Double longitude) {
-        if (latitude == null || longitude == null) {
-            throw new IllegalArgumentException("Coordinates should neither be null");
-        }
+        Preconditions.noneNull(latitude, longitude);
+
         if (latitude < -90 || latitude > 90) {
             throw new IllegalArgumentException("Latitude must be between -90 and 90");
         }
@@ -25,10 +29,6 @@ public class AirportCoordinates implements ValueObject {
 
         this.latitude = latitude;
         this.longitude = longitude;
-    }
-
-    protected AirportCoordinates() {
-        // for ORM
     }
 
     public Double latitude() {

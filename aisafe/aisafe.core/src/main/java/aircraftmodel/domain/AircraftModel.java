@@ -1,27 +1,35 @@
 package aircraftmodel.domain;
 
-import jakarta.persistence.Embedded;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Version;
+import java.util.HashSet;
+import java.util.Set;
 
+import enginemodel.domain.EngineModel;
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
-import shared.domain.AircraftModelId;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Version;
 
 @Entity
-public class AircraftModel implements AggregateRoot<AircraftModelId> {
+public class AircraftModel implements AggregateRoot<Long> {
 
     private static final long serialVersionUID = 1L;
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @Version
     private Long version;
-
-    @EmbeddedId
-    private AircraftModelId aircraftModelId;
 
     @Enumerated(EnumType.STRING)
     private AircraftType type;
@@ -40,8 +48,18 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
     @Embedded
     private AircraftModelMaker maker;
 
+    @ManyToMany
+    @JoinTable(
+            name = "aircraftmodel_enginemodel",
+            joinColumns = @JoinColumn(name = "aircraft_model_pk"),
+            inverseJoinColumns = @JoinColumn(name = "engine_model_pk"))
+    private Set<EngineModel> supportedEngineModels = new HashSet<>();
+
+    protected AircraftModel() {
+        // for ORM
+    }
+
     public AircraftModel(
-            final AircraftModelId aircraftModelId,
             final AircraftType type,
             final Double emptyWeight,
             final Double maximumTakeOffWeight,
@@ -56,9 +74,9 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
             final AircraftModelMaker maker) {
 
         Preconditions.noneNull(
-                aircraftModelId, type, emptyWeight, maximumTakeOffWeight,
-                maximumZeroFuelWeight, maximumFuelCapacity, serviceCeiling,
-                cruiseSpeed, wingArea, wingSpan, dragCoefficient, liftCoefficient, maker);
+                type, emptyWeight, maximumTakeOffWeight, maximumZeroFuelWeight,
+                maximumFuelCapacity, serviceCeiling, cruiseSpeed, wingArea,
+                wingSpan, dragCoefficient, liftCoefficient, maker);
 
         if (emptyWeight <= 0 || maximumTakeOffWeight <= 0 || maximumZeroFuelWeight <= 0
                 || maximumFuelCapacity <= 0 || serviceCeiling <= 0 || cruiseSpeed <= 0
@@ -74,7 +92,6 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
             throw new IllegalArgumentException("Maximum zero fuel weight must be less than or equal to maximum take-off weight");
         }
 
-        this.aircraftModelId = aircraftModelId;
         this.type = type;
         this.emptyWeight = emptyWeight;
         this.maximumTakeOffWeight = maximumTakeOffWeight;
@@ -89,13 +106,14 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
         this.maker = maker;
     }
 
-    protected AircraftModel() {
-        // for ORM
+    public void addSupportedEngineModel(final EngineModel engineModel) {
+        Preconditions.noneNull(engineModel);
+        supportedEngineModels.add(engineModel);
     }
 
     @Override
-    public AircraftModelId identity() {
-        return aircraftModelId;
+    public Long identity() {
+        return id;
     }
 
     @Override
@@ -104,13 +122,17 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        return DomainEntities.areEqual(this, o);
+    public boolean equals(final Object other) {
+        return DomainEntities.areEqual(this, other);
     }
 
     @Override
     public int hashCode() {
         return DomainEntities.hashCode(this);
+    }
+
+    public Long id() {
+        return id;
     }
 
     public AircraftType type() {
@@ -159,5 +181,9 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
 
     public AircraftModelMaker maker() {
         return maker;
+    }
+
+    public Set<EngineModel> supportedEngineModels() {
+        return Set.copyOf(supportedEngineModels);
     }
 }
