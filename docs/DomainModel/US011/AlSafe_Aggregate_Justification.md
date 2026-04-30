@@ -2,6 +2,7 @@
 
 > **Project:** AISafe – Air Traffic Management System  
 > **Artefact:** US011 – Aggregate Justification Document  
+> **Version:** 2.0  
 
 ---
 
@@ -45,9 +46,9 @@ Certain Value Object *types* (same structure, same semantics) appear in multiple
 | VO Type | Appears in |
 |---|---|
 | `Coordinates` (latitude, longitude) | `Airport` aggregate, `Node` aggregate |
-| `Maker` (name, country) | `AircraftModel` aggregate, `EngineModel` aggregate |
+| `Maker` (name, country) — named as `AircraftMaker` and `EngineMaker` in their respective aggregates | `AircraftModel` aggregate, `EngineModel` aggregate |
 
-In a full implementation, these would be *shared kernel* types defined in a common module and reused across bounded contexts. In the diagram, they are shown as separate VO boxes within each aggregate **to avoid cross-package arrows**, which would imply a coupling that does not exist at the aggregate boundary level. Each aggregate owns its own copy of the VO definition.
+In a full implementation, these would be *shared kernel* types defined in a common module and reused across bounded contexts. In the diagram, they are shown as separate VO boxes within each aggregate **to avoid cross-package arrows**, which would imply a coupling that does not exist at the aggregate boundary level. Each aggregate owns its own copy of the VO definition with context-specific naming (e.g., `AircraftMaker` for aircraft manufacturers, `EngineMaker` for engine manufacturers).
 
 ### Summary
 
@@ -57,7 +58,7 @@ In a full implementation, these would be *shared kernel* types defined in a comm
 | `AirportId` not re-declared inside `FlightPlan` | Declare `AirportId <<VO>>` inside `FlightPlan` package | Same rationale as above |
 | `PilotId`, `AircraftId` not re-declared inside `FlightPlan` | Declare each as `<<VO>>` inside `FlightPlan` | Cross-aggregate references are self-evident from relationship labels |
 | `Coordinates` duplicated in `Airport` and `Node` | Extract to shared kernel module | Prevents cross-aggregate VO arrows that imply structural coupling |
-| `Maker` duplicated in `AircraftModel` and `EngineModel` | Extract to shared kernel module | Same rationale as `Coordinates` |
+| `AircraftMaker` and `EngineMaker` duplicated | Extract to shared `Maker` kernel type | Enables context-aware naming while maintaining type coherence across aggregates |
 
 ---
 
@@ -97,7 +98,7 @@ The `User` aggregate has a *long-lived lifecycle*. It does not get deleted — d
 **Internal Structure:**
 
 - **`UserId`** *(Value Object)*: An immutable, globally unique identifier generated upon user creation. As a VO, two `UserId` instances carrying the same value are semantically identical and fully interchangeable. It acts as the cross-aggregate reference token, propagated to `Pilot`, `AirTransportCompany`, and other aggregates without creating inter-aggregate coupling.
-- **`Role`** *(Entity)*: Modelled as an Entity within the aggregate because roles have a domain identity (`designation`) and an independent assignable lifecycle — they can be added or revoked on a user independently. The `Role` entity is bounded by the `User` aggregate: it has no meaningful existence outside the context of a user assignment.
+- **`Role`** *(Enumeration)*: Modelled as an enumeration representing predefined system roles (e.g., `PILOT`, `AIR_TRAFFIC_CONTROLLER`, `FLIGHT_DISPATCHER`, `MAINTENANCE_ENGINEER`, `AIRPORT_MANAGER`, `SYSTEM_ADMINISTRATOR`). The enumeration contains a fixed, closed set of role values, each with a `designation` field. Using an enumeration instead of an Entity enforces type safety and prevents arbitrary role values from entering the domain.
 
 **Key Invariants Enforced:**
 
@@ -254,13 +255,13 @@ The lifecycle constraint at termination illustrates a *cross-aggregate lifecycle
 **Internal Structure:**
 
 - **`AircraftModelId`** *(Value Object)*: Identifier referenced by `Aircraft`, `Pilot`, and `AircraftModel` itself (self-referential, for variant tracking).
-- **`Maker`** *(Value Object)*: Encapsulates `name` and `country` of the manufacturer. Modelled as a VO because manufacturer information is *descriptive metadata* — it has no independent domain lifecycle. Two `AircraftModel` instances from the same manufacturer share equivalent `Maker` VOs.
+- **`AircraftMaker`** *(Value Object)*: Encapsulates `name` and `country` of the manufacturer. Modelled as a VO because manufacturer information is *descriptive metadata* — it has no independent domain lifecycle. Two `AircraftModel` instances from the same manufacturer share equivalent `AircraftMaker` VOs.
 
-> **Note on shared VO types:** `Maker` uses the same structure as the one in the `EngineModel` aggregate. As with `Coordinates`, each aggregate owns its own VO declaration in the diagram to avoid cross-aggregate structural coupling arrows. In implementation, a shared `Maker` value type will be defined in a common module.
+> **Note on shared VO types:** `AircraftMaker` uses the same structure as the one in the `EngineModel` aggregate (named `EngineMaker`). As with `Coordinates`, each aggregate owns its own VO declaration in the diagram to avoid cross-aggregate structural coupling arrows. In implementation, both would inherit from or reference a common `Maker` base type.
 
 **Key Invariants Enforced:**
 
-- The combination of model name and `Maker` must be globally unique (composite key invariant).
+- The combination of model name and `AircraftMaker` must be globally unique (composite key invariant).
 - At least one certified `EngineModel` (`EngineModelId`) must always be associated — the last engine cannot be removed.
 - All aerodynamic parameters (`dragCoefficient`, `liftCoefficient`, `wingArea`, `wingSpan`) must be strictly positive, as they feed directly into the lift/drag physics equations in the simulation.
 - `maximumTakeOffWeight` ≥ `maximumZeroFuelWeight` ≥ `emptyWeight` is a structural physics invariant.
@@ -281,12 +282,12 @@ Engine models constitute a distinct *propulsion catalogue* subdomain with an ind
 **Internal Structure:**
 
 - **`EngineModelId`** *(Value Object)*: Cross-aggregate identifier propagated to `AircraftModel` for the certified-engine association.
-- **`Maker`** *(Value Object)*: Manufacturer descriptor — same VO semantics as in `AircraftModel`. No independent lifecycle within this context.
+- **`EngineMaker`** *(Value Object)*: Manufacturer descriptor — same VO semantics as `AircraftMaker` in `AircraftModel`. No independent lifecycle within this context.
 - **`FuelProperties`** *(Value Object)*: Encapsulates `type`, `density`, and `specificEnergy` as an *atomic, immutable* physical specification. It is a VO because fuel properties are a scientific constant characterising the propellant — they have no independent identity, and two `FuelProperties` instances with identical values are interchangeable domain objects.
 
 **Key Invariants Enforced:**
 
-- The combination of `name` and `Maker` must be globally unique.
+- The combination of `name` and `EngineMaker` must be globally unique.
 - `thrustSpecificFuelConsumption` must be strictly positive.
 - `FuelProperties.density` and `specificEnergy` must be physically valid values.
 - An `EngineModel` cannot be disassociated from all `AircraftModel` references if actual `Aircraft` instances actively use that model combination.
@@ -491,3 +492,118 @@ The aggregate contains no nested Entities or Value Objects. Its data (`totalFlig
 - The report is *immutable once generated* — any subsequent analysis or correction requires a new report instance, preserving the audit trail.
 
 ---
+
+## Cross-Aggregate Linking: Aggregate Roots as the Primary Association Mechanism
+
+### Concept & Rationale
+
+The AlSafe domain model employs a deliberate architectural principle regarding inter-aggregate relationships: **while identifiers (VOs such as `AircraftId`, `FlightId`) are often used for persistence, queries, and references, the primary semantic bond between aggregates is established through direct references to Aggregate Roots, not to their identities.**
+
+This principle serves two critical purposes:
+
+1. **Semantic Clarity:** The presence of an Aggregate Root reference (e.g., a `Flight` object) in a relationship makes explicit the domain concept being linked. It is semantically more expressive to say "`FlightPlan` is *for* a `Flight`" than to say "`FlightPlan` holds a `FlightId`."
+
+2. **Lifecycle Consistency:** Aggregate Root references enable runtime verification of lifecycle constraints and cross-aggregate invariants. For example, a `FlightPlan` should only be created if its referenced `Flight` aggregate actually exists and is in a valid state — a verification best performed by holding the root itself or a reference to it, not merely its ID.
+
+### Example: `FlightPlan` and `Flight`
+
+**Scenario:** A `FlightPlan` is the operational execution blueprint for a specific `Flight`. In the domain language, we express this as: *"A FlightPlan is created **for** a specific Flight."*
+
+**Cross-Aggregate Linkage Pattern:**
+
+- **Semantic Root Reference:** In domain logic, operations involving a `FlightPlan` should accept or reference the `Flight` Aggregate Root (not just its `FlightId`). For example:
+  ```
+  FlightPlan plan = new FlightPlan(
+      flight,          // Reference to the Flight Aggregate Root
+      aircraft,        // Reference to the Aircraft Aggregate Root
+      pilot,           // Reference to the Pilot Aggregate Root
+      flightLegs,
+      status
+  );
+  ```
+
+- **Persistence & Queries:** When persisting or querying, the implementation may store only the `flightId` (foreign key) in the database for normalized storage. However, when *loading* the `FlightPlan` aggregate from the repository, the system should reconstruct or fetch the associated `Flight` aggregate and inject it into the `FlightPlan` instance. This preserves the semantic link while respecting database constraints.
+
+- **Invariant Enforcement:** At the constructor or mutation point, the presence of the `Flight` root allows validation logic to run at the aggregate boundary. For instance:
+  ```
+  public FlightPlan(Flight flight, Aircraft aircraft, Pilot pilot, ...) {
+      // Invariant: Flight must be in SCHEDULED or PLANNING state
+      if (!flight.canHavePlan()) {
+          throw new InvalidFlightPlanStateException(...);
+      }
+      // Invariant: Pilot must be certified for the aircraft model
+      if (!pilot.isCertifiedFor(aircraft.aircraftModel())) {
+          throw new InsufficientCertificationException(...);
+      }
+      this.flight = flight;  // Store root reference
+      this.aircraft = aircraft;
+      // ...
+  }
+  ```
+
+### Contrast: ID-Only Linking
+
+In an ID-only pattern, the `FlightPlan` would reference only `Flight` via its `FlightId`:
+
+```java
+public class FlightPlan {
+    private FlightId flightId;  // Only the ID, not the root
+    
+    public FlightPlan(FlightId flightId, ...) {
+        // No invariant checking is possible without the Flight root.
+        // Caller must ensure Flight validity externally.
+        this.flightId = flightId;
+    }
+}
+```
+
+This approach:
+- Loses semantic specificity in the code.
+- Defers invariant validation to external application services or database constraints, weakening encapsulation.
+- Makes it harder to reason about the aggregate's state in isolation.
+
+### Implementation Guidance
+
+**Architecture Layer (Services, Repositories):**
+
+When external clients (e.g., application services) create or mutate a `FlightPlan`, they should:
+1. Fetch the referenced `Flight`, `Aircraft`, and `Pilot` aggregates (via their repositories).
+2. Pass these root references to the `FlightPlan` constructor or mutation method.
+3. Let the `FlightPlan` aggregate enforce its own invariants in terms of these roots.
+
+**Persistence Layer:**
+
+The Object-Relational Mapping (ORM) framework may store only the identity references (foreign keys) in the database. However, the repository implementation should eagerly load or lazy-load associated aggregates to maintain the semantic link in memory.
+
+**Example Repository Implementation:**
+```java
+public class FlightPlanRepository {
+    public FlightPlan findById(FlightPlanId id) {
+        FlightPlan plan = orm.findById(id);
+        Flight flight = flightRepository.findById(plan.getFlightId());
+        Aircraft aircraft = aircraftRepository.findById(plan.getAircraftId());
+        Pilot pilot = pilotRepository.findById(plan.getPilotId());
+        
+        // Reconstruct the aggregate with root references
+        plan.setFlight(flight);
+        plan.setAircraft(aircraft);
+        plan.setPilot(pilot);
+        return plan;
+    }
+}
+```
+
+### Benefits in the AlSafe Domain
+
+By linking aggregates via their roots:
+
+1. **Domain-Driven Architecture:** Code directly reflects domain language: *"I have a FlightPlan for this Flight"* rather than *"I have a FlightPlan that references this FlightId".*
+
+2. **Fail-Fast Validation:** Invariants are checked at creation time, preventing invalid states from propagating into the domain.
+
+3. **Temporal Consistency:** If a `Flight` is deleted or transitions to an invalid state, dependent aggregates can be notified or constrained at runtime, not merely through database cascades.
+
+4. **Testability:** Unit tests can verify invariants by injecting mock or test-double aggregate roots, without needing database setup.
+
+---
+
