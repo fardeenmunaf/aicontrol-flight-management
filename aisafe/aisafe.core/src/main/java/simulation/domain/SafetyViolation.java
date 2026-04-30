@@ -12,10 +12,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 
 import eapli.framework.domain.model.DomainEntities;
+import eapli.framework.domain.model.DomainEntity;
 import eapli.framework.validations.Preconditions;
 
 @Entity
-public class SafetyViolation {
+public class SafetyViolation implements DomainEntity<Long> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -50,6 +51,16 @@ public class SafetyViolation {
     }
 
     @Override
+    public Long identity() {
+        return id;
+    }
+
+    @Override
+    public boolean sameAs(final Object other) {
+        return DomainEntities.areEqual(this, other);
+    }
+
+    @Override
     public boolean equals(final Object o) {
         return DomainEntities.areEqual(this, o);
     }
@@ -74,5 +85,4 @@ public class SafetyViolation {
     public Set<VelocityVector> recordedVectors() {
         return new HashSet<>(recordedVectors);
     }
-
 }
