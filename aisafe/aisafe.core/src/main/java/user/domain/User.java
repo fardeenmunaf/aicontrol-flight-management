@@ -1,29 +1,34 @@
 package user.domain;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Version;
+import jakarta.persistence.JoinColumn;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
-import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
+import shared.domain.UserId;
 
 @Entity
 public class User implements AggregateRoot<Long> {
 
-    private static final long serialVersionUID = 1L;
+    private static final String STATUS_ACTIVE = "ACTIVE";
+    private static final String STATUS_DISABLED = "DISABLED";
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-
-    @Version
-    private Long version;
 
     private String email;
     private String name;
@@ -32,36 +37,30 @@ public class User implements AggregateRoot<Long> {
     private LocalDate skillsAssessmentDueDate;
     private String status;
 
+    @ElementCollection
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
+    private Set<Role> roles = new HashSet<>();
+
+    @Embedded
+    private UserId userId;
+
     public User(final String email, final String name, final String phoneNumber,
             final LocalDate activeSecurityClearanceExpiry, final LocalDate skillsAssessmentDueDate,
-            final String status) {
-        Preconditions.noneNull(email, name, phoneNumber, status);
-        if (StringPredicates.isNullOrEmpty(email)) {
-            throw new IllegalArgumentException("Email should neither be null nor empty");
-        }
-        if (StringPredicates.isNullOrEmpty(name)) {
-            throw new IllegalArgumentException("Name should neither be null nor empty");
-        }
+            final String status, final Set<Role> roles, final UserId userId) {
+        Preconditions.noneNull(email, name, phoneNumber, status, roles, userId);
         this.email = email;
         this.name = name;
         this.phoneNumber = phoneNumber;
         this.activeSecurityClearanceExpiry = activeSecurityClearanceExpiry;
         this.skillsAssessmentDueDate = skillsAssessmentDueDate;
         this.status = status;
+        this.roles.addAll(roles);
+        this.userId = userId;
     }
 
     protected User() {
         // for ORM
-    }
-
-    @Override
-    public Long identity() {
-        return id;
-    }
-
-    @Override
-    public boolean sameAs(final Object other) {
-        return DomainEntities.areEqual(this, other);
     }
 
     @Override
@@ -72,6 +71,16 @@ public class User implements AggregateRoot<Long> {
     @Override
     public int hashCode() {
         return DomainEntities.hashCode(this);
+    }
+
+    @Override
+    public boolean sameAs(final Object other) {
+        return DomainEntities.areEqual(this, other);
+    }
+
+    @Override
+    public Long identity() {
+        return id;
     }
 
     public String email() {
@@ -96,5 +105,25 @@ public class User implements AggregateRoot<Long> {
 
     public String status() {
         return status;
+    }
+
+    public void enable() {
+        this.status = STATUS_ACTIVE;
+    }
+
+    public void disable() {
+        this.status = STATUS_DISABLED;
+    }
+
+    public boolean isActive() {
+        return STATUS_ACTIVE.equals(status);
+    }
+
+    public Set<Role> roles() {
+        return Set.copyOf(roles);
+    }
+
+    public UserId userId() {
+        return userId;
     }
 }

@@ -19,7 +19,7 @@ import jakarta.persistence.OneToMany;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.domain.model.DomainEntity;
 import eapli.framework.validations.Preconditions;
-import org.yaml.snakeyaml.nodes.NodeId;
+import shared.domain.NodeId;
 
 @Entity
 public class Segment implements DomainEntity<Long>, Serializable {
@@ -37,11 +37,11 @@ public class Segment implements DomainEntity<Long>, Serializable {
 
     // Cross-aggregate references to Node — stored as plain IDs (DDD rule)
     @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "start_node_id"))
+    @AttributeOverride(name = "value", column = @Column(name = "start_node_id"))
     private NodeId startNodeId;
 
     @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "end_node_id"))
+    @AttributeOverride(name = "value", column = @Column(name = "end_node_id"))
     private NodeId endNodeId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)

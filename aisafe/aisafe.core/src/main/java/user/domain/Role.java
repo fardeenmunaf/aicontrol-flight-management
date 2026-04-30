@@ -1,12 +1,12 @@
 package user.domain;
 
 public enum Role {
+    ADMIN("Admin"),
+    BACKOFFICE_OPERATOR("Backoffice Operator"),
+    AIR_TRANSPORT_COMPANY_COLLABORATOR("ATCC"),
     PILOT("Pilot"),
-    AIR_TRAFFIC_CONTROLLER("Air Traffic Controller"),
-    FLIGHT_DISPATCHER("Flight Dispatcher"),
-    MAINTENANCE_ENGINEER("Maintenance Engineer"),
-    AIRPORT_MANAGER("Airport Manager"),
-    SYSTEM_ADMINISTRATOR("System Administrator");
+    FLIGHT_CONTROL_OPERATOR("FCO"),
+    WEATHER_PERSON("Weather Person");
 
     private final String designation;
 
@@ -18,4 +18,3 @@ public enum Role {
         return designation;
     }
 }
-

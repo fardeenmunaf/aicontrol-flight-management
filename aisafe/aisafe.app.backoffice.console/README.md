@@ -34,3 +34,13 @@ BackofficeApp.java  ← main() entry point
 - `aisafe.core` — application services and domain model
 - `aisafe.persistence.impl` — JPA repositories
 - `eapli.framework.infrastructure.authz` — role-based access control
+
+## US030 Smoke Test
+
+Use `backoffice.BackofficeApp` to run a minimal authentication/authorization check (in-memory authz repo, no database).
+
+### How to run
+
+Run the `backoffice.BackofficeApp` main from your IDE.
+
+This prints `[US030] ... OK/FAIL` lines for AC01, AC02, AC04, AC06, and AC07.
