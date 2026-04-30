@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,8 +18,6 @@ import jakarta.persistence.Version;
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
-import shared.domain.PilotId;
-import shared.domain.AircraftId;
 
 
 @Entity
@@ -42,22 +39,14 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
     @Enumerated(EnumType.STRING)
     private FlightPlanStatus status;
 
-    // Cross-aggregate references — stored as plain IDs (DDD rule)
-    @Embedded
-    private AircraftId aircraftId;
-
-    @Embedded
-    private PilotId pilotId;
-
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "flight_plan_ref")
     @OrderBy("sequenceNumber ASC")
     private List<FlightLeg> legs = new ArrayList<>();
 
     public FlightPlan(final FlightPlanId flightPlanId, final Instant departureDateTime,
-                      final double fuelQuantity, final int passengerLoad, final double cargoLoad,
-                      final AircraftId aircraftId, final PilotId pilotId) {
-        Preconditions.noneNull(flightPlanId, departureDateTime, aircraftId, pilotId);
+                      final double fuelQuantity, final int passengerLoad, final double cargoLoad) {
+        Preconditions.noneNull(flightPlanId, departureDateTime);
         Preconditions.ensure(fuelQuantity > 0, "Fuel quantity must be strictly positive");
         Preconditions.ensure(passengerLoad >= 0, "Passenger load must be non-negative");
         Preconditions.ensure(cargoLoad >= 0, "Cargo load must be non-negative");
@@ -66,8 +55,6 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
         this.fuelQuantity = fuelQuantity;
         this.passengerLoad = passengerLoad;
         this.cargoLoad = cargoLoad;
-        this.aircraftId = aircraftId;
-        this.pilotId = pilotId;
         this.status = FlightPlanStatus.DRAFT;
     }
 
@@ -156,13 +143,6 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
         return status;
     }
 
-    public AircraftId aircraftId() {
-        return aircraftId;
-    }
-
-    public PilotId pilotId() {
-        return pilotId;
-    }
 
     public List<FlightLeg> legs() {
         return Collections.unmodifiableList(legs);
