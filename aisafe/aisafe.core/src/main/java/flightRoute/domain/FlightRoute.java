@@ -1,24 +1,15 @@
 package flightRoute.domain;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
-import jakarta.persistence.AttributeOverride;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Version;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
-import shared.domain.FlightId;
 
 
 @Entity
@@ -42,14 +33,6 @@ public class FlightRoute implements AggregateRoot<FlightRouteId> {
      * When set, the route is deactivated from that date onwards (US074).
      */
     private LocalDate activeUntil;
-
-    /**
-     * Cross-aggregate references to scheduled Flight instances.
-     * Stored as plain FlightId values — DDD cross-aggregate reference rule.
-     */
-    @ElementCollection
-    @JoinColumn(name = "flight_route_ref")
-    private List<FlightId> scheduledFlightIds = new ArrayList<>();
 
     public FlightRoute(final FlightRouteId flightRouteId, final RouteDesignation designation,
                        final LocalDate activeFrom) {
@@ -90,33 +73,6 @@ public class FlightRoute implements AggregateRoot<FlightRouteId> {
         return activeUntil == null || !date.isAfter(activeUntil);
     }
 
-    /**
-     * Schedules a new flight on this route.
-     * Enforces that the route must be active on the flight's departure date.
-     */
-    public void scheduleFlightOn(final FlightId flightId, final LocalDate flightDate) {
-        Preconditions.noneNull(flightId, flightDate);
-        if (!isActiveOn(flightDate)) {
-            throw new IllegalStateException(
-                    "Cannot schedule a flight on route " + designation
-                            + ": the route is not active on " + flightDate);
-        }
-        if (scheduledFlightIds.contains(flightId)) {
-            throw new IllegalArgumentException("Flight " + flightId + " is already scheduled on this route");
-        }
-        scheduledFlightIds.add(flightId);
-    }
-
-    /**
-     * Removes a scheduled flight — used when a flight is cancelled before departure.
-     */
-    public void removeScheduledFlight(final FlightId flightId) {
-        Preconditions.nonNull(flightId, "FlightId must not be null");
-        if (!scheduledFlightIds.remove(flightId)) {
-            throw new IllegalArgumentException("Flight " + flightId + " is not scheduled on this route");
-        }
-    }
-
     @Override
     public FlightRouteId identity() {
         return flightRouteId;
@@ -153,9 +109,6 @@ public class FlightRoute implements AggregateRoot<FlightRouteId> {
         return isActiveOn(LocalDate.now());
     }
 
-    public List<FlightId> scheduledFlightIds() {
-        return Collections.unmodifiableList(scheduledFlightIds);
-    }
 
     @Override
     public String toString() {
