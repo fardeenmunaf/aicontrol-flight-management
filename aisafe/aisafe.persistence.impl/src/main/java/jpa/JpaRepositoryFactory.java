@@ -5,6 +5,10 @@ import eapli.framework.infrastructure.repositories.impl.jpa.JpaAutoTxRepository;
 import user.repository.UserRepository;
 import enginemodel.repositories.EngineModelRepository;
 import infrastructure.persistence.RepositoryFactory;
+import flightPlan.repository.FlightPlanRepository;
+import flightRoute.repository.FlightRouteRepository;
+import node.repository.NodeRepository;
+import flight.repository.FlightRepository;
 
 /**
  * JPA implementation of RepositoryFactory.
@@ -39,5 +43,45 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     @Override
     public EngineModelRepository engineModels(final TransactionalContext autoTx) {
         return new JpaEngineModelRepository(autoTx);
+    }
+
+    @Override
+    public FlightPlanRepository flightPlans() {
+        return new JpaFlightPlanRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public FlightPlanRepository flightPlans(final TransactionalContext autoTx) {
+        return new JpaFlightPlanRepository(autoTx);
+    }
+
+    @Override
+    public FlightRouteRepository flightRoutes() {
+        return new JpaFlightRouteRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public FlightRouteRepository flightRoutes(final TransactionalContext autoTx) {
+        return new JpaFlightRouteRepository(autoTx);
+    }
+
+    @Override
+    public NodeRepository nodes() {
+        return new JpaNodeRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public NodeRepository nodes(final TransactionalContext autoTx) {
+        return new JpaNodeRepository(autoTx);
+    }
+
+    @Override
+    public FlightRepository flights() {
+        return new JpaFlightRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public FlightRepository flights(final TransactionalContext autoTx) {
+        return new JpaFlightRepository(autoTx);
     }
 }

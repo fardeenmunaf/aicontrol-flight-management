@@ -3,6 +3,10 @@ package infrastructure.persistence;
 import eapli.framework.domain.repositories.TransactionalContext;
 import enginemodel.repositories.EngineModelRepository;
 import user.repository.UserRepository;
+import flightPlan.repository.FlightPlanRepository;
+import flightRoute.repository.FlightRouteRepository;
+import node.repository.NodeRepository;
+import flight.repository.FlightRepository;
 
 /**
  * Master contract defining creation methods for all aggregate repositories.
@@ -28,6 +32,14 @@ public interface RepositoryFactory {
 
     UserRepository users();
 
+    FlightPlanRepository flightPlans();
+
+    FlightRouteRepository flightRoutes();
+
+    NodeRepository nodes();
+
+    FlightRepository flights();
+
     /**
      * Get the EngineModel repository enrolled in a specific transactional context.
      *
@@ -37,4 +49,12 @@ public interface RepositoryFactory {
     EngineModelRepository engineModels(TransactionalContext autoTx);
 
     UserRepository users(TransactionalContext autoTx);
+
+    FlightPlanRepository flightPlans(TransactionalContext autoTx);
+
+    FlightRouteRepository flightRoutes(TransactionalContext autoTx);
+
+    NodeRepository nodes(TransactionalContext autoTx);
+
+    FlightRepository flights(TransactionalContext autoTx);
 }

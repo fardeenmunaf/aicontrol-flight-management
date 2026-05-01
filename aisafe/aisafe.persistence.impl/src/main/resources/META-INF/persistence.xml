@@ -10,6 +10,19 @@
         <!-- Domain Entities -->
         <class>enginemodel.domain.EngineModel</class>
         <class>shared.domain.EngineModelId</class>
+        <class>flight.domain.Flight</class>
+        <class>flightPlan.domain.FlightPlan</class>
+        <class>flightPlan.domain.FlightPlanId</class>
+        <class>flightPlan.domain.FlightLeg</class>
+        <class>flightPlan.domain.Segment</class>
+        <class>flightPlan.domain.AltitudeSlot</class>
+        <class>flightRoute.domain.FlightRoute</class>
+        <class>flightRoute.domain.FlightRouteId</class>
+        <class>flightRoute.domain.RouteDesignation</class>
+        <class>node.domain.Node</class>
+        <class>node.domain.Coordinates</class>
+        <class>shared.domain.NodeId</class>
+        <class>shared.domain.AirportId</class>
         <class>user.domain.User</class>
         <class>user.domain.UserId</class>
 
@@ -40,6 +53,19 @@
         <!-- Domain Entities -->
         <class>enginemodel.domain.EngineModel</class>
         <class>shared.domain.EngineModelId</class>
+        <class>flight.domain.Flight</class>
+        <class>flightPlan.domain.FlightPlan</class>
+        <class>flightPlan.domain.FlightPlanId</class>
+        <class>flightPlan.domain.FlightLeg</class>
+        <class>flightPlan.domain.Segment</class>
+        <class>flightPlan.domain.AltitudeSlot</class>
+        <class>flightRoute.domain.FlightRoute</class>
+        <class>flightRoute.domain.FlightRouteId</class>
+        <class>flightRoute.domain.RouteDesignation</class>
+        <class>node.domain.Node</class>
+        <class>node.domain.Coordinates</class>
+        <class>shared.domain.NodeId</class>
+        <class>shared.domain.AirportId</class>
 
         <class>user.domain.User</class>
         <class>user.domain.UserId</class>
