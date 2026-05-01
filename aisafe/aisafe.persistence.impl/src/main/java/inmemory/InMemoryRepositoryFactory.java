@@ -8,6 +8,8 @@ import flightPlan.repository.FlightPlanRepository;
 import flightRoute.repository.FlightRouteRepository;
 import node.repository.NodeRepository;
 import flight.repository.FlightRepository;
+import simulationReport.repository.SimulationReportRepository;
+import weatherData.repository.WeatherDataRepository;
 
 /**
  * In-memory implementation of RepositoryFactory.
@@ -82,5 +84,25 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
     @Override
     public FlightRepository flights() {
         return flights(null);
+    }
+
+    @Override
+    public SimulationReportRepository simulationReports(final TransactionalContext autoTx) {
+        return new InMemorySimulationReportRepository();
+    }
+
+    @Override
+    public SimulationReportRepository simulationReports() {
+        return simulationReports(null);
+    }
+
+    @Override
+    public WeatherDataRepository weatherData(final TransactionalContext autoTx) {
+        return new InMemoryWeatherDataRepository();
+    }
+
+    @Override
+    public WeatherDataRepository weatherData() {
+        return weatherData(null);
     }
 }

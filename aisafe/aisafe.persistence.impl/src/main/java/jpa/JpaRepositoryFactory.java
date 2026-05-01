@@ -9,6 +9,8 @@ import flightPlan.repository.FlightPlanRepository;
 import flightRoute.repository.FlightRouteRepository;
 import node.repository.NodeRepository;
 import flight.repository.FlightRepository;
+import simulationReport.repository.SimulationReportRepository;
+import weatherData.repository.WeatherDataRepository;
 
 /**
  * JPA implementation of RepositoryFactory.
@@ -83,5 +85,25 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     @Override
     public FlightRepository flights(final TransactionalContext autoTx) {
         return new JpaFlightRepository(autoTx);
+    }
+
+    @Override
+    public SimulationReportRepository simulationReports() {
+        return new JpaSimulationReportRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public SimulationReportRepository simulationReports(final TransactionalContext autoTx) {
+        return new JpaSimulationReportRepository(autoTx);
+    }
+
+    @Override
+    public WeatherDataRepository weatherData() {
+        return new JpaWeatherDataRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public WeatherDataRepository weatherData(final TransactionalContext autoTx) {
+        return new JpaWeatherDataRepository(autoTx);
     }
 }

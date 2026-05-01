@@ -24,6 +24,8 @@
         <class>shared.domain.NodeId</class>
         <class>shared.domain.AirportId</class>
         <class>user.domain.User</class>
+        <class>simulationReport.domain.SimulationReport</class>
+        <class>weatherData.domain.WeatherData</class>
 
         <properties>
             <!-- JPA Properties -->
@@ -67,6 +69,8 @@
         <class>shared.domain.AirportId</class>
 
         <class>user.domain.User</class>
+        <class>simulationReport.domain.SimulationReport</class>
+        <class>weatherData.domain.WeatherData</class>
 
 
         <properties>
