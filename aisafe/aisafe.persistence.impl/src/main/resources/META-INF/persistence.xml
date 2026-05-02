@@ -1,95 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <persistence version="3.0"
-    xmlns="https://jakarta.ee/xml/ns/persistence"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+             xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
 
+    <!-- H2 — Desenvolvimento e Testes -->
     <persistence-unit name="aisafe-pu" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <!-- Domain Entities -->
+        <!-- Apenas @Entity — @Embeddable são descobertos automaticamente -->
         <class>enginemodel.domain.EngineModel</class>
-        <class>shared.domain.EngineModelId</class>
         <class>flight.domain.Flight</class>
         <class>flightPlan.domain.FlightPlan</class>
-        <class>flightPlan.domain.FlightPlanId</class>
         <class>flightPlan.domain.FlightLeg</class>
         <class>flightPlan.domain.Segment</class>
         <class>flightPlan.domain.AltitudeSlot</class>
         <class>flightRoute.domain.FlightRoute</class>
-        <class>flightRoute.domain.FlightRouteId</class>
-        <class>flightRoute.domain.RouteDesignation</class>
         <class>node.domain.Node</class>
-        <class>node.domain.Coordinates</class>
-        <class>shared.domain.NodeId</class>
-        <class>shared.domain.AirportId</class>
+        <class>aircraft.domain.Aircraft</class>
+        <class>pilot.domain.Pilot</class>
+        <class>airport.domain.Airport</class>
         <class>user.domain.User</class>
         <class>simulationReport.domain.SimulationReport</class>
         <class>weatherData.domain.WeatherData</class>
+        <class>simulation.domain.Simulation</class>
+        <class>simulation.domain.AircraftPosition</class>
+        <class>simulation.domain.SafetyViolation</class>
 
         <properties>
-            <!-- JPA Properties -->
-            <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver" />
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:aisafe;MODE=PostgreSQL" />
-            <property name="jakarta.persistence.jdbc.user" value="admin" />
-            <property name="jakarta.persistence.jdbc.password" value="admin" />
+            <property name="jakarta.persistence.jdbc.driver"   value="org.h2.Driver"/>
+            <property name="jakarta.persistence.jdbc.url"      value="jdbc:h2:mem:aisafe;MODE=PostgreSQL;DB_CLOSE_DELAY=-1"/>
+            <property name="jakarta.persistence.jdbc.user"     value="admin"/>
+            <property name="jakarta.persistence.jdbc.password" value="admin"/>
 
-            <!-- Hibernate Properties -->
-            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
-            <property name="hibernate.format_sql" value="true" />
-            <property name="hibernate.use_sql_comments" value="true" />
-            <property name="hibernate.hbm2ddl.auto" value="update" />
-            <property name="hibernate.generate_statistics" value="false" />
-            <property name="hibernate.show_sql" value="false" />
-
-            <!-- Connection Pool -->
-            <property name="hibernate.hikari.maximumPoolSize" value="5" />
+            <property name="hibernate.dialect"                 value="org.hibernate.dialect.H2Dialect"/>
+            <property name="hibernate.hbm2ddl.auto"            value="create-drop"/>
+            <property name="hibernate.format_sql"              value="true"/>
+            <property name="hibernate.use_sql_comments"        value="true"/>
+            <property name="hibernate.show_sql"                value="false"/>
+            <property name="hibernate.generate_statistics"     value="false"/>
+            <property name="hibernate.hikari.maximumPoolSize"  value="5"/>
         </properties>
     </persistence-unit>
 
-    <!-- PostgreSQL Persistence Unit for Production -->
+    <!-- PostgreSQL — Produção -->
     <persistence-unit name="aisafe-pu-postgres" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <!-- Domain Entities -->
+        <!-- Apenas @Entity — @Embeddable são descobertos automaticamente -->
         <class>enginemodel.domain.EngineModel</class>
-        <class>shared.domain.EngineModelId</class>
         <class>flight.domain.Flight</class>
         <class>flightPlan.domain.FlightPlan</class>
-        <class>flightPlan.domain.FlightPlanId</class>
         <class>flightPlan.domain.FlightLeg</class>
         <class>flightPlan.domain.Segment</class>
         <class>flightPlan.domain.AltitudeSlot</class>
         <class>flightRoute.domain.FlightRoute</class>
-        <class>flightRoute.domain.FlightRouteId</class>
-        <class>flightRoute.domain.RouteDesignation</class>
         <class>node.domain.Node</class>
-        <class>node.domain.Coordinates</class>
-        <class>shared.domain.NodeId</class>
-        <class>shared.domain.AirportId</class>
-
+        <class>aircraft.domain.Aircraft</class>
+        <class>pilot.domain.Pilot</class>
+        <class>airport.domain.Airport</class>
         <class>user.domain.User</class>
         <class>simulationReport.domain.SimulationReport</class>
         <class>weatherData.domain.WeatherData</class>
-
+        <class>simulation.domain.Simulation</class>
+        <class>simulation.domain.AircraftPosition</class>
+        <class>simulation.domain.SafetyViolation</class>
 
         <properties>
-            <!-- JPA Properties -->
-            <property name="jakarta.persistence.jdbc.driver" value="org.postgresql.Driver" />
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/aisafe" />
-            <property name="jakarta.persistence.jdbc.user" value="aisafe_user" />
-            <property name="jakarta.persistence.jdbc.password" value="aisafe_password" />
+            <property name="jakarta.persistence.jdbc.driver"   value="org.postgresql.Driver"/>
+            <property name="jakarta.persistence.jdbc.url"      value="jdbc:postgresql://localhost:5432/aisafe"/>
+            <property name="jakarta.persistence.jdbc.user"     value="postgres"/>
+            <property name="jakarta.persistence.jdbc.password" value="postgres"/>
 
-            <!-- Hibernate Properties -->
-            <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
-            <property name="hibernate.format_sql" value="true" />
-            <property name="hibernate.use_sql_comments" value="true" />
-            <property name="hibernate.hbm2ddl.auto" value="update" />
-            <property name="hibernate.generate_statistics" value="false" />
-            <property name="hibernate.show_sql" value="false" />
-
-            <!-- Connection Pool -->
-            <property name="hibernate.hikari.maximumPoolSize" value="20" />
+            <property name="hibernate.dialect"                 value="org.hibernate.dialect.PostgreSQLDialect"/>
+            <property name="hibernate.hbm2ddl.auto"            value="update"/>
+            <property name="hibernate.format_sql"              value="true"/>
+            <property name="hibernate.use_sql_comments"        value="true"/>
+            <property name="hibernate.show_sql"                value="true"/>
+            <property name="hibernate.generate_statistics"     value="false"/>
+            <property name="hibernate.hikari.maximumPoolSize"  value="20"/>
         </properties>
     </persistence-unit>
+
 </persistence>

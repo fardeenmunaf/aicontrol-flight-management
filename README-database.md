@@ -12,89 +12,126 @@ The file `aisafe.persistence.impl/src/main/resources/META-INF/persistence.xml` d
 - `aisafe-pu` (H2 in-memory)
 - `aisafe-pu-postgres` (PostgreSQL)
 
-The default is `aisafe-pu` unless you pass a JVM property to select another unit.
+The default is `aisafe-pu` (H2) used during development and tests.
 
 ## 2) H2 (in-memory) usage
 
-No setup required. Just run the app without extra properties.
+No setup required. Just run the app — the H2 database is created automatically in memory.
 
 Notes:
 - The database is created in memory and lost when the app stops.
-- Useful for local development and tests.
+- Useful for local development and unit tests.
+- Schema is created and dropped automatically (`create-drop`).
 
 ## 3) PostgreSQL setup
 
-### 3.1 Create user and database
+### 3.1 Create the database
 
-Run these commands in your PostgreSQL instance:
+Connect to your PostgreSQL instance (via psql or DataGrip) and run:
 
 ```sql
-CREATE USER aisafe_user WITH PASSWORD 'aisafe_password';
-CREATE DATABASE aisafe OWNER aisafe_user;
-GRANT ALL PRIVILEGES ON DATABASE aisafe TO aisafe_user;
+CREATE DATABASE aisafe;
 ```
 
-### 3.2 Configure connection
+The default superuser `postgres` is used. No extra user creation is needed for local development.
 
-The PostgreSQL connection is already declared in `persistence.xml`:
+### 3.2 Connection details
+
+The PostgreSQL connection is declared in `persistence.xml`:
 
 - URL: `jdbc:postgresql://localhost:5432/aisafe`
-- User: `aisafe_user`
-- Password: `aisafe_password`
+- User: `postgres`
+- Password: `postgres`
 
-If you need to override these without editing XML, use JVM system properties:
+If your local PostgreSQL uses a different password, update it directly in `persistence.xml`:
 
-```text
--Daisafe.persistence.unit=aisafe-pu-postgres
--Daisafe.db.url=jdbc:postgresql://localhost:5432/aisafe
--Daisafe.db.username=aisafe_user
--Daisafe.db.password=aisafe_password
--Daisafe.db.driver=org.postgresql.Driver
--Daisafe.db.dialect=org.hibernate.dialect.PostgreSQLDialect
+```xml
+<property name="jakarta.persistence.jdbc.user"     value="postgres"/>
+<property name="jakarta.persistence.jdbc.password" value="YOUR_PASSWORD_HERE"/>
+```
+
+### 3.3 DataGrip configuration
+
+To inspect the database using DataGrip:
+
+1. Open DataGrip → `+` → `Data Source` → `PostgreSQL`
+2. Fill in:
+   - Host: `localhost`
+   - Port: `5432`
+   - Database: `aisafe`
+   - User: `postgres`
+   - Password: `postgres`
+3. Click `Test Connection` → should show green
+4. Click `OK`
+
+Tables are created automatically by Hibernate on first run.
+To inspect data, open a Query Console and run:
+
+```sql
+SELECT * FROM user_entity;
+SELECT * FROM aircraft;
+SELECT * FROM flight;
 ```
 
 ## 4) Switching between H2 and PostgreSQL
 
-### H2 (default)
+To switch persistence unit, change the constant in `JpaRepositoryFactory.java`:
 
-Run without extra JVM properties.
+```java
+// H2 in-memory (development/tests)
+private static final String PERSISTENCE_UNIT = "aisafe-pu";
 
-### PostgreSQL
+// PostgreSQL (production/integration)
+private static final String PERSISTENCE_UNIT = "aisafe-pu-postgres";
+```
 
-Add this JVM property:
+If running from an IDE (e.g. IntelliJ), you can also set the persistence unit via the Run Configuration
+by adding a JVM property:
 
 ```text
 -Daisafe.persistence.unit=aisafe-pu-postgres
 ```
 
-If you are running from an IDE, add the properties to the Run Configuration.
-
 ## 5) Schema generation
 
-In `persistence.xml`, the PostgreSQL unit uses:
+| Persistence unit   | `hbm2ddl.auto` | Behaviour                              |
+|--------------------|----------------|----------------------------------------|
+| `aisafe-pu`        | `create-drop`  | Schema created on start, dropped on stop |
+| `aisafe-pu-postgres` | `update`     | Tables created/updated automatically   |
 
-```text
-hibernate.hbm2ddl.auto=update
+Once the schema is stable, change PostgreSQL to `validate` for production:
+
+```xml
+<property name="hibernate.hbm2ddl.auto" value="validate"/>
 ```
-
-This will create/update tables automatically on startup. You can change it to `validate` for production once the schema is stable.
 
 ## 6) Driver dependency
 
-The PostgreSQL driver is declared in the root `pom.xml`:
+The PostgreSQL driver is declared in `aisafe.persistence.impl/pom.xml`:
 
 ```xml
 <dependency>
     <groupId>org.postgresql</groupId>
     <artifactId>postgresql</artifactId>
     <version>42.7.3</version>
-    <scope>runtime</scope>
+</dependency>
+```
+
+The H2 driver is declared with test scope:
+
+```xml
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <version>2.2.224</version>
+    <scope>test</scope>
 </dependency>
 ```
 
 ## 7) Troubleshooting
 
-- Connection refused: confirm the PostgreSQL server is running and the port is correct.
-- Authentication failed: check username/password and pg_hba.conf rules.
-- Tables not created: ensure `hibernate.hbm2ddl.auto` is `update` or `create`.
-
+- **Connection refused**: confirm PostgreSQL is running on port 5432.
+- **Authentication failed**: check username/password in `persistence.xml` match your local PostgreSQL setup.
+- **Tables not created**: ensure `hibernate.hbm2ddl.auto` is set to `update` or `create`.
+- **Class not found — org.postgresql.Driver**: confirm the PostgreSQL dependency is present in `pom.xml`.
+- **H2 data lost between runs**: expected behaviour — H2 is in-memory only. Use PostgreSQL for persistent data.
