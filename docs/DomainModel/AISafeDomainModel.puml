@@ -1,10 +1,10 @@
-@startuml
+@startuml AISafe DomainModel
 skinparam packageStyle rectangle
 skinparam shadowing false
 hide circle
 hide methods
 
-title AlSafe Domain Model - Aggregate Boundaries
+title AISafe Domain Model - Aggregate Boundaries
 
 ' --- AGGREGATES ---
 

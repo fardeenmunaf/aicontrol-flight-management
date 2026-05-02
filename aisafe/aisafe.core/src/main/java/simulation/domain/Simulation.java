@@ -59,7 +59,7 @@ public class Simulation implements AggregateRoot<Long> {
     private Set<SafetyViolation> safetyViolations = new HashSet<>();
 
     public Simulation(final Instant startDateTime, final Instant endDateTime, final SimulationStatus status) {
-        Preconditions.noneNull(status);
+        Preconditions.noneNull(status, startDateTime, endDateTime);
         if (startDateTime != null && endDateTime != null && endDateTime.isBefore(startDateTime)) {
             throw new IllegalArgumentException("End time must be after start time");
         }

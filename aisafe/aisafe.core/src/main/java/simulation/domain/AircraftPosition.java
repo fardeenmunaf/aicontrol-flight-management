@@ -27,10 +27,7 @@ public class AircraftPosition implements DomainEntity<Long> {
     private Double altitude;
 
     @Embedded
-    private VelocityVector velocityVector;
-
-    // TODO: Aircraft aggregate is not implemented yet.
-    // private Aircraft aircraft;
+    private VelocityVector velocityVector;;
 
     public AircraftPosition(final Simulation simulation,
             final Instant timestamp, final Double altitude,

@@ -9,11 +9,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.domain.model.DomainEntity;
 import eapli.framework.validations.Preconditions;
+
+import aircraft.domain.Aircraft;
 
 @Entity
 public class SafetyViolation implements DomainEntity<Long> {
@@ -31,20 +34,26 @@ public class SafetyViolation implements DomainEntity<Long> {
     @ElementCollection
     private Set<VelocityVector> recordedVectors = new HashSet<>();
 
-    // TODO: Aircraft aggregate is not implemented yet.
-    // @ElementCollection
-    // private Set<Aircraft> involvedAircraft = new HashSet<>();
+    @ManyToMany
+    private Set<Aircraft> involvedAircraft = new HashSet<>();
 
-    public SafetyViolation(final Simulation simulation, final Instant timestamp, final String severity, final Set<VelocityVector> recordedVectors) {
-        Preconditions.noneNull(simulation, timestamp, severity, recordedVectors);
-        if (recordedVectors.size() < 2) {
+    public SafetyViolation(final Simulation simulation, final Instant timestamp, final String severity, final Set<VelocityVector> recordedVectors, final Set<Aircraft> involvedAircraft) 
+    {
+        Preconditions.noneNull(simulation, timestamp, severity, recordedVectors, involvedAircraft);
+        if (recordedVectors.size() < 2) 
+        {
             throw new IllegalArgumentException("At least two velocity vectors are required");
+        }
+        if (involvedAircraft.size() < 2) 
+        {
+            throw new IllegalArgumentException("At least two aircraft must be involved");
         }
         this.simulation = simulation;
         this.timestamp = timestamp;
         this.severity = severity;
         this.recordedVectors.addAll(recordedVectors);
-    }
+        this.involvedAircraft.addAll(involvedAircraft);
+}
 
     protected SafetyViolation() {
         // for ORM
@@ -84,5 +93,9 @@ public class SafetyViolation implements DomainEntity<Long> {
 
     public Set<VelocityVector> recordedVectors() {
         return new HashSet<>(recordedVectors);
+    }
+
+    public Set<Aircraft> involvedAircraft() {
+        return new HashSet<>(involvedAircraft);
     }
 }
