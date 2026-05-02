@@ -158,6 +158,7 @@ package "Flight Aggregate" <<Aggregate>> #E6FFF0 {
     type
     scheduledDepartureTime
     scheduledArrivalTime
+    status
   }
 
 }
