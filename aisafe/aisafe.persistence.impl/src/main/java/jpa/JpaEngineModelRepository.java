@@ -10,9 +10,7 @@ import enginemodel.repositories.EngineModelRepository;
  *
  * @author LAPR4 Team
  */
-class JpaEngineModelRepository
-        extends BaseJpaRepositoryBase<EngineModel, Long, Long>
-        implements EngineModelRepository {
+class JpaEngineModelRepository extends BaseJpaRepositoryBase<EngineModel, Long, Long> implements EngineModelRepository {
 
     public JpaEngineModelRepository(final TransactionalContext autoTx) {
         super(autoTx, "id");

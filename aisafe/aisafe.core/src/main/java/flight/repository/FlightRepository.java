@@ -3,7 +3,6 @@ package flight.repository;
 import eapli.framework.domain.repositories.DomainRepository;
 import flight.domain.Flight;
 import flight.domain.FlightStatus;
-import aircontrolarea.domain.AirControlArea;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,14 +16,13 @@ import java.util.Optional;
 public interface FlightRepository extends DomainRepository<Long, Flight> {
 
     /**
-     * Returns all flights currently active within a given air control area.
-     * Used by the simulation engine to determine which flights need
-     * position updates and conflict checks each tick.
+     * Returns all flights currently airborne and scheduled to land at a given airport.
+     * Used by the simulation engine to anticipate incoming traffic at an airport.
      *
-     * @param areaId the identity of the AirControlArea to query
-     * @return list of flights currently inside the given area, never null
+     * @param iataCode the IATA code of the destination airport
+     * @return list of active flights landing at the given airport, never null
      */
-    List<Flight> findActiveFlightsInArea(AirControlArea area);
+    List<Flight> findActiveFlightsLandingInAirport(final String iataCode);
 
     /**
      * Returns all flights matching a given status.
