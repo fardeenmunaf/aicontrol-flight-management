@@ -1,5 +1,7 @@
 package infrastructure.persistence;
 
+import aircraftmodel.repositories.AircraftModelRepository;
+import airport.repositories.AirportRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import enginemodel.repositories.EngineModelRepository;
 import user.repository.UserRepository;
@@ -67,4 +69,13 @@ public interface RepositoryFactory {
     WeatherDataRepository weatherData();
 
     WeatherDataRepository weatherData(TransactionalContext autoTx);
+
+    AircraftModelRepository aircraftModels();
+
+    AircraftModelRepository aircraftModels(TransactionalContext autoTx);
+
+    AirportRepository airports();
+
+    AirportRepository airports(TransactionalContext autoTx);
+
 }

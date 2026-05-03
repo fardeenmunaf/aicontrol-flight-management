@@ -51,12 +51,12 @@ public class AircraftModel implements AggregateRoot<Long> {
     @ManyToMany
     @JoinTable(
             name = "aircraftmodel_enginemodel",
-            joinColumns = @JoinColumn(name = "aircraft_model_pk"),
-            inverseJoinColumns = @JoinColumn(name = "engine_model_pk"))
+            joinColumns = @JoinColumn(name = "aircraft_model_id"),
+            inverseJoinColumns = @JoinColumn(name = "engine_model_id"))
+
     private Set<EngineModel> supportedEngineModels = new HashSet<>();
 
     protected AircraftModel() {
-        // for ORM
     }
 
     public AircraftModel(

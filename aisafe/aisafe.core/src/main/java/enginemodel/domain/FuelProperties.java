@@ -19,7 +19,6 @@ public class FuelProperties implements ValueObject {
     private Double specificEnergy;
 
     protected FuelProperties() {
-        // for ORM
     }
 
     public FuelProperties(final FuelType type, final Double density, final Double specificEnergy) {

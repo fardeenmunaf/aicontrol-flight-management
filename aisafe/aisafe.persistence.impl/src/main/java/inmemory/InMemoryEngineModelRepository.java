@@ -1,19 +1,31 @@
 package inmemory;
 
-import enginemodel.domain.EngineModel;
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
+import enginemodel.domain.EngineModel;
+import enginemodel.domain.EngineType;
 import enginemodel.repositories.EngineModelRepository;
 
-/**
- * In-memory implementation of EngineModelRepository.
- * Used for testing and development environments.
- *
- * @author LAPR4 Team
- */
-public class InMemoryEngineModelRepository extends InMemoryDomainRepository<EngineModel, Long>
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+public class InMemoryEngineModelRepository
+        extends InMemoryDomainRepository<EngineModel, Long>
         implements EngineModelRepository {
 
     static {
         InMemoryInitializer.init();
+    }
+
+    @Override
+    public Optional<EngineModel> findByName(final String name) {
+        return matchOne(e -> e.name().equalsIgnoreCase(name));
+    }
+
+    @Override
+    public List<EngineModel> findByType(final EngineType type) {
+        final List<EngineModel> result = new ArrayList<>();
+        match(e -> e.type() == type).forEach(result::add);
+        return result;
     }
 }

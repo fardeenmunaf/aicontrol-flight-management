@@ -108,4 +108,40 @@ public class Airport implements AggregateRoot<Long> {
     public int hashCode() {
         return DomainEntities.hashCode(this);
     }
+
+    public Long id() {
+        return id;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public String town() {
+        return town;
+    }
+
+    public String country() {
+        return country;
+    }
+
+    public String iataCode() {
+        return iataCode;
+    }
+
+    public String icaoCode() {
+        return icaoCode;
+    }
+
+    public Double elevation() {
+        return elevation;
+    }
+
+    public AirportCoordinates coordinates() {
+        return coordinates;
+    }
+
+    public AirControlArea airControlArea() {
+        return airControlArea;
+    }
 }

@@ -14,7 +14,6 @@ public class AircraftModelMaker implements ValueObject {
     private String country;
 
     protected AircraftModelMaker() {
-        // for ORM
     }
 
     public AircraftModelMaker(final String name, final String country) {

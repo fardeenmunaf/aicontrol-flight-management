@@ -14,7 +14,6 @@ public class AirportCoordinates implements ValueObject {
     private Double longitude;
 
     protected AirportCoordinates() {
-        // for ORM
     }
 
     public AirportCoordinates(final Double latitude, final Double longitude) {
