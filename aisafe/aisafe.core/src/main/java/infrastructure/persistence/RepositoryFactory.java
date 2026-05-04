@@ -11,6 +11,7 @@ import node.repository.NodeRepository;
 import flight.repository.FlightRepository;
 import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
+import pilot.repository.PilotRepository;
 
 /**
  * Master contract defining creation methods for all aggregate repositories.
@@ -18,6 +19,7 @@ import weatherData.repository.WeatherDataRepository;
  *
  * @author LAPR4 Team
  */
+
 public interface RepositoryFactory {
 
     /**
@@ -27,11 +29,6 @@ public interface RepositoryFactory {
      */
     TransactionalContext newTransactionalContext();
 
-    /**
-     * Get the EngineModel repository with auto-transaction management.
-     *
-     * @return the EngineModelRepository instance
-     */
     EngineModelRepository engineModels();
 
     UserRepository users();
@@ -44,12 +41,9 @@ public interface RepositoryFactory {
 
     FlightRepository flights();
 
-    /**
-     * Get the EngineModel repository enrolled in a specific transactional context.
-     *
-     * @param autoTx the transactional context to enrol
-     * @return the EngineModelRepository instance
-     */
+    PilotRepository pilots();
+
+
     EngineModelRepository engineModels(TransactionalContext autoTx);
 
     UserRepository users(TransactionalContext autoTx);
@@ -77,5 +71,7 @@ public interface RepositoryFactory {
     AirportRepository airports();
 
     AirportRepository airports(TransactionalContext autoTx);
+
+    PilotRepository pilots(TransactionalContext autoTx);
 
 }

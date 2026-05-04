@@ -12,6 +12,7 @@ import node.repository.NodeRepository;
 import flight.repository.FlightRepository;
 import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
+import pilot.repository.PilotRepository;
 
 /**
  * In-memory implementation of RepositoryFactory.
@@ -20,6 +21,7 @@ import weatherData.repository.WeatherDataRepository;
  *
  * @author LAPR4 Team
  */
+
 public class InMemoryRepositoryFactory implements RepositoryFactory {
 
     @Override
@@ -126,6 +128,16 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
     @Override
     public AirportRepository airports() {
         return airports(null);
+    }
+
+    @Override
+    public PilotRepository pilots(final TransactionalContext autoTx) {
+        return new InMemoryPilotRepository();
+    }
+
+    @Override
+    public PilotRepository pilots() {
+        return pilots(null);
     }
 
 }

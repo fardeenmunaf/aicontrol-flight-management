@@ -13,7 +13,7 @@ import java.util.List;
  * @author LAPR4 Team
  */
 
-public interface AircraftRepository extends DomainRepository<String, Aircraft> {
+public interface AircraftRepository extends DomainRepository<Long, Aircraft> {
 
     /**
      * Returns all aircraft matching a given cabin configuration.

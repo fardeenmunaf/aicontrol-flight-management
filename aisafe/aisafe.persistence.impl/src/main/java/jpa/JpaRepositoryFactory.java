@@ -13,6 +13,7 @@ import node.repository.NodeRepository;
 import flight.repository.FlightRepository;
 import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
+import pilot.repository.PilotRepository;
 
 /**
  * JPA implementation of RepositoryFactory.
@@ -129,4 +130,13 @@ public class JpaRepositoryFactory implements RepositoryFactory {
         return new JpaAirportRepository(autoTx);
     }
 
+    @Override
+    public PilotRepository pilots() {
+        return new JpaPilotRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public PilotRepository pilots(final TransactionalContext autoTx) {
+        return new JpaPilotRepository(autoTx);
+    }
 }
