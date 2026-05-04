@@ -26,6 +26,8 @@
         <class>simulation.domain.Simulation</class>
         <class>simulation.domain.AircraftPosition</class>
         <class>simulation.domain.SafetyViolation</class>
+        <class>aircraftmodel.domain.AircraftModel</class>
+
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver"   value="org.h2.Driver"/>
@@ -65,6 +67,7 @@
         <class>simulation.domain.Simulation</class>
         <class>simulation.domain.AircraftPosition</class>
         <class>simulation.domain.SafetyViolation</class>
+        <class>aircraftmodel.domain.AircraftModel</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver"   value="org.postgresql.Driver"/>

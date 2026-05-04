@@ -1,5 +1,7 @@
 package jpa;
 
+import aircraftmodel.repositories.AircraftModelRepository;
+import airport.repositories.AirportRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import eapli.framework.infrastructure.repositories.impl.jpa.JpaAutoTxRepository;
 import user.repository.UserRepository;
@@ -106,4 +108,25 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     public WeatherDataRepository weatherData(final TransactionalContext autoTx) {
         return new JpaWeatherDataRepository(autoTx);
     }
+
+    @Override
+    public AircraftModelRepository aircraftModels() {
+        return new JpaAircraftModelRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public AircraftModelRepository aircraftModels(final TransactionalContext autoTx) {
+        return new JpaAircraftModelRepository(autoTx);
+    }
+
+    @Override
+    public AirportRepository airports() {
+        return new JpaAirportRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public AirportRepository airports(final TransactionalContext autoTx) {
+        return new JpaAirportRepository(autoTx);
+    }
+
 }

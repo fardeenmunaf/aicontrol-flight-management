@@ -14,7 +14,6 @@ public class EngineModelMaker implements ValueObject {
     private String country;
 
     protected EngineModelMaker() {
-        // for ORM
     }
 
     public EngineModelMaker(final String name, final String country) {

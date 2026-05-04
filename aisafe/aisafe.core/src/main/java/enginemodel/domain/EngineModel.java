@@ -60,7 +60,7 @@ public class EngineModel implements AggregateRoot<Long> {
             final FuelProperties fuelProperties) {
 
         Preconditions.noneNull(
-                type, power, efficiency, thrustSeaLevelStopped,
+                name, type, power, efficiency, thrustSeaLevelStopped,
                 thrustSeaLevelCruise, thrustSpecificFuelConsumption, maker, fuelProperties);
 
         if (StringPredicates.isNullOrEmpty(name)) {
@@ -101,5 +101,45 @@ public class EngineModel implements AggregateRoot<Long> {
     @Override
     public int hashCode() {
         return DomainEntities.hashCode(this);
+    }
+
+    public Long id() {
+        return id;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public EngineType type() {
+        return type;
+    }
+
+    public Double power() {
+        return power;
+    }
+
+    public Double efficiency() {
+        return efficiency;
+    }
+
+    public Double thrustSeaLevelStopped() {
+        return thrustSeaLevelStopped;
+    }
+
+    public Double thrustSeaLevelCruise() {
+        return thrustSeaLevelCruise;
+    }
+
+    public Double thrustSpecificFuelConsumption() {
+        return thrustSpecificFuelConsumption;
+    }
+
+    public EngineModelMaker maker() {
+        return maker;
+    }
+
+    public FuelProperties fuelProperties() {
+        return fuelProperties;
     }
 }
