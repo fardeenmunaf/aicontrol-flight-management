@@ -14,6 +14,7 @@ import flight.repository.FlightRepository;
 import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
 import pilot.repository.PilotRepository;
+import simulation.repository.SimulationRepository;
 
 /**
  * JPA implementation of RepositoryFactory.
@@ -138,5 +139,15 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     @Override
     public PilotRepository pilots(final TransactionalContext autoTx) {
         return new JpaPilotRepository(autoTx);
+    }
+
+    @Override
+    public SimulationRepository simulations() {
+        return new JpaSimulationRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public SimulationRepository simulations(final TransactionalContext autoTx) {
+        return new JpaSimulationRepository(autoTx);
     }
 }

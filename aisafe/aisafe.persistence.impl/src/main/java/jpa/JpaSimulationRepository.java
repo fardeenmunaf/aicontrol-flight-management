@@ -1,5 +1,38 @@
 package jpa;
 
-public class JpaSimulationRepository {
-    
+import eapli.framework.domain.repositories.TransactionalContext;
+import simulation.domain.Simulation;
+import simulation.domain.SimulationStatus;
+import simulation.repository.SimulationRepository;
+import flight.domain.Flight;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+public class JpaSimulationRepository extends BaseJpaRepositoryBase<Simulation, Long, Long>
+		implements SimulationRepository {
+
+	public JpaSimulationRepository(final TransactionalContext autoTx) {
+		super(autoTx, "id");
+	}
+
+	public JpaSimulationRepository(final String persistenceUnitName) {
+		super("id");
+	}
+
+	@Override
+	public Optional<Simulation> findActive() {
+		return matchOne("e.status = :status", Map.of("status", SimulationStatus.RUNNING));
+	}
+
+	@Override
+	public List<Simulation> findByStatus(final SimulationStatus status) {
+		return match("e.status = :status", Map.of("status", status));
+	}
+
+	@Override
+	public List<Simulation> findByTrackedFlight(final Flight flight) {
+		return match("?1 MEMBER OF e.trackedFlights", Map.of(1, flight));
+	}
 }

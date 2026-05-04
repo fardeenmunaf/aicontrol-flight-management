@@ -12,6 +12,7 @@ import flight.repository.FlightRepository;
 import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
 import pilot.repository.PilotRepository;
+import simulation.repository.SimulationRepository;
 
 /**
  * Master contract defining creation methods for all aggregate repositories.
@@ -43,6 +44,8 @@ public interface RepositoryFactory {
 
     PilotRepository pilots();
 
+    SimulationRepository simulations();
+
 
     EngineModelRepository engineModels(TransactionalContext autoTx);
 
@@ -73,5 +76,7 @@ public interface RepositoryFactory {
     AirportRepository airports(TransactionalContext autoTx);
 
     PilotRepository pilots(TransactionalContext autoTx);
+
+    SimulationRepository simulations(TransactionalContext autoTx);
 
 }

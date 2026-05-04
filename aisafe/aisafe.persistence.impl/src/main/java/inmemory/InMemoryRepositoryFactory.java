@@ -13,6 +13,7 @@ import flight.repository.FlightRepository;
 import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
 import pilot.repository.PilotRepository;
+import simulation.repository.SimulationRepository;
 
 /**
  * In-memory implementation of RepositoryFactory.
@@ -138,6 +139,16 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
     @Override
     public PilotRepository pilots() {
         return pilots(null);
+    }
+
+    @Override
+    public SimulationRepository simulations(final TransactionalContext autoTx) {
+        return new InMemorySimulationRepository();
+    }
+
+    @Override
+    public SimulationRepository simulations() {
+        return simulations(null);
     }
 
 }
