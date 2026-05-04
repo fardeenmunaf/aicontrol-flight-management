@@ -20,6 +20,7 @@ import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
 import flight.domain.Flight;
 import weatherData.domain.WeatherData;
+import aircontrolarea.domain.AirControlArea;
 
 @Entity
 public class Simulation implements AggregateRoot<Long> {
@@ -43,8 +44,7 @@ public class Simulation implements AggregateRoot<Long> {
     @Enumerated(EnumType.STRING)
     private SimulationStatus status;
 
-    // TODO: AirControlArea aggregate is not implemented yet.
-    // private AirControlArea airControlArea;
+    private AirControlArea airControlArea;
 
     @ManyToMany
     private Set<Flight> trackedFlights = new HashSet<>();
