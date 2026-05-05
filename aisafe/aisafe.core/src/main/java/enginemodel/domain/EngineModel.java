@@ -54,6 +54,7 @@ public class EngineModel implements AggregateRoot<EngineModelId> {
     private EngineModelMaker maker;
 
     @Embedded
+    @AttributeOverride(name = "type", column = @Column(name = "fuel_type"))
     private FuelProperties fuelProperties;
 
     protected EngineModel() {

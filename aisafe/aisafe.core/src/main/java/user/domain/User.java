@@ -18,6 +18,7 @@ import eapli.framework.validations.Preconditions;
 import shared.domain.UserId;
 
 @Entity
+@jakarta.persistence.Table(name = "AppUser")
 public class User implements AggregateRoot<UserId> {
 
     private static final String STATUS_ACTIVE = "ACTIVE";

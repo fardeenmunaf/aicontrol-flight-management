@@ -2,6 +2,7 @@ package simulationReport.domain;
 
 import java.time.Instant;
 
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Version;
@@ -21,11 +22,15 @@ public class SimulationReport implements AggregateRoot<SimulationReportId> {
     private Long version;
 
     @EmbeddedId
+    @AttributeOverride(name = "value", column = @jakarta.persistence.Column(name = "simulation_report_id"))
     private SimulationReportId simulationReportId;
 
     private Integer totalFlights;
     private String validationResult;
     private Instant generatedAt;
+
+    @jakarta.persistence.Embedded
+    @AttributeOverride(name = "value", column = @jakarta.persistence.Column(name = "simulation_id"))
     private SimulationId simulationId;
 
     public SimulationReport(final Integer totalFlights, final String validationResult,

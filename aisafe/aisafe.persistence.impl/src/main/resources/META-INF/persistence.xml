@@ -27,16 +27,21 @@
         <class>simulation.domain.AircraftPosition</class>
         <class>simulation.domain.SafetyViolation</class>
         <class>aircraftmodel.domain.AircraftModel</class>
-
+        <class>aircontrolarea.domain.AirControlArea</class>
+        <class>airtransportcompany.domain.AirTransportCompany</class>
+        <class>eapli.framework.infrastructure.authz.domain.model.SystemUser</class>
+        <class>eapli.framework.infrastructure.authz.domain.model.Role</class>
+        <class>eapli.framework.infrastructure.authz.domain.model.RoleSet</class>
+        <class>eapli.framework.infrastructure.authz.domain.model.RoleAssignment</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver"   value="org.h2.Driver"/>
-            <property name="jakarta.persistence.jdbc.url"      value="jdbc:h2:mem:aisafe;MODE=PostgreSQL;DB_CLOSE_DELAY=-1"/>
+            <property name="jakarta.persistence.jdbc.url"      value="jdbc:h2:./aisafe_db;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER,VALUE"/>
             <property name="jakarta.persistence.jdbc.user"     value="admin"/>
             <property name="jakarta.persistence.jdbc.password" value="admin"/>
 
             <property name="hibernate.dialect"                 value="org.hibernate.dialect.H2Dialect"/>
-            <property name="hibernate.hbm2ddl.auto"            value="create-drop"/>
+            <property name="hibernate.hbm2ddl.auto"            value="update"/>
             <property name="hibernate.format_sql"              value="true"/>
             <property name="hibernate.use_sql_comments"        value="true"/>
             <property name="hibernate.show_sql"                value="false"/>
@@ -68,6 +73,12 @@
         <class>simulation.domain.AircraftPosition</class>
         <class>simulation.domain.SafetyViolation</class>
         <class>aircraftmodel.domain.AircraftModel</class>
+        <class>aircontrolarea.domain.AirControlArea</class>
+        <class>airtransportcompany.domain.AirTransportCompany</class>
+        <class>eapli.framework.infrastructure.authz.domain.model.SystemUser</class>
+        <class>eapli.framework.infrastructure.authz.domain.model.Role</class>
+        <class>eapli.framework.infrastructure.authz.domain.model.RoleSet</class>
+        <class>eapli.framework.infrastructure.authz.domain.model.RoleAssignment</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver"   value="org.postgresql.Driver"/>

@@ -24,6 +24,8 @@ public class Flight implements AggregateRoot<FlightId> {
     private FlightId flightId;
 
     private String flightDesignator;
+
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
     private FlightType type;
     private Instant scheduledDepartureTime;
     private Instant scheduledArrivalTime;

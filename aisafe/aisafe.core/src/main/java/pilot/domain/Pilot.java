@@ -27,9 +27,11 @@ public class Pilot implements AggregateRoot<PilotId> {
     private Long version;
 
     @EmbeddedId
+    @jakarta.persistence.AttributeOverride(name = "value", column = @jakarta.persistence.Column(name = "pilot_id"))
     private PilotId pilotId;
 
     @Embedded
+    @jakarta.persistence.AttributeOverride(name = "value", column = @jakarta.persistence.Column(name = "user_id"))
     private UserId userId;
 
     @Enumerated(EnumType.STRING)

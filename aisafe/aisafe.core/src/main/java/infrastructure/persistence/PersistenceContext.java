@@ -60,8 +60,8 @@ public final class PersistenceContext {
         if (factoryClass != null && !factoryClass.isBlank()) {
             return factoryClass;
         }
-        // Default to in-memory for development
-        return "inmemory.InMemoryRepositoryFactory";
+        // Default to JPA for development with local file H2 DB
+        return "jpa.JpaRepositoryFactory";
     }
 
     /**

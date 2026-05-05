@@ -1,4 +1,4 @@
-﻿package jpa;
+package jpa;
 
 import eapli.framework.domain.repositories.TransactionalContext;
 import enginemodel.domain.EngineModel;

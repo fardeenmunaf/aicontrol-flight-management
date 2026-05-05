@@ -1,7 +1,8 @@
 package bootstrap;
 
 import auth.infrastructure.AuthzConfigurator;
-import eapli.framework.infrastructure.authz.repositories.impl.inmemory.InMemoryUserRepository;
+import eapli.framework.infrastructure.authz.repositories.impl.jpa.JpaAutoTxUserRepository;
+import jpa.PersistenceSettings;
 import infrastructure.persistence.PersistenceContext;
 
 /**
@@ -16,7 +17,9 @@ public final class AISafeBootstrap {
     public static void main(final String[] args) {
         System.out.println("Starting AISafe bootstrap...");
 
-        AuthzConfigurator.configure(new InMemoryUserRepository());
+        AuthzConfigurator.configure(new JpaAutoTxUserRepository(
+                PersistenceSettings.getPersistenceUnitName(),
+                PersistenceSettings.getExtendedPersistenceProperties()));
         final var repositories = PersistenceContext.repositories();
 
         new UsersBootstrap(repositories.users()).execute();

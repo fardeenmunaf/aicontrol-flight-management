@@ -20,6 +20,8 @@ public class MainMenu extends AbstractUI {
     private static final int ENGINE_MODELS_OPTION = 1;
 
     private static final int REGISTER_ENGINE_MODEL_OPTION = 1;
+    private static final int LIST_ENGINE_MODELS_OPTION = 2;
+    private static final int DELETE_ENGINE_MODEL_OPTION = 3;
 
     private final AuthorizationService authz = AuthzRegistry.authorizationService();
 
@@ -40,7 +42,8 @@ public class MainMenu extends AbstractUI {
     @Override
     public String headline() {
         return authz.session()
-                .map(s -> "Backoffice [ @" + s.authenticatedUser().identity() + " ]") .orElse("Backoffice [ ==Anonymous== ]");
+                .map(s -> "Backoffice [ @" + s.authenticatedUser().identity() + " ]")
+                .orElse("Backoffice [ ==Anonymous== ]");
     }
 
     private Menu buildMainMenu() {
@@ -50,7 +53,7 @@ public class MainMenu extends AbstractUI {
             mainMenu.addSubMenu(ENGINE_MODELS_OPTION, buildEngineModelsMenu());
         }
 
-        mainMenu.addItem(EXIT_OPTION, "Exit", new ExitWithMessageAction("Bye"));
+        mainMenu.addItem(EXIT_OPTION, "Exit", new ExitWithMessageAction("Thank you for using the AISafe Backoffice."));
         return mainMenu;
     }
 
@@ -58,6 +61,8 @@ public class MainMenu extends AbstractUI {
         final var menu = new Menu("Engine Models >");
 
         menu.addItem(REGISTER_ENGINE_MODEL_OPTION, "Register Engine Model", new RegisterEngineModelAction());
+        menu.addItem(LIST_ENGINE_MODELS_OPTION, "List Engine Models", new backoffice.presentation.enginemodel.ListEngineModelsAction());
+        menu.addItem(DELETE_ENGINE_MODEL_OPTION, "Delete Engine Model", new backoffice.presentation.enginemodel.DeleteEngineModelAction());
         menu.addItem(EXIT_OPTION, RETURN_LABEL, Actions.SUCCESS);
 
         return menu;
