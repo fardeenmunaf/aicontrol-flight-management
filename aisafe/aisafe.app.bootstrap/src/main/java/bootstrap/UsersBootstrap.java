@@ -41,12 +41,14 @@ public class UsersBootstrap {
                     Set.of(role)
             );
 
-            userRepository.save(new User(
+            final User domainUser = new User(
                     email, name, "+351000000000",
                     null, null, "ACTIVE",
                     Set.of(domainRole),
                     UserId.valueOf(email)
-            ));
+            );
+
+            userRepository.save(domainUser);
         }
     }
 }

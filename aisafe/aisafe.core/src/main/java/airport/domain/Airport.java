@@ -7,24 +7,22 @@ import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Version;
+import shared.domain.AirportId;
 
 @Entity
-public class Airport implements AggregateRoot<Long> {
+public class Airport implements AggregateRoot<AirportId> {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @Version
     private Long version;
+
+    @EmbeddedId
+    private AirportId airportId;
 
     private String name;
     private String town;
@@ -90,8 +88,8 @@ public class Airport implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public AirportId identity() {
+        return airportId;
     }
 
     @Override
@@ -109,8 +107,8 @@ public class Airport implements AggregateRoot<Long> {
         return DomainEntities.hashCode(this);
     }
 
-    public Long id() {
-        return id;
+    public AirportId airportId() {
+        return airportId;
     }
 
     public String name() {

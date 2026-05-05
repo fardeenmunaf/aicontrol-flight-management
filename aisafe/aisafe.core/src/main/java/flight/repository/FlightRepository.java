@@ -3,6 +3,7 @@ package flight.repository;
 import eapli.framework.domain.repositories.DomainRepository;
 import flight.domain.Flight;
 import flight.domain.FlightStatus;
+import shared.domain.FlightId;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +14,7 @@ import java.util.Optional;
  *
  * @author LAPR4 Team
  */
-public interface FlightRepository extends DomainRepository<Long, Flight> {
+public interface FlightRepository extends DomainRepository<FlightId, Flight> {
 
     /**
      * Returns all flights currently airborne and scheduled to land at a given airport.

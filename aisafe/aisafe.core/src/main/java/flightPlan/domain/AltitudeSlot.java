@@ -1,7 +1,5 @@
 package flightPlan.domain;
 
-import java.io.Serializable;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,7 +10,7 @@ import eapli.framework.domain.model.DomainEntity;
 import eapli.framework.validations.Preconditions;
 
 @Entity
-public class AltitudeSlot implements DomainEntity<Long>, Serializable {
+public class AltitudeSlot implements DomainEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 

@@ -5,11 +5,12 @@ import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainR
 import pilot.domain.Pilot;
 import pilot.domain.PilotStatus;
 import pilot.repository.PilotRepository;
+import shared.domain.PilotId;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class InMemoryPilotRepository extends InMemoryDomainRepository<Pilot, Long> implements PilotRepository {
+public class InMemoryPilotRepository extends InMemoryDomainRepository<Pilot, PilotId> implements PilotRepository {
 
     static {
         InMemoryInitializer.init();

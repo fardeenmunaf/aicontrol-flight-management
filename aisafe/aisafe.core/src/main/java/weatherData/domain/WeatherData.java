@@ -3,26 +3,24 @@ package weatherData.domain;
 import java.time.LocalDate;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Version;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
+import shared.domain.WeatherDataId;
 
 @Entity
-public class WeatherData implements AggregateRoot<Long> {
+public class WeatherData implements AggregateRoot<WeatherDataId> {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
     @Version
     private Long version;
+
+    @EmbeddedId
+    private WeatherDataId weatherDataId;
 
     private LocalDate date;
     private Double windSpeed;
@@ -46,8 +44,8 @@ public class WeatherData implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public WeatherDataId identity() {
+        return weatherDataId;
     }
 
     @Override

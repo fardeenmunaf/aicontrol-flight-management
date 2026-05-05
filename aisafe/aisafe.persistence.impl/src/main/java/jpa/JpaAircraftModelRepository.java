@@ -4,20 +4,21 @@ import aircraftmodel.domain.AircraftModel;
 import aircraftmodel.domain.AircraftType;
 import aircraftmodel.repositories.AircraftModelRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
+import shared.domain.AircraftModelId;
 
 import java.util.List;
 import java.util.Map;
 
 public class JpaAircraftModelRepository
-        extends BaseJpaRepositoryBase<AircraftModel, Long, Long>
+        extends BaseJpaRepositoryBase<AircraftModel, AircraftModelId, AircraftModelId>
         implements AircraftModelRepository {
 
     public JpaAircraftModelRepository(final TransactionalContext autoTx) {
-        super(autoTx, "id");
+        super(autoTx, "aircraftModelId");
     }
 
     public JpaAircraftModelRepository(final String persistenceUnitName) {
-        super("id");
+        super("aircraftModelId");
     }
 
     @Override

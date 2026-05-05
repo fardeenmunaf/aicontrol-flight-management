@@ -3,20 +3,21 @@ package jpa;
 import eapli.framework.domain.repositories.TransactionalContext;
 import user.domain.User;
 import user.repository.UserRepository;
+import shared.domain.UserId;
 
 import java.util.Map;
 import java.util.Optional;
 
 public class JpaUserRepository
-        extends BaseJpaRepositoryBase<User, Long, Long>
+        extends BaseJpaRepositoryBase<User, UserId, UserId>
         implements UserRepository {
 
     public JpaUserRepository(final TransactionalContext autoTx) {
-        super(autoTx, "id");
+        super(autoTx, "userId");
     }
 
     public JpaUserRepository(final String persistenceUnitName) {
-        super("id");
+        super("userId");
     }
 
     @Override

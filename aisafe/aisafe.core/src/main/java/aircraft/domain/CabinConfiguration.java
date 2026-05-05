@@ -2,7 +2,6 @@ package aircraft.domain;
 
 import eapli.framework.domain.model.ValueObject;
 import jakarta.persistence.Embeddable;
-import java.util.Objects;
 
 @Embeddable
 public class CabinConfiguration implements ValueObject {

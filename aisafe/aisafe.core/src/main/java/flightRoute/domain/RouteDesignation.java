@@ -1,6 +1,5 @@
 package flightRoute.domain;
 
-import java.io.Serializable;
 import java.util.regex.Pattern;
 
 import jakarta.persistence.Embeddable;
@@ -9,7 +8,7 @@ import eapli.framework.domain.model.ValueObject;
 import eapli.framework.validations.Preconditions;
 
 @Embeddable
-public class RouteDesignation implements ValueObject, Serializable {
+public class RouteDesignation implements ValueObject {
 
     private static final long serialVersionUID = 1L;
 

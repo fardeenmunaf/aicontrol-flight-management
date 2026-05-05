@@ -3,27 +3,25 @@ package flight.domain;
 import java.time.Instant;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Version;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
+import shared.domain.FlightId;
 
 @Entity
-public class Flight implements AggregateRoot<Long> {
+public class Flight implements AggregateRoot<FlightId> {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
     @Version
     private Long version;
+
+    @EmbeddedId
+    private FlightId flightId;
 
     private String flightDesignator;
     private FlightType type;
@@ -49,8 +47,8 @@ public class Flight implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public FlightId identity() {
+        return flightId;
     }
 
     @Override

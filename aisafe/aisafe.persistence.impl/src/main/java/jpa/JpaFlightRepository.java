@@ -4,6 +4,7 @@ import eapli.framework.domain.repositories.TransactionalContext;
 import flight.domain.Flight;
 import flight.repository.FlightRepository;
 import flight.domain.FlightStatus;
+import shared.domain.FlightId;
 
 import java.time.Instant;
 import java.util.Collections;
@@ -12,14 +13,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class JpaFlightRepository extends BaseJpaRepositoryBase<Flight, Long, Long> implements FlightRepository {
+public class JpaFlightRepository extends BaseJpaRepositoryBase<Flight, FlightId, FlightId> implements FlightRepository {
 
     public JpaFlightRepository(final TransactionalContext autoTx) {
-        super(autoTx, "id");
+        super(autoTx, "flightId");
     }
 
     public JpaFlightRepository(final String persistenceUnitName) {
-        super("id");
+        super("flightId");
     }
 
     @Override

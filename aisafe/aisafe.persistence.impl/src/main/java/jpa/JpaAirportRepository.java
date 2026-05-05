@@ -3,20 +3,21 @@ package jpa;
 import airport.domain.Airport;
 import airport.repositories.AirportRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
+import shared.domain.AirportId;
 
 import java.util.Map;
 import java.util.Optional;
 
 public class JpaAirportRepository
-        extends BaseJpaRepositoryBase<Airport, Long, Long>
+        extends BaseJpaRepositoryBase<Airport, AirportId, AirportId>
         implements AirportRepository {
 
     public JpaAirportRepository(final TransactionalContext autoTx) {
-        super(autoTx, "id");
+        super(autoTx, "airportId");
     }
 
     public JpaAirportRepository(final String persistenceUnitName) {
-        super("id");
+        super("airportId");
     }
 
     @Override

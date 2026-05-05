@@ -1,5 +1,6 @@
 package shared.domain;
 
+
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;

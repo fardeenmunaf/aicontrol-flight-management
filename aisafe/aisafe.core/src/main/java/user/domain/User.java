@@ -5,14 +5,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.CollectionTable;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 
 import eapli.framework.domain.model.AggregateRoot;
@@ -21,14 +18,10 @@ import eapli.framework.validations.Preconditions;
 import shared.domain.UserId;
 
 @Entity
-public class User implements AggregateRoot<Long> {
+public class User implements AggregateRoot<UserId> {
 
     private static final String STATUS_ACTIVE = "ACTIVE";
     private static final String STATUS_DISABLED = "DISABLED";
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
 
     private String email;
     private String name;
@@ -42,7 +35,7 @@ public class User implements AggregateRoot<Long> {
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     private Set<Role> roles = new HashSet<>();
 
-    @Embedded
+    @EmbeddedId
     private UserId userId;
 
     public User(final String email, final String name, final String phoneNumber,
@@ -79,8 +72,8 @@ public class User implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public UserId identity() {
+        return userId;
     }
 
     public String email() {

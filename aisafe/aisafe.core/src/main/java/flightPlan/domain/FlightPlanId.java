@@ -1,6 +1,5 @@
 package flightPlan.domain;
 
-import java.io.Serializable;
 import java.util.UUID;
 
 import jakarta.persistence.Embeddable;
@@ -9,7 +8,7 @@ import eapli.framework.domain.model.ValueObject;
 import eapli.framework.validations.Preconditions;
 
 @Embeddable
-public class FlightPlanId implements ValueObject, Serializable, Comparable<FlightPlanId> {
+public class FlightPlanId implements ValueObject, Comparable<FlightPlanId> {
 
     private static final long serialVersionUID = 1L;
 

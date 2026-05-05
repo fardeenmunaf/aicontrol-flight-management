@@ -4,6 +4,7 @@ import eapli.framework.domain.repositories.DomainRepository;
 import pilot.domain.Pilot;
 import pilot.domain.PilotStatus;
 import aircraftmodel.domain.AircraftModel;
+import shared.domain.PilotId;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
  *
  * @author LAPR4 Team
  */
-public interface PilotRepository extends DomainRepository<Long, Pilot> {
+public interface PilotRepository extends DomainRepository<PilotId, Pilot> {
 
     /**
      * Returns all pilots matching a given status.

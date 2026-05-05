@@ -4,12 +4,13 @@ import aircraftmodel.domain.AircraftModel;
 import aircraftmodel.domain.AircraftType;
 import aircraftmodel.repositories.AircraftModelRepository;
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
+import shared.domain.AircraftModelId;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class InMemoryAircraftModelRepository
-        extends InMemoryDomainRepository<AircraftModel, Long>
+    extends InMemoryDomainRepository<AircraftModel, AircraftModelId>
         implements AircraftModelRepository {
 
     static {

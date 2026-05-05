@@ -3,6 +3,7 @@ package jpa;
 import eapli.framework.domain.repositories.TransactionalContext;
 import weatherData.domain.WeatherData;
 import weatherData.repository.WeatherDataRepository;
+import shared.domain.WeatherDataId;
 
 /**
  * JPA implementation of WeatherDataRepository.
@@ -11,15 +12,15 @@ import weatherData.repository.WeatherDataRepository;
  * @author LAPR4 Team
  */
 class JpaWeatherDataRepository
-        extends BaseJpaRepositoryBase<WeatherData, Long, Long>
+        extends BaseJpaRepositoryBase<WeatherData, WeatherDataId, WeatherDataId>
         implements WeatherDataRepository {
 
     public JpaWeatherDataRepository(final TransactionalContext autoTx) {
-        super(autoTx, "id");
+        super(autoTx, "weatherDataId");
     }
 
     public JpaWeatherDataRepository(final String persistenceUnitName) {
-        super("id");
+        super("weatherDataId");
     }
 }
 

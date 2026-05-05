@@ -4,29 +4,37 @@ import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import shared.domain.EngineModelId;
 
 @Entity
-public class EngineModel implements AggregateRoot<Long> {
+@Table(
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"name", "maker_name"})
+    }
+)
+public class EngineModel implements AggregateRoot<EngineModelId> {
 
     private static final long serialVersionUID = 1L;
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
     @Version
     private Long version;
 
-    @Column(unique = true, nullable = false)
+    @EmbeddedId
+    @AttributeOverride(name = "value", column = @Column(name = "engine_model_id", nullable = false, unique = true))
+    private EngineModelId engineModelId;
+
+    @Column(nullable = false)
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -39,6 +47,10 @@ public class EngineModel implements AggregateRoot<Long> {
     private Double thrustSpecificFuelConsumption;
 
     @Embedded
+        @AttributeOverrides({
+            @AttributeOverride(name = "name", column = @Column(name = "maker_name", nullable = false)),
+            @AttributeOverride(name = "country", column = @Column(name = "maker_country", nullable = false))
+        })
     private EngineModelMaker maker;
 
     @Embedded
@@ -84,8 +96,8 @@ public class EngineModel implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public EngineModelId identity() {
+        return engineModelId;
     }
 
     @Override
@@ -103,8 +115,8 @@ public class EngineModel implements AggregateRoot<Long> {
         return DomainEntities.hashCode(this);
     }
 
-    public Long id() {
-        return id;
+    public EngineModelId engineModelId() {
+        return engineModelId;
     }
 
     public String name() {

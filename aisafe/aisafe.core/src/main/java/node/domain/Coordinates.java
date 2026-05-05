@@ -1,14 +1,12 @@
 package node.domain;
 
-import java.io.Serializable;
-
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
 import eapli.framework.validations.Preconditions;
 
 @Embeddable
-public class Coordinates implements ValueObject, Serializable {
+public class Coordinates implements ValueObject {
 
     private static final long serialVersionUID = 1L;
 

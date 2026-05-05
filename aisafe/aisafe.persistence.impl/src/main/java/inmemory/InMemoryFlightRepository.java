@@ -10,6 +10,7 @@ import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainR
 import flight.domain.Flight;
 import flight.domain.FlightStatus;
 import flight.repository.FlightRepository;
+import shared.domain.FlightId;
 
 /**
  * In-memory implementation of FlightRepository.
@@ -17,7 +18,7 @@ import flight.repository.FlightRepository;
  *
  * @author LAPR4 Team
  */
-public class InMemoryFlightRepository extends InMemoryDomainRepository<Flight, Long> implements FlightRepository {
+public class InMemoryFlightRepository extends InMemoryDomainRepository<Flight, FlightId> implements FlightRepository {
 
     static {
         InMemoryInitializer.init();

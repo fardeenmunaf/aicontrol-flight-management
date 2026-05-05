@@ -4,12 +4,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Version;
 
@@ -17,19 +15,19 @@ import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
 import aircraftmodel.domain.AircraftModel;
+import shared.domain.PilotId;
 import shared.domain.UserId;
 
 @Entity
-public class Pilot implements AggregateRoot<Long> {
+public class Pilot implements AggregateRoot<PilotId> {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
     @Version
     private Long version;
+
+    @EmbeddedId
+    private PilotId pilotId;
 
     @Embedded
     private UserId userId;
@@ -52,8 +50,8 @@ public class Pilot implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public PilotId identity() {
+        return pilotId;
     }
 
     @Override

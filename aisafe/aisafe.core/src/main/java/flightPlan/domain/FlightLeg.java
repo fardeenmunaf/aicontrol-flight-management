@@ -1,6 +1,5 @@
 package flightPlan.domain;
 
-import java.io.Serializable;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,7 +15,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OrderBy;
 
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.domain.model.DomainEntity;
@@ -24,7 +22,7 @@ import eapli.framework.validations.Preconditions;
 import shared.domain.AirportId;
 
 @Entity
-public class FlightLeg implements DomainEntity<Long>, Serializable {
+public class FlightLeg implements DomainEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 

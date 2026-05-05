@@ -8,28 +8,26 @@ import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Version;
+import shared.domain.AircraftModelId;
 
 @Entity
-public class AircraftModel implements AggregateRoot<Long> {
+public class AircraftModel implements AggregateRoot<AircraftModelId> {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @Version
     private Long version;
+
+    @EmbeddedId
+    private AircraftModelId aircraftModelId;
 
     @Enumerated(EnumType.STRING)
     private AircraftType type;
@@ -112,8 +110,8 @@ public class AircraftModel implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public AircraftModelId identity() {
+        return aircraftModelId;
     }
 
     @Override
@@ -131,8 +129,8 @@ public class AircraftModel implements AggregateRoot<Long> {
         return DomainEntities.hashCode(this);
     }
 
-    public Long id() {
-        return id;
+    public AircraftModelId aircraftModelId() {
+        return aircraftModelId;
     }
 
     public AircraftType type() {

@@ -3,11 +3,12 @@ package inmemory;
 import airport.domain.Airport;
 import airport.repositories.AirportRepository;
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
+import shared.domain.AirportId;
 
 import java.util.Optional;
 
 public class InMemoryAirportRepository
-        extends InMemoryDomainRepository<Airport, Long>
+    extends InMemoryDomainRepository<Airport, AirportId>
         implements AirportRepository {
 
     static {

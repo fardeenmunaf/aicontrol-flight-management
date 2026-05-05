@@ -3,6 +3,7 @@ package inmemory;
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
 import user.domain.User;
 import user.repository.UserRepository;
+import shared.domain.UserId;
 import java.util.Optional;
 
 /**
@@ -11,7 +12,7 @@ import java.util.Optional;
  *
  * @author LAPR4 Team
  */
-public class InMemoryUserRepository extends InMemoryDomainRepository<User, Long>
+public class InMemoryUserRepository extends InMemoryDomainRepository<User, UserId>
         implements UserRepository {
 
     static {

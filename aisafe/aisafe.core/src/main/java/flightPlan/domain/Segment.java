@@ -1,6 +1,5 @@
 package flightPlan.domain;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,7 +21,7 @@ import eapli.framework.validations.Preconditions;
 import shared.domain.NodeId;
 
 @Entity
-public class Segment implements DomainEntity<Long>, Serializable {
+public class Segment implements DomainEntity<Long> {
 
     private static final long serialVersionUID = 1L;
 
