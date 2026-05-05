@@ -1,8 +1,6 @@
 package backoffice.presentation;
 
 import auth.domain.AISafeRoles;
-import backoffice.presentation.enginemodel.RegisterEngineModelAction;
-import eapli.framework.actions.Actions;
 import eapli.framework.actions.menu.Menu;
 import eapli.framework.infrastructure.authz.application.AuthorizationService;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
@@ -50,21 +48,11 @@ public class MainMenu extends AbstractUI {
         final var mainMenu = new Menu();
 
         if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.BACKOFFICE_OPERATOR)) {
-            mainMenu.addSubMenu(ENGINE_MODELS_OPTION, buildEngineModelsMenu());
+            mainMenu.addItem(ENGINE_MODELS_OPTION, "Engine Models",
+                    new backoffice.presentation.enginemodel.EngineModelsMenuAction());
         }
 
         mainMenu.addItem(EXIT_OPTION, "Exit", new ExitWithMessageAction("Thank you for using the AISafe Backoffice."));
         return mainMenu;
-    }
-
-    private Menu buildEngineModelsMenu() {
-        final var menu = new Menu("Engine Models >");
-
-        menu.addItem(REGISTER_ENGINE_MODEL_OPTION, "Register Engine Model", new RegisterEngineModelAction());
-        menu.addItem(LIST_ENGINE_MODELS_OPTION, "List Engine Models", new backoffice.presentation.enginemodel.ListEngineModelsAction());
-        menu.addItem(DELETE_ENGINE_MODEL_OPTION, "Delete Engine Model", new backoffice.presentation.enginemodel.DeleteEngineModelAction());
-        menu.addItem(EXIT_OPTION, RETURN_LABEL, Actions.SUCCESS);
-
-        return menu;
     }
 }

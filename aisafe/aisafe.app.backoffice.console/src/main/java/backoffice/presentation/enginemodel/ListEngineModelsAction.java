@@ -6,6 +6,7 @@ public class ListEngineModelsAction implements Action {
 
     @Override
     public boolean execute() {
-        return new ListEngineModelsUI().show();
+        new ListEngineModelsUI().show();
+        return false;
     }
 }

@@ -6,6 +6,7 @@ public class RegisterEngineModelAction implements Action {
 
     @Override
     public boolean execute() {
-        return new RegisterEngineModelUI().show();
+        new RegisterEngineModelUI().show();
+        return false;
     }
 }

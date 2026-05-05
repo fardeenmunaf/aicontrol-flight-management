@@ -23,24 +23,24 @@ goto menu
 
 :backoffice
 echo Running Backoffice...
-mvn -pl aisafe.app.backoffice.console exec:java -Dexec.mainClass="eapli.app.backoffice.console.presentation.backoffice.BackofficeApp"
+call run-backoffice.bat
 pause
 goto menu
 
 :weather
 echo Running Weather Client...
-mvn -pl aisafe.app.weather.client exec:java -Dexec.mainClass="eapli.app.weather.client.WeatherClientApp"
+call run-weatherclient.bat
 pause
 goto menu
 
 :aircontrol
 echo Running Air Control...
-mvn -pl aisafe.app.aircontrol.console exec:java -Dexec.mainClass="eapli.app.aircontrol.console.AirControlApp"
+echo (Not implemented yet)
 pause
 goto menu
 
 :airtransport
 echo Running Air Transport...
-mvn -pl aisafe.app.airtransport.console exec:java -Dexec.mainClass="eapli.app.airtransport.console.AirTransportApp"
+echo (Not implemented yet)
 pause
 goto menu

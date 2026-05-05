@@ -1,6 +1,6 @@
 package weatherData.application;
 
-import eapli.framework.infrastructure.persistence.PersistenceContext;
+import infrastructure.persistence.PersistenceContext;
 import weatherData.domain.WeatherData;
 import weatherData.dto.WeatherDataDTO;
 import weatherData.repository.WeatherDataRepository;

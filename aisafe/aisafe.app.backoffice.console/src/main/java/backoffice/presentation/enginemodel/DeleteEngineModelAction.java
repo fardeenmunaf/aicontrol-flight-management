@@ -6,6 +6,7 @@ public class DeleteEngineModelAction implements Action {
 
     @Override
     public boolean execute() {
-        return new DeleteEngineModelUI().show();
+        new DeleteEngineModelUI().show();
+        return false;
     }
 }

@@ -12,6 +12,8 @@ import java.time.format.DateTimeParseException;
 
 import weatherData.application.RegisterWeatherDataController;
 
+import weatherData.dto.WeatherDataDTO;
+
 public class BulkImportWeatherUI extends AbstractUI {
 
     private final RegisterWeatherDataController controller = new RegisterWeatherDataController();
@@ -43,7 +45,7 @@ public class BulkImportWeatherUI extends AbstractUI {
                     final Double temperature = Double.parseDouble(parts[4].trim());
                     final Double pressure = Double.parseDouble(parts[5].trim());
 
-                    controller.registerWeatherData(
+                    final WeatherDataDTO dto = new WeatherDataDTO(
                             airControlArea,
                             dateTime,
                             windDirection,
@@ -51,6 +53,8 @@ public class BulkImportWeatherUI extends AbstractUI {
                             temperature,
                             pressure
                     );
+                    
+                    controller.registerWeatherData(dto);
                     successCount++;
                 } catch (final IllegalArgumentException | DateTimeParseException ex) {
                     errorCount++;

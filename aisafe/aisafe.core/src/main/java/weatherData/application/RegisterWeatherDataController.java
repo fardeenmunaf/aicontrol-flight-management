@@ -1,15 +1,13 @@
 package weatherData.application;
 
-import eapli.framework.infrastructure.authz.application.AuthorizationService;
-import eapli.framework.infrastructure.persistence.PersistenceContext;
+import infrastructure.persistence.PersistenceContext;
 import weatherData.domain.WeatherData;
 import weatherData.dto.WeatherDataDTO;
 import weatherData.repository.WeatherDataRepository;
 
 public class RegisterWeatherDataController {
 
-    private final WeatherDataRepository repo =
-            PersistenceContext.repositories().weatherData();
+    private final WeatherDataRepository repo = PersistenceContext.repositories().weatherData();
 
     public boolean registerWeatherData(final WeatherDataDTO dto) {
 
@@ -41,8 +39,7 @@ public class RegisterWeatherDataController {
                 dto.windDirection(),
                 dto.windSpeed(),
                 dto.temperature(),
-                dto.pressure()
-        );
+                dto.pressure());
 
         // guardar no repo
         repo.save(data);
