@@ -1,12 +1,12 @@
 package jpa;
 
+import java.util.Map;
+import java.util.Optional;
+
 import airport.domain.Airport;
 import airport.repositories.AirportRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import shared.domain.AirportId;
-
-import java.util.Map;
-import java.util.Optional;
 
 public class JpaAirportRepository
         extends BaseJpaRepositoryBase<Airport, AirportId, AirportId>

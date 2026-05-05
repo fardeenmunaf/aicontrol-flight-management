@@ -1,10 +1,10 @@
 package airport.repositories;
 
+import java.util.Optional;
+
 import airport.domain.Airport;
 import eapli.framework.domain.repositories.DomainRepository;
 import shared.domain.AirportId;
-
-import java.util.Optional;
 
 public interface AirportRepository extends DomainRepository<AirportId, Airport> {
 
