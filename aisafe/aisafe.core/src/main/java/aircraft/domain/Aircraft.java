@@ -6,24 +6,22 @@ import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Version;
+import shared.domain.AircraftId;
 
 @Entity
-public class Aircraft implements AggregateRoot<Long> {
+public class Aircraft implements AggregateRoot<AircraftId> {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
     @Version
     private Long version;
+
+    @EmbeddedId
+    private AircraftId aircraftId;
 
     @Embedded
     private CabinConfiguration cabinConfiguration;
@@ -57,12 +55,13 @@ public class Aircraft implements AggregateRoot<Long> {
             throw new IllegalArgumentException("Flight crew count cannot be negative");
         }
 
-        this.registrationNumber = registrationNumber;
         this.registrationCountry = registrationCountry;
+        this.registrationNumber = registrationNumber;
         this.operationStatus = operationStatus;
         this.flightCrewCount = flightCrewCount;
         this.aircraftModel = aircraftModel;
         this.cabinConfiguration = cabinConfiguration;
+        this.aircraftId = AircraftId.newId();
     }
 
     protected Aircraft() {
@@ -70,8 +69,8 @@ public class Aircraft implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public AircraftId identity() {
+        return aircraftId;
     }
 
     @Override
@@ -90,7 +89,7 @@ public class Aircraft implements AggregateRoot<Long> {
     }
 
     public String registrationNumber() {
-        return registrationNumber;
+        return aircraftId.toString();
     }
 
     public String registrationCountry() {

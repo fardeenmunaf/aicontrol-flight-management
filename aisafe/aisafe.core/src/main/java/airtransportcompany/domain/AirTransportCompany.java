@@ -4,23 +4,21 @@ import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Version;
+import shared.domain.AirTransportCompanyId;
 
 @Entity
-public class AirTransportCompany implements AggregateRoot<Long> {
+public class AirTransportCompany implements AggregateRoot<AirTransportCompanyId> {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
     @Version
     private Long version;
+
+    @EmbeddedId
+    private AirTransportCompanyId airTransportCompanyId;
 
     private String name;
     private String iataCode;
@@ -44,6 +42,7 @@ public class AirTransportCompany implements AggregateRoot<Long> {
         this.name = name;
         this.iataCode = iataCode;
         this.icaoCode = icaoCode;
+        this.airTransportCompanyId = AirTransportCompanyId.newId();
     }
 
     protected AirTransportCompany() {
@@ -51,8 +50,8 @@ public class AirTransportCompany implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public AirTransportCompanyId identity() {
+        return airTransportCompanyId;
     }
 
     @Override

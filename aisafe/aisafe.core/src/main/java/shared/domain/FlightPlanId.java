@@ -1,4 +1,4 @@
-package flightRoute.domain;
+package shared.domain;
 
 import java.util.UUID;
 
@@ -8,35 +8,39 @@ import eapli.framework.domain.model.ValueObject;
 import eapli.framework.validations.Preconditions;
 
 @Embeddable
-public class FlightRouteId implements ValueObject, Comparable<FlightRouteId> {
+public class FlightPlanId implements ValueObject, Comparable<FlightPlanId> {
 
     private static final long serialVersionUID = 1L;
 
     private String id;
 
-    public FlightRouteId(final String id) {
-        Preconditions.nonEmpty(id, "FlightRouteId must not be null or empty");
+    public FlightPlanId(final String id) {
+        Preconditions.nonEmpty(id, "FlightPlanId must not be null or empty");
         this.id = id;
     }
 
-    protected FlightRouteId() {
+    protected FlightPlanId() {
         // for ORM
     }
 
-    public static FlightRouteId newUnique() {
-        return new FlightRouteId(UUID.randomUUID().toString());
+    public static FlightPlanId valueOf(final String id) {
+        return new FlightPlanId(id);
+    }
+
+    public static FlightPlanId newId() {
+        return new FlightPlanId(UUID.randomUUID().toString());
     }
 
     @Override
-    public int compareTo(final FlightRouteId other) {
+    public int compareTo(final FlightPlanId other) {
         return this.id.compareTo(other.id);
     }
 
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
-        if (!(o instanceof FlightRouteId)) return false;
-        return this.id.equals(((FlightRouteId) o).id);
+        if (!(o instanceof FlightPlanId)) return false;
+        return this.id.equals(((FlightPlanId) o).id);
     }
 
     @Override

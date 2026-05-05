@@ -85,6 +85,7 @@ public class Airport implements AggregateRoot<AirportId> {
         this.elevation = elevation;
         this.coordinates = coordinates;
         this.airControlArea = airControlArea;
+        this.airportId = AirportId.newId();
     }
 
     @Override

@@ -90,6 +90,7 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
             throw new IllegalArgumentException("Maximum zero fuel weight must be less than or equal to maximum take-off weight");
         }
 
+        this.aircraftModelId = AircraftModelId.newId();
         this.type = type;
         this.emptyWeight = emptyWeight;
         this.maximumTakeOffWeight = maximumTakeOffWeight;

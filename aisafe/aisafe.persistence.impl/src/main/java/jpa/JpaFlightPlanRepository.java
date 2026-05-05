@@ -2,9 +2,9 @@ package jpa;
 
 import eapli.framework.domain.repositories.TransactionalContext;
 import flightPlan.domain.FlightPlan;
-import flightPlan.domain.FlightPlanId;
 import flightPlan.domain.FlightPlanStatus;
 import flightPlan.repository.FlightPlanRepository;
+import shared.domain.FlightPlanId;
 
 import java.time.Instant;
 import java.util.HashMap;

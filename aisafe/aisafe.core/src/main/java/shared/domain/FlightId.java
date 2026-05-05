@@ -1,5 +1,7 @@
 package shared.domain;
 
+import java.util.UUID;
+
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
@@ -25,6 +27,10 @@ public class FlightId implements ValueObject, Comparable<FlightId> {
 
     public static FlightId valueOf(final String value) {
         return new FlightId(value);
+    }
+
+    public static FlightId newId() {
+        return new FlightId(UUID.randomUUID().toString());
     }
 
     @Override

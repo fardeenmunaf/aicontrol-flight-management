@@ -2,8 +2,8 @@ package flightRoute.repository;
 
 import eapli.framework.domain.repositories.DomainRepository;
 import flightRoute.domain.FlightRoute;
-import flightRoute.domain.FlightRouteId;
 import flightRoute.domain.RouteDesignation;
+import shared.domain.FlightRouteId;
 
 import java.time.LocalDate;
 import java.util.Optional;

@@ -5,20 +5,21 @@ import simulation.domain.Simulation;
 import simulation.domain.SimulationStatus;
 import simulation.repository.SimulationRepository;
 import flight.domain.Flight;
+import shared.domain.SimulationId;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class JpaSimulationRepository extends BaseJpaRepositoryBase<Simulation, Long, Long>
+public class JpaSimulationRepository extends BaseJpaRepositoryBase<Simulation, SimulationId, SimulationId>
 		implements SimulationRepository {
 
 	public JpaSimulationRepository(final TransactionalContext autoTx) {
-		super(autoTx, "id");
+		super(autoTx, "simulationId");
 	}
 
 	public JpaSimulationRepository(final String persistenceUnitName) {
-		super("id");
+		super("simulationId");
 	}
 
 	@Override

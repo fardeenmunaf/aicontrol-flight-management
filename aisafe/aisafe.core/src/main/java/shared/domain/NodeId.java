@@ -1,5 +1,7 @@
 package shared.domain;
 
+import java.util.UUID;
+
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
@@ -25,6 +27,10 @@ public class NodeId implements ValueObject, Comparable<NodeId> {
 
     public static NodeId valueOf(final String value) {
         return new NodeId(value);
+    }
+
+    public static NodeId newId() {
+        return new NodeId(UUID.randomUUID().toString());
     }
 
     @Override

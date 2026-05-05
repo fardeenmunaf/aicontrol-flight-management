@@ -3,6 +3,7 @@ package jpa;
 import eapli.framework.domain.repositories.TransactionalContext;
 import simulationReport.domain.SimulationReport;
 import simulationReport.repository.SimulationReportRepository;
+import shared.domain.SimulationReportId;
 
 /**
  * JPA implementation of SimulationReportRepository.
@@ -11,15 +12,15 @@ import simulationReport.repository.SimulationReportRepository;
  * @author LAPR4 Team
  */
 class JpaSimulationReportRepository
-        extends BaseJpaRepositoryBase<SimulationReport, Long, Long>
+                extends BaseJpaRepositoryBase<SimulationReport, SimulationReportId, SimulationReportId>
         implements SimulationReportRepository {
 
     public JpaSimulationReportRepository(final TransactionalContext autoTx) {
-        super(autoTx, "id");
+		super(autoTx, "simulationReportId");
     }
 
     public JpaSimulationReportRepository(final String persistenceUnitName) {
-        super("id");
+		super("simulationReportId");
     }
 }
 

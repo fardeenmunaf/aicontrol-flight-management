@@ -34,6 +34,7 @@ public class WeatherData implements AggregateRoot<WeatherDataId> {
         if (windDirection < 0 || windDirection > 360) {
             throw new IllegalArgumentException("Wind direction must be between 0 and 360 degrees");
         }
+        this.weatherDataId = WeatherDataId.newId();
         this.date = date;
         this.windSpeed = windSpeed;
         this.windDirection = windDirection;

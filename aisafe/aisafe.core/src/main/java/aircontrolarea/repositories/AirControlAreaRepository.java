@@ -2,6 +2,7 @@ package aircontrolarea.repositories;
 
 import eapli.framework.domain.repositories.DomainRepository;
 import aircontrolarea.domain.AirControlArea;
+import shared.domain.AirControlAreaId;
 
 import java.util.List;
 
@@ -9,7 +10,7 @@ import java.util.List;
  * Repository interface for AirControlArea aggregate.
  * Defines domain-specific persistence operations for AirControlArea entities.
  */
-public interface AirControlAreaRepository extends DomainRepository<Long, AirControlArea> {
+public interface AirControlAreaRepository extends DomainRepository<AirControlAreaId, AirControlArea> {
 
     /**
      * Returns all control areas matching a given area code.

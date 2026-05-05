@@ -2,6 +2,7 @@ package simulationReport.repository;
 
 import eapli.framework.domain.repositories.DomainRepository;
 import simulationReport.domain.SimulationReport;
+import shared.domain.SimulationReportId;
 
 /**
  * Repository interface for SimulationReport aggregate.
@@ -9,7 +10,7 @@ import simulationReport.domain.SimulationReport;
  *
  * @author LAPR4 Team
  */
-public interface SimulationReportRepository extends DomainRepository<Long, SimulationReport> {
+public interface SimulationReportRepository extends DomainRepository<SimulationReportId, SimulationReport> {
     // Domain-specific query methods can be added here as needed
 }
 

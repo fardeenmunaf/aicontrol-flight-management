@@ -3,6 +3,7 @@ package aircraft.repositories;
 import eapli.framework.domain.repositories.DomainRepository;
 import aircraft.domain.Aircraft;
 import aircraft.domain.CabinConfiguration;
+import shared.domain.AircraftId;
 
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
  * @author LAPR4 Team
  */
 
-public interface AircraftRepository extends DomainRepository<Long, Aircraft> {
+public interface AircraftRepository extends DomainRepository<AircraftId, Aircraft> {
 
     /**
      * Returns all aircraft matching a given cabin configuration.

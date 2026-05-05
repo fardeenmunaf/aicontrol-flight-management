@@ -4,6 +4,7 @@ import eapli.framework.domain.repositories.DomainRepository;
 import simulation.domain.Simulation;
 import simulation.domain.SimulationStatus;
 import flight.domain.Flight;
+import shared.domain.SimulationId;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,7 +15,7 @@ import java.util.Optional;
  *
  * @author LAPR4 Team
  */
-public interface SimulationRepository extends DomainRepository<Long, Simulation> {
+public interface SimulationRepository extends DomainRepository<SimulationId, Simulation> {
 
     /**
      * Returns the currently running simulation, if any.

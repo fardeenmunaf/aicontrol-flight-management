@@ -4,23 +4,21 @@ import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Version;
+import shared.domain.AirControlAreaId;
 
 @Entity
-public class AirControlArea implements AggregateRoot<Long> {
+public class AirControlArea implements AggregateRoot<AirControlAreaId> {
 
     private static final long serialVersionUID = 1L;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
-
     @Version
     private Long version;
+
+    @EmbeddedId
+    private AirControlAreaId airControlAreaId;
 
     private String areaCode;
     private double minimumRequiredArrivalFuel;
@@ -44,6 +42,7 @@ public class AirControlArea implements AggregateRoot<Long> {
         this.areaCode = areaCode;
         this.minimumRequiredArrivalFuel = minimumRequiredArrivalFuel;
         this.geographicBoundaries = geographicBoundaries;
+        this.airControlAreaId = AirControlAreaId.newId();
     }
 
     protected AirControlArea() {
@@ -51,8 +50,8 @@ public class AirControlArea implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public AirControlAreaId identity() {
+        return airControlAreaId;
     }
 
     @Override

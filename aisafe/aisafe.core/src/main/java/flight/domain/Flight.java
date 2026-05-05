@@ -40,6 +40,7 @@ public class Flight implements AggregateRoot<FlightId> {
         this.type = type;
         this.scheduledDepartureTime = scheduledDepartureTime;
         this.scheduledArrivalTime = scheduledArrivalTime;
+        this.flightId = FlightId.newId();
     }
 
     protected Flight() {

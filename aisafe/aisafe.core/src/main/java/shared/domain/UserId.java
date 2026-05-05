@@ -1,5 +1,7 @@
 package shared.domain;
 
+import java.util.UUID;
+
 
 import jakarta.persistence.Embeddable;
 
@@ -26,6 +28,10 @@ public class UserId implements ValueObject, Comparable<UserId> {
 
     public static UserId valueOf(final String value) {
         return new UserId(value);
+    }
+
+    public static UserId newId() {
+        return new UserId(UUID.randomUUID().toString());
     }
 
     @Override

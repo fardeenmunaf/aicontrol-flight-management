@@ -43,6 +43,7 @@ public class Pilot implements AggregateRoot<PilotId> {
         this.userId = userId;
         this.status = status;
         this.certifiedAircraftModels.addAll(certifiedAircraftModels);
+        this.pilotId = PilotId.newId();
     }
 
     protected Pilot() {

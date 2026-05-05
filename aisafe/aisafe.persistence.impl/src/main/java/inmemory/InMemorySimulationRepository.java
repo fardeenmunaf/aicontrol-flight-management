@@ -5,12 +5,13 @@ import simulation.domain.Simulation;
 import simulation.domain.SimulationStatus;
 import simulation.repository.SimulationRepository;
 import flight.domain.Flight;
+import shared.domain.SimulationId;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class InMemorySimulationRepository extends InMemoryDomainRepository<Simulation, Long>
+public class InMemorySimulationRepository extends InMemoryDomainRepository<Simulation, SimulationId>
 		implements SimulationRepository {
 
 	static {

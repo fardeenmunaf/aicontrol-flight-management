@@ -2,9 +2,9 @@ package jpa;
 
 import eapli.framework.domain.repositories.TransactionalContext;
 import flightRoute.domain.FlightRoute;
-import flightRoute.domain.FlightRouteId;
 import flightRoute.domain.RouteDesignation;
 import flightRoute.repository.FlightRouteRepository;
+import shared.domain.FlightRouteId;
 
 import java.time.LocalDate;
 import java.util.HashMap;

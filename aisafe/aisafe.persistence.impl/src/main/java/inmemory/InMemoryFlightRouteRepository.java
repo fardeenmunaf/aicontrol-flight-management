@@ -2,9 +2,9 @@ package inmemory;
 
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
 import flightRoute.domain.FlightRoute;
-import flightRoute.domain.FlightRouteId;
 import flightRoute.domain.RouteDesignation;
 import flightRoute.repository.FlightRouteRepository;
+import shared.domain.FlightRouteId;
 
 import java.time.LocalDate;
 import java.util.Optional;

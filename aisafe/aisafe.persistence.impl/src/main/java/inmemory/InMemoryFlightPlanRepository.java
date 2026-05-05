@@ -2,9 +2,9 @@ package inmemory;
 
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
 import flightPlan.domain.FlightPlan;
-import flightPlan.domain.FlightPlanId;
 import flightPlan.domain.FlightPlanStatus;
 import flightPlan.repository.FlightPlanRepository;
+import shared.domain.FlightPlanId;
 
 import java.time.Instant;
 import java.util.Optional;

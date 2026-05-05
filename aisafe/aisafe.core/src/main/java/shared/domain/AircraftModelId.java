@@ -1,5 +1,7 @@
 package shared.domain;
 
+import java.util.UUID;
+
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
@@ -25,6 +27,10 @@ public class AircraftModelId implements ValueObject, Comparable<AircraftModelId>
 
     public static AircraftModelId valueOf(final String value) {
         return new AircraftModelId(value);
+    }
+
+    public static AircraftModelId newId() {
+        return new AircraftModelId(UUID.randomUUID().toString());
     }
 
     @Override

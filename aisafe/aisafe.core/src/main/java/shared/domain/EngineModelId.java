@@ -1,5 +1,7 @@
 package shared.domain;
 
+import java.util.UUID;
+
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
@@ -25,6 +27,10 @@ public class EngineModelId implements ValueObject, Comparable<EngineModelId> {
 
     public static EngineModelId valueOf(final String value) {
         return new EngineModelId(value);
+    }
+
+    public static EngineModelId newId() {
+        return new EngineModelId(UUID.randomUUID().toString());
     }
 
     @Override

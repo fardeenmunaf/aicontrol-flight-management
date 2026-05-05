@@ -2,6 +2,7 @@ package airtransportcompany.repositories;
 
 import eapli.framework.domain.repositories.DomainRepository;
 import airtransportcompany.domain.AirTransportCompany;
+import shared.domain.AirTransportCompanyId;
 
 import java.util.List;
 
@@ -9,7 +10,7 @@ import java.util.List;
  * Repository interface for AirTransportCompany aggregate.
  * Defines domain-specific persistence operations for AirTransportCompany entities.
  */
-public interface AirTransportCompanyRepository extends DomainRepository<Long, AirTransportCompany> {
+public interface AirTransportCompanyRepository extends DomainRepository<AirTransportCompanyId, AirTransportCompany> {
 
     /**
      * Returns all companies matching a given name.

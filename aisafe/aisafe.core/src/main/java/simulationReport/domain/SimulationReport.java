@@ -2,35 +2,34 @@ package simulationReport.domain;
 
 import java.time.Instant;
 
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 import jakarta.persistence.Version;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
+import shared.domain.SimulationId;
+import shared.domain.SimulationReportId;
 
 @Entity
-public class SimulationReport implements AggregateRoot<Long> {
+public class SimulationReport implements AggregateRoot<SimulationReportId> {
 
     private static final long serialVersionUID = 1L;
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
 
     @Version
     private Long version;
 
+    @EmbeddedId
+    private SimulationReportId simulationReportId;
+
     private Integer totalFlights;
     private String validationResult;
     private Instant generatedAt;
-    private Long simulationId;
+    private SimulationId simulationId;
 
     public SimulationReport(final Integer totalFlights, final String validationResult,
-            final Instant generatedAt, final Long simulationId) {
+            final Instant generatedAt, final SimulationId simulationId) {
         Preconditions.noneNull(totalFlights, validationResult, generatedAt, simulationId);
         if (totalFlights < 0) {
             throw new IllegalArgumentException("Total flights must be non-negative");
@@ -39,6 +38,7 @@ public class SimulationReport implements AggregateRoot<Long> {
         this.validationResult = validationResult;
         this.generatedAt = generatedAt;
         this.simulationId = simulationId;
+        this.simulationReportId = SimulationReportId.newId();
     }
 
     protected SimulationReport() {
@@ -46,8 +46,8 @@ public class SimulationReport implements AggregateRoot<Long> {
     }
 
     @Override
-    public Long identity() {
-        return id;
+    public SimulationReportId identity() {
+        return simulationReportId;
     }
 
     @Override
@@ -77,7 +77,7 @@ public class SimulationReport implements AggregateRoot<Long> {
         return generatedAt;
     }
 
-    public Long simulationId() {
+    public SimulationId simulationId() {
         return simulationId;
     }
 }

@@ -3,6 +3,7 @@ package inmemory;
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
 import simulationReport.domain.SimulationReport;
 import simulationReport.repository.SimulationReportRepository;
+import shared.domain.SimulationReportId;
 
 /**
  * In-memory implementation of SimulationReportRepository.
@@ -10,7 +11,7 @@ import simulationReport.repository.SimulationReportRepository;
  *
  * @author LAPR4 Team
  */
-public class InMemorySimulationReportRepository extends InMemoryDomainRepository<SimulationReport, Long>
+public class InMemorySimulationReportRepository extends InMemoryDomainRepository<SimulationReport, SimulationReportId>
         implements SimulationReportRepository {
 
     static {

@@ -38,9 +38,7 @@ public class User implements AggregateRoot<UserId> {
     @EmbeddedId
     private UserId userId;
 
-    public User(final String email, final String name, final String phoneNumber,
-            final LocalDate activeSecurityClearanceExpiry, final LocalDate skillsAssessmentDueDate,
-            final String status, final Set<Role> roles, final UserId userId) {
+    public User(final String email, final String name, final String phoneNumber, final LocalDate activeSecurityClearanceExpiry, final LocalDate skillsAssessmentDueDate, final String status, final Set<Role> roles, final UserId userId) {
         Preconditions.noneNull(email, name, phoneNumber, status, roles, userId);
         this.email = email;
         this.name = name;

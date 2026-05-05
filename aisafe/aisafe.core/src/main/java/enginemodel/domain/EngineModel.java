@@ -84,6 +84,7 @@ public class EngineModel implements AggregateRoot<EngineModelId> {
             throw new IllegalArgumentException("Engine model numeric attributes must be greater than zero");
         }
 
+        this.engineModelId = EngineModelId.newId();
         this.name = name;
         this.type = type;
         this.power = power;

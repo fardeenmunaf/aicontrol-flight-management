@@ -1,5 +1,7 @@
 package shared.domain;
 
+import java.util.UUID;
+
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
@@ -25,6 +27,10 @@ public class WeatherDataId implements ValueObject, Comparable<WeatherDataId> {
 
     public static WeatherDataId valueOf(final String value) {
         return new WeatherDataId(value);
+    }
+
+    public static WeatherDataId newId() {
+        return new WeatherDataId(UUID.randomUUID().toString());
     }
 
     @Override
