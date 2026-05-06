@@ -1,7 +1,9 @@
-package aircraftmodel.aplication;
+package aircraftmodel.application;
 
 import aircraftmodel.domain.AircraftModel;
+import aircraftmodel.dto.AircraftModelDTO;
 import aircraftmodel.domain.AircraftModelMaker;
+import aircraftmodel.repositories.AircraftModelRepository;
 import auth.domain.AISafeRoles;
 import eapli.framework.infrastructure.authz.application.AuthorizationService;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;

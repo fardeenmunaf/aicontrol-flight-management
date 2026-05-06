@@ -122,6 +122,16 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
     }
 
     @Override
+    public aircontrolarea.repositories.AirControlAreaRepository airControlAreas(final TransactionalContext autoTx) {
+        return new InMemoryAirControlAreaRepository();
+    }
+
+    @Override
+    public aircontrolarea.repositories.AirControlAreaRepository airControlAreas() {
+        return airControlAreas(null);
+    }
+
+    @Override
     public AirportRepository airports(final TransactionalContext autoTx) {
         return new InMemoryAirportRepository();
     }

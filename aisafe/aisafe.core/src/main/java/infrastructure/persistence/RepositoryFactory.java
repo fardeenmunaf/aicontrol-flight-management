@@ -71,6 +71,13 @@ public interface RepositoryFactory {
 
     AircraftModelRepository aircraftModels(TransactionalContext autoTx);
 
+    /**
+     * Air control area repositories
+     */
+    AirControlAreaRepository airControlAreas();
+
+    AirControlAreaRepository airControlAreas(TransactionalContext autoTx);
+
     AirportRepository airports();
 
     AirportRepository airports(TransactionalContext autoTx);

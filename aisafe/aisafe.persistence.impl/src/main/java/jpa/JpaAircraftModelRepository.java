@@ -30,4 +30,15 @@ public class JpaAircraftModelRepository
     public List<AircraftModel> findByMakerName(final String makerName) {
         return match("LOWER(e.maker.name) = LOWER(:makerName)", Map.of("makerName", makerName));
     }
+
+    @Override
+    public List<AircraftModel> findByModelName(final String modelName) {
+        return match("LOWER(e.modelName) = LOWER(:modelName)", Map.of("modelName", modelName));
+    }
+
+    @Override
+    public List<AircraftModel> findByModelNameAndMaker(final String modelName, final String makerName) {
+        return match("LOWER(e.modelName) = LOWER(:modelName) AND LOWER(e.maker.name) = LOWER(:makerName)",
+                Map.of("modelName", modelName, "makerName", makerName));
+    }
 }
