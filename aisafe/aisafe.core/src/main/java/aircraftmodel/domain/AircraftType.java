@@ -1,8 +1,7 @@
 package aircraftmodel.domain;
 
 public enum AircraftType {
-    JET,
-    TURBOPROP,
-    PISTON,
-    HELICOPTER
+    PASSENGER,
+    CARGO,
+    MIXED
 }

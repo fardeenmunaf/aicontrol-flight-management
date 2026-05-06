@@ -7,6 +7,7 @@ import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
 import infrastructure.persistence.PersistenceContext;
 
+import enginemodel.domain.EngineModel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,16 +26,16 @@ public class RegisterAircraftModelUI extends AbstractUI {
             final String makerCountry = Console.readLine("Manufacturer country");
             final AircraftType type = readAircraftType();
 
-            final Double emptyWeight = readDouble("Empty weight");
-            final Double maximumTakeOffWeight = readDouble("Maximum take-off weight");
-            final Double maximumZeroFuelWeight = readDouble("Maximum zero fuel weight");
-            final Double maximumFuelCapacity = readDouble("Maximum fuel capacity");
-            final Double serviceCeiling = readDouble("Service ceiling");
-            final Double cruiseSpeed = readDouble("Cruise speed");
-            final Double wingArea = readDouble("Wing area");
-            final Double wingSpan = readDouble("Wing span");
-            final Double dragCoefficient = readDouble("Drag coefficient");
-            final Double liftCoefficient = readDouble("Lift coefficient");
+            final Double emptyWeight = readDouble("Empty weight (kg)");
+            final Double maximumTakeOffWeight = readDouble("Maximum take-off weight (kg)");
+            final Double maximumZeroFuelWeight = readDouble("Maximum zero fuel weight (kg)");
+            final Double maximumFuelCapacity = readDouble("Maximum fuel capacity (kg)");
+            final Double serviceCeiling = readDouble("Service ceiling (ft)");
+            final Double cruiseSpeed = readDouble("Cruise speed (km/h)");
+            final Double wingArea = readDouble("Wing area (m^2)");
+            final Double wingSpan = readDouble("Wing span (m)");
+            final Double dragCoefficient = readDouble("Drag coefficient (Cd)");
+            final Double liftCoefficient = readDouble("Lift coefficient (Cl)");
 
             final List<String> engineModelNames = readEngineModelNames();
 
@@ -85,16 +86,43 @@ public class RegisterAircraftModelUI extends AbstractUI {
     }
 
     private List<String> readEngineModelNames() {
-        System.out.println("Enter at least one certified engine model name.");
-        System.out.println("Type one per line. Leave blank to finish.");
+
+        final List<EngineModel> available = new ArrayList<>();
+        PersistenceContext.repositories().engineModels().findAll().forEach(available::add);
+
+        if (available.isEmpty()) {
+            throw new IllegalArgumentException("No engine models available in the system. Please register engine models first.");
+        }
+
+        System.out.println("Available engine models:");
+        for (int i = 0; i < available.size(); i++) {
+            final EngineModel em = available.get(i);
+            // assume EngineModel has a name() method
+            System.out.printf("%d - %s%n", i + 1, em.name());
+        }
+
+        System.out.println("Select at least one certified engine model by number.");
+        System.out.println("Type one number per line. Leave blank to finish selection.");
 
         final List<String> names = new ArrayList<>();
         while (true) {
-            final String value = Console.readLine("Engine model name").trim();
-            if (value.isEmpty()) {
+            final String raw = Console.readLine("Engine model number").trim();
+            if (raw.isEmpty()) {
                 break;
             }
-            names.add(value);
+            final int choice;
+            try {
+                choice = Integer.parseInt(raw);
+            } catch (final NumberFormatException ex) {
+                System.out.println("Invalid number: " + raw);
+                continue;
+            }
+            if (choice < 1 || choice > available.size()) {
+                System.out.println("Choice out of range: " + choice);
+                continue;
+            }
+            final EngineModel selected = available.get(choice - 1);
+            names.add(selected.name());
         }
 
         if (names.isEmpty()) {
