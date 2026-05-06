@@ -66,6 +66,23 @@ public class RegisterAirportController {
 
         final String normalizedIata = iataCode.trim().toUpperCase();
         final String normalizedIcao = icaoCode.trim().toUpperCase();
+
+        if (!normalizedIata.matches("[A-Z]{3}")) {
+            throw new IllegalArgumentException("Airport IATA code must have exactly 3 letters");
+        }
+
+        if (!normalizedIcao.matches("[A-Z]{4}")) {
+            throw new IllegalArgumentException("Airport ICAO code must have exactly 4 letters");
+        }
+
+        if (latitude < -90 || latitude > 90) {
+            throw new IllegalArgumentException("Latitude must be between -90 and 90");
+        }
+
+        if (longitude < -180 || longitude > 180) {
+            throw new IllegalArgumentException("Longitude must be between -180 and 180");
+        }
+
         if (airportRepository.findByIataCode(normalizedIata).isPresent()) {
             throw new IllegalArgumentException("Airport with IATA code '" + normalizedIata + "' already exists");
         }
