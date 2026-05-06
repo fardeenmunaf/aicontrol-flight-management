@@ -30,4 +30,19 @@ public class InMemoryAircraftModelRepository
         match(a -> a.maker().name().equalsIgnoreCase(makerName)).forEach(result::add);
         return result;
     }
+
+    @Override
+    public List<AircraftModel> findByModelName(final String modelName) {
+        final List<AircraftModel> result = new ArrayList<>();
+        match(a -> a.modelName().equalsIgnoreCase(modelName)).forEach(result::add);
+        return result;
+    }
+
+    @Override
+    public List<AircraftModel> findByModelNameAndMaker(final String modelName, final String maker) {
+        final List<AircraftModel> result = new ArrayList<>();
+        match(a -> a.modelName().equalsIgnoreCase(modelName)
+                && a.maker().name().equalsIgnoreCase(maker)).forEach(result::add);
+        return result;
+    }
 }

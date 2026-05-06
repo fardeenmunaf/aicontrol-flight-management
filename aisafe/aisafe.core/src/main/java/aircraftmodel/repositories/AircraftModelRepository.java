@@ -12,4 +12,9 @@ public interface AircraftModelRepository extends DomainRepository<AircraftModelI
     List<AircraftModel> findByType(AircraftType type);
 
     List<AircraftModel> findByMakerName(String makerName);
+
+    List<AircraftModel> findByModelName(String modelName);
+
+    List<AircraftModel> findByModelNameAndMaker(String modelName, String maker);
+
 }

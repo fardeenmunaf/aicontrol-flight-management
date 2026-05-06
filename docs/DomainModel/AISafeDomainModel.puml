@@ -101,6 +101,7 @@ package "AircraftModel Aggregate" <<Aggregate>> #FFE6E6 {
     wingSpan
     dragCoefficient
     liftCoefficient
+    modelName
   }
 
   class AircraftModelId <<Value Object>>

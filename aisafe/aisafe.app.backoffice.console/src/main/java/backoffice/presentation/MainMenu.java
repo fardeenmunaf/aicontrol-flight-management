@@ -16,6 +16,7 @@ public class MainMenu extends AbstractUI {
     private static final int EXIT_OPTION = 0;
 
     private static final int ENGINE_MODELS_OPTION = 1;
+    private static final int AIRCRAFT_MODELS_OPTION = 2;
 
     private static final int REGISTER_ENGINE_MODEL_OPTION = 1;
     private static final int LIST_ENGINE_MODELS_OPTION = 2;
@@ -50,6 +51,8 @@ public class MainMenu extends AbstractUI {
         if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.BACKOFFICE_OPERATOR)) {
             mainMenu.addItem(ENGINE_MODELS_OPTION, "Engine Models",
                     new backoffice.presentation.enginemodel.EngineModelsMenuAction());
+            mainMenu.addItem(AIRCRAFT_MODELS_OPTION, "Aircraft Models",
+                    new backoffice.presentation.aircraftmodel.AircraftModelsMenuAction());
         }
 
         mainMenu.addItem(EXIT_OPTION, "Exit", new ExitWithMessageAction("Thank you for using the AISafe Backoffice."));

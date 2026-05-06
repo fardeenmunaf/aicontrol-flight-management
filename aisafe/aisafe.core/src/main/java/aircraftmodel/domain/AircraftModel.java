@@ -42,6 +42,7 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
     private Double wingSpan;
     private Double dragCoefficient;
     private Double liftCoefficient;
+    private String modelName;
 
     @Embedded
     private AircraftModelMaker maker;
@@ -69,12 +70,13 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
             final Double wingSpan,
             final Double dragCoefficient,
             final Double liftCoefficient,
+            final String modelName,
             final AircraftModelMaker maker) {
 
         Preconditions.noneNull(
                 type, emptyWeight, maximumTakeOffWeight, maximumZeroFuelWeight,
                 maximumFuelCapacity, serviceCeiling, cruiseSpeed, wingArea,
-                wingSpan, dragCoefficient, liftCoefficient, maker);
+                wingSpan, dragCoefficient, liftCoefficient, modelName, maker);
 
         if (emptyWeight <= 0 || maximumTakeOffWeight <= 0 || maximumZeroFuelWeight <= 0
                 || maximumFuelCapacity <= 0 || serviceCeiling <= 0 || cruiseSpeed <= 0
@@ -102,6 +104,7 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
         this.wingSpan = wingSpan;
         this.dragCoefficient = dragCoefficient;
         this.liftCoefficient = liftCoefficient;
+        this.modelName = modelName;
         this.maker = maker;
     }
 
@@ -177,6 +180,8 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
     public Double liftCoefficient() {
         return liftCoefficient;
     }
+
+    public String modelName() { return modelName; }
 
     public AircraftModelMaker maker() {
         return maker;
