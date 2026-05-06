@@ -5,6 +5,7 @@ import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
@@ -22,10 +23,16 @@ public class Airport implements AggregateRoot<AirportId> {
     private Long version;
 
     @EmbeddedId
+    @AttributeOverride(name = "value", column = @Column(name = "airport_id", nullable = false, unique = true))
     private AirportId airportId;
 
+    @Column(nullable = false)
     private String name;
+
+    @Column(nullable = false)
     private String town;
+
+    @Column(nullable = false)
     private String country;
 
     @Column(unique = true, nullable = false)
@@ -34,12 +41,13 @@ public class Airport implements AggregateRoot<AirportId> {
     @Column(unique = true, nullable = false)
     private String icaoCode;
 
+    @Column(nullable = false)
     private Double elevation;
 
     @Embedded
     private AirportCoordinates coordinates;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     private AirControlArea airControlArea;
 
     protected Airport() {
@@ -67,25 +75,31 @@ public class Airport implements AggregateRoot<AirportId> {
         if (StringPredicates.isNullOrEmpty(country)) {
             throw new IllegalArgumentException("Airport country should neither be null nor empty");
         }
-        if (StringPredicates.isNullOrEmpty(iataCode)) {
-            throw new IllegalArgumentException("Airport IATA code should neither be null nor empty");
+
+
+        final String normalizedIata = iataCode.trim().toUpperCase();
+        final String normalizedIcao = icaoCode.trim().toUpperCase();
+
+        if (!normalizedIata.matches("[A-Z]{3}")) {
+            throw new IllegalArgumentException("Airport IATA code must have exactly 3 letters");
         }
-        if (StringPredicates.isNullOrEmpty(icaoCode)) {
-            throw new IllegalArgumentException("Airport ICAO code should neither be null nor empty");
+        if (!normalizedIcao.matches("[A-Z]{4}")) {
+            throw new IllegalArgumentException("Airport ICAO code must have exactly 4 letters");
         }
         if (elevation < 0) {
             throw new IllegalArgumentException("Airport elevation should not be negative");
         }
 
-        this.name = name;
-        this.town = town;
-        this.country = country;
-        this.iataCode = iataCode;
-        this.icaoCode = icaoCode;
+        this.airportId = AirportId.newId();
+        this.name = name.trim();
+        this.town = town.trim();
+        this.country = country.trim();
+        this.iataCode = normalizedIata;
+        this.icaoCode = normalizedIcao;
         this.elevation = elevation;
         this.coordinates = coordinates;
         this.airControlArea = airControlArea;
-        this.airportId = AirportId.newId();
+
     }
 
     @Override
