@@ -27,7 +27,7 @@ public class AircraftModelsMenuUI extends AbstractUI {
     }
 
     private Menu buildAircraftModelsMenu() {
-        final Menu menu = new Menu("Aircraft Models >");
+        final Menu menu = new Menu("Aircraft Models");
 
         menu.addItem(REGISTER_AIRCRAFT_MODEL_OPTION, "Register Aircraft Model", new RegisterAircraftModelAction());
         menu.addItem(RETURN_OPTION, "Return", Actions.SUCCESS);
