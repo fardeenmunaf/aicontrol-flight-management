@@ -446,11 +446,11 @@ The `status` field of `Simulation` represents the *current phase in its lifecycl
 
 **Justification:**
 
-`WeatherData` encapsulates meteorological observations or forecasts for a specific date and air control area. Its separate aggregate boundary is justified by the independence of its acquisition lifecycle: weather data may be ingested via bulk CSV import, registered manually , or uploaded remotely via a TCP-based client . This acquisition pipeline is entirely decoupled from flight planning and simulation. Moreover, `WeatherData` records are *immutable once registered* — they represent a factual meteorological record — which is a lifecycle characteristic distinct from all other aggregates in the domain.
+`WeatherData` encapsulates meteorological observations or forecasts for a specific `AirControlArea`, recorded at a precise `dateTime` and enriched with the weather parameters `windDirection`, `windSpeed`, `temperature`, and `pressure`. Its separate aggregate boundary is justified by the independence of its acquisition lifecycle: weather data may be registered manually or uploaded remotely through the weather client, and each record is handled as an isolated meteorological snapshot. This acquisition pipeline is decoupled from flight planning and simulation. Moreover, `WeatherData` records are *immutable once registered* — they represent factual meteorological data, not a mutable operational object — which makes them suitable for their own transactional boundary.
 
 
 
-`WeatherData` follows an *immutable record* lifecycle pattern once in `REGISTERED` state — no mutations are permitted. This is consistent with the domain concept of meteorological records as historical, factual data points.
+`WeatherData` follows an *immutable record* lifecycle pattern once in `REGISTERED` state — no mutations are permitted. This is consistent with the domain concept of meteorological records as historical, factual data points associated with a specific air control area and timestamp.
 
 **Internal Structure:**
 
@@ -458,10 +458,10 @@ The `status` field of `Simulation` represents the *current phase in its lifecycl
 
 **Key Invariants Enforced:**
 
-- `date` must be a valid calendar date.
-- `windSpeed` must be non-negative.
+- `dateTime` must represent a valid calendar date and time.
+- `windSpeed`, `temperature`, and `pressure` must be valid numeric values.
 - `windDirection` must be a valid bearing (0°–360°).
-- A `WeatherData` record must be scoped to an existing `AirControlArea` (validated via `AirControlAreaId`).
+- A `WeatherData` record must be scoped to an existing `AirControlArea` (validated via `AirControlAreaId` or the corresponding aggregate root reference, depending on the application layer).
 - Records are immutable post-creation — any correction requires a new `WeatherData` instance.
 
 ---
