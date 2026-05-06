@@ -68,7 +68,6 @@ public class Simulation implements AggregateRoot<SimulationId> {
     }
 
     protected Simulation() {
-        // for ORM
     }
 
     public SimulationId identity() {
