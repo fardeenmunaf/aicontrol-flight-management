@@ -21,5 +21,10 @@
             <artifactId>aisafe.core</artifactId>
             <version>${project.parent.version}</version>
         </dependency>
+        <dependency>
+            <groupId>pt.uc.dei.a2526</groupId>
+            <artifactId>aisafe.persistence.impl</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
     </dependencies>
 </project>
