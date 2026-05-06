@@ -2,6 +2,7 @@ package infrastructure.persistence;
 
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
+import aircontrolarea.repositories.AirControlAreaRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import enginemodel.repositories.EngineModelRepository;
 import user.repository.UserRepository;
