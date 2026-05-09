@@ -97,7 +97,6 @@ public class RegisterAircraftModelUI extends AbstractUI {
         System.out.println("Available engine models:");
         for (int i = 0; i < available.size(); i++) {
             final EngineModel em = available.get(i);
-            // assume EngineModel has a name() method
             System.out.printf("%d - %s%n", i + 1, em.name());
         }
 
@@ -106,7 +105,12 @@ public class RegisterAircraftModelUI extends AbstractUI {
 
         final List<String> names = new ArrayList<>();
         while (true) {
-            final String raw = Console.readLine("Engine model number").trim();
+            final String input = Console.readLine("Engine model number");
+            // handle possible null (console closed) or blank line to finish
+            if (input == null) {
+                break;
+            }
+            final String raw = input.trim();
             if (raw.isEmpty()) {
                 break;
             }
@@ -114,7 +118,7 @@ public class RegisterAircraftModelUI extends AbstractUI {
             try {
                 choice = Integer.parseInt(raw);
             } catch (final NumberFormatException ex) {
-                System.out.println("Invalid number: " + raw);
+                System.out.println("Invalid number: " + raw + " (type only the list number, e.g. 1)");
                 continue;
             }
             if (choice < 1 || choice > available.size()) {
@@ -122,7 +126,12 @@ public class RegisterAircraftModelUI extends AbstractUI {
                 continue;
             }
             final EngineModel selected = available.get(choice - 1);
-            names.add(selected.name());
+            System.out.println("Selected: " + selected.name());
+            if (!names.contains(selected.name())) {
+                names.add(selected.name());
+            } else {
+                System.out.println("Already selected: " + selected.name());
+            }
         }
 
         if (names.isEmpty()) {

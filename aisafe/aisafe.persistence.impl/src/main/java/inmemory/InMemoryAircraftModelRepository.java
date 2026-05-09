@@ -45,4 +45,11 @@ public class InMemoryAircraftModelRepository
                 && a.maker().name().equalsIgnoreCase(maker)).forEach(result::add);
         return result;
     }
+    
+    @Override
+    public List<AircraftModel> findAllAircraftModels(){
+        final List<AircraftModel> result = new ArrayList<>();
+        match(a -> true).forEach(result::add);
+        return result;
+    }
 }
