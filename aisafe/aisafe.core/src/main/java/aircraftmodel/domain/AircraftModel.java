@@ -42,6 +42,7 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
     private Double wingSpan;
     private Double dragCoefficient;
     private Double liftCoefficient;
+    private int numberOfEngines;
     private String modelName;
 
     @Embedded
@@ -71,6 +72,7 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
             final Double dragCoefficient,
             final Double liftCoefficient,
             final String modelName,
+            final int numberOfEngines,
             final AircraftModelMaker maker) {
 
         Preconditions.noneNull(
@@ -92,6 +94,10 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
             throw new IllegalArgumentException("Maximum zero fuel weight must be less than or equal to maximum take-off weight");
         }
 
+        if (numberOfEngines < 0) {
+            throw new IllegalArgumentException("Number of engines cannot be negative");
+        }
+
         this.aircraftModelId = AircraftModelId.newId();
         this.type = type;
         this.emptyWeight = emptyWeight;
@@ -105,6 +111,7 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
         this.dragCoefficient = dragCoefficient;
         this.liftCoefficient = liftCoefficient;
         this.modelName = modelName;
+        this.numberOfEngines = numberOfEngines;
         this.maker = maker;
     }
 
@@ -186,6 +193,8 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
     public AircraftModelMaker maker() {
         return maker;
     }
+
+    public int numberOfEngines() { return numberOfEngines; }
 
     public Set<EngineModel> supportedEngineModels() {
         return Set.copyOf(supportedEngineModels);

@@ -5,9 +5,8 @@ import airtransportcompany.repositories.AirTransportCompanyRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import shared.domain.AirTransportCompanyId;
 
-
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public class JpaAirTransportCompanyRepository
         extends BaseJpaRepositoryBase<AirTransportCompany, AirTransportCompanyId, AirTransportCompanyId>

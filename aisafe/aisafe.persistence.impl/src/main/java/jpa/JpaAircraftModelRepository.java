@@ -41,4 +41,9 @@ public class JpaAircraftModelRepository
         return match("LOWER(e.modelName) = LOWER(:modelName) AND LOWER(e.maker.name) = LOWER(:makerName)",
                 Map.of("modelName", modelName, "makerName", makerName));
     }
+
+    @Override
+    public List<AircraftModel> findAllAircraftModels(){
+        return match("true", Map.of());
+    }
 }

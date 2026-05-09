@@ -50,6 +50,7 @@ public class ViewAircraftModelController {
                     model.wingSpan(),
                     model.dragCoefficient(),
                     model.liftCoefficient(),
+                    model.numberOfEngines(),
                     engineNames
             ));
         }
