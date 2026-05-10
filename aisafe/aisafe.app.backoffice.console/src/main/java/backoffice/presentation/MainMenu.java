@@ -15,13 +15,10 @@ public class MainMenu extends AbstractUI {
     private static final String RETURN_LABEL = "Return";
     private static final int EXIT_OPTION = 0;
 
-    private static final int ENGINE_MODELS_OPTION = 1;
-    private static final int AIRCRAFT_MODELS_OPTION = 2;
-    private static final int AIRPORTS_OPTION = 3;
-
-    private static final int REGISTER_ENGINE_MODEL_OPTION = 1;
-    private static final int LIST_ENGINE_MODELS_OPTION = 2;
-    private static final int DELETE_ENGINE_MODEL_OPTION = 3;
+    private static final int USERS_OPTION = 1;
+    private static final int ENGINE_MODELS_OPTION = 2;
+    private static final int AIRCRAFT_MODELS_OPTION = 3;
+    private static final int AIRPORTS_OPTION = 4;
 
     private final AuthorizationService authz = AuthzRegistry.authorizationService();
 
@@ -48,6 +45,11 @@ public class MainMenu extends AbstractUI {
 
     private Menu buildMainMenu() {
         final var mainMenu = new Menu();
+
+        if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.ADMIN)) {
+            mainMenu.addItem(USERS_OPTION, "Users Management",
+                    new backoffice.presentation.user.UsersMenuAction());
+        }
 
         if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.BACKOFFICE_OPERATOR)) {
             mainMenu.addItem(ENGINE_MODELS_OPTION, "Engine Models",

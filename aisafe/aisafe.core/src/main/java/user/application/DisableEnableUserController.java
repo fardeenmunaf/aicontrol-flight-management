@@ -5,7 +5,11 @@ import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import eapli.framework.infrastructure.authz.domain.model.Username;
 
 import auth.domain.AISafeRoles;
+import user.domain.User;
 import user.repository.UserRepository;
+
+import java.util.List;
+import java.util.stream.StreamSupport;
 
 public class DisableEnableUserController {
 
@@ -15,6 +19,13 @@ public class DisableEnableUserController {
 
     public DisableEnableUserController(final UserRepository userRepository) {
         this.userRepository = userRepository;
+    }
+
+    public List<User> allUsers() {
+        authz.ensureAuthenticatedUserHasAnyOf(AISafeRoles.ADMIN);
+        return StreamSupport
+                .stream(userRepository.findAll().spliterator(), false)
+                .toList();
     }
 
     public void disableUser(final String email) {
