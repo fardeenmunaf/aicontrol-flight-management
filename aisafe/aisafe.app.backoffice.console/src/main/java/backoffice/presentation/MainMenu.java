@@ -19,6 +19,7 @@ public class MainMenu extends AbstractUI {
     private static final int AIRCRAFT_MODELS_OPTION = 3;
     private static final int AIRPORTS_OPTION = 4;
     private static final int CUSTOMER_COLLABORATORS_OPTION = 5;
+    private static final int AIR_TRANSPORT_COMPANIES_OPTION = 6;
 
     private final AuthorizationService authz = AuthzRegistry.authorizationService();
 
@@ -60,6 +61,8 @@ public class MainMenu extends AbstractUI {
                     new backoffice.presentation.airport.AirportsMenuAction());
             mainMenu.addItem(CUSTOMER_COLLABORATORS_OPTION, "Customer Collaborators",
                     new backoffice.presentation.customercollaborator.CustomerCollaboratorsMenuAction());
+            mainMenu.addItem(AIR_TRANSPORT_COMPANIES_OPTION, "Air Transport Companies",
+                    new backoffice.presentation.airtransportcompany.AirTransportCompaniesMenuAction());
         }
 
         mainMenu.addItem(EXIT_OPTION, "Exit", new ExitWithMessageAction("Thank you for using the AISafe Backoffice."));
