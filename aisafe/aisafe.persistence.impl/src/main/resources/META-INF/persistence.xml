@@ -36,7 +36,7 @@
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver"   value="org.h2.Driver"/>
-            <property name="jakarta.persistence.jdbc.url"      value="jdbc:h2:./aisafe_db;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER,VALUE"/>
+            <property name="jakarta.persistence.jdbc.url"      value="jdbc:h2:tcp://localhost:9092/mem:aisafe;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER,VALUE"/>
             <property name="jakarta.persistence.jdbc.user"     value="admin"/>
             <property name="jakarta.persistence.jdbc.password" value="admin"/>
 
