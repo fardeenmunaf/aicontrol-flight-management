@@ -18,7 +18,7 @@ public class DisableEnableUserUI extends AbstractUI {
         final Iterable<User> users = controller.allUsers();
 
         final SelectWidget<User> selector = new SelectWidget<>("Select a User to disable/enable:", users,
-                user -> String.format("%s (%s) - Status: %s", user.email(), user.name(), user.status()));
+                new UserPrinter());
         selector.show();
         final User selected = selector.selectedElement();
 
