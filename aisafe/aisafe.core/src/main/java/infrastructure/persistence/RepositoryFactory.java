@@ -77,6 +77,10 @@ public interface RepositoryFactory {
      */
     AirControlAreaRepository airControlAreas();
 
+    airtransportcompany.repositories.AirTransportCompanyRepository airTransportCompanies(TransactionalContext autoTx);
+
+    airtransportcompany.repositories.AirTransportCompanyRepository airTransportCompanies();
+
     AirControlAreaRepository airControlAreas(TransactionalContext autoTx);
 
     AirportRepository airports();

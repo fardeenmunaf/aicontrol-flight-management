@@ -14,8 +14,6 @@ import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
 import pilot.repository.PilotRepository;
 import simulation.repository.SimulationRepository;
-import aircontrolarea.repositories.AirControlAreaRepository;
-import airtransportcompany.repositories.AirTransportCompanyRepository;
 
 /**
  * In-memory implementation of RepositoryFactory.
