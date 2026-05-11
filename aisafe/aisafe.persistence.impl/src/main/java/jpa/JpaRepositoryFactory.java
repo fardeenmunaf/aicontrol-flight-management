@@ -2,6 +2,7 @@ package jpa;
 
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
+import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import eapli.framework.infrastructure.repositories.impl.jpa.JpaAutoTxRepository;
 import user.repository.UserRepository;
@@ -172,5 +173,14 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     @Override
     public SimulationRepository simulations(final TransactionalContext autoTx) {
         return new JpaSimulationRepository(autoTx);
+    }
+
+    @Override
+    public CustomerCollaboratorRepository customerCollaborators() {
+        return new JpaCustomerCollaboratorRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+    @Override
+    public CustomerCollaboratorRepository customerCollaborators(final TransactionalContext autoTx) {
+        return new JpaCustomerCollaboratorRepository(autoTx);
     }
 }

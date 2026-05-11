@@ -2,6 +2,7 @@ package inmemory;
 
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
+import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import enginemodel.repositories.EngineModelRepository;
 import user.repository.UserRepository;
@@ -171,4 +172,10 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
         return simulations(null);
     }
 
+    @Override
+    public CustomerCollaboratorRepository customerCollaborators(final TransactionalContext autoTx) {
+        return new InMemoryCustomerCollaboratorRepository();
+    }
+    @Override
+    public CustomerCollaboratorRepository customerCollaborators() {return customerCollaborators(null);}
 }
