@@ -132,6 +132,16 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     }
 
     @Override
+    public airtransportcompany.repositories.AirTransportCompanyRepository airTransportCompanies() {
+        return new JpaAirTransportCompanyRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public airtransportcompany.repositories.AirTransportCompanyRepository airTransportCompanies(final TransactionalContext autoTx) {
+        return new JpaAirTransportCompanyRepository(autoTx);
+    }
+
+    @Override
     public AirportRepository airports() {
         return new JpaAirportRepository(PersistenceSettings.getPersistenceUnitName());
     }
