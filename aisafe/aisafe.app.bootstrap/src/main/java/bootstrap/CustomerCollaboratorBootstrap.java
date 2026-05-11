@@ -50,21 +50,17 @@ public class CustomerCollaboratorBootstrap {
             return;
         }
 
-        registerSystemUser(email, "Password123", "ATCC One", Role.AIR_TRANSPORT_COMPANY_COLLABORATOR);
-
-        final User domainUser = userRepository.save(new User(
-                email, "ATCC One", "910000001", null, null, "ACTIVE",
-                Set.of(Role.AIR_TRANSPORT_COMPANY_COLLABORATOR),
-                UserId.valueOf(email)
-        ));
-
-        collaboratorRepository.save(new CustomerCollaborator(
-                domainUser.identity(),
+        registerUserAndCollaborator(
+                email,
+                "Password123",
+                "ATCC One",
+                "910000001",
+                Role.AIR_TRANSPORT_COMPANY_COLLABORATOR,
                 CustomerType.AIR_TRANSPORT_COMPANY,
                 id,
                 null,
                 "Operations Manager"
-        ));
+        );
     }
 
     private void registerAirControlAreaCollaborator() {
@@ -80,34 +76,57 @@ public class CustomerCollaboratorBootstrap {
             return;
         }
 
-        registerSystemUser(email, "Password123", "FCO One", Role.FLIGHT_CONTROL_OPERATOR);
-
-        final User domainUser = userRepository.save(new User(
-                email, "FCO One", "920000001", null, null, "ACTIVE",
-                Set.of(Role.FLIGHT_CONTROL_OPERATOR),
-                UserId.valueOf(email)
-        ));
-
-        collaboratorRepository.save(new CustomerCollaborator(
-                domainUser.identity(),
+        registerUserAndCollaborator(
+                email,
+                "Password123",
+                "FCO One",
+                "920000001",
+                Role.FLIGHT_CONTROL_OPERATOR,
                 CustomerType.AIR_CONTROL_AREA,
                 null,
                 id,
                 "Area Supervisor"
-        ));
+        );
     }
 
-    private void registerSystemUser(final String email, final String rawPassword,
-                                    final String name, final Role role) {
+    private void registerUserAndCollaborator(final String email,
+                                             final String rawPassword,
+                                             final String name,
+                                             final String phoneNumber,
+                                             final Role domainRole,
+                                             final CustomerType customerType,
+                                             final AirTransportCompanyId airTransportCompanyId,
+                                             final AirControlAreaId airControlAreaId,
+                                             final String position) {
         final var parts = splitName(name);
+
         AuthzRegistry.userService().registerNewUser(
                 email,
                 rawPassword,
                 parts[0],
                 parts[1],
                 email,
-                Set.of(toAuthzRole(role))
+                Set.of(toAuthzRole(domainRole))
         );
+
+        final User user = userRepository.save(new User(
+                email,
+                name,
+                phoneNumber,
+                null,
+                null,
+                "ACTIVE",
+                Set.of(domainRole),
+                UserId.valueOf(email)
+        ));
+
+        collaboratorRepository.save(new CustomerCollaborator(
+                user.identity(),
+                customerType,
+                airTransportCompanyId,
+                airControlAreaId,
+                position
+        ));
     }
 
     private String[] splitName(final String name) {
