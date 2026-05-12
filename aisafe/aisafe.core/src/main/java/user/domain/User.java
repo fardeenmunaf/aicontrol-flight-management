@@ -118,4 +118,68 @@ public class User implements AggregateRoot<UserId> {
     public UserId userId() {
         return userId;
     }
+
+    /**
+     * Updates the user's email address.
+     * Validates the email format before updating.
+     *
+     * @param newEmail the new email address
+     * @throws IllegalArgumentException if the email format is invalid
+     */
+    public void updateEmail(final String newEmail) {
+        validateEmail(newEmail);
+        this.email = newEmail;
+    }
+
+    /**
+     * Updates the user's phone number.
+     * Validates the phone number format before updating.
+     *
+     * @param newPhoneNumber the new phone number
+     * @throws IllegalArgumentException if the phone number format is invalid
+     */
+    public void updatePhoneNumber(final String newPhoneNumber) {
+        validatePhoneNumber(newPhoneNumber);
+        this.phoneNumber = newPhoneNumber;
+    }
+
+    /**
+     * Validates email format using a simple pattern.
+     * Email must contain @ and at least one dot after @.
+     *
+     * @param email the email to validate
+     * @throws IllegalArgumentException if email format is invalid
+     */
+    private static void validateEmail(final String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
+        
+        final String trimmedEmail = email.trim();
+        final String emailPattern = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
+        if (!trimmedEmail.matches(emailPattern)) {
+            throw new IllegalArgumentException("Email format is invalid");
+        }
+    }
+
+    /**
+     * Validates phone number format.
+     * Phone number must contain only digits, spaces, hyphens, or plus sign,
+     * and have at least 7 digits.
+     *
+     * @param phoneNumber the phone number to validate
+     * @throws IllegalArgumentException if phone number format is invalid
+     */
+    private static void validatePhoneNumber(final String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException("Phone number cannot be null or empty");
+        }
+        
+        final String trimmedPhone = phoneNumber.trim();
+        // Phone number format: must contain at least 7 digits, can include spaces, hyphens, +
+        final String phonePattern = "^[+]?[0-9]{1,3}[\\s-]?[0-9\\s-]{5,}$";
+        if (!trimmedPhone.matches(phonePattern)) {
+            throw new IllegalArgumentException("Phone number format is invalid");
+        }
+    }
 }
