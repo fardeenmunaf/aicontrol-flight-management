@@ -80,5 +80,10 @@ public class AirTransportCompany implements AggregateRoot<AirTransportCompanyId>
     public String icaoCode() {
         return icaoCode;
     }
+
+    @Override
+    public String toString() {
+        return String.format("%s | IATA: %s | ICAO: %s", name, iataCode, icaoCode);
+    }
 }
 

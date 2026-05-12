@@ -80,5 +80,16 @@ public class AirControlArea implements AggregateRoot<AirControlAreaId> {
     public String geographicBoundaries() {
         return geographicBoundaries;
     }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "Code: %s | MinFuel: %.2f | Boundaries: %s",
+                areaCode,
+                minimumRequiredArrivalFuel,
+                geographicBoundaries
+        );
+    }
+
 }
 
