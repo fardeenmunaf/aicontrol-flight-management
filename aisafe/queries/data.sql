@@ -64,7 +64,7 @@ VALUES
 -- TOPOGRAPHY
 -- ============================================================
 
-INSERT INTO AirControlArea (airControlAreaId_value, areaCode, minimumRequiredArrivalFuel, geographicBoundaries, version)
+INSERT INTO AirControlArea (value, areaCode, minimumRequiredArrivalFuel, geographicBoundaries, version)
 VALUES
     ('aca-001', 'ACA-N', 500.0, 'NORTH_AREA', 0),
     ('aca-002', 'ACA-S', 600.0, 'SOUTH_AREA', 0),
@@ -73,7 +73,7 @@ VALUES
 
 INSERT INTO Airport (
     airport_id, name, town, country, iataCode, icaoCode, elevation,
-    coordinates_latitude, coordinates_longitude, airControlArea_airControlAreaId_value, version
+    coordinates_latitude, coordinates_longitude, airControlArea_value, version
 )
 VALUES
     ('apt-001', 'Lisbon Portela', 'Lisbon', 'Portugal', 'LIS', 'LPPT', 114.0, 38.7742, -9.1342, 'aca-001', 0),
@@ -224,7 +224,7 @@ VALUES
 
 INSERT INTO Simulation (
     simulationId_value, startDateTime, endDateTime, geographicArea, safetyThresholds,
-    performanceSettings, status, airControlArea_airControlAreaId_value, version
+    performanceSettings, status, airControlArea_value, version
 )
 VALUES
     ('sim-001', '2026-05-12 08:00:00', '2026-05-12 10:30:00', 'AREA-N', 'STD', 'DEFAULT', 'CREATED', 'aca-001', 0),
@@ -276,3 +276,4 @@ VALUES
     ('sr-001', 2, 'PENDING', '2026-05-12 10:35:00', 'sim-001', 0),
     ('sr-002', 1, 'PASSED',  '2026-05-12 12:35:00', 'sim-002', 0),
     ('sr-003', 1, 'FAILED',  '2026-05-12 16:50:00', 'sim-003', 0);
+

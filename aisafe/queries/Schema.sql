@@ -95,25 +95,25 @@ CREATE SEQUENCE T_ROLEASSIGNMENT_SEQ START WITH 1 INCREMENT BY 50;
 -- ============================================================
 
 CREATE TABLE AirControlArea (
-                                airControlAreaId_value     VARCHAR(255) PRIMARY KEY,
-                                areaCode                   VARCHAR(255) NOT NULL,
-                                minimumRequiredArrivalFuel DOUBLE PRECISION NOT NULL,
-                                geographicBoundaries       TEXT NOT NULL,
-                                version                    BIGINT
+    value                      VARCHAR(255) PRIMARY KEY,
+    areaCode                   VARCHAR(255) NOT NULL,
+    minimumRequiredArrivalFuel DOUBLE PRECISION NOT NULL,
+    geographicBoundaries       TEXT NOT NULL,
+    version                    BIGINT
 );
 
 CREATE TABLE Airport (
-                         airport_id                          VARCHAR(255) PRIMARY KEY,
-                         name                                VARCHAR(255) NOT NULL,
-                         town                                VARCHAR(255) NOT NULL,
-                         country                             VARCHAR(255) NOT NULL,
-                         iataCode                            VARCHAR(255) NOT NULL,
-                         icaoCode                            VARCHAR(255) NOT NULL,
-                         elevation                           DOUBLE PRECISION NOT NULL,
-                         coordinates_latitude                DOUBLE PRECISION NOT NULL,
-                         coordinates_longitude               DOUBLE PRECISION NOT NULL,
-                         airControlArea_airControlAreaId_value VARCHAR(255) NOT NULL REFERENCES AirControlArea(airControlAreaId_value),
-                         version                             BIGINT
+    airport_id                          VARCHAR(255) PRIMARY KEY,
+    name                                VARCHAR(255) NOT NULL,
+    town                                VARCHAR(255) NOT NULL,
+    country                             VARCHAR(255) NOT NULL,
+    iataCode                            VARCHAR(255) NOT NULL,
+    icaoCode                            VARCHAR(255) NOT NULL,
+    elevation                           DOUBLE PRECISION NOT NULL,
+    coordinates_latitude                DOUBLE PRECISION NOT NULL,
+    coordinates_longitude               DOUBLE PRECISION NOT NULL,
+    airControlArea_value                VARCHAR(255) NOT NULL REFERENCES AirControlArea(value),
+    version                             BIGINT
 );
 
 CREATE TABLE Node (
@@ -293,15 +293,15 @@ CREATE TABLE WeatherData (
 -- ============================================================
 
 CREATE TABLE Simulation (
-                            simulationId_value              VARCHAR(255) PRIMARY KEY,
-                            startDateTime                   TIMESTAMP,
-                            endDateTime                     TIMESTAMP,
-                            geographicArea                  TEXT,
-                            safetyThresholds                TEXT,
-                            performanceSettings             TEXT,
-                            status                          VARCHAR(255),
-                            airControlArea_airControlAreaId_value VARCHAR(255) REFERENCES AirControlArea(airControlAreaId_value),
-                            version                         BIGINT
+    simulationId_value              VARCHAR(255) PRIMARY KEY,
+    startDateTime                   TIMESTAMP,
+    endDateTime                     TIMESTAMP,
+    geographicArea                  TEXT,
+    safetyThresholds                TEXT,
+    performanceSettings             TEXT,
+    status                          VARCHAR(255),
+    airControlArea_value            VARCHAR(255) REFERENCES AirControlArea(value),
+    version                         BIGINT
 );
 
 CREATE TABLE Simulation_trackedFlights (
