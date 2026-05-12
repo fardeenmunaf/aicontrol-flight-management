@@ -54,7 +54,7 @@ class RegisterAirportControllerTest {
     // --- Success ---
 
     @Test
-    void shouldRegisterAirportSuccessfully() {
+    void ensureAirportWithValidDataIsRegistered() {
         final Airport result = ctrl().registerAirport(
                 "Porto Airport", "Porto", "Portugal",
                 "OPO", "LPPR", 69.0, 41.24, -8.67,
@@ -65,7 +65,7 @@ class RegisterAirportControllerTest {
     }
 
     @Test
-    void shouldNormalizeCodesOnRegister() {
+    void ensureCodesAreNormalizedOnRegister() {
         final Airport result = ctrl().registerAirport(
                 "Lisbon Airport", "Lisbon", "Portugal",
                 "lis", "lppt", 114.0, 38.77, -9.13,
@@ -77,7 +77,7 @@ class RegisterAirportControllerTest {
     // --- Duplicate codes ---
 
     @Test
-    void shouldThrowWhenIataAlreadyExists() {
+    void ensureDuplicateIataCodeIsRejected() {
         ctrl().registerAirport("Porto Airport", "Porto", "Portugal",
                 "OPO", "LPPR", 69.0, 41.24, -8.67, TEST_AREA.identity().toString());
         assertThrows(IllegalArgumentException.class, () ->
@@ -86,7 +86,7 @@ class RegisterAirportControllerTest {
     }
 
     @Test
-    void shouldThrowWhenIcaoAlreadyExists() {
+    void ensureDuplicateIcaoCodeIsRejected() {
         ctrl().registerAirport("Porto Airport", "Porto", "Portugal",
                 "OPO", "LPPR", 69.0, 41.24, -8.67, TEST_AREA.identity().toString());
         assertThrows(IllegalArgumentException.class, () ->
@@ -97,7 +97,7 @@ class RegisterAirportControllerTest {
     // --- Non-existent area ---
 
     @Test
-    void shouldThrowWhenAirControlAreaDoesNotExist() {
+    void ensureNonExistentAirControlAreaIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test Airport", "City", "Country",
                         "XYZ", "XYZW", 0.0, 0.0, 0.0, "NON-EXISTENT-AREA"));
@@ -106,21 +106,21 @@ class RegisterAirportControllerTest {
     // --- Invalid IATA/ICAO format ---
 
     @Test
-    void shouldThrowWhenIataHasWrongLength() {
+    void ensureIataWithWrongLengthIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "AB", "LPPR", 0.0, 0.0, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenIcaoHasWrongLength() {
+    void ensureIcaoWithWrongLengthIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "LPP", 0.0, 0.0, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenIataContainsDigits() {
+    void ensureIataWithDigitsIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "A1C", "LPPR", 0.0, 0.0, 0.0, TEST_AREA.identity().toString()));
@@ -129,21 +129,21 @@ class RegisterAirportControllerTest {
     // --- Invalid coordinates ---
 
     @Test
-    void shouldThrowWhenLatitudeExceedsRange() {
+    void ensureLatitudeAboveRangeIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "ABCD", 0.0, 91.0, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenLongitudeExceedsRange() {
+    void ensureLongitudeAboveRangeIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "ABCD", 0.0, 0.0, 181.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenLatitudeIsBelowRange() {
+    void ensureLatitudeBelowRangeIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "ABCD", 0.0, -91.0, 0.0, TEST_AREA.identity().toString()));
@@ -152,63 +152,63 @@ class RegisterAirportControllerTest {
     // --- Blank / null fields ---
 
     @Test
-    void shouldThrowWhenNameIsBlank() {
+    void ensureBlankNameIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("", "City", "Country",
                         "ABC", "ABCD", 0.0, 0.0, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenTownIsBlank() {
+    void ensureBlankTownIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "", "Country",
                         "ABC", "ABCD", 0.0, 0.0, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenCountryIsBlank() {
+    void ensureBlankCountryIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "",
                         "ABC", "ABCD", 0.0, 0.0, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenIataIsBlank() {
+    void ensureBlankIataIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "", "ABCD", 0.0, 0.0, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenIcaoIsBlank() {
+    void ensureBlankIcaoIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "", 0.0, 0.0, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenElevationIsNull() {
+    void ensureNullElevationIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "ABCD", null, 0.0, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenLatitudeIsNull() {
+    void ensureNullLatitudeIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "ABCD", 0.0, null, 0.0, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenLongitudeIsNull() {
+    void ensureNullLongitudeIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "ABCD", 0.0, 0.0, null, TEST_AREA.identity().toString()));
     }
 
     @Test
-    void shouldThrowWhenAreaIdIsBlank() {
+    void ensureBlankAreaIdIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "ABCD", 0.0, 0.0, 0.0, ""));
@@ -217,7 +217,7 @@ class RegisterAirportControllerTest {
     // --- Authorization ---
 
     @Test
-    void shouldThrowWhenUserHasNoRequiredRole() {
+    void ensureUnauthorizedUserCannotRegisterAirport() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
         assertThrows(Exception.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
@@ -254,9 +254,7 @@ class RegisterAirportControllerTest {
             extends InMemoryDomainRepository<AirControlArea, AirControlAreaId>
             implements AirControlAreaRepository {
 
-        StubAirControlAreaRepository() {
-            save(TEST_AREA);
-        }
+        StubAirControlAreaRepository() { save(TEST_AREA); }
 
         @Override public List<AirControlArea> findByAreaCode(final String c) { return List.of(); }
         @Override public List<AirControlArea> findByMinimumRequiredArrivalFuelGreaterThanEqual(final double v) { return List.of(); }

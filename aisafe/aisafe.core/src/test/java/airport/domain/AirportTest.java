@@ -17,7 +17,7 @@ class AirportTest {
     // --- Construction ---
 
     @Test
-    void shouldCreateAirportWithValidData() {
+    void ensureAirportWithValidDataIsCreated() {
         final Airport a = validAirport();
         assertEquals("Porto Airport", a.name());
         assertEquals("Porto", a.town());
@@ -31,19 +31,19 @@ class AirportTest {
     }
 
     @Test
-    void shouldNormalizeIataToUppercase() {
+    void ensureIataCodeIsNormalizedToUppercase() {
         final Airport a = new Airport("Test", "City", "Country", "opo", "LPPR", 0.0, COORDS, AREA);
         assertEquals("OPO", a.iataCode());
     }
 
     @Test
-    void shouldNormalizeIcaoToUppercase() {
+    void ensureIcaoCodeIsNormalizedToUppercase() {
         final Airport a = new Airport("Test", "City", "Country", "OPO", "lppr", 0.0, COORDS, AREA);
         assertEquals("LPPR", a.icaoCode());
     }
 
     @Test
-    void shouldAcceptZeroElevation() {
+    void ensureZeroElevationIsAccepted() {
         assertDoesNotThrow(() ->
                 new Airport("Test", "City", "Country", "AAA", "AAAA", 0.0, COORDS, AREA));
     }
@@ -51,19 +51,19 @@ class AirportTest {
     // --- IATA validation ---
 
     @Test
-    void shouldThrowWhenIataHasFewerThan3Letters() {
+    void ensureIataWithFewerThan3LettersIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "Country", "AB", "LPPR", 0.0, COORDS, AREA));
     }
 
     @Test
-    void shouldThrowWhenIataHasMoreThan3Letters() {
+    void ensureIataWithMoreThan3LettersIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "Country", "ABCD", "LPPR", 0.0, COORDS, AREA));
     }
 
     @Test
-    void shouldThrowWhenIataContainsDigits() {
+    void ensureIataWithDigitsIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "Country", "A1B", "LPPR", 0.0, COORDS, AREA));
     }
@@ -71,19 +71,19 @@ class AirportTest {
     // --- ICAO validation ---
 
     @Test
-    void shouldThrowWhenIcaoHasFewerThan4Letters() {
+    void ensureIcaoWithFewerThan4LettersIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "Country", "OPO", "LPP", 0.0, COORDS, AREA));
     }
 
     @Test
-    void shouldThrowWhenIcaoHasMoreThan4Letters() {
+    void ensureIcaoWithMoreThan4LettersIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "Country", "OPO", "LPPRT", 0.0, COORDS, AREA));
     }
 
     @Test
-    void shouldThrowWhenIcaoContainsDigits() {
+    void ensureIcaoWithDigitsIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "Country", "OPO", "L1PR", 0.0, COORDS, AREA));
     }
@@ -91,7 +91,7 @@ class AirportTest {
     // --- Elevation ---
 
     @Test
-    void shouldThrowWhenElevationIsNegative() {
+    void ensureNegativeElevationIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "Country", "OPO", "LPPR", -1.0, COORDS, AREA));
     }
@@ -99,39 +99,39 @@ class AirportTest {
     // --- Null fields ---
 
     @Test
-    void shouldThrowWhenNameIsNull() {
+    void ensureNullNameIsRejected() {
         assertThrows(Exception.class, () ->
                 new Airport(null, "City", "Country", "OPO", "LPPR", 0.0, COORDS, AREA));
     }
 
     @Test
-    void shouldThrowWhenAreaIsNull() {
+    void ensureNullAreaIsRejected() {
         assertThrows(Exception.class, () ->
                 new Airport("Test", "City", "Country", "OPO", "LPPR", 0.0, COORDS, null));
     }
 
     @Test
-    void shouldThrowWhenCoordinatesIsNull() {
+    void ensureNullCoordinatesIsRejected() {
         assertThrows(Exception.class, () ->
                 new Airport("Test", "City", "Country", "OPO", "LPPR", 0.0, null, AREA));
     }
 
-    // --- Empty string fields (distinct from null — triggers StringPredicates branch) ---
+    // --- Empty string fields ---
 
     @Test
-    void shouldThrowWhenNameIsEmpty() {
+    void ensureEmptyNameIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("", "City", "Country", "OPO", "LPPR", 0.0, COORDS, AREA));
     }
 
     @Test
-    void shouldThrowWhenTownIsEmpty() {
+    void ensureEmptyTownIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "", "Country", "OPO", "LPPR", 0.0, COORDS, AREA));
     }
 
     @Test
-    void shouldThrowWhenCountryIsEmpty() {
+    void ensureEmptyCountryIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "", "OPO", "LPPR", 0.0, COORDS, AREA));
     }
@@ -139,7 +139,7 @@ class AirportTest {
     // --- All getters ---
 
     @Test
-    void shouldExposeAllGetters() {
+    void ensureAllGettersReturnExpectedValues() {
         final Airport a = validAirport();
         assertNotNull(a.airportId());
         assertEquals(a.identity(), a.airportId());
@@ -152,13 +152,13 @@ class AirportTest {
     // --- sameAs ---
 
     @Test
-    void shouldBeSameAsItself() {
+    void ensureAirportIsSameAsItself() {
         final Airport a = validAirport();
         assertTrue(a.sameAs(a));
     }
 
     @Test
-    void shouldNotBeSameAsDifferentAirport() {
+    void ensureDifferentAirportsAreNotSameAs() {
         final Airport a1 = new Airport("Porto", "Porto", "PT", "OPO", "LPPR", 69.0, COORDS, AREA);
         final Airport a2 = new Airport("Lisbon", "Lisbon", "PT", "LIS", "LPPT", 114.0, COORDS, AREA);
         assertFalse(a1.sameAs(a2));
@@ -167,19 +167,19 @@ class AirportTest {
     // --- Equality ---
 
     @Test
-    void shouldBeEqualToItself() {
+    void ensureAirportIsEqualToItself() {
         final Airport a = validAirport();
         assertEquals(a, a);
         assertEquals(a.hashCode(), a.hashCode());
     }
 
     @Test
-    void shouldNotBeEqualToNull() {
+    void ensureAirportIsNotEqualToNull() {
         assertNotEquals(validAirport(), null);
     }
 
     @Test
-    void twoDifferentAirportsShouldNotBeEqual() {
+    void ensureTwoDifferentAirportsAreNotEqual() {
         final Airport a1 = new Airport("Porto", "Porto", "PT", "OPO", "LPPR", 69.0, COORDS, AREA);
         final Airport a2 = new Airport("Lisbon", "Lisbon", "PT", "LIS", "LPPT", 114.0, COORDS, AREA);
         assertNotEquals(a1, a2);

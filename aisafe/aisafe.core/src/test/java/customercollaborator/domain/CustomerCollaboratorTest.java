@@ -16,7 +16,7 @@ class CustomerCollaboratorTest {
     // --- Construction ---
 
     @Test
-    void shouldCreateActiveCollaboratorForAirTransportCompany() {
+    void ensureCollaboratorForAirTransportCompanyIsCreatedActive() {
         final CustomerCollaborator c = new CustomerCollaborator(
                 USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager");
         assertTrue(c.isActive());
@@ -29,7 +29,7 @@ class CustomerCollaboratorTest {
     }
 
     @Test
-    void shouldCreateActiveCollaboratorForAirControlArea() {
+    void ensureCollaboratorForAirControlAreaIsCreatedActive() {
         final CustomerCollaborator c = new CustomerCollaborator(
                 USER, CustomerType.AIR_CONTROL_AREA, null, AREA, "Supervisor");
         assertTrue(c.isActive());
@@ -40,7 +40,7 @@ class CustomerCollaboratorTest {
     }
 
     @Test
-    void shouldTrimPositionOnCreation() {
+    void ensurePositionIsTrimmedOnCreation() {
         final CustomerCollaborator c = new CustomerCollaborator(
                 USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "  Manager  ");
         assertEquals("Manager", c.position());
@@ -49,25 +49,25 @@ class CustomerCollaboratorTest {
     // --- Null / blank validation ---
 
     @Test
-    void shouldThrowWhenUserIdIsNull() {
+    void ensureNullUserIdIsRejected() {
         assertThrows(Exception.class, () ->
                 new CustomerCollaborator(null, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager"));
     }
 
     @Test
-    void shouldThrowWhenCustomerTypeIsNull() {
+    void ensureNullCustomerTypeIsRejected() {
         assertThrows(Exception.class, () ->
                 new CustomerCollaborator(USER, null, COMPANY, null, "Manager"));
     }
 
     @Test
-    void shouldThrowWhenPositionIsNull() {
+    void ensureNullPositionIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new CustomerCollaborator(USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, null));
     }
 
     @Test
-    void shouldThrowWhenPositionIsBlank() {
+    void ensureBlankPositionIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new CustomerCollaborator(USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "   "));
     }
@@ -75,25 +75,25 @@ class CustomerCollaboratorTest {
     // --- Invariant validation ---
 
     @Test
-    void shouldThrowForAirTransportCompanyWithNullCompanyId() {
+    void ensureAirTransportCompanyWithNullCompanyIdIsRejected() {
         assertThrows(Exception.class, () ->
                 new CustomerCollaborator(USER, CustomerType.AIR_TRANSPORT_COMPANY, null, null, "Manager"));
     }
 
     @Test
-    void shouldThrowForAirTransportCompanyWithAreaIdSet() {
+    void ensureAirTransportCompanyWithAreaIdSetIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new CustomerCollaborator(USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, AREA, "Manager"));
     }
 
     @Test
-    void shouldThrowForAirControlAreaWithNullAreaId() {
+    void ensureAirControlAreaWithNullAreaIdIsRejected() {
         assertThrows(Exception.class, () ->
                 new CustomerCollaborator(USER, CustomerType.AIR_CONTROL_AREA, null, null, "Supervisor"));
     }
 
     @Test
-    void shouldThrowForAirControlAreaWithCompanyIdSet() {
+    void ensureAirControlAreaWithCompanyIdSetIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new CustomerCollaborator(USER, CustomerType.AIR_CONTROL_AREA, COMPANY, AREA, "Supervisor"));
     }
@@ -101,7 +101,7 @@ class CustomerCollaboratorTest {
     // --- Disable ---
 
     @Test
-    void shouldDisableActiveCollaborator() {
+    void ensureActiveCollaboratorCanBeDisabled() {
         final CustomerCollaborator c = new CustomerCollaborator(
                 USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager");
         assertTrue(c.isActive());
@@ -110,7 +110,7 @@ class CustomerCollaboratorTest {
     }
 
     @Test
-    void shouldThrowWhenDisablingAlreadyDisabledCollaborator() {
+    void ensureDisablingAlreadyDisabledCollaboratorIsRejected() {
         final CustomerCollaborator c = new CustomerCollaborator(
                 USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager");
         c.disable();
@@ -120,7 +120,7 @@ class CustomerCollaboratorTest {
     // --- Equality / identity ---
 
     @Test
-    void shouldBeEqualToItself() {
+    void ensureCollaboratorIsEqualToItself() {
         final CustomerCollaborator c = new CustomerCollaborator(
                 USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager");
         assertEquals(c, c);
@@ -128,14 +128,14 @@ class CustomerCollaboratorTest {
     }
 
     @Test
-    void shouldNotBeEqualToNull() {
+    void ensureCollaboratorIsNotEqualToNull() {
         final CustomerCollaborator c = new CustomerCollaborator(
                 USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager");
         assertNotEquals(c, null);
     }
 
     @Test
-    void twoDifferentCollaboratorsShouldNotBeEqual() {
+    void ensureTwoDifferentCollaboratorsAreNotEqual() {
         final CustomerCollaborator c1 = new CustomerCollaborator(
                 USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager");
         final CustomerCollaborator c2 = new CustomerCollaborator(

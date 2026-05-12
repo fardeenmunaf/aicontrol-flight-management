@@ -38,6 +38,11 @@ class RegisterCustomerCollaboratorControllerTest {
     private static final AirControlArea TEST_AREA =
             new AirControlArea("PT-TEST", 100.0, "Test Boundaries");
 
+    private final StubUserRepository userRepo = new StubUserRepository();
+    private final StubCollaboratorRepository collabRepo = new StubCollaboratorRepository();
+    private final StubAirTransportCompanyRepository companyRepo = new StubAirTransportCompanyRepository();
+    private final StubAirControlAreaRepository areaRepo = new StubAirControlAreaRepository();
+
     @BeforeAll
     static void setupAuth() {
         try {
@@ -46,11 +51,6 @@ class RegisterCustomerCollaboratorControllerTest {
         safeRegister(OPERATOR_EMAIL, PASSWORD, AISafeRoles.BACKOFFICE_OPERATOR);
         safeRegister(PILOT_EMAIL, PASSWORD, AISafeRoles.PILOT);
     }
-
-    private final StubUserRepository userRepo = new StubUserRepository();
-    private final StubCollaboratorRepository collabRepo = new StubCollaboratorRepository();
-    private final StubAirTransportCompanyRepository companyRepo = new StubAirTransportCompanyRepository();
-    private final StubAirControlAreaRepository areaRepo = new StubAirControlAreaRepository();
 
     @BeforeEach
     void resetState() {
@@ -61,14 +61,13 @@ class RegisterCustomerCollaboratorControllerTest {
 
     private RegisterCustomerCollaboratorController newController() {
         return new RegisterCustomerCollaboratorController(
-                userRepo, collabRepo, companyRepo, areaRepo
-        );
+                userRepo, collabRepo, companyRepo, areaRepo);
     }
 
     // --- Success cases ---
 
     @Test
-    void shouldRegisterCollaboratorForAirTransportCompany() {
+    void ensureCollaboratorForAirTransportCompanyIsRegistered() {
         final CustomerCollaborator result = newController().registerForAirTransportCompany(
                 TEST_COMPANY.identity().toString(),
                 "new1@company.com", PASSWORD, "John Doe", "910000001", "Manager");
@@ -77,7 +76,7 @@ class RegisterCustomerCollaboratorControllerTest {
     }
 
     @Test
-    void shouldRegisterCollaboratorForAirControlArea() {
+    void ensureCollaboratorForAirControlAreaIsRegistered() {
         final CustomerCollaborator result = newController().registerForAirControlArea(
                 TEST_AREA.identity().toString(),
                 "new2@area.com", PASSWORD, "Jane Doe", "920000001", "Supervisor");
@@ -86,7 +85,7 @@ class RegisterCustomerCollaboratorControllerTest {
     }
 
     @Test
-    void shouldHandleSingleWordName() {
+    void ensureSingleWordNameIsHandled() {
         final CustomerCollaborator result = newController().registerForAirTransportCompany(
                 TEST_COMPANY.identity().toString(),
                 "singlename@company.com", PASSWORD, "John", "930000001", "Pilot");
@@ -96,7 +95,7 @@ class RegisterCustomerCollaboratorControllerTest {
     // --- Duplicate email ---
 
     @Test
-    void shouldThrowWhenEmailAlreadyExists() {
+    void ensureDuplicateEmailIsRejected() {
         userRepo.preLoad("existing@test.com");
         assertThrows(IllegalArgumentException.class, () ->
                 newController().registerForAirTransportCompany(
@@ -107,14 +106,14 @@ class RegisterCustomerCollaboratorControllerTest {
     // --- Non-existent customer ---
 
     @Test
-    void shouldThrowWhenCompanyDoesNotExist() {
+    void ensureNonExistentCompanyIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 newController().registerForAirTransportCompany(
                         "non-existent-id", "new3@test.com", PASSWORD, "John Doe", "910000001", "Manager"));
     }
 
     @Test
-    void shouldThrowWhenAreaDoesNotExist() {
+    void ensureNonExistentAreaIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 newController().registerForAirControlArea(
                         "non-existent-id", "new4@test.com", PASSWORD, "Jane Doe", "920000001", "Supervisor"));
@@ -123,35 +122,35 @@ class RegisterCustomerCollaboratorControllerTest {
     // --- Field validation ---
 
     @Test
-    void shouldThrowWhenEmailIsBlank() {
+    void ensureBlankEmailIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 newController().registerForAirTransportCompany(
                         TEST_COMPANY.identity().toString(), "", PASSWORD, "John Doe", "910000001", "Manager"));
     }
 
     @Test
-    void shouldThrowWhenPasswordIsBlank() {
+    void ensureBlankPasswordIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 newController().registerForAirTransportCompany(
                         TEST_COMPANY.identity().toString(), "a@b.com", "", "John Doe", "910000001", "Manager"));
     }
 
     @Test
-    void shouldThrowWhenNameIsBlank() {
+    void ensureBlankNameIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 newController().registerForAirTransportCompany(
                         TEST_COMPANY.identity().toString(), "a@b.com", PASSWORD, "", "910000001", "Manager"));
     }
 
     @Test
-    void shouldThrowWhenPhoneIsBlank() {
+    void ensureBlankPhoneIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 newController().registerForAirTransportCompany(
                         TEST_COMPANY.identity().toString(), "a@b.com", PASSWORD, "John Doe", "", "Manager"));
     }
 
     @Test
-    void shouldThrowWhenPositionIsBlank() {
+    void ensureBlankPositionIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 newController().registerForAirTransportCompany(
                         TEST_COMPANY.identity().toString(), "a@b.com", PASSWORD, "John Doe", "910000001", ""));
@@ -160,7 +159,7 @@ class RegisterCustomerCollaboratorControllerTest {
     // --- Authorization ---
 
     @Test
-    void shouldThrowWhenUserHasNoRequiredRole() {
+    void ensureUnauthorizedUserCannotRegisterCollaborator() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
         assertThrows(Exception.class, () ->
                 newController().registerForAirTransportCompany(
@@ -225,9 +224,7 @@ class RegisterCustomerCollaboratorControllerTest {
             extends InMemoryDomainRepository<AirTransportCompany, AirTransportCompanyId>
             implements AirTransportCompanyRepository {
 
-        StubAirTransportCompanyRepository() {
-            save(TEST_COMPANY);
-        }
+        StubAirTransportCompanyRepository() { save(TEST_COMPANY); }
 
         @Override public List<AirTransportCompany> findByName(final String n) { return List.of(); }
         @Override public List<AirTransportCompany> findByIataCode(final String c) { return List.of(); }
@@ -238,9 +235,7 @@ class RegisterCustomerCollaboratorControllerTest {
             extends InMemoryDomainRepository<AirControlArea, AirControlAreaId>
             implements AirControlAreaRepository {
 
-        StubAirControlAreaRepository() {
-            save(TEST_AREA);
-        }
+        StubAirControlAreaRepository() { save(TEST_AREA); }
 
         @Override public List<AirControlArea> findByAreaCode(final String c) { return List.of(); }
         @Override public List<AirControlArea> findByMinimumRequiredArrivalFuelGreaterThanEqual(final double v) { return List.of(); }

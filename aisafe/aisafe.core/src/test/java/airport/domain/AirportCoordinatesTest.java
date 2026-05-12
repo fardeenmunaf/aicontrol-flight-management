@@ -7,51 +7,59 @@ import static org.junit.jupiter.api.Assertions.*;
 class AirportCoordinatesTest {
 
     @Test
-    void shouldCreateWithValidCoordinates() {
+    void ensureValidCoordinatesAreAccepted() {
         final AirportCoordinates c = new AirportCoordinates(38.77, -9.13);
         assertEquals(38.77, c.latitude());
         assertEquals(-9.13, c.longitude());
     }
 
     @Test
-    void shouldAcceptBoundaryLatitude() {
+    void ensureBoundaryLatitudeMaxIsAccepted() {
         assertDoesNotThrow(() -> new AirportCoordinates(90.0, 0.0));
+    }
+
+    @Test
+    void ensureBoundaryLatitudeMinIsAccepted() {
         assertDoesNotThrow(() -> new AirportCoordinates(-90.0, 0.0));
     }
 
     @Test
-    void shouldAcceptBoundaryLongitude() {
+    void ensureBoundaryLongitudeMaxIsAccepted() {
         assertDoesNotThrow(() -> new AirportCoordinates(0.0, 180.0));
+    }
+
+    @Test
+    void ensureBoundaryLongitudeMinIsAccepted() {
         assertDoesNotThrow(() -> new AirportCoordinates(0.0, -180.0));
     }
 
     @Test
-    void shouldThrowWhenLatitudeAbove90() {
+    void ensureLatitudeAbove90IsRejected() {
         assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(90.1, 0.0));
     }
 
     @Test
-    void shouldThrowWhenLatitudeBelow90() {
+    void ensureLatitudeBelow90IsRejected() {
         assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(-90.1, 0.0));
     }
 
     @Test
-    void shouldThrowWhenLongitudeAbove180() {
+    void ensureLongitudeAbove180IsRejected() {
         assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(0.0, 180.1));
     }
 
     @Test
-    void shouldThrowWhenLongitudeBelow180() {
+    void ensureLongitudeBelow180IsRejected() {
         assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(0.0, -180.1));
     }
 
     @Test
-    void shouldThrowWhenLatitudeIsNull() {
+    void ensureNullLatitudeIsRejected() {
         assertThrows(Exception.class, () -> new AirportCoordinates(null, 0.0));
     }
 
     @Test
-    void shouldThrowWhenLongitudeIsNull() {
+    void ensureNullLongitudeIsRejected() {
         assertThrows(Exception.class, () -> new AirportCoordinates(0.0, null));
     }
 }

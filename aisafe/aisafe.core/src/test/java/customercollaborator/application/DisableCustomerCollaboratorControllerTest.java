@@ -55,7 +55,7 @@ class DisableCustomerCollaboratorControllerTest {
     // --- Success ---
 
     @Test
-    void shouldDisableActiveAirTransportCollaborator() {
+    void ensureActiveAirTransportCollaboratorIsDisabled() {
         final UserId userId = UserId.valueOf(COLLAB_EMAIL);
         final CustomerCollaborator collab = new CustomerCollaborator(
                 userId, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY_ID, null, "Manager");
@@ -71,7 +71,7 @@ class DisableCustomerCollaboratorControllerTest {
     }
 
     @Test
-    void shouldDisableActiveAirControlAreaCollaborator() {
+    void ensureActiveAirControlAreaCollaboratorIsDisabled() {
         final String areaEmail = "area.collab@test.com";
         safeRegister(areaEmail, PASSWORD, AISafeRoles.FLIGHT_CONTROL_OPERATOR);
 
@@ -93,14 +93,14 @@ class DisableCustomerCollaboratorControllerTest {
     // --- Not found ---
 
     @Test
-    void shouldThrowWhenCollaboratorNotFound() {
+    void ensureDisablingNonExistentCollaboratorIsRejected() {
         assertThrows(IllegalArgumentException.class, () ->
                 new DisableCustomerCollaboratorController(collabRepo, userRepo)
                         .disable("notfound@test.com"));
     }
 
     @Test
-    void shouldThrowWhenUserNotFound() {
+    void ensureDisablingCollaboratorWithNoUserIsRejected() {
         collabRepo.add(new CustomerCollaborator(
                 UserId.valueOf("orphan@test.com"),
                 CustomerType.AIR_TRANSPORT_COMPANY, COMPANY_ID, null, "Manager"));
@@ -113,7 +113,7 @@ class DisableCustomerCollaboratorControllerTest {
     // --- Already disabled ---
 
     @Test
-    void shouldThrowWhenCollaboratorAlreadyDisabled() {
+    void ensureDisablingAlreadyDisabledCollaboratorIsRejected() {
         final String email = "already.dis@test.com";
         safeRegister(email, PASSWORD, AISafeRoles.AIR_TRANSPORT_COMPANY_COLLABORATOR);
 
@@ -133,7 +133,7 @@ class DisableCustomerCollaboratorControllerTest {
     // --- Authorization ---
 
     @Test
-    void shouldThrowWhenUserHasNoRequiredRole() {
+    void ensureUnauthorizedUserCannotDisableCollaborator() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
         assertThrows(Exception.class, () ->
                 new DisableCustomerCollaboratorController(collabRepo, userRepo).disable(COLLAB_EMAIL));
