@@ -14,6 +14,13 @@ public class CustomerCollaboratorsMenu extends AbstractUI {
     private static final int DISABLE_OPTION = 3;
     private static final int UPDATE_OPTION = 4;
 
+    public void mainLoop() {
+        boolean exit;
+        do {
+            exit = doShow();
+        } while (!exit);
+    }
+
     @Override
     protected boolean doShow() {
         final Menu menu = new Menu("Customer Collaborators");

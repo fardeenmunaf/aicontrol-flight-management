@@ -4,33 +4,34 @@ import aircontrolarea.domain.AirControlArea;
 import aircontrolarea.repositories.AirControlAreaRepository;
 import airtransportcompany.domain.AirTransportCompany;
 import airtransportcompany.repositories.AirTransportCompanyRepository;
+import customercollaborator.application.ListCustomerCollaboratorsController;
 import customercollaborator.domain.CustomerCollaborator;
 import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.io.util.Console;
+import eapli.framework.presentation.console.AbstractUI;
+import infrastructure.persistence.PersistenceContext;
 import user.domain.User;
 import user.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListCustomerCollaboratorsUI {
+public class ListCustomerCollaboratorsUI extends AbstractUI {
 
-    private final CustomerCollaboratorRepository collaboratorRepository;
-    private final AirTransportCompanyRepository airTransportCompanyRepository;
-    private final AirControlAreaRepository airControlAreaRepository;
-    private final UserRepository userRepository;
+    private final CustomerCollaboratorRepository collaboratorRepository =
+            PersistenceContext.repositories().customerCollaborators();
+    private final AirTransportCompanyRepository airTransportCompanyRepository =
+            PersistenceContext.repositories().airTransportCompanies();
+    private final AirControlAreaRepository airControlAreaRepository =
+            PersistenceContext.repositories().airControlAreas();
+    private final UserRepository userRepository =
+            PersistenceContext.repositories().users();
 
-    public ListCustomerCollaboratorsUI(final CustomerCollaboratorRepository collaboratorRepository,
-                                       final AirTransportCompanyRepository airTransportCompanyRepository,
-                                       final AirControlAreaRepository airControlAreaRepository,
-                                       final UserRepository userRepository) {
-        this.collaboratorRepository = collaboratorRepository;
-        this.airTransportCompanyRepository = airTransportCompanyRepository;
-        this.airControlAreaRepository = airControlAreaRepository;
-        this.userRepository = userRepository;
-    }
+    private final ListCustomerCollaboratorsController controller =
+            new ListCustomerCollaboratorsController(collaboratorRepository);
 
-    public boolean show() {
+    @Override
+    protected boolean doShow() {
         final int type = Console.readInteger("Customer type (1-Air Transport Company, 2-Air Control Area): ");
 
         if (type == 1) {
@@ -41,7 +42,12 @@ public class ListCustomerCollaboratorsUI {
             System.out.println("Invalid option.");
         }
 
-        return true;
+        return false;
+    }
+
+    @Override
+    public String headline() {
+        return "List Customer Collaborators";
     }
 
     private void listFromAirTransportCompany() {
@@ -63,11 +69,14 @@ public class ListCustomerCollaboratorsUI {
         }
 
         final AirTransportCompany selected = companies.get(choice - 1);
-        final List<CustomerCollaborator> collaborators = toList(
-                collaboratorRepository.findActiveByAirTransportCompanyId(selected.identity())
-        );
 
-        printCollaborators(collaborators);
+        try {
+            final List<CustomerCollaborator> collaborators = toList(
+                    controller.listActiveByAirTransportCompany(selected.identity().toString()));
+            printCollaborators(collaborators);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 
     private void listFromAirControlArea() {
@@ -89,11 +98,14 @@ public class ListCustomerCollaboratorsUI {
         }
 
         final AirControlArea selected = areas.get(choice - 1);
-        final List<CustomerCollaborator> collaborators = toList(
-                collaboratorRepository.findActiveByAirControlAreaId(selected.identity())
-        );
 
-        printCollaborators(collaborators);
+        try {
+            final List<CustomerCollaborator> collaborators = toList(
+                    controller.listActiveByAirControlArea(selected.identity().toString()));
+            printCollaborators(collaborators);
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 
     private void printCollaborators(final List<CustomerCollaborator> collaborators) {
@@ -108,10 +120,7 @@ public class ListCustomerCollaboratorsUI {
                     .map(User::name)
                     .orElse(userId);
 
-            System.out.printf("- %s | %s | %s%n",
-                    name,
-                    c.position(),
-                    userId);
+            System.out.printf("- %s | %s | %s%n", name, c.position(), userId);
         }
     }
 

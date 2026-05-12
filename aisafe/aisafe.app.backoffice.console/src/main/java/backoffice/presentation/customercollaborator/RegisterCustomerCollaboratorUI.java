@@ -4,38 +4,34 @@ import aircontrolarea.domain.AirControlArea;
 import aircontrolarea.repositories.AirControlAreaRepository;
 import airtransportcompany.domain.AirTransportCompany;
 import airtransportcompany.repositories.AirTransportCompanyRepository;
-import customercollaborator.domain.CustomerCollaborator;
-import customercollaborator.domain.CustomerType;
+import customercollaborator.application.RegisterCustomerCollaboratorController;
 import customercollaborator.repositories.CustomerCollaboratorRepository;
-import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import eapli.framework.io.util.Console;
-import shared.domain.UserId;
-import user.domain.Role;
-import user.domain.User;
+import eapli.framework.presentation.console.AbstractUI;
+import infrastructure.persistence.PersistenceContext;
 import user.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-public class RegisterCustomerCollaboratorUI {
+public class RegisterCustomerCollaboratorUI extends AbstractUI {
 
-    private final UserRepository userRepository;
-    private final CustomerCollaboratorRepository collaboratorRepository;
-    private final AirTransportCompanyRepository airTransportCompanyRepository;
-    private final AirControlAreaRepository airControlAreaRepository;
+    private final UserRepository userRepository =
+            PersistenceContext.repositories().users();
+    private final CustomerCollaboratorRepository collaboratorRepository =
+            PersistenceContext.repositories().customerCollaborators();
+    private final AirTransportCompanyRepository airTransportCompanyRepository =
+            PersistenceContext.repositories().airTransportCompanies();
+    private final AirControlAreaRepository airControlAreaRepository =
+            PersistenceContext.repositories().airControlAreas();
 
-    public RegisterCustomerCollaboratorUI(final UserRepository userRepository,
-                                          final CustomerCollaboratorRepository collaboratorRepository,
-                                          final AirTransportCompanyRepository airTransportCompanyRepository,
-                                          final AirControlAreaRepository airControlAreaRepository) {
-        this.userRepository = userRepository;
-        this.collaboratorRepository = collaboratorRepository;
-        this.airTransportCompanyRepository = airTransportCompanyRepository;
-        this.airControlAreaRepository = airControlAreaRepository;
-    }
+    private final RegisterCustomerCollaboratorController controller =
+            new RegisterCustomerCollaboratorController(
+                    userRepository, collaboratorRepository,
+                    airTransportCompanyRepository, airControlAreaRepository);
 
-    public boolean show() {
+    @Override
+    protected boolean doShow() {
         final int type = Console.readInteger("Customer type (1-Air Transport Company, 2-Air Control Area): ");
 
         if (type == 1) {
@@ -46,7 +42,12 @@ public class RegisterCustomerCollaboratorUI {
             System.out.println("Invalid option.");
         }
 
-        return true;
+        return false;
+    }
+
+    @Override
+    public String headline() {
+        return "Register Customer Collaborator";
     }
 
     private void registerAirTransportCollaborator() {
@@ -69,53 +70,23 @@ public class RegisterCustomerCollaboratorUI {
 
         final AirTransportCompany selected = companies.get(choice - 1);
         final String email = Console.readLine("Email: ");
-        final String password = Console.readLine("Password: ");
+        final String password = Console.readLine("Password (min. 8 characters): ");
         final String name = Console.readLine("Name: ");
         final String phone = Console.readLine("Phone number: ");
         final String position = Console.readLine("Position: ");
 
-        if (userRepository.findByEmail(email).isPresent()) {
-            System.out.println("Error: user already exists.");
+        if (!validateInputs(email, password, name, phone, position)) {
             return;
         }
-
-        final String[] split = splitName(name);
 
         try {
-            AuthzRegistry.userService().registerNewUser(
-                    email,
-                    password,
-                    split[0],
-                    split[1],
-                    email,
-                    Set.of(auth.domain.AISafeRoles.AIR_TRANSPORT_COMPANY_COLLABORATOR)
-            );
+            controller.registerForAirTransportCompany(
+                    selected.identity().toString(),
+                    email, password, name, phone, position);
+            System.out.println("Customer collaborator registered.");
         } catch (Exception e) {
-            System.out.println("Failed to create auth user: " + e.getMessage());
-            return;
+            System.out.println("Error: " + e.getMessage());
         }
-
-        final User user = new User(
-                email,
-                name,
-                phone,
-                null,
-                null,
-                "ACTIVE",
-                Set.of(Role.AIR_TRANSPORT_COMPANY_COLLABORATOR),
-                UserId.valueOf(email)
-        );
-        final User savedUser = userRepository.save(user);
-
-        collaboratorRepository.save(new CustomerCollaborator(
-                savedUser.identity(),
-                CustomerType.AIR_TRANSPORT_COMPANY,
-                selected.identity(),
-                null,
-                position
-        ));
-
-        System.out.println("Customer collaborator registered.");
     }
 
     private void registerAirControlCollaborator() {
@@ -138,53 +109,69 @@ public class RegisterCustomerCollaboratorUI {
 
         final AirControlArea selected = areas.get(choice - 1);
         final String email = Console.readLine("Email: ");
-        final String password = Console.readLine("Password: ");
+        final String password = Console.readLine("Password (min. 8 characters): ");
         final String name = Console.readLine("Name: ");
         final String phone = Console.readLine("Phone number: ");
         final String position = Console.readLine("Position: ");
 
-        if (userRepository.findByEmail(email).isPresent()) {
-            System.out.println("Error: user already exists.");
+        if (!validateInputs(email, password, name, phone, position)) {
             return;
         }
-
-        final String[] split = splitName(name);
 
         try {
-            AuthzRegistry.userService().registerNewUser(
-                    email,
-                    password,
-                    split[0],
-                    split[1],
-                    email,
-                    Set.of(auth.domain.AISafeRoles.FLIGHT_CONTROL_OPERATOR)
-            );
+            controller.registerForAirControlArea(
+                    selected.identity().toString(),
+                    email, password, name, phone, position);
+            System.out.println("Customer collaborator registered.");
         } catch (Exception e) {
-            System.out.println("Failed to create auth user: " + e.getMessage());
-            return;
+            System.out.println("Error: " + e.getMessage());
         }
+    }
 
-        final User user = new User(
-                email,
-                name,
-                phone,
-                null,
-                null,
-                "ACTIVE",
-                Set.of(Role.FLIGHT_CONTROL_OPERATOR),
-                UserId.valueOf(email)
-        );
-        final User savedUser = userRepository.save(user);
+    private boolean validateInputs(final String email, final String password,
+                                   final String name, final String phone,
+                                   final String position) {
+        if (isBlank(email)) {
+            System.out.println("Error: email cannot be empty.");
+            return false;
+        }
+        if (!isValidEmail(email)) {
+            System.out.println("Error: invalid email format.");
+            return false;
+        }
+        if (password == null || password.length() < 8) {
+            System.out.println("Error: password must be at least 8 characters.");
+            return false;
+        }
+        if (isBlank(name)) {
+            System.out.println("Error: name cannot be empty.");
+            return false;
+        }
+        if (isBlank(phone)) {
+            System.out.println("Error: phone number cannot be empty.");
+            return false;
+        }
+        if (!isValidPhone(phone)) {
+            System.out.println("Error: phone number must contain only digits and may start with '+'.");
+            return false;
+        }
+        if (isBlank(position)) {
+            System.out.println("Error: position cannot be empty.");
+            return false;
+        }
+        return true;
+    }
 
-        collaboratorRepository.save(new CustomerCollaborator(
-                savedUser.identity(),
-                CustomerType.AIR_CONTROL_AREA,
-                null,
-                selected.identity(),
-                position
-        ));
+    private boolean isBlank(final String value) {
+        return value == null || value.trim().isEmpty();
+    }
 
-        System.out.println("Customer collaborator registered.");
+    private boolean isValidEmail(final String email) {
+        return email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+    }
+
+    private boolean isValidPhone(final String phone) {
+        return phone.matches("^\\+?[0-9]{7,15}$");
     }
 
     private <T> List<T> toList(final Iterable<T> iterable) {
@@ -193,14 +180,5 @@ public class RegisterCustomerCollaboratorUI {
             list.add(item);
         }
         return list;
-    }
-
-    private String[] splitName(final String name) {
-        final String trimmed = name == null ? "" : name.trim();
-        final int idx = trimmed.indexOf(' ');
-        if (idx <= 0 || idx == trimmed.length() - 1) {
-            return new String[]{trimmed.isEmpty() ? "User" : trimmed, "User"};
-        }
-        return new String[]{trimmed.substring(0, idx), trimmed.substring(idx + 1)};
     }
 }

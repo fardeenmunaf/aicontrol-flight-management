@@ -6,6 +6,7 @@ public class RegisterAirportAction implements Action {
 
     @Override
     public boolean execute() {
-        return new RegisterAirportUI().show();
+        new RegisterAirportUI().show();
+        return false;
     }
 }

@@ -54,7 +54,7 @@ public class CustomerCollaborator implements AggregateRoot<CustomerCollaboratorI
                                 final AirControlAreaId airControlAreaId,
                                 final String position) {
         Preconditions.noneNull(userId, customerType);
-        if (StringPredicates.isNullOrEmpty(position)) {
+        if (position == null || position.trim().isEmpty()) {
             throw new IllegalArgumentException("Position cannot be null or empty");
         }
 

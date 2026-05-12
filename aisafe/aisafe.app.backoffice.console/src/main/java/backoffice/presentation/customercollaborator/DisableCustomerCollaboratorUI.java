@@ -4,28 +4,33 @@ import aircontrolarea.domain.AirControlArea;
 import aircontrolarea.repositories.AirControlAreaRepository;
 import airtransportcompany.domain.AirTransportCompany;
 import airtransportcompany.repositories.AirTransportCompanyRepository;
+import customercollaborator.application.DisableCustomerCollaboratorController;
 import customercollaborator.domain.CustomerCollaborator;
 import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.io.util.Console;
+import eapli.framework.presentation.console.AbstractUI;
+import infrastructure.persistence.PersistenceContext;
+import user.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class DisableCustomerCollaboratorUI {
+public class DisableCustomerCollaboratorUI extends AbstractUI {
 
-    private final CustomerCollaboratorRepository collaboratorRepository;
-    private final AirTransportCompanyRepository airTransportCompanyRepository;
-    private final AirControlAreaRepository airControlAreaRepository;
+    private final CustomerCollaboratorRepository collaboratorRepository =
+            PersistenceContext.repositories().customerCollaborators();
+    private final AirTransportCompanyRepository airTransportCompanyRepository =
+            PersistenceContext.repositories().airTransportCompanies();
+    private final AirControlAreaRepository airControlAreaRepository =
+            PersistenceContext.repositories().airControlAreas();
+    private final UserRepository userRepository =
+            PersistenceContext.repositories().users();
 
-    public DisableCustomerCollaboratorUI(final CustomerCollaboratorRepository collaboratorRepository,
-                                         final AirTransportCompanyRepository airTransportCompanyRepository,
-                                         final AirControlAreaRepository airControlAreaRepository) {
-        this.collaboratorRepository = collaboratorRepository;
-        this.airTransportCompanyRepository = airTransportCompanyRepository;
-        this.airControlAreaRepository = airControlAreaRepository;
-    }
+    private final DisableCustomerCollaboratorController controller =
+            new DisableCustomerCollaboratorController(collaboratorRepository, userRepository);
 
-    public boolean show() {
+    @Override
+    protected boolean doShow() {
         final int type = Console.readInteger("Customer type (1-Air Transport Company, 2-Air Control Area): ");
 
         if (type == 1) {
@@ -36,7 +41,12 @@ public class DisableCustomerCollaboratorUI {
             System.out.println("Invalid option.");
         }
 
-        return true;
+        return false;
+    }
+
+    @Override
+    public String headline() {
+        return "Disable Customer Collaborator";
     }
 
     private void disableFromAirTransportCompany() {
@@ -59,8 +69,7 @@ public class DisableCustomerCollaboratorUI {
 
         final AirTransportCompany selected = companies.get(choice - 1);
         final List<CustomerCollaborator> collaborators = toList(
-                collaboratorRepository.findActiveByAirTransportCompanyId(selected.identity())
-        );
+                collaboratorRepository.findActiveByAirTransportCompanyId(selected.identity()));
 
         disableSelectedCollaborator(collaborators);
     }
@@ -85,8 +94,7 @@ public class DisableCustomerCollaboratorUI {
 
         final AirControlArea selected = areas.get(choice - 1);
         final List<CustomerCollaborator> collaborators = toList(
-                collaboratorRepository.findActiveByAirControlAreaId(selected.identity())
-        );
+                collaboratorRepository.findActiveByAirControlAreaId(selected.identity()));
 
         disableSelectedCollaborator(collaborators);
     }
@@ -99,10 +107,7 @@ public class DisableCustomerCollaboratorUI {
 
         for (int i = 0; i < collaborators.size(); i++) {
             final CustomerCollaborator c = collaborators.get(i);
-            System.out.printf("%d - %s | %s%n",
-                    i + 1,
-                    c.identity(),
-                    c.position());
+            System.out.printf("%d - %s | %s%n", i + 1, c.userId(), c.position());
         }
 
         final int choice = Console.readInteger("Choose collaborator to disable: ");
@@ -112,10 +117,15 @@ public class DisableCustomerCollaboratorUI {
         }
 
         final CustomerCollaborator selected = collaborators.get(choice - 1);
-        selected.disable();
-        collaboratorRepository.save(selected);
 
-        System.out.println("Collaborator disabled.");
+        try {
+            controller.disable(selected.userId().toString());
+            System.out.println("Collaborator disabled.");
+        } catch (IllegalStateException e) {
+            System.out.println("Error: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error disabling collaborator: " + e.getMessage());
+        }
     }
 
     private <T> List<T> toList(final Iterable<T> iterable) {

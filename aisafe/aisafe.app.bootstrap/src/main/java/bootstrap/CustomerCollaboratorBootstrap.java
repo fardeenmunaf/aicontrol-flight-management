@@ -71,7 +71,7 @@ public class CustomerCollaboratorBootstrap {
     }
 
     private void registerAirControlAreaCollaborator() {
-        final String areaCode = "PT-NORTH";
+        final String areaCode = "LPPC";
         final String email = "fco1@aisafe.pt";
 
         if (userRepository.findByEmail(email).isPresent()) {
@@ -81,7 +81,7 @@ public class CustomerCollaboratorBootstrap {
 
         final List<AirControlArea> areas = airControlAreaRepository.findByAreaCode(areaCode);
         if (areas.isEmpty()) {
-            System.out.println("Air Control Area PT-NORTH not found. Skipping collaborator creation.");
+            System.out.println("Air Control Area LPPC not found. Skipping collaborator creation.");
             return;
         }
 
