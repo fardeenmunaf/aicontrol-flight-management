@@ -3,7 +3,6 @@ package bootstrap;
 import auth.infrastructure.AuthzConfigurator;
 import eapli.framework.infrastructure.authz.repositories.impl.jpa.JpaAutoTxUserRepository;
 import jpa.PersistenceSettings;
-import jpa.ProfileSettings;
 import infrastructure.persistence.PersistenceContext;
 
 /**
@@ -16,7 +15,6 @@ public final class AISafeBootstrap {
     }
 
     public static void main(final String[] args) {
-        ProfileSettings.applyFromArgs(args);
         System.out.println("Starting AISafe bootstrap...");
 
         AuthzConfigurator.configure(new JpaAutoTxUserRepository(

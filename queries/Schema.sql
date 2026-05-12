@@ -1,387 +1,339 @@
-    -- ============================================================
--- AISafe schema + bootstrap data
--- Naming sem underscores
+-- ============================================================
+-- AISafe Database Schema — alinhado com o Domain Model
 -- PostgreSQL
 -- ============================================================
 
--- ============================================================
--- DROP
--- ============================================================
-
-DROP TABLE IF EXISTS simulationreportflightstatus CASCADE;
-DROP TABLE IF EXISTS simulationreport CASCADE;
-DROP TABLE IF EXISTS safetyviolationvelocityvector CASCADE;
-DROP TABLE IF EXISTS safetyviolationinvolvedaircraft CASCADE;
-DROP TABLE IF EXISTS safetyviolation CASCADE;
-DROP TABLE IF EXISTS aircraftposition CASCADE;
-DROP TABLE IF EXISTS simulationweatherdata CASCADE;
-DROP TABLE IF EXISTS simulationflight CASCADE;
+DROP TABLE IF EXISTS safety_violation_velocity_vectors CASCADE;
+DROP TABLE IF EXISTS aircraft_position_velocity_vector CASCADE;
+DROP TABLE IF EXISTS simulation_flights CASCADE;
+DROP TABLE IF EXISTS safety_violation CASCADE;
+DROP TABLE IF EXISTS aircraft_position CASCADE;
 DROP TABLE IF EXISTS simulation CASCADE;
-DROP TABLE IF EXISTS weatherdata CASCADE;
-DROP TABLE IF EXISTS altitudeslot CASCADE;
+DROP TABLE IF EXISTS simulation_report CASCADE;
+DROP TABLE IF EXISTS altitude_slot CASCADE;
 DROP TABLE IF EXISTS segment CASCADE;
-DROP TABLE IF EXISTS flightleg CASCADE;
-DROP TABLE IF EXISTS flightplan CASCADE;
+DROP TABLE IF EXISTS flight_leg CASCADE;
+DROP TABLE IF EXISTS flight_plan CASCADE;
+DROP TABLE IF EXISTS flight_route_scheduled_flights CASCADE;
+DROP TABLE IF EXISTS flight_route CASCADE;
 DROP TABLE IF EXISTS flight CASCADE;
-DROP TABLE IF EXISTS flightroute CASCADE;
-DROP TABLE IF EXISTS pilotcertifiedaircraftmodel CASCADE;
+DROP TABLE IF EXISTS pilot_certified_models CASCADE;
 DROP TABLE IF EXISTS pilot CASCADE;
 DROP TABLE IF EXISTS aircraft CASCADE;
-DROP TABLE IF EXISTS aircontrolareacollaborator CASCADE;
-DROP TABLE IF EXISTS airtransportcompanycollaborator CASCADE;
-DROP TABLE IF EXISTS airtransportcompany CASCADE;
-DROP TABLE IF EXISTS aircraftmodelenginemodel CASCADE;
-DROP TABLE IF EXISTS aircraftmodel CASCADE;
-DROP TABLE IF EXISTS enginemodel CASCADE;
+DROP TABLE IF EXISTS aircraft_model_engine_models CASCADE;
+DROP TABLE IF EXISTS aircraft_model CASCADE;
+DROP TABLE IF EXISTS engine_model CASCADE;
+DROP TABLE IF EXISTS air_transport_company_users CASCADE;
+DROP TABLE IF EXISTS air_transport_company CASCADE;
+DROP TABLE IF EXISTS weather_data CASCADE;
 DROP TABLE IF EXISTS airport CASCADE;
-DROP TABLE IF EXISTS aircontrolarea CASCADE;
+DROP TABLE IF EXISTS air_control_area CASCADE;
 DROP TABLE IF EXISTS node CASCADE;
-DROP TABLE IF EXISTS userrole CASCADE;
-DROP TABLE IF EXISTS role CASCADE;
-DROP TABLE IF EXISTS appuser CASCADE;
+DROP TABLE IF EXISTS authz_user CASCADE;
+DROP TABLE IF EXISTS user_entity CASCADE;
 
 -- ============================================================
--- USERS / AUTH
+-- IDENTITY & ACCESS
+-- User Aggregate: User + Role
 -- ============================================================
 
-CREATE TABLE appuser (
-                         email VARCHAR(255) PRIMARY KEY,
-                         passwordhash VARCHAR(255) NOT NULL,
-                         name VARCHAR(255) NOT NULL,
-                         phonenumber VARCHAR(50) NOT NULL,
-                         activesecurityclearanceexpiry DATE,
-                         skillsassessmentduedate DATE,
-                         status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-                         enabled BOOLEAN NOT NULL DEFAULT TRUE,
-                         CHECK (status IN ('ACTIVE', 'INACTIVE', 'DISABLED'))
+CREATE TABLE authz_user (
+                            username   VARCHAR(255) PRIMARY KEY,
+                            password   VARCHAR(255) NOT NULL,
+                            first_name VARCHAR(255) NOT NULL,
+                            last_name  VARCHAR(255) NOT NULL,
+                            email      VARCHAR(255) NOT NULL UNIQUE,
+                            enabled    BOOLEAN      NOT NULL DEFAULT TRUE,
+                            roles      VARCHAR(500)
 );
 
-CREATE TABLE role (
-                      rolecode VARCHAR(50) PRIMARY KEY,
-                      description VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE userrole (
-                          useremail VARCHAR(255) NOT NULL REFERENCES appuser(email),
-                          rolecode VARCHAR(50) NOT NULL REFERENCES role(rolecode),
-                          PRIMARY KEY (useremail, rolecode)
+CREATE TABLE user_entity (
+                             id                               BIGSERIAL    PRIMARY KEY,
+                             email                            VARCHAR(255) NOT NULL UNIQUE,
+                             name                             VARCHAR(255) NOT NULL,
+                             phone_number                     VARCHAR(50)  NOT NULL,
+                             active_security_clearance_expiry DATE,
+                             skills_assessment_due_date       DATE,
+                             status                           VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
+                             user_id                          VARCHAR(255) NOT NULL,
+                             role                             VARCHAR(50)  NOT NULL
 );
 
 -- ============================================================
--- AIR CONTROL / AIRPORTS / NODES
+-- TOPOGRAPHY
+-- AirControlArea Aggregate
+-- Airport Aggregate (Coordinates embedded)
+-- Node Aggregate (Coordinates embedded)
 -- ============================================================
 
-CREATE TABLE aircontrolarea (
-                                id BIGSERIAL PRIMARY KEY,
-                                areacode VARCHAR(10) NOT NULL UNIQUE,
-                                minimumrequiredarrivalfuel DOUBLE PRECISION NOT NULL CHECK (minimumrequiredarrivalfuel >= 0),
-                                geographicboundaries TEXT NOT NULL
+CREATE TABLE air_control_area (
+                                  id                            BIGSERIAL        PRIMARY KEY,
+                                  area_code                     VARCHAR(10)      NOT NULL UNIQUE,
+                                  minimum_required_arrival_fuel DOUBLE PRECISION NOT NULL,
+                                  geographic_boundaries         TEXT             NOT NULL
 );
 
 CREATE TABLE airport (
-                         id BIGSERIAL PRIMARY KEY,
-                         name VARCHAR(255) NOT NULL,
-                         town VARCHAR(255) NOT NULL,
-                         country VARCHAR(255) NOT NULL,
-                         iatacode VARCHAR(3) NOT NULL UNIQUE,
-                         icaocode VARCHAR(4) NOT NULL UNIQUE,
-                         latitude DOUBLE PRECISION NOT NULL,
-                         longitude DOUBLE PRECISION NOT NULL,
-                         elevation DOUBLE PRECISION NOT NULL,
-                         aircontrolareaid BIGINT NOT NULL REFERENCES aircontrolarea(id)
+                         id                  BIGSERIAL        PRIMARY KEY,
+                         name                VARCHAR(255)     NOT NULL,
+                         town                VARCHAR(255)     NOT NULL,
+                         country             VARCHAR(255)     NOT NULL,
+                         iata_code           VARCHAR(3)       NOT NULL UNIQUE,
+                         icao_code           VARCHAR(4)       NOT NULL UNIQUE,
+                         latitude            DOUBLE PRECISION NOT NULL,
+                         longitude           DOUBLE PRECISION NOT NULL,
+                         elevation           DOUBLE PRECISION NOT NULL,
+                         air_control_area_id BIGINT           NOT NULL REFERENCES air_control_area(id)
 );
 
 CREATE TABLE node (
-                      id VARCHAR(255) PRIMARY KEY,
-                      designation VARCHAR(255) NOT NULL,
-                      latitude DOUBLE PRECISION NOT NULL,
-                      longitude DOUBLE PRECISION NOT NULL
+                      id          VARCHAR(255)     PRIMARY KEY,
+                      designation VARCHAR(255)     NOT NULL,
+                      latitude    DOUBLE PRECISION NOT NULL,
+                      longitude   DOUBLE PRECISION NOT NULL
 );
 
 -- ============================================================
--- ENGINE MODELS
+-- ENGINE CATALOG
+-- EngineModel Aggregate (EngineMaker + FuelProperties embedded)
 -- ============================================================
 
-CREATE TABLE enginemodel (
-                             id BIGSERIAL PRIMARY KEY,
-                             name VARCHAR(255) NOT NULL,
-                             enginetype VARCHAR(100) NOT NULL,
-                             power DOUBLE PRECISION NOT NULL CHECK (power > 0),
-                             fueltype VARCHAR(100) NOT NULL,
-                             efficiency DOUBLE PRECISION NOT NULL CHECK (efficiency > 0),
-                             thrustsealevelstopped DOUBLE PRECISION NOT NULL CHECK (thrustsealevelstopped > 0),
-                             thrustsealevelcruise DOUBLE PRECISION NOT NULL CHECK (thrustsealevelcruise > 0),
-                             thrustspecificfuelconsumption DOUBLE PRECISION NOT NULL CHECK (thrustspecificfuelconsumption > 0),
-                             makername VARCHAR(255) NOT NULL,
-                             makercountry VARCHAR(255) NOT NULL,
-                             fueldensity DOUBLE PRECISION,
-                             fuelspecificenergy DOUBLE PRECISION,
-                             UNIQUE (name, makername)
+CREATE TABLE engine_model (
+                              id                               BIGSERIAL        PRIMARY KEY,
+                              name                             VARCHAR(255)     NOT NULL,
+                              engine_type                      VARCHAR(100)     NOT NULL,
+                              power                            DOUBLE PRECISION NOT NULL,
+                              fuel_type                        VARCHAR(100)     NOT NULL,
+                              efficiency                       DOUBLE PRECISION NOT NULL,
+                              thrust_sea_level_stopped         DOUBLE PRECISION NOT NULL,
+                              thrust_sea_level_cruise          DOUBLE PRECISION NOT NULL,
+                              thrust_specific_fuel_consumption DOUBLE PRECISION NOT NULL,
+                              maker_name                       VARCHAR(255)     NOT NULL,
+                              maker_country                    VARCHAR(255)     NOT NULL,
+                              fuel_density                     DOUBLE PRECISION,
+                              fuel_specific_energy             DOUBLE PRECISION
 );
 
 -- ============================================================
--- AIRCRAFT MODELS
+-- AIRCRAFT CATALOG
+-- AircraftModel Aggregate (AircraftMaker embedded)
+-- AircraftModel --> EngineModel (cross-aggregate, many-to-many)
 -- ============================================================
 
-CREATE TABLE aircraftmodel (
-                               id BIGSERIAL PRIMARY KEY,
-                               modelname VARCHAR(255) NOT NULL,
-                               modeltype VARCHAR(20) NOT NULL,
-                               enginetype VARCHAR(100) NOT NULL,
-                               maximumrange DOUBLE PRECISION NOT NULL CHECK (maximumrange > 0),
-                               emptyweight DOUBLE PRECISION NOT NULL CHECK (emptyweight > 0),
-                               maximumtakeoffweight DOUBLE PRECISION NOT NULL CHECK (maximumtakeoffweight > 0),
-                               maximumzerofuelweight DOUBLE PRECISION NOT NULL CHECK (maximumzerofuelweight > 0),
-                               maximumfuelcapacity DOUBLE PRECISION NOT NULL CHECK (maximumfuelcapacity > 0),
-                               serviceceiling DOUBLE PRECISION NOT NULL CHECK (serviceceiling > 0),
-                               cruisespeed DOUBLE PRECISION NOT NULL CHECK (cruisespeed > 0),
-                               wingarea DOUBLE PRECISION NOT NULL CHECK (wingarea > 0),
-                               wingspan DOUBLE PRECISION NOT NULL CHECK (wingspan > 0),
-                               dragcoefficient DOUBLE PRECISION NOT NULL CHECK (dragcoefficient > 0),
-                               liftcoefficient DOUBLE PRECISION NOT NULL CHECK (liftcoefficient > 0),
-                               numberofengines INT NOT NULL CHECK (numberofengines > 0),
-                               maximumpassengercapacity INT NOT NULL CHECK (maximumpassengercapacity > 0),
-                               makername VARCHAR(255) NOT NULL,
-                               makercountry VARCHAR(255) NOT NULL,
-                               UNIQUE (modelname, makername),
-                               CHECK (modeltype IN ('PASSENGER', 'CARGO', 'MIXED'))
+CREATE TABLE aircraft_model (
+                                id                       BIGSERIAL        PRIMARY KEY,
+                                model_type               VARCHAR(100)     NOT NULL,
+                                empty_weight             DOUBLE PRECISION NOT NULL,
+                                maximum_take_off_weight  DOUBLE PRECISION NOT NULL,
+                                maximum_zero_fuel_weight DOUBLE PRECISION NOT NULL,
+                                maximum_fuel_capacity    DOUBLE PRECISION NOT NULL,
+                                service_ceiling          DOUBLE PRECISION NOT NULL,
+                                cruise_speed             DOUBLE PRECISION NOT NULL,
+                                wing_area                DOUBLE PRECISION NOT NULL,
+                                wing_span                DOUBLE PRECISION NOT NULL,
+                                drag_coefficient         DOUBLE PRECISION NOT NULL,
+                                lift_coefficient         DOUBLE PRECISION NOT NULL,
+                                maker_name               VARCHAR(255)     NOT NULL,
+                                maker_country            VARCHAR(255)     NOT NULL
 );
 
-CREATE TABLE aircraftmodelenginemodel (
-                                          aircraftmodelid BIGINT NOT NULL REFERENCES aircraftmodel(id),
-                                          enginemodelid BIGINT NOT NULL REFERENCES enginemodel(id),
-                                          PRIMARY KEY (aircraftmodelid, enginemodelid)
+CREATE TABLE aircraft_model_engine_models (
+                                              aircraft_model_id BIGINT NOT NULL REFERENCES aircraft_model(id),
+                                              engine_model_id   BIGINT NOT NULL REFERENCES engine_model(id),
+                                              PRIMARY KEY (aircraft_model_id, engine_model_id)
 );
 
 -- ============================================================
--- COMPANIES / COLLABORATORS
+-- FLEET
+-- AirTransportCompany Aggregate
+-- AirTransportCompany --> User (employs)
+-- AirTransportCompany --> Aircraft (owns)
+-- AirTransportCompany --> FlightRoute (operates) — FK na FlightRoute
+-- Aircraft Aggregate (CabinConfiguration embedded)
+-- Aircraft --> AircraftModel (cross-aggregate)
+-- Pilot Aggregate
+-- Pilot --> User (account id)
+-- Pilot --> AircraftModel (certified for)
 -- ============================================================
 
-CREATE TABLE airtransportcompany (
-                                     id BIGSERIAL PRIMARY KEY,
-                                     name VARCHAR(255) NOT NULL UNIQUE,
-                                     iatacode VARCHAR(2) NOT NULL UNIQUE,
-                                     icaocode VARCHAR(3) NOT NULL UNIQUE
+CREATE TABLE air_transport_company (
+                                       id        BIGSERIAL    PRIMARY KEY,
+                                       name      VARCHAR(255) NOT NULL UNIQUE,
+                                       iata_code VARCHAR(2)   NOT NULL UNIQUE,
+                                       icao_code VARCHAR(3)   NOT NULL UNIQUE
 );
 
-CREATE TABLE airtransportcompanycollaborator (
-                                                 companyid BIGINT NOT NULL REFERENCES airtransportcompany(id),
-                                                 useremail VARCHAR(255) NOT NULL REFERENCES appuser(email),
-                                                 position VARCHAR(100) NOT NULL,
-                                                 active BOOLEAN NOT NULL DEFAULT TRUE,
-                                                 PRIMARY KEY (companyid, useremail)
+CREATE TABLE air_transport_company_users (
+                                             company_id BIGINT       NOT NULL REFERENCES air_transport_company(id),
+                                             user_id    VARCHAR(255) NOT NULL,
+                                             PRIMARY KEY (company_id, user_id)
 );
-
-CREATE TABLE aircontrolareacollaborator (
-                                            aircontrolareaid BIGINT NOT NULL REFERENCES aircontrolarea(id),
-                                            useremail VARCHAR(255) NOT NULL REFERENCES appuser(email),
-                                            position VARCHAR(100) NOT NULL,
-                                            active BOOLEAN NOT NULL DEFAULT TRUE,
-                                            PRIMARY KEY (aircontrolareaid, useremail)
-);
-
--- ============================================================
--- AIRCRAFT / PILOTS
--- ============================================================
 
 CREATE TABLE aircraft (
-                          registrationnumber VARCHAR(20) PRIMARY KEY,
-                          registrationcountry VARCHAR(255) NOT NULL,
-                          operationalstatus VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
-                          serviceentrydate DATE NOT NULL,
-                          flightcrewcount INT NOT NULL CHECK (flightcrewcount > 0),
-                          firstclassseats INT NOT NULL DEFAULT 0 CHECK (firstclassseats >= 0),
-                          businessclassseats INT NOT NULL DEFAULT 0 CHECK (businessclassseats >= 0),
-                          economyclassseats INT NOT NULL DEFAULT 0 CHECK (economyclassseats >= 0),
-                          aircraftmodelid BIGINT NOT NULL REFERENCES aircraftmodel(id),
-                          companyid BIGINT NOT NULL REFERENCES airtransportcompany(id),
-                          CHECK (operationalstatus IN ('ACTIVE', 'INACTIVE', 'RETIRED'))
+                          registration_number  VARCHAR(20)      PRIMARY KEY,
+                          registration_country VARCHAR(255)     NOT NULL,
+                          operational_status   VARCHAR(30)      NOT NULL DEFAULT 'ACTIVE',
+                          flight_crew_count    INT              NOT NULL,
+                          first_class_seats    INT              NOT NULL DEFAULT 0,
+                          business_class_seats INT              NOT NULL DEFAULT 0,
+                          economy_class_seats  INT              NOT NULL DEFAULT 0,
+                          aircraft_model_id    BIGINT           NOT NULL REFERENCES aircraft_model(id),
+                          company_id           BIGINT           NOT NULL REFERENCES air_transport_company(id)
 );
 
 CREATE TABLE pilot (
-                       id BIGSERIAL PRIMARY KEY,
-                       useremail VARCHAR(255) NOT NULL UNIQUE REFERENCES appuser(email),
-                       companyid BIGINT NOT NULL REFERENCES airtransportcompany(id),
-                       status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-                       CHECK (status IN ('ACTIVE', 'INACTIVE'))
+                       id      BIGSERIAL    PRIMARY KEY,
+                       status  VARCHAR(20)  NOT NULL DEFAULT 'ACTIVE',
+                       user_id VARCHAR(255) NOT NULL UNIQUE
 );
 
-CREATE TABLE pilotcertifiedaircraftmodel (
-                                             pilotid BIGINT NOT NULL REFERENCES pilot(id),
-                                             aircraftmodelid BIGINT NOT NULL REFERENCES aircraftmodel(id),
-                                             PRIMARY KEY (pilotid, aircraftmodelid)
+CREATE TABLE pilot_certified_models (
+                                        pilot_id          BIGINT NOT NULL REFERENCES pilot(id),
+                                        aircraft_model_id BIGINT NOT NULL REFERENCES aircraft_model(id),
+                                        PRIMARY KEY (pilot_id, aircraft_model_id)
 );
 
 -- ============================================================
--- ROUTES / FLIGHTS / FLIGHT PLANS
+-- FLIGHT PLANNING
+-- FlightRoute Aggregate
+-- AirTransportCompany --> FlightRoute (operates)
+-- Flight Aggregate
+-- FlightRoute --> Flight (schedules)
+-- Flight --> FlightPlan (uses)
+-- FlightPlan Aggregate (FlightLeg + Segment + AltitudeSlot)
+-- FlightPlan --> Aircraft, Pilot (cross-aggregate)
+-- FlightLeg --> Airport departure/arrival (cross-aggregate)
+-- Segment --> Node start/end (cross-aggregate)
 -- ============================================================
 
-CREATE TABLE flightroute (
-                             id BIGSERIAL PRIMARY KEY,
-                             routecode VARCHAR(6) NOT NULL UNIQUE,
-                             originairportid BIGINT NOT NULL REFERENCES airport(id),
-                             destinationairportid BIGINT NOT NULL REFERENCES airport(id),
-                             activefrom DATE NOT NULL,
-                             activeuntil DATE,
-                             companyid BIGINT NOT NULL REFERENCES airtransportcompany(id),
-                             CHECK (originairportid <> destinationairportid)
+CREATE TABLE flight_route (
+                              id          VARCHAR(255) PRIMARY KEY,
+                              designation VARCHAR(6)   NOT NULL UNIQUE,
+                              active_from DATE         NOT NULL,
+                              active_until DATE,
+                              company_id  BIGINT       NOT NULL REFERENCES air_transport_company(id)
 );
 
 CREATE TABLE flight (
-                        flightdesignator VARCHAR(10) PRIMARY KEY,
-                        flighttype VARCHAR(20) NOT NULL,
-                        scheduleddeparturetime TIMESTAMP NOT NULL,
-                        scheduledarrivaltime TIMESTAMP NOT NULL,
-                        flightrouteid BIGINT NOT NULL REFERENCES flightroute(id),
-                        CHECK (flighttype IN ('REGULAR', 'CHARTER')),
-                        CHECK (scheduledarrivaltime > scheduleddeparturetime)
+                        flight_designator        VARCHAR(10)  PRIMARY KEY,
+                        flight_type              VARCHAR(20)  NOT NULL,
+                        scheduled_departure_time TIMESTAMP    NOT NULL,
+                        scheduled_arrival_time   TIMESTAMP    NOT NULL,
+                        flight_route_id          VARCHAR(255) REFERENCES flight_route(id)
 );
 
-CREATE TABLE flightplan (
-                            id VARCHAR(255) PRIMARY KEY,
-                            flightid VARCHAR(10) NOT NULL REFERENCES flight(flightdesignator),
-                            version BIGINT NOT NULL DEFAULT 1,
-                            departuredatetime TIMESTAMP NOT NULL,
-                            fuelquantity DOUBLE PRECISION NOT NULL CHECK (fuelquantity > 0),
-                            passengerload INT NOT NULL DEFAULT 0 CHECK (passengerload >= 0),
-                            cargoload DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (cargoload >= 0),
-                            planstatus VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
-                            aircraftid VARCHAR(20) NOT NULL REFERENCES aircraft(registrationnumber),
-                            pilotid BIGINT NOT NULL REFERENCES pilot(id),
-                            weatherattached BOOLEAN NOT NULL DEFAULT FALSE,
-                            testedat TIMESTAMP,
-                            testresult VARCHAR(20),
-                            UNIQUE (flightid, version),
-                            CHECK (planstatus IN ('DRAFT', 'SUBMITTED', 'VALIDATED', 'REJECTED')),
-                            CHECK (testresult IS NULL OR testresult IN ('PASS', 'FAIL'))
+CREATE TABLE flight_plan (
+                             id                  VARCHAR(255)     PRIMARY KEY,
+                             departure_date_time TIMESTAMP        NOT NULL,
+                             fuel_quantity       DOUBLE PRECISION NOT NULL,
+                             passenger_load      INT              NOT NULL DEFAULT 0,
+                             cargo_load          DOUBLE PRECISION NOT NULL DEFAULT 0,
+                             plan_status         VARCHAR(10)      NOT NULL DEFAULT 'DRAFT',
+                             aircraft_id         VARCHAR(20)      REFERENCES aircraft(registration_number),
+                             pilot_id            BIGINT           REFERENCES pilot(id),
+                             flight_id           VARCHAR(10)      REFERENCES flight(flight_designator),
+                             version             BIGINT
 );
 
-CREATE TABLE flightleg (
-                           id BIGSERIAL PRIMARY KEY,
-                           flightplanid VARCHAR(255) NOT NULL REFERENCES flightplan(id),
-                           sequencenumber INT NOT NULL CHECK (sequencenumber > 0),
-                           departureairportid BIGINT NOT NULL REFERENCES airport(id),
-                           arrivalairportid BIGINT NOT NULL REFERENCES airport(id),
-                           departuretime TIMESTAMP NOT NULL,
-                           arrivaltime TIMESTAMP NOT NULL,
-                           fuelquantity DOUBLE PRECISION NOT NULL CHECK (fuelquantity > 0),
-                           UNIQUE (flightplanid, sequencenumber),
-                           CHECK (departureairportid <> arrivalairportid),
-                           CHECK (arrivaltime > departuretime)
+CREATE TABLE flight_leg (
+                            id                   BIGSERIAL        PRIMARY KEY,
+                            sequence_number      INT              NOT NULL,
+                            departure_time       TIMESTAMP        NOT NULL,
+                            arrival_time         TIMESTAMP        NOT NULL,
+                            fuel_quantity        DOUBLE PRECISION NOT NULL,
+                            departure_airport_id BIGINT           NOT NULL REFERENCES airport(id),
+                            arrival_airport_id   BIGINT           NOT NULL REFERENCES airport(id),
+                            flight_plan_id       VARCHAR(255)     NOT NULL REFERENCES flight_plan(id)
 );
 
 CREATE TABLE segment (
-                         id BIGSERIAL PRIMARY KEY,
-                         flightlegid BIGINT NOT NULL REFERENCES flightleg(id),
-                         sequencenumber INT NOT NULL CHECK (sequencenumber > 0),
-                         startnodeid VARCHAR(255) NOT NULL REFERENCES node(id),
-                         endnodeid VARCHAR(255) NOT NULL REFERENCES node(id),
-                         winddirection DOUBLE PRECISION NOT NULL,
-                         windspeed DOUBLE PRECISION NOT NULL CHECK (windspeed >= 0),
-                         UNIQUE (flightlegid, sequencenumber),
-                         CHECK (startnodeid <> endnodeid)
+                         id             BIGSERIAL        PRIMARY KEY,
+                         wind_direction DOUBLE PRECISION NOT NULL,
+                         wind_speed     DOUBLE PRECISION NOT NULL,
+                         start_node_id  VARCHAR(255)     NOT NULL REFERENCES node(id),
+                         end_node_id    VARCHAR(255)     NOT NULL REFERENCES node(id),
+                         flight_leg_id  BIGINT           NOT NULL REFERENCES flight_leg(id)
 );
 
-CREATE TABLE altitudeslot (
-                              id BIGSERIAL PRIMARY KEY,
-                              segmentid BIGINT NOT NULL REFERENCES segment(id),
-                              minimumaltitude DOUBLE PRECISION NOT NULL CHECK (minimumaltitude > 0),
-                              maximumaltitude DOUBLE PRECISION NOT NULL CHECK (maximumaltitude > minimumaltitude),
-                              width DOUBLE PRECISION NOT NULL CHECK (width > 0)
+CREATE TABLE altitude_slot (
+                               id               BIGSERIAL        PRIMARY KEY,
+                               minimum_altitude DOUBLE PRECISION NOT NULL,
+                               maximum_altitude DOUBLE PRECISION NOT NULL,
+                               width            DOUBLE PRECISION NOT NULL,
+                               segment_id       BIGINT           NOT NULL REFERENCES segment(id)
 );
 
 -- ============================================================
 -- WEATHER
+-- WeatherData Aggregate
 -- ============================================================
 
-CREATE TABLE weatherdata (
-                             id BIGSERIAL PRIMARY KEY,
-                             weatherdate DATE NOT NULL,
-                             source VARCHAR(100) NOT NULL DEFAULT 'MANUAL',
-                             windspeed DOUBLE PRECISION NOT NULL CHECK (windspeed >= 0),
-                             winddirection DOUBLE PRECISION NOT NULL,
-                             aircontrolareaid BIGINT NOT NULL REFERENCES aircontrolarea(id),
-                             UNIQUE (weatherdate, source, aircontrolareaid)
+CREATE TABLE weather_data (
+                              id                  BIGSERIAL        PRIMARY KEY,
+                              weather_date        DATE             NOT NULL,
+                              wind_speed          DOUBLE PRECISION NOT NULL,
+                              wind_direction      DOUBLE PRECISION NOT NULL,
+                              air_control_area_id BIGINT           NOT NULL REFERENCES air_control_area(id)
 );
 
 -- ============================================================
 -- SIMULATION
+-- Simulation Aggregate
+-- AircraftPosition (VelocityVector embedded — speed + direction)
+-- SafetyViolation (2+ VelocityVectors em tabela separada)
+-- Simulation --> AirControlArea, Flight (cross-aggregate)
+-- SimulationReport Aggregate --> Simulation
 -- ============================================================
 
 CREATE TABLE simulation (
-                            id VARCHAR(255) PRIMARY KEY,
-                            startdatetime TIMESTAMP NOT NULL,
-                            enddatetime TIMESTAMP NOT NULL,
-                            geographicarea TEXT,
-                            safetythresholds TEXT,
-                            performancesettings TEXT,
-                            simstatus VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-                            aircontrolareaid BIGINT NOT NULL REFERENCES aircontrolarea(id),
-                            CHECK (simstatus IN ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'ABORTED')),
-                            CHECK (enddatetime > startdatetime)
+                            id                   VARCHAR(255) PRIMARY KEY,
+                            start_date_time      TIMESTAMP    NOT NULL,
+                            end_date_time        TIMESTAMP    NOT NULL,
+                            geographic_area      TEXT,
+                            safety_thresholds    TEXT,
+                            performance_settings TEXT,
+                            sim_status           VARCHAR(20)  NOT NULL DEFAULT 'PENDING',
+                            air_control_area_id  BIGINT       REFERENCES air_control_area(id)
 );
 
-CREATE TABLE simulationflight (
-                                  simulationid VARCHAR(255) NOT NULL REFERENCES simulation(id),
-                                  flightdesignator VARCHAR(10) NOT NULL REFERENCES flight(flightdesignator),
-                                  PRIMARY KEY (simulationid, flightdesignator)
+-- Simulation --> Flight (many-to-many: "tracks 1..*")
+CREATE TABLE simulation_flights (
+                                    simulation_id     VARCHAR(255) NOT NULL REFERENCES simulation(id),
+                                    flight_designator VARCHAR(10)  NOT NULL REFERENCES flight(flight_designator),
+                                    PRIMARY KEY (simulation_id, flight_designator)
 );
 
-CREATE TABLE simulationweatherdata (
-                                       simulationid VARCHAR(255) NOT NULL REFERENCES simulation(id),
-                                       weatherdataid BIGINT NOT NULL REFERENCES weatherdata(id),
-                                       PRIMARY KEY (simulationid, weatherdataid)
+-- AircraftPosition com VelocityVector embutido (speed + direction)
+CREATE TABLE aircraft_position (
+                                   id            BIGSERIAL        PRIMARY KEY,
+                                   pos_timestamp TIMESTAMP        NOT NULL,
+                                   altitude      DOUBLE PRECISION NOT NULL,
+                                   speed         DOUBLE PRECISION NOT NULL,
+                                   direction     DOUBLE PRECISION NOT NULL,
+                                   aircraft_id   VARCHAR(20)      NOT NULL REFERENCES aircraft(registration_number),
+                                   simulation_id VARCHAR(255)     NOT NULL REFERENCES simulation(id)
 );
 
-CREATE TABLE aircraftposition (
-                                  id BIGSERIAL PRIMARY KEY,
-                                  simulationid VARCHAR(255) NOT NULL REFERENCES simulation(id),
-                                  aircraftregistrationnumber VARCHAR(20) NOT NULL REFERENCES aircraft(registrationnumber),
-                                  positiontimestamp TIMESTAMP NOT NULL,
-                                  altitude DOUBLE PRECISION NOT NULL CHECK (altitude >= 0),
-                                  speed DOUBLE PRECISION NOT NULL CHECK (speed >= 0),
-                                  direction DOUBLE PRECISION NOT NULL
+-- SafetyViolation com 2+ VelocityVectors em tabela separada
+CREATE TABLE safety_violation (
+                                  id             BIGSERIAL    PRIMARY KEY,
+                                  viol_timestamp TIMESTAMP    NOT NULL,
+                                  severity       VARCHAR(20)  NOT NULL,
+                                  simulation_id  VARCHAR(255) NOT NULL REFERENCES simulation(id)
 );
 
-CREATE TABLE safetyviolation (
-                                 id BIGSERIAL PRIMARY KEY,
-                                 simulationid VARCHAR(255) NOT NULL REFERENCES simulation(id),
-                                 violationtimestamp TIMESTAMP NOT NULL,
-                                 severity VARCHAR(20) NOT NULL,
-                                 CHECK (severity IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL'))
+CREATE TABLE safety_violation_velocity_vectors (
+                                                   id                  BIGSERIAL        PRIMARY KEY,
+                                                   safety_violation_id BIGINT           NOT NULL REFERENCES safety_violation(id),
+                                                   speed               DOUBLE PRECISION NOT NULL,
+                                                   direction           DOUBLE PRECISION NOT NULL
 );
 
-CREATE TABLE safetyviolationinvolvedaircraft (
-                                                 safetyviolationid BIGINT NOT NULL REFERENCES safetyviolation(id),
-                                                 aircraftregistrationnumber VARCHAR(20) NOT NULL REFERENCES aircraft(registrationnumber),
-                                                 PRIMARY KEY (safetyviolationid, aircraftregistrationnumber)
-);
-
-CREATE TABLE safetyviolationvelocityvector (
-                                               id BIGSERIAL PRIMARY KEY,
-                                               safetyviolationid BIGINT NOT NULL REFERENCES safetyviolation(id),
-                                               aircraftregistrationnumber VARCHAR(20) REFERENCES aircraft(registrationnumber),
-                                               speed DOUBLE PRECISION NOT NULL CHECK (speed >= 0),
-                                               direction DOUBLE PRECISION NOT NULL
-);
-
--- ============================================================
--- REPORTS
--- ============================================================
-
-CREATE TABLE simulationreport (
-                                  id BIGSERIAL PRIMARY KEY,
-                                  simulationid VARCHAR(255) NOT NULL UNIQUE REFERENCES simulation(id),
-                                  totalflights INT NOT NULL DEFAULT 0 CHECK (totalflights >= 0),
-                                  validationresult VARCHAR(10) NOT NULL DEFAULT 'PENDING',
-                                  generatedat TIMESTAMP NOT NULL DEFAULT NOW(),
-                                  CHECK (validationresult IN ('PENDING', 'PASS', 'FAIL'))
-);
-
-CREATE TABLE simulationreportflightstatus (
-                                              reportid BIGINT NOT NULL REFERENCES simulationreport(id),
-                                              flightdesignator VARCHAR(10) NOT NULL REFERENCES flight(flightdesignator),
-                                              executionstatus VARCHAR(20) NOT NULL,
-                                              PRIMARY KEY (reportid, flightdesignator),
-                                              CHECK (executionstatus IN ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'ABORTED'))
+-- SimulationReport Aggregate
+CREATE TABLE simulation_report (
+                                   id                BIGSERIAL    PRIMARY KEY,
+                                   total_flights     INT          NOT NULL DEFAULT 0,
+                                   validation_result VARCHAR(10)  NOT NULL DEFAULT 'PENDING',
+                                   generated_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
+                                   simulation_id     VARCHAR(255) REFERENCES simulation(id)
 );
