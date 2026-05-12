@@ -1,21 +1,25 @@
 package flight.dsl;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
+import flight.dsl.model.FlightDslProcessingResult;
+import flight.dsl.processing.FlightDslProcessor;
+
+import java.nio.file.Path;
 
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        FlightDSLLexer lexer = new FlightDSLLexer(
-                CharStreams.fromFileName("input.txt")
-        );
+        final FlightDslProcessor processor = new FlightDslProcessor();
+        final FlightDslProcessingResult result = processor.process(Path.of("input.txt"));
 
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        FlightDSLParser parser = new FlightDSLParser(tokens);
+        System.out.println("Flights parsed: " + result.summary().flightPlanCount());
+        System.out.println("Legs parsed: " + result.summary().legCount());
+        System.out.println("Segments parsed: " + result.summary().segmentCount());
 
-        ParseTree tree = parser.start();
-
-        System.out.println(tree.toStringTree(parser));
+        if (result.semanticErrors().isEmpty()) {
+            System.out.println("No semantic errors detected.");
+        } else {
+            System.out.println("Semantic errors:");
+            result.semanticErrors().forEach(error -> System.out.println(" - " + error));
+        }
     }
 }
