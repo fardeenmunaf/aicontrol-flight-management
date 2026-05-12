@@ -129,7 +129,7 @@ VALUES
 -- FLEET
 -- ============================================================
 
-INSERT INTO AirTransportCompany (airTransportCompanyId_value, name, iataCode, icaoCode, version)
+INSERT INTO AirTransportCompany (value, name, iataCode, icaoCode, version)
 VALUES
     ('atc-001', 'TAP Air Portugal', 'TP', 'TAP', 0),
     ('atc-002', 'British Airways', 'BA', 'BAW', 0),
