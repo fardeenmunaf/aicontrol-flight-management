@@ -30,6 +30,8 @@ class ListCustomerCollaboratorsControllerTest {
     private static final AirTransportCompanyId COMPANY_ID = AirTransportCompanyId.valueOf("list-company-1");
     private static final AirControlAreaId AREA_ID = AirControlAreaId.valueOf("list-area-1");
 
+    private final StubCollaboratorRepository repo = new StubCollaboratorRepository();
+
     @BeforeAll
     static void setupAuth() {
         try {
@@ -38,8 +40,6 @@ class ListCustomerCollaboratorsControllerTest {
         safeRegister(OPERATOR_EMAIL, PASSWORD, AISafeRoles.BACKOFFICE_OPERATOR);
         safeRegister(PILOT_EMAIL, PASSWORD, AISafeRoles.PILOT);
     }
-
-    private final StubCollaboratorRepository repo = new StubCollaboratorRepository();
 
     @BeforeEach
     void resetState() {
@@ -50,7 +50,7 @@ class ListCustomerCollaboratorsControllerTest {
     // --- List by Air Transport Company ---
 
     @Test
-    void shouldListActiveCollaboratorsForCompany() {
+    void ensureActiveCollaboratorsForCompanyAreListed() {
         repo.add(activeCompanyCollaborator("collab1@co.com"));
         repo.add(activeCompanyCollaborator("collab2@co.com"));
 
@@ -62,7 +62,7 @@ class ListCustomerCollaboratorsControllerTest {
     }
 
     @Test
-    void shouldNotReturnDisabledCompanyCollaborators() {
+    void ensureDisabledCompanyCollaboratorsAreNotListed() {
         final CustomerCollaborator active = activeCompanyCollaborator("active@co.com");
         final CustomerCollaborator disabled = activeCompanyCollaborator("disabled@co.com");
         disabled.disable();
@@ -78,7 +78,7 @@ class ListCustomerCollaboratorsControllerTest {
     }
 
     @Test
-    void shouldReturnEmptyWhenCompanyHasNoCollaborators() {
+    void ensureEmptyListIsReturnedWhenCompanyHasNoCollaborators() {
         final List<CustomerCollaborator> result = toList(
                 new ListCustomerCollaboratorsController(repo)
                         .listActiveByAirTransportCompany(COMPANY_ID.toString()));
@@ -89,7 +89,7 @@ class ListCustomerCollaboratorsControllerTest {
     // --- List by Air Control Area ---
 
     @Test
-    void shouldListActiveCollaboratorsForArea() {
+    void ensureActiveCollaboratorsForAreaAreListed() {
         repo.add(activeAreaCollaborator("fco1@area.com"));
 
         final List<CustomerCollaborator> result = toList(
@@ -100,7 +100,7 @@ class ListCustomerCollaboratorsControllerTest {
     }
 
     @Test
-    void shouldNotReturnDisabledAreaCollaborators() {
+    void ensureDisabledAreaCollaboratorsAreNotListed() {
         final CustomerCollaborator disabled = activeAreaCollaborator("disabled.area@test.com");
         disabled.disable();
         repo.add(disabled);
@@ -113,7 +113,7 @@ class ListCustomerCollaboratorsControllerTest {
     }
 
     @Test
-    void shouldReturnEmptyWhenAreaHasNoCollaborators() {
+    void ensureEmptyListIsReturnedWhenAreaHasNoCollaborators() {
         final List<CustomerCollaborator> result = toList(
                 new ListCustomerCollaboratorsController(repo)
                         .listActiveByAirControlArea(AREA_ID.toString()));
@@ -124,7 +124,7 @@ class ListCustomerCollaboratorsControllerTest {
     // --- Authorization ---
 
     @Test
-    void shouldThrowWhenUserHasNoRequiredRoleForCompany() {
+    void ensureUnauthorizedUserCannotListCompanyCollaborators() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
         assertThrows(Exception.class, () ->
                 new ListCustomerCollaboratorsController(repo)
@@ -132,7 +132,7 @@ class ListCustomerCollaboratorsControllerTest {
     }
 
     @Test
-    void shouldThrowWhenUserHasNoRequiredRoleForArea() {
+    void ensureUnauthorizedUserCannotListAreaCollaborators() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
         assertThrows(Exception.class, () ->
                 new ListCustomerCollaboratorsController(repo)
