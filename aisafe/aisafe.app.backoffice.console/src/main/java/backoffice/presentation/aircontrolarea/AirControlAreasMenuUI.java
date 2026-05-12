@@ -11,6 +11,7 @@ public class AirControlAreasMenuUI extends AbstractUI {
 
     private static final int RETURN_OPTION = 0;
     private static final int REGISTER_AREA_OPTION = 1;
+    private static final int LIST_AREAS_OPTION = 2;
 
     public void mainLoop() {
         boolean exit;
@@ -30,6 +31,7 @@ public class AirControlAreasMenuUI extends AbstractUI {
         final Menu menu = new Menu("Air Control Areas >");
 
         menu.addItem(REGISTER_AREA_OPTION, "Register New Air Control Area", new RegisterAirControlAreaAction());
+        menu.addItem(LIST_AREAS_OPTION, "List All Air Control Areas", new ListAirControlAreasAction());
         menu.addItem(RETURN_OPTION, "Return", Actions.SUCCESS);
 
         return menu;
