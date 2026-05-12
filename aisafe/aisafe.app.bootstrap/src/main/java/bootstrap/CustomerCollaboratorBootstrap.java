@@ -1,6 +1,8 @@
 package bootstrap;
 
+import aircontrolarea.domain.AirControlArea;
 import aircontrolarea.repositories.AirControlAreaRepository;
+import airtransportcompany.domain.AirTransportCompany;
 import airtransportcompany.repositories.AirTransportCompanyRepository;
 import customercollaborator.domain.CustomerCollaborator;
 import customercollaborator.domain.CustomerType;
@@ -13,6 +15,7 @@ import user.domain.Role;
 import user.domain.User;
 import user.repository.UserRepository;
 
+import java.util.List;
 import java.util.Set;
 
 public class CustomerCollaboratorBootstrap {
@@ -38,17 +41,21 @@ public class CustomerCollaboratorBootstrap {
     }
 
     private void registerAirTransportCompanyCollaborator() {
-        final String companyId = "TAP-ID";
+        final String iataCode = "TP";
         final String email = "atcc1@tap.pt";
 
         if (userRepository.findByEmail(email).isPresent()) {
+            System.out.println("User already exists: " + email);
             return;
         }
 
-        final AirTransportCompanyId id = AirTransportCompanyId.valueOf(companyId);
-        if (airTransportCompanyRepository.ofIdentity(id).isEmpty()) {
+        final List<AirTransportCompany> companies = airTransportCompanyRepository.findByIataCode(iataCode);
+        if (companies.isEmpty()) {
+            System.out.println("TAP Air Portugal (TP) not found. Skipping collaborator creation.");
             return;
         }
+
+        final AirTransportCompanyId companyId = companies.get(0).identity();
 
         registerUserAndCollaborator(
                 email,
@@ -57,24 +64,28 @@ public class CustomerCollaboratorBootstrap {
                 "910000001",
                 Role.AIR_TRANSPORT_COMPANY_COLLABORATOR,
                 CustomerType.AIR_TRANSPORT_COMPANY,
-                id,
+                companyId,
                 null,
                 "Operations Manager"
         );
     }
 
     private void registerAirControlAreaCollaborator() {
-        final String areaId = "PT-NORTH";
+        final String areaCode = "PT-NORTH";
         final String email = "fco1@aisafe.pt";
 
         if (userRepository.findByEmail(email).isPresent()) {
+            System.out.println("User already exists: " + email);
             return;
         }
 
-        final AirControlAreaId id = AirControlAreaId.valueOf(areaId);
-        if (airControlAreaRepository.ofIdentity(id).isEmpty()) {
+        final List<AirControlArea> areas = airControlAreaRepository.findByAreaCode(areaCode);
+        if (areas.isEmpty()) {
+            System.out.println("Air Control Area PT-NORTH not found. Skipping collaborator creation.");
             return;
         }
+
+        final AirControlAreaId areaId = areas.get(0).identity();
 
         registerUserAndCollaborator(
                 email,
@@ -84,7 +95,7 @@ public class CustomerCollaboratorBootstrap {
                 Role.FLIGHT_CONTROL_OPERATOR,
                 CustomerType.AIR_CONTROL_AREA,
                 null,
-                id,
+                areaId,
                 "Area Supervisor"
         );
     }
@@ -98,18 +109,23 @@ public class CustomerCollaboratorBootstrap {
                                              final AirTransportCompanyId airTransportCompanyId,
                                              final AirControlAreaId airControlAreaId,
                                              final String position) {
-        final var parts = splitName(name);
+        final String[] parts = splitName(name);
 
-        AuthzRegistry.userService().registerNewUser(
-                email,
-                rawPassword,
-                parts[0],
-                parts[1],
-                email,
-                Set.of(toAuthzRole(domainRole))
-        );
+        try {
+            AuthzRegistry.userService().registerNewUser(
+                    email,
+                    rawPassword,
+                    parts[0],
+                    parts[1],
+                    email,
+                    Set.of(toAuthzRole(domainRole))
+            );
+        } catch (Exception e) {
+            System.out.println("Failed to create auth user for " + email + ": " + e.getMessage());
+            return;
+        }
 
-        final User user = userRepository.save(new User(
+        final User user = new User(
                 email,
                 name,
                 phoneNumber,
@@ -118,24 +134,29 @@ public class CustomerCollaboratorBootstrap {
                 "ACTIVE",
                 Set.of(domainRole),
                 UserId.valueOf(email)
-        ));
+        );
 
-        collaboratorRepository.save(new CustomerCollaborator(
-                user.identity(),
+        final UserId userId = userRepository.save(user).identity();
+
+        final CustomerCollaborator collaborator = new CustomerCollaborator(
+                userId,
                 customerType,
                 airTransportCompanyId,
                 airControlAreaId,
                 position
-        ));
+        );
+
+        collaboratorRepository.save(collaborator);
+        System.out.println("Customer collaborator created: " + email);
     }
 
     private String[] splitName(final String name) {
-        final var trimmed = name == null ? "" : name.trim();
-        final var spaceIndex = trimmed.indexOf(' ');
-        if (spaceIndex <= 0 || spaceIndex == trimmed.length() - 1) {
+        final String trimmed = name == null ? "" : name.trim();
+        final int idx = trimmed.indexOf(' ');
+        if (idx <= 0 || idx == trimmed.length() - 1) {
             return new String[]{trimmed.isEmpty() ? "User" : trimmed, "User"};
         }
-        return new String[]{trimmed.substring(0, spaceIndex), trimmed.substring(spaceIndex + 1)};
+        return new String[]{trimmed.substring(0, idx), trimmed.substring(idx + 1)};
     }
 
     private eapli.framework.infrastructure.authz.domain.model.Role toAuthzRole(final Role domainRole) {
