@@ -7,6 +7,9 @@ import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
 import infrastructure.persistence.PersistenceContext;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class RegisterAirportUI extends AbstractUI {
 
     private final RegisterAirportController controller =
@@ -20,6 +23,13 @@ public class RegisterAirportUI extends AbstractUI {
     @Override
     protected boolean doShow() {
         try {
+            final List<AirControlArea> areas = toList(airControlAreaRepository.findAll());
+
+            if (areas.isEmpty()) {
+                System.out.println("No air control areas available.");
+                return false;
+            }
+
             final String name = Console.readLine("Airport name");
             final String town = Console.readLine("Town");
             final String country = Console.readLine("Country");
@@ -30,11 +40,17 @@ public class RegisterAirportUI extends AbstractUI {
             final Double longitude = readDouble("Longitude");
 
             System.out.println("Existing Air Control Areas:");
-            for (final AirControlArea area : airControlAreaRepository.findAll()) {
-                System.out.println(area.identity());
+            for (int i = 0; i < areas.size(); i++) {
+                System.out.printf("%d - %s%n", i + 1, areas.get(i));
             }
 
-            final String airControlAreaId = Console.readLine("Air Control Area ID");
+            final int choice = Console.readInteger("Choose an Air Control Area: ");
+            if (choice < 1 || choice > areas.size()) {
+                System.out.println("Invalid option.");
+                return false;
+            }
+
+            final String airControlAreaId = areas.get(choice - 1).identity().toString();
 
             controller.registerAirport(
                     name, town, country, iataCode, icaoCode,
@@ -60,5 +76,13 @@ public class RegisterAirportUI extends AbstractUI {
         } catch (final NumberFormatException ex) {
             throw new IllegalArgumentException("Invalid number: " + raw);
         }
+    }
+
+    private <T> List<T> toList(final Iterable<T> iterable) {
+        final List<T> list = new ArrayList<>();
+        for (final T item : iterable) {
+            list.add(item);
+        }
+        return list;
     }
 }
