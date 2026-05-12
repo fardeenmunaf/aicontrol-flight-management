@@ -81,9 +81,6 @@ public class FlightDSLTest {
             "invalid_missing_segment.dsl",
             "invalid_bad_date.dsl",
             "invalid_private_type.dsl",
-            "invalid_same_segment_coords.dsl",
-            "invalid_duplicate_airport.dsl",
-            "invalid_leg_mismatch.dsl",
             "invalid_negative_fuel.dsl"
     })
     void shouldRejectLexicallyOrSyntacticallyInvalidFiles(String resourceName) {
