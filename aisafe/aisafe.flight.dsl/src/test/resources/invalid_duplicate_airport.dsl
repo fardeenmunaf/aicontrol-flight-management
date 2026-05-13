@@ -2,7 +2,7 @@
 
 flight TP9999 {
     type:  regular;
-    route: XX001 from OPO to OPO;
+    route: XX001;
 
     leg {
         departure {

@@ -38,15 +38,13 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
     public Object visitFlightPlan(final FlightDSLParser.FlightPlanContext ctx) {
         final String flightDesignator = ctx.ID(0).getText();
         final String routeReference = ctx.ID(1).getText();
-        final String routeOrigin = ctx.airportCode(0).getText();
-        final String routeDestination = ctx.airportCode(1).getText();
         final FlightTypeAst type = (FlightTypeAst) visitFlightType(ctx.flightType());
         final List<LegAst> legs = new ArrayList<>();
         for (final FlightDSLParser.LegContext legContext : ctx.leg()) {
             legs.add((LegAst) visitLeg(legContext));
         }
 
-        final FlightPlanAst flightPlanAst = new FlightPlanAst(flightDesignator, type, routeReference, routeOrigin, routeDestination, legs);
+        final FlightPlanAst flightPlanAst = new FlightPlanAst(flightDesignator, type, routeReference, legs);
         register(flightPlanAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
         return flightPlanAst;
     }

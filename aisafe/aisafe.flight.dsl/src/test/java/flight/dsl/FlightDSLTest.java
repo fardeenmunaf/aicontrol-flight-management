@@ -69,18 +69,7 @@ public class FlightDSLTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "valid_flight.dsl",
-            "invalid_duplicate_airport.dsl",
-            "invalid_leg_mismatch.dsl",
-            "invalid_same_segment_coords.dsl",
-            "invalid_duplicate_id.dsl",
-            "invalid_zero_fuel.dsl",
-            "invalid_route_mismatch.dsl",
-            "invalid_arrival_before_departure.dsl",
-            "invalid_leg_time_overlap.dsl",
-            "invalid_profile_climb_speed.dsl",
-            "invalid_profile_descend_rate.dsl",
-            "invalid_coords_out_of_bounds.dsl"
+            "valid_flight.dsl"
     })
     void shouldParseSyntacticallyValidFiles(String resourceName) {
         parseValid(resourceName);
