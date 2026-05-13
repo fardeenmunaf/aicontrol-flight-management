@@ -9,7 +9,7 @@ start
 flightPlan
     : FLIGHT ID LBRACE
         TYPE COLON flightType SEMI
-        ROUTE COLON ID SEMI
+        ROUTE COLON ID FROM airportCode TO airportCode SEMI
         leg+
       RBRACE
     ;

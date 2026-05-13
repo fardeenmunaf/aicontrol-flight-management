@@ -1,7 +1,7 @@
 # Flight DSL – Informal Specification
 
 **User Story:** US083-1  
-**Version:** 1.0  
+**Version:** 1.1  
 **Sprint:** 2  
 **Status:** Draft
 
@@ -32,7 +32,9 @@ DSL File → Lexical Analysis → Syntactic Analysis → Semantic Validation →
 
 Each stage is a gate: a file that fails lexical analysis is rejected before syntactic analysis begins, and so on. Only a fully valid file produces an internal flight plan object in the system.
 
-The DSL is **hierarchical and block-based**. The top-level construct is a `flight` block, which contains one or more `leg` blocks. Each leg contains `departure`, `arrival`, `route`, `segment`, and `fuel` blocks.
+The DSL is **hierarchical and block-based**. The top-level construct is a `flight` block, which contains one or more `leg` blocks. Each leg contains `departure`, `arrival`, `fuel`, `segment`, and an optional `profile` block.
+
+A DSL file may contain **one or more `flight` blocks**. All flight identifiers within the same file must be unique.
 
 ---
 
@@ -42,9 +44,12 @@ The DSL is **hierarchical and block-based**. The top-level construct is a `fligh
 
 ```
 Flight
-├── ID              (unique flight identifier)
+├── ID              (unique flight identifier within the file)
 ├── Type            (regular | charter)
-├── Route           (route name reference)
+├── Route
+│   ├── Reference   (route name identifier)
+│   ├── Origin      (IATA or ICAO airport code)
+│   └── Destination (IATA or ICAO airport code)
 └── Leg [1..*]
     ├── Departure
     │   ├── Airport code  (IATA or ICAO)
@@ -55,9 +60,9 @@ Flight
     │   ├── Date
     │   └── Time
     ├── Fuel
-    │   ├── Quantity      (positive number)
+    │   ├── Quantity      (strictly positive number)
     │   └── Unit          (kg | l)
-    ├── FlightProfile
+    ├── FlightProfile [0..1]
     │   ├── Climb [0..*]
     │   │   ├── Altitude
     │   │   └── Speed
@@ -85,12 +90,13 @@ Flight
 | **Leg** | A single non-stop journey between two airports. A flight with intermediate stops has multiple legs. Each leg is self-contained with its own departure, arrival, fuel, profile, and segments. |
 | **Departure** | The origin point of a leg: airport code, date, and scheduled time of departure. |
 | **Arrival** | The destination point of a leg: airport code, date, and scheduled time of arrival. |
-| **Fuel** | The fuel load assigned to a leg, expressed as a positive quantity with a unit (kg or l). |
+| **Fuel** | The fuel load assigned to a leg, expressed as a strictly positive quantity with a unit (kg or l). |
 | **FlightProfile** | Optional climb and descent profiles, describing altitude/speed tables used for simulation. Descent entries also include a rate of descent. |
 | **Segment** | A linear path within a leg, characterised by a mode (climb, cruise, or descend), start and end 3D coordinates. Segments must cover the full spatial path of the leg. |
 
 ### 2.3 Key Constraints (Conceptual Level)
 
+- A DSL file must contain at least one `flight` block; all flight identifiers must be unique within the file.
 - A `flight` must have at least one `leg`.
 - Each `leg` must have exactly one `departure`, one `arrival`, one `fuel` block, and at least one `segment`.
 - The `FlightProfile` is optional but, if present, must contain at least one `climb` or one `descend` entry.
@@ -100,6 +106,7 @@ Flight
 - The route destination must match the last leg's arrival airport.
 - No airport may appear twice across all legs of the same flight.
 - Segment start and end coordinates must differ.
+- Fuel quantity must be strictly positive (greater than zero).
 
 ---
 
@@ -127,7 +134,7 @@ Reserved words that define the structure of the language. They may not be used a
 | `leg` | Opens a leg block |
 | `departure` | Opens a departure block |
 | `arrival` | Opens an arrival block |
-| `route` | Opens a route block |
+| `route` | Introduces the route declaration |
 | `segment` | Opens a segment block |
 | `fuel` | Opens a fuel block |
 | `profile` | Opens a flight profile block |
@@ -137,8 +144,9 @@ Reserved words that define the structure of the language. They may not be used a
 | `regular` | Flight type value |
 | `charter` | Flight type value |
 | `type` | Introduces the flight type field |
-| `from` | Introduces a segment start coordinate |
-| `to` | Introduces a segment end coordinate |
+| `airport` | Introduces an airport code field |
+| `from` | Introduces the route origin airport or a segment start coordinate |
+| `to` | Introduces the route destination airport or a segment end coordinate |
 | `altitude` | Introduces an altitude field |
 | `speed` | Introduces a speed field |
 | `rate` | Introduces a rate of descent field |
@@ -169,12 +177,14 @@ ICAO pattern: [A-Z]{4}           Examples: LPPR, LEMD, LPPT
 
 #### Numeric Literals
 
-Integers and floating-point numbers. Negative values are only valid where explicitly permitted (e.g. rate of descent).
+Integers and floating-point numbers. Negative values are only valid where explicitly permitted (e.g. rate of descent, coordinates).
 
 ```
 Integer:  [0-9]+                 Examples: 0, 100, 35000
 Float:    [0-9]+ '.' [0-9]+      Examples: 41.262891, 9249.0, 0.804
 ```
+
+> **Note:** Fuel quantity and altitude use the grammar rule `positiveNumber` (INT | FLOAT, no minus sign). A value of `0` passes parsing but fuel quantity `0` is rejected at the semantic level. Coordinates and descent rates use `signedNumber` and may be negative.
 
 #### Date Literals
 
@@ -214,7 +224,7 @@ Qualify numeric values. Must follow the number they modify.
 | `[` `]` | Profile entry groupings |
 | `:` | Separates a field name from its value |
 | `;` | Terminates a field or entry |
-| `,` | Separates values within a coordinate |
+| `,` | Separates values within a coordinate or profile entry |
 
 #### Whitespace and Comments
 
@@ -232,17 +242,22 @@ Single-line comments using `//` are supported and ignored by the lexer:
 
 ### 4.1 Top-Level Structure
 
-A valid DSL file contains exactly one `flight` block.
+A valid DSL file contains **one or more `flight` blocks**. All flight identifiers must be unique within the file.
 
 ```
 flight <ID> {
-    type: <flight-type>;
-    route: <route-name>;
+    type:  <flight-type>;
+    route: <route-name> from <airport-code> to <airport-code>;
 
     leg { ... }
     leg { ... }   // one or more legs
 }
 ```
+
+The `route` declaration includes:
+- `<route-name>` — an identifier referencing the route in the system
+- `from <airport-code>` — the route's origin airport (must match the first leg's departure airport)
+- `to <airport-code>` — the route's destination airport (must match the last leg's arrival airport)
 
 ### 4.2 Leg Block
 
@@ -282,12 +297,14 @@ fuel {
 }
 ```
 
+The quantity must be strictly greater than zero. A value of `0` is syntactically valid but rejected during semantic validation.
+
 ### 4.5 Flight Profile Block (Optional)
 
 ```
 profile {
     climb   [ altitude: <number> <unit>, speed: <number> <unit> ];  // 0 or more
-    descend [ altitude: <number> <unit>, speed: <number> <unit>, rate: <number> ];  // 0 or more
+    descend [ altitude: <number> <unit>, speed: <number> <unit>, rate: <signed-number> ];  // 0 or more
 }
 ```
 
@@ -306,7 +323,7 @@ segment {
 ```
 flight
 ├── type
-├── route
+├── route <name> from <origin> to <destination>
 └── leg [1..*]
     ├── departure
     │   ├── airport
@@ -338,7 +355,7 @@ A condensed reference of every block and its mandatory vs. optional fields.
 | Field | Type | Mandatory | Description |
 |---|---|---|---|
 | `type` | keyword (`regular`\|`charter`) | Yes | Type of flight |
-| `route` | identifier | Yes | Route name reference |
+| `route` | identifier + `from` airport + `to` airport | Yes | Route reference with explicit origin and destination airports |
 | `leg` | block | Yes (1 or more) | One leg per non-stop journey segment |
 
 ### `leg` block
@@ -363,7 +380,7 @@ A condensed reference of every block and its mandatory vs. optional fields.
 
 | Field | Type | Mandatory | Description |
 |---|---|---|---|
-| `quantity` | positive number + unit | Yes | Fuel load (`kg` or `l`) |
+| `quantity` | positive number + unit | Yes | Fuel load (`kg` or `l`); must be strictly greater than zero |
 
 ### `profile` block
 
@@ -372,8 +389,8 @@ A condensed reference of every block and its mandatory vs. optional fields.
 | `climb` | entry list | No | One or more climb profile entries |
 | `descend` | entry list | No | One or more descend profile entries |
 
-Each `climb` entry: `altitude` (number + unit), `speed` (number + unit).  
-Each `descend` entry: `altitude` (number + unit), `speed` (number + unit), `rate` (negative number).
+Each `climb` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0).  
+Each `descend` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0), `rate` (must be negative).
 
 ### `segment` block
 
@@ -381,7 +398,7 @@ Each `descend` entry: `altitude` (number + unit), `speed` (number + unit), `rate
 |---|---|---|---|
 | `mode` | keyword (`climb`\|`cruise`\|`descend`) | Yes | Phase of flight for this segment |
 | `from` | coordinate tuple | Yes | Start point (lat, lon, altitude) |
-| `to` | coordinate tuple | Yes | End point (lat, lon, altitude) |
+| `to` | coordinate tuple | Yes | End point (lat, lon, altitude); must differ from `from` |
 
 ---
 
@@ -395,7 +412,7 @@ This example is derived from the JSON reference (`Flight_Plan_v0a.json`) and rep
 
 flight TP1234 {
     type:  regular;
-    route: AA123;
+    route: AA123 from OPO to MAD;
 
     leg {
 
@@ -459,7 +476,12 @@ flight TP1234 {
 
 ## 7. Invalid Examples and Error Cases
 
-Each example below corresponds to a specific validation rule. These will serve as negative test cases for the ANTLR grammar and semantic validator.
+Each example below corresponds to a specific validation rule and serves as a negative test case for the ANTLR grammar and semantic validator.
+
+> **Note on error types:**
+> - **Lexical error** — unrecognised character or malformed token (e.g. wrong date format).
+> - **Syntactic error** — token stream violates grammar rules (e.g. missing mandatory block, unrecognised keyword). The grammar itself catches these before semantic validation.
+> - **Semantic error** — syntactically valid but domain-invalid (e.g. duplicate airport, fuel = 0).
 
 ---
 
@@ -470,19 +492,11 @@ Each example below corresponds to a specific validation rule. These will serve a
 
 flight TP1234 {
     type:  regular;
-    route: AA123;
+    route: AA123 from OPO to MAD;
 
     leg {
-        departure {
-            airport: OPO;
-            date:    2026-05-05;
-            time:    08:00;
-        }
-        arrival {
-            airport: MAD;
-            date:    2026-05-05;
-            time:    09:30;
-        }
+        departure { airport: OPO; date: 2026-05-05; time: 08:00; }
+        arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         segment {
             mode: cruise;
             from: (42.0, -8.01, altitude: 9249 m);
@@ -502,22 +516,12 @@ flight TP1234 {
 
 flight TP1234 {
     type:  regular;
-    route: AA123;
+    route: AA123 from OPO to MAD;
 
     leg {
-        departure {
-            airport: OPO;
-            date:    2026-05-05;
-            time:    08:00;
-        }
-        arrival {
-            airport: MAD;
-            date:    2026-05-05;
-            time:    09:30;
-        }
-        fuel {
-            quantity: 40200 kg;
-        }
+        departure { airport: OPO; date: 2026-05-05; time: 08:00; }
+        arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
+        fuel { quantity: 40200 kg; }
         // No segment blocks here
     }
 }
@@ -533,7 +537,7 @@ flight TP1234 {
 
 flight TP5678 {
     type:  regular;
-    route: TP001;
+    route: TP001 from OPO to BCN;
 
     leg {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }
@@ -562,20 +566,20 @@ flight TP5678 {
 
 ---
 
-### 7.4 Negative Fuel Quantity — Semantic Error
+### 7.4 Negative Fuel Quantity — Syntactic Error
 
 ```
-// ERROR: fuel quantity must be strictly positive
+// ERROR: positiveNumber does not allow a minus sign
 
 flight TP1234 {
     type:  regular;
-    route: AA123;
+    route: AA123 from OPO to MAD;
 
     leg {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel {
-            quantity: -500 kg;    // invalid: must be > 0
+            quantity: -500 kg;    // invalid: positiveNumber = INT | FLOAT (no minus)
         }
         segment {
             mode: cruise;
@@ -585,18 +589,18 @@ flight TP1234 {
     }
 }
 ```
-**Expected error:** Semantic — fuel quantity must be strictly positive.
+**Expected error:** Syntactic — the grammar rule `positiveNumber` does not accept a minus sign; `-500` is an unexpected token.
 
 ---
 
-### 7.5 Invalid Flight Type — Semantic Error
+### 7.5 Invalid Flight Type — Syntactic Error
 
 ```
 // ERROR: "private" is not a valid flight type
 
 flight TP1234 {
-    type:  private;    // invalid: must be regular or charter
-    route: AA123;
+    type:  private;    // invalid: grammar only accepts "regular" or "charter"
+    route: AA123 from OPO to MAD;
 
     leg {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }
@@ -610,7 +614,7 @@ flight TP1234 {
     }
 }
 ```
-**Expected error:** Semantic — flight type must be one of `regular` or `charter`.
+**Expected error:** Syntactic — the parser rule `flightType` only matches `regular` or `charter`; any other word is an unexpected token.
 
 ---
 
@@ -621,7 +625,7 @@ flight TP1234 {
 
 flight TP1234 {
     type:  regular;
-    route: AA123;
+    route: AA123 from OPO to MAD;
 
     leg {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }
@@ -642,11 +646,11 @@ flight TP1234 {
 ### 7.7 Duplicate Airport in Flight — Semantic Error
 
 ```
-// ERROR: OPO appears as both the origin and an intermediate stop
+// ERROR: OPO appears twice (departure of leg 1 and arrival of leg 2)
 
 flight TP9999 {
     type:  regular;
-    route: XX001;
+    route: XX001 from OPO to OPO;
 
     leg {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }
@@ -682,7 +686,7 @@ flight TP9999 {
 
 flight TP1234 {
     type:  regular;
-    route: AA123;
+    route: AA123 from OPO to MAD;
 
     leg {
         departure {
@@ -695,6 +699,82 @@ flight TP1234 {
 }
 ```
 **Expected error:** Lexical — date token does not match the expected pattern `YYYY-MM-DD`.
+
+---
+
+### 7.9 Duplicate Flight Identifier — Semantic Error
+
+```
+// ERROR: TP1234 used as flight identifier in two separate flight blocks
+
+flight TP1234 {
+    type:  regular;
+    route: AA123 from OPO to MAD;
+
+    leg {
+        departure { airport: OPO; date: 2026-05-05; time: 08:00; }
+        arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
+        fuel { quantity: 40200 kg; }
+        segment { mode: cruise; from: (41.26, -8.68, altitude: 69 m); to: (40.49, -3.56, altitude: 610 m); }
+    }
+}
+
+flight TP1234 {    // duplicate identifier
+    type:  charter;
+    route: BB456 from LIS to BCN;
+
+    leg {
+        departure { airport: LIS; date: 2026-05-06; time: 10:00; }
+        arrival   { airport: BCN; date: 2026-05-06; time: 12:00; }
+        fuel { quantity: 35000 kg; }
+        segment { mode: cruise; from: (38.77, -9.13, altitude: 114 m); to: (41.29, 2.07, altitude: 4 m); }
+    }
+}
+```
+**Expected error:** Semantic — flight identifier `TP1234` appears more than once in the same file.
+
+---
+
+### 7.10 Route Origin/Destination Mismatch — Semantic Error
+
+```
+// ERROR: route declares origin LIS and destination BCN,
+//        but leg departs OPO and arrives MAD
+
+flight TP7777 {
+    type:  regular;
+    route: RP001 from LIS to BCN;
+
+    leg {
+        departure { airport: OPO; date: 2026-05-05; time: 08:00; }  // OPO ≠ LIS
+        arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }  // MAD ≠ BCN
+        fuel { quantity: 40200 kg; }
+        segment { mode: cruise; from: (41.26, -8.68, altitude: 69 m); to: (40.49, -3.56, altitude: 610 m); }
+    }
+}
+```
+**Expected errors:** Semantic — route origin (`LIS`) must match first leg departure (`OPO`); route destination (`BCN`) must match last leg arrival (`MAD`).
+
+---
+
+### 7.11 Zero Fuel Quantity — Semantic Error
+
+```
+// ERROR: 0 passes the parser (valid positiveNumber) but is rejected semantically
+
+flight TP1234 {
+    type:  regular;
+    route: AA123 from OPO to MAD;
+
+    leg {
+        departure { airport: OPO; date: 2026-05-05; time: 08:00; }
+        arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
+        fuel { quantity: 0 kg; }
+        segment { mode: cruise; from: (41.26, -8.68, altitude: 69 m); to: (40.49, -3.56, altitude: 610 m); }
+    }
+}
+```
+**Expected error:** Semantic — fuel quantity must be strictly greater than zero.
 
 ---
 
@@ -716,9 +796,21 @@ The requirements explicitly state that airport codes may be IATA (3-letter) or I
 
 The requirements describe the flight profile (climb/descent tables) as contextual data for simulation. Not all flight plans will specify it at creation time, and the requirements do not mandate it as a core DSL field. Making it optional keeps the DSL compatible with both simple and detailed flight plans.
 
-### 8.4 Relationship to the ANTLR grammar (next sub-issue)
+### 8.4 Why does `route` declare origin and destination explicitly?
 
-This document is the design input for `FlightDSL.g4`. The mapping will be:
+The route declaration (`route: AA123 from OPO to MAD;`) embeds the origin and destination airports inline. This makes the DSL file **self-contained and self-validating**: the semantic validator can immediately check that the declared endpoints match the first and last leg airports (AC10) without requiring a database lookup during parsing.
+
+### 8.5 Why are negative fuel and invalid flight type syntactic errors?
+
+The grammar rule `positiveNumber` accepts only `INT` or `FLOAT` (no minus sign), so a negative fuel value is rejected at the parser before semantic validation begins. Similarly, the parser rule `flightType` is restricted to `regular` and `charter`, so any other keyword is a syntactic mismatch.
+
+Zero fuel (`0 kg`) is different: `0` is a valid `INT` and a valid `positiveNumber`, so it passes parsing but is rejected by the semantic validator which checks `quantity > 0`.
+
+### 8.6 Why allow multiple `flight` blocks in one file?
+
+A single DSL file may describe a batch of flight plans (e.g. a day's schedule). The grammar allows `flightPlan+` (one or more). The uniqueness constraint on flight identifiers (AC08) ensures each flight is unambiguously identifiable within the file.
+
+### 8.7 Relationship to the ANTLR grammar
 
 | DSL concept | ANTLR artefact |
 |---|---|
@@ -726,17 +818,18 @@ This document is the design input for `FlightDSL.g4`. The mapping will be:
 | Identifiers | `ID` lexer rule |
 | Airport codes | `IATA_CODE` / `ICAO_CODE` lexer rules |
 | Numeric literals | `INT` / `FLOAT` lexer rules |
-| Date / Time literals | `DATE` / `TIME` lexer rules |
+| Date / Time literals | `DATE_LITERAL` / `TIME_LITERAL` lexer rules |
 | Block structure | Parser rules (`flightPlan`, `leg`, `departure`, etc.) |
-| Semantic constraints (e.g. leg coherence) | Visitor or Listener walking the parse tree |
+| Route origin/destination | Inline `airportCode` references in the `flightPlan` parser rule |
+| Semantic constraints | `FlightSemanticValidator` traversing the AST built by `FlightAstBuilderVisitor` |
 
-### 8.5 Error reporting
+### 8.8 Error reporting
 
 All three validation stages must produce clear, actionable errors:
 
 - **Lexical errors** — unrecognised character or malformed token. Must report line and column.
 - **Syntactic errors** — missing or unexpected token. Must report line, column, and what was expected.
-- **Semantic errors** — structurally valid but domain-invalid content (e.g. fuel ≤ 0). Must report which rule was violated and where.
+- **Semantic errors** — structurally valid but domain-invalid content (e.g. fuel = 0, duplicate ID, route mismatch). Must report which rule was violated and where.
 
 All semantic errors must be **collected and reported together** in a single execution pass — the validator must not abort on the first error.
 
