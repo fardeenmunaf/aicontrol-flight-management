@@ -48,6 +48,21 @@ public class InMemoryFlightRepository extends InMemoryDomainRepository<Flight, F
     }
 
     @Override
+    public List<Flight> findByAircraftAndStatus(final shared.domain.AircraftId aircraftId, final FlightStatus status) {
+        final Instant now = Instant.now();
+        switch (status) {
+            case SCHEDULED:
+                return StreamSupport.stream(match(f -> f.aircraft() != null && f.aircraft().identity().equals(aircraftId) && f.scheduledDepartureTime().isAfter(now)).spliterator(), false).collect(Collectors.toList());
+            case AIRBORNE:
+                return StreamSupport.stream(match(f -> f.aircraft() != null && f.aircraft().identity().equals(aircraftId) && f.scheduledDepartureTime().isBefore(now) && f.scheduledArrivalTime().isAfter(now)).spliterator(), false).collect(Collectors.toList());
+            case COMPLETED:
+                return StreamSupport.stream(match(f -> f.aircraft() != null && f.aircraft().identity().equals(aircraftId) && f.scheduledArrivalTime().isBefore(now)).spliterator(), false).collect(Collectors.toList());
+            default:
+                return List.of();
+        }
+    }
+
+    @Override
     public Optional<Flight> findByFlightDesignator(final String flightDesignator) {
         return matchOne(f -> f.flightDesignator().equals(flightDesignator));
     }

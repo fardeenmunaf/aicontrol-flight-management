@@ -121,4 +121,16 @@ public class Aircraft implements AggregateRoot<AircraftId> {
     public AirTransportCompany airTransportCompany() {
         return airTransportCompany;
     }
+
+    /**
+     * Decommission this aircraft (retire it from service).
+     * 
+     * @throws IllegalStateException if the aircraft is already decommissioned
+     */
+    public void decommission() {
+        if (this.operationStatus == AircraftOperationStatus.DECOMISSIONED) {
+            throw new IllegalStateException("Aircraft is already decommissioned");
+        }
+        this.operationStatus = AircraftOperationStatus.DECOMISSIONED;
+    }
 }

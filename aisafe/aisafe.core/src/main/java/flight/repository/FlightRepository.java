@@ -7,6 +7,7 @@ import shared.domain.FlightId;
 
 import java.util.List;
 import java.util.Optional;
+import shared.domain.AircraftId;
 
 /**
  * Repository interface for Flight aggregate.
@@ -42,4 +43,10 @@ public interface FlightRepository extends DomainRepository<FlightId, Flight> {
      * @return an Optional containing the flight, or empty if not found
      */
     Optional<Flight> findByFlightDesignator(String flightDesignator);
+
+    /**
+     * Returns all flights assigned to the given aircraft that match the provided status.
+     * Useful to determine pending flights for a specific aircraft.
+     */
+    List<Flight> findByAircraftAndStatus(AircraftId aircraftId, FlightStatus status);
 }
