@@ -1,6 +1,6 @@
 flight TP1234 {
     type:  regular;
-    route: AA123;
+    route: AA123 from OPO to MAD;
 
     leg {
         departure {

@@ -1,6 +1,5 @@
 package flight.dsl.validation;
 
-import flight.dsl.ast.ArrivalAst;
 import flight.dsl.ast.ClimbEntryAst;
 import flight.dsl.ast.DescendEntryAst;
 import flight.dsl.ast.FlightPlanAst;
@@ -23,21 +22,12 @@ public class FlightSemanticValidator {
     public List<SemanticError> validate(final FlightDslDocument document) {
         final List<SemanticError> errors = new ArrayList<>();
 
-        if (document.flightPlans().isEmpty()) {
-            errors.add(new SemanticError(SemanticErrorType.STRUCTURAL, 1, 0, "At least one flight block is required"));
-            return errors;
-        }
-
-        if (document.flightPlans().size() != 1) {
-            errors.add(new SemanticError(
-                    SemanticErrorType.STRUCTURAL,
-                    1,
-                    0,
-                    "Exactly one flight block is allowed in a DSL file"
-            ));
-        }
-
+        final Set<String> seenIds = new HashSet<>();
         for (final FlightPlanAst flight : document.flightPlans()) {
+            if (!seenIds.add(flight.flightDesignator())) {
+                errors.add(error(document, flight, SemanticErrorType.SEMANTIC,
+                        "Duplicate flight identifier: " + flight.flightDesignator()));
+            }
             validateFlight(flight, document, errors);
         }
 
@@ -45,11 +35,6 @@ public class FlightSemanticValidator {
     }
 
     private void validateFlight(final FlightPlanAst flight, final FlightDslDocument document, final List<SemanticError> errors) {
-        if (flight.legs().isEmpty()) {
-            errors.add(error(document, flight, SemanticErrorType.STRUCTURAL, "A flight must contain at least one leg"));
-            return;
-        }
-
         final Set<String> visitedAirports = new HashSet<>();
         String previousArrival = null;
         LocalDateTime previousArrivalTime = null;
@@ -62,29 +47,30 @@ public class FlightSemanticValidator {
             final String departureAirport = leg.departure().airportCode();
             final String arrivalAirport = leg.arrival().airportCode();
 
-            if (i == 0 && !visitedAirports.add(departureAirport)) {
-                errors.add(error(document, leg.departure(), SemanticErrorType.SEMANTIC, "Departure airport is repeated in flight"));
+            if (i == 0) {
+                visitedAirports.add(departureAirport);
             }
             if (!visitedAirports.add(arrivalAirport)) {
-                if (previousArrival == null || !previousArrival.equals(arrivalAirport)) {
-                    errors.add(error(document, leg.arrival(), SemanticErrorType.SEMANTIC, "Airport appears more than once in the same flight: " + arrivalAirport));
-                }
+                errors.add(error(document, leg.arrival(), SemanticErrorType.SEMANTIC,
+                        "Airport appears more than once in the same flight: " + arrivalAirport));
             }
 
             if (previousArrival != null && !previousArrival.equals(departureAirport)) {
                 errors.add(error(document, leg.departure(), SemanticErrorType.SEMANTIC,
-                        "Arrival airport of leg " + (i) + " must match departure airport of leg " + (i + 1)));
+                        "Arrival airport of leg " + i + " must match departure airport of leg " + (i + 1)));
             }
 
-            final LocalDateTime departureDateTime = parseDateTime(leg.departure().date(), leg.departure().time(), document, leg.departure(), errors);
-            final LocalDateTime arrivalDateTime = parseDateTime(leg.arrival().date(), leg.arrival().time(), document, leg.arrival(), errors);
+            final LocalDateTime departureDateTime = LocalDateTime.of(
+                    LocalDate.parse(leg.departure().date()), LocalTime.parse(leg.departure().time()));
+            final LocalDateTime arrivalDateTime = LocalDateTime.of(
+                    LocalDate.parse(leg.arrival().date()), LocalTime.parse(leg.arrival().time()));
 
-            if (departureDateTime != null && arrivalDateTime != null && !arrivalDateTime.isAfter(departureDateTime)) {
+            if (!arrivalDateTime.isAfter(departureDateTime)) {
                 errors.add(error(document, leg.arrival(), SemanticErrorType.SEMANTIC,
-                        "Arrival date/time must be after departure date/time"));
+                        "Arrival date/time must be after departure date/time in leg " + (i + 1)));
             }
 
-            if (previousArrivalTime != null && departureDateTime != null && !departureDateTime.isAfter(previousArrivalTime)) {
+            if (previousArrivalTime != null && !departureDateTime.isAfter(previousArrivalTime)) {
                 errors.add(error(document, leg.departure(), SemanticErrorType.SEMANTIC,
                         "Departure of leg " + (i + 1) + " must be after arrival of leg " + i));
             }
@@ -93,26 +79,24 @@ public class FlightSemanticValidator {
             previousArrivalTime = arrivalDateTime;
         }
 
-        final String firstDeparture = flight.legs().get(0).departure().airportCode();
-        final String lastArrival = flight.legs().get(flight.legs().size() - 1).arrival().airportCode();
-        if (firstDeparture == null || lastArrival == null || !firstDeparture.equals(lastArrival) && flight.legs().size() == 1) {
-            // single-leg routes naturally depend on same origin/destination only if expected by the file; keep this check minimal
-        }
-
-        validateFlightType(flight, document, errors);
+        validateRouteCoherence(flight, document, errors);
     }
 
-    private void validateFlightType(final FlightPlanAst flight, final FlightDslDocument document, final List<SemanticError> errors) {
-        if (flight.type() == null) {
-            errors.add(error(document, flight, SemanticErrorType.SEMANTIC, "Flight type is required"));
+    private void validateRouteCoherence(final FlightPlanAst flight, final FlightDslDocument document, final List<SemanticError> errors) {
+        final String firstDeparture = flight.legs().get(0).departure().airportCode();
+        final String lastArrival = flight.legs().get(flight.legs().size() - 1).arrival().airportCode();
+
+        if (!flight.routeOrigin().equals(firstDeparture)) {
+            errors.add(error(document, flight.legs().get(0).departure(), SemanticErrorType.SEMANTIC,
+                    "Route origin (" + flight.routeOrigin() + ") must match first leg departure airport (" + firstDeparture + ")"));
+        }
+        if (!flight.routeDestination().equals(lastArrival)) {
+            errors.add(error(document, flight.legs().get(flight.legs().size() - 1).arrival(), SemanticErrorType.SEMANTIC,
+                    "Route destination (" + flight.routeDestination() + ") must match last leg arrival airport (" + lastArrival + ")"));
         }
     }
 
     private void validateLeg(final LegAst leg, final FlightDslDocument document, final List<SemanticError> errors, final int legNumber) {
-        if (leg.segments().isEmpty()) {
-            errors.add(error(document, leg, SemanticErrorType.STRUCTURAL, "Leg " + legNumber + " must contain at least one segment"));
-        }
-
         validateFuel(leg, document, errors, legNumber);
         validateProfile(leg.profile(), document, errors, legNumber);
 
@@ -133,21 +117,17 @@ public class FlightSemanticValidator {
             return;
         }
 
-        if (profile.climbEntries().isEmpty() && profile.descendEntries().isEmpty()) {
-            errors.add(new SemanticError(SemanticErrorType.STRUCTURAL, 1, 0, "Profile in leg " + legNumber + " cannot be empty"));
-        }
-
         for (final ClimbEntryAst climb : profile.climbEntries()) {
             if (climb.altitude() < 0 || climb.speed() <= 0) {
                 errors.add(error(document, climb, SemanticErrorType.SEMANTIC,
-                        "Climb profile values must be valid and positive"));
+                        "Climb profile values must be valid and positive in leg " + legNumber));
             }
         }
 
         for (final DescendEntryAst descend : profile.descendEntries()) {
             if (descend.altitude() < 0 || descend.speed() <= 0 || descend.rate() >= 0) {
                 errors.add(error(document, descend, SemanticErrorType.SEMANTIC,
-                        "Descend profile values must be valid and rate must be negative"));
+                        "Descend profile values must be valid and rate must be negative in leg " + legNumber));
             }
         }
     }
@@ -160,24 +140,16 @@ public class FlightSemanticValidator {
                     "Segment start and end coordinates must differ in leg " + legNumber));
         }
 
-        if (segment.from().latitude() < -90 || segment.from().latitude() > 90 || segment.to().latitude() < -90 || segment.to().latitude() > 90) {
-            errors.add(error(document, segment, SemanticErrorType.SEMANTIC, "Latitude must be between -90 and 90"));
+        if (segment.from().latitude() < -90 || segment.from().latitude() > 90
+                || segment.to().latitude() < -90 || segment.to().latitude() > 90) {
+            errors.add(error(document, segment, SemanticErrorType.SEMANTIC,
+                    "Latitude must be between -90 and 90 in leg " + legNumber));
         }
-        if (segment.from().longitude() < -180 || segment.from().longitude() > 180 || segment.to().longitude() < -180 || segment.to().longitude() > 180) {
-            errors.add(error(document, segment, SemanticErrorType.SEMANTIC, "Longitude must be between -180 and 180"));
-        }
-    }
 
-    private LocalDateTime parseDateTime(final String date,
-                                        final String time,
-                                        final FlightDslDocument document,
-                                        final Object node,
-                                        final List<SemanticError> errors) {
-        try {
-            return LocalDateTime.of(LocalDate.parse(date), LocalTime.parse(time));
-        } catch (final Exception ex) {
-            errors.add(error(document, node, SemanticErrorType.SEMANTIC, "Invalid date/time value: " + date + " " + time));
-            return null;
+        if (segment.from().longitude() < -180 || segment.from().longitude() > 180
+                || segment.to().longitude() < -180 || segment.to().longitude() > 180) {
+            errors.add(error(document, segment, SemanticErrorType.SEMANTIC,
+                    "Longitude must be between -180 and 180 in leg " + legNumber));
         }
     }
 
@@ -186,4 +158,3 @@ public class FlightSemanticValidator {
         return new SemanticError(type, location.line(), location.column(), message);
     }
 }
-

@@ -31,7 +31,7 @@ public class UsersMenuUI extends AbstractUI {
     private Menu buildUsersMenu() {
         final Menu menu = new Menu("Users >");
 
-        menu.addItem(REGISTER_USER_OPTION, "Register New User", new RegisterUserAction());
+        menu.addItem(REGISTER_USER_OPTION, "Register New User or Edit a User", new RegisterUserAction());
         menu.addItem(LIST_USERS_OPTION, "List All Users", new ListUsersAction());
         menu.addItem(DISABLE_USER_OPTION, "Disable/Enable User", new DisableEnableUserAction());
         menu.addItem(RETURN_OPTION, "Return", Actions.SUCCESS);
