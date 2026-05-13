@@ -2,7 +2,7 @@
 
 flight TP5678 {
     type:  regular;
-    route: TP001;
+    route: TP001 from OPO to BCN;
 
     leg {
         departure {
