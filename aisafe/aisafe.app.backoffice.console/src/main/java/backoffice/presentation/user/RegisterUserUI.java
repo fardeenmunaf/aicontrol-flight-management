@@ -30,9 +30,9 @@ public class RegisterUserUI extends AbstractUI {
 
     private boolean doRegisterUser() {
         try {
-            final String name = Console.readLine("User full name");
-            final String email = Console.readLine("Email address");
-            final String phoneNumber = Console.readLine("Phone number");
+            final String name = Console.readLine("User full name (John Doe)");
+            final String email = readAisafeEmail("Email address (register@aisafe.com)");
+            final String phoneNumber = Console.readLine("Phone number (+351912345678)");
             final String password = Console.readLine("Password");
             final java.util.Set<Role> roles = readRoles();
 
@@ -51,8 +51,8 @@ public class RegisterUserUI extends AbstractUI {
 
     private boolean doEditUser() {
         try {
-            final String email = Console.readLine("Email address of user to edit");
-            final String newPhone = Console.readLine("New phone number");
+            final String email = readAisafeEmail("Email address of user to edit (edit@aisafe.com)");
+            final String newPhone = Console.readLine("New phone number (+351912345678)");
             final java.util.Set<Role> newRoles = readRoles();
             controller.editUser(email, newPhone, newRoles);
             System.out.println("\nUser updated successfully.");
@@ -105,6 +105,14 @@ public class RegisterUserUI extends AbstractUI {
         } catch (final NumberFormatException ex) {
             throw new IllegalArgumentException("Invalid number: " + raw);
         }
+    }
+
+    private String readAisafeEmail(final String prompt) {
+        final String email = Console.readLine(prompt).trim();
+        if (!email.matches("^[^@\\s]+@aisafe\\.com$")) {
+            throw new IllegalArgumentException("Email must end with @aisafe.com");
+        }
+        return email;
     }
 }
 
