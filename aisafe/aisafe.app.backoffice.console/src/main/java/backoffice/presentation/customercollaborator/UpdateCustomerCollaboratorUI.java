@@ -1,10 +1,15 @@
 package backoffice.presentation.customercollaborator;
 
+import customercollaborator.domain.CustomerCollaborator;
 import customercollaborator.application.UpdateCustomerCollaboratorController;
 import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
 import infrastructure.persistence.PersistenceContext;
+import shared.domain.UserId;
 import user.domain.User;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * UI for updating a customer collaborator's contact information.
@@ -21,6 +26,8 @@ public class UpdateCustomerCollaboratorUI extends AbstractUI {
     @Override
     protected boolean doShow() {
         try {
+            showAvailableCollaborators();
+
             final String userId = Console.readLine("Collaborator User ID");
             
             System.out.println("\nLeave empty to keep the current value:");
@@ -55,5 +62,54 @@ public class UpdateCustomerCollaboratorUI extends AbstractUI {
     @Override
     public String headline() {
         return "Update Customer Collaborator Contact Information";
+    }
+
+    private void showAvailableCollaborators() {
+        final List<CustomerCollaborator> collaborators = toList(
+                PersistenceContext.repositories().customerCollaborators().findAll());
+
+        if (collaborators.isEmpty()) {
+            System.out.println("No customer collaborators available.");
+            return;
+        }
+
+        System.out.println("\nAvailable collaborators:");
+        for (final CustomerCollaborator collaborator : collaborators) {
+            final String collaboratorInfo = describeCollaborator(collaborator);
+            System.out.printf("- User ID: %s | %s%n", collaborator.userId(), collaboratorInfo);
+        }
+        System.out.println();
+    }
+
+    private String describeCollaborator(final CustomerCollaborator collaborator) {
+        final UserId userId = collaborator.userId();
+        final String userInfo = PersistenceContext.repositories().users()
+                .ofIdentity(userId)
+                .map(User::name)
+                .orElse("Unknown user");
+
+        final String affiliation;
+        if (collaborator.airTransportCompanyId() != null) {
+            affiliation = "Air Transport Company: " + collaborator.airTransportCompanyId();
+        } else if (collaborator.airControlAreaId() != null) {
+            affiliation = "Air Control Area: " + collaborator.airControlAreaId();
+        } else {
+            affiliation = "No affiliation";
+        }
+
+        return String.format("Name: %s | Type: %s | %s | Position: %s | %s",
+                userInfo,
+                collaborator.customerType(),
+                affiliation,
+                collaborator.position(),
+                collaborator.isActive() ? "ACTIVE" : "DISABLED");
+    }
+
+    private <T> List<T> toList(final Iterable<T> iterable) {
+        final List<T> list = new ArrayList<>();
+        for (final T item : iterable) {
+            list.add(item);
+        }
+        return list;
     }
 }
