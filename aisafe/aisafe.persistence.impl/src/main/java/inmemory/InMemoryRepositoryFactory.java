@@ -1,5 +1,6 @@
 package inmemory;
 
+import aircraft.repositories.AircraftRepository;
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
 import customercollaborator.repositories.CustomerCollaboratorRepository;
@@ -120,6 +121,16 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
     @Override
     public AircraftModelRepository aircraftModels() {
         return aircraftModels(null);
+    }
+
+    @Override
+    public AircraftRepository aircraft(final TransactionalContext autoTx) {
+        return new InMemoryAircraftRepository();
+    }
+
+    @Override
+    public AircraftRepository aircraft() {
+        return aircraft(null);
     }
 
     @Override

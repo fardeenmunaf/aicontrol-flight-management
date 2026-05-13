@@ -22,9 +22,10 @@ public final class AISafeBootstrap {
                 PersistenceSettings.getExtendedPersistenceProperties()));
         final var repositories = PersistenceContext.repositories();
 
+        new AirTransportCompanyBootstrap(repositories.airTransportCompanies()).execute();
         new UsersBootstrap(repositories.users()).execute();
         new EngineModelBootstrap(repositories.engineModels()).execute();
-        new AirTransportCompanyBootstrap(repositories.airTransportCompanies()).execute();
+        new AircraftModelBootstrap(repositories.aircraftModels(), repositories.engineModels()).execute();
         new AirControlAreaBootstrap(repositories.airControlAreas()).execute();
         new CustomerCollaboratorBootstrap(
                 repositories.users(),

@@ -20,17 +20,19 @@ public class UsersBootstrap {
     }
 
     public void execute() {
-        registerIfAbsent("admin@aisafe.com",  "Admin1234!",    "System Admin",    AISafeRoles.ADMIN, Role.ADMIN);
-        registerIfAbsent("bo@aisafe.com",     "Operator1234!", "Backoffice Ops",  AISafeRoles.BACKOFFICE_OPERATOR, Role.BACKOFFICE_OPERATOR);
-        registerIfAbsent("pilot@aisafe.com",  "Pilot1234!",    "Default Pilot",   AISafeRoles.PILOT, Role.PILOT);
-        registerIfAbsent("fco@aisafe.com",    "Fco1234!",      "Default FCO",     AISafeRoles.FLIGHT_CONTROL_OPERATOR, Role.FLIGHT_CONTROL_OPERATOR);
-        registerIfAbsent("weather@aisafe.com","Weather1234!",  "Weather Person",  AISafeRoles.WEATHER_PERSON, Role.WEATHER_PERSON);
+        registerIfAbsent("admin@aisafe.com",  "Admin1234!",    "System Admin",    AISafeRoles.ADMIN, Role.ADMIN, null);
+        registerIfAbsent("bo@aisafe.com",     "Operator1234!", "Backoffice Ops",  AISafeRoles.BACKOFFICE_OPERATOR, Role.BACKOFFICE_OPERATOR, null);
+        registerIfAbsent("pilot@aisafe.com",  "Pilot1234!",    "Default Pilot",   AISafeRoles.PILOT, Role.PILOT, null);
+        registerIfAbsent("fco@aisafe.com",    "Fco1234!",      "Default FCO",     AISafeRoles.FLIGHT_CONTROL_OPERATOR, Role.FLIGHT_CONTROL_OPERATOR, null);
+        registerIfAbsent("weather@aisafe.com","Weather1234!",  "Weather Person",  AISafeRoles.WEATHER_PERSON, Role.WEATHER_PERSON, null);
+        
     }
 
     private void registerIfAbsent(final String email, final String password,
                                   final String name,
                                   final eapli.framework.infrastructure.authz.domain.model.Role role,
-                                  final Role domainRole) {
+                                  final Role domainRole,
+                                  final Object unused) {
         if (AuthzRegistry.userService().userOfIdentity(Username.valueOf(email)).isEmpty()) {
             AuthzRegistry.userService().registerNewUser(
                     email,
