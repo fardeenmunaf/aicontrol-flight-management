@@ -41,9 +41,10 @@ public class RegisterAircraftModelController {
                 throw new IllegalArgumentException("No engine models must be selected when number of engines is zero");
             }
         } else {
-            if (dto.engineModelNames == null || dto.engineModelNames.size() != dto.numberOfEngines) {
+            final int numSelected = (dto.engineModelNames == null) ? 0 : dto.engineModelNames.size();
+            if (numSelected > dto.numberOfEngines) {
                 throw new IllegalArgumentException(String.format(
-                        "Select exactly %d engine model(s) for this aircraft model",
+                        "Cannot select more than %d engine model(s) for this aircraft model",
                         dto.numberOfEngines));
             }
         }
