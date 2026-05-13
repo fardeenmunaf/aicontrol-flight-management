@@ -126,22 +126,22 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     }
 
     @Override
-    public aircontrolarea.repositories.AirControlAreaRepository airControlAreas() {
+    public AirControlAreaRepository airControlAreas() {
         return new JpaAirControlAreaRepository(PersistenceSettings.getPersistenceUnitName());
     }
 
     @Override
-    public aircontrolarea.repositories.AirControlAreaRepository airControlAreas(final TransactionalContext autoTx) {
+    public AirControlAreaRepository airControlAreas(final TransactionalContext autoTx) {
         return new JpaAirControlAreaRepository(autoTx);
     }
 
     @Override
-    public airtransportcompany.repositories.AirTransportCompanyRepository airTransportCompanies() {
+    public AirTransportCompanyRepository airTransportCompanies() {
         return new JpaAirTransportCompanyRepository(PersistenceSettings.getPersistenceUnitName());
     }
 
     @Override
-    public airtransportcompany.repositories.AirTransportCompanyRepository airTransportCompanies(final TransactionalContext autoTx) {
+    public AirTransportCompanyRepository airTransportCompanies(final TransactionalContext autoTx) {
         return new JpaAirTransportCompanyRepository(autoTx);
     }
 
