@@ -81,6 +81,41 @@ public class AirControlArea implements AggregateRoot<AirControlAreaId> {
         return geographicBoundaries;
     }
 
+    /**
+     * Returns true if the given point (latitude, longitude) falls inside this area's polygon.
+     * The geographicBoundaries string must follow the format "lat,lon;lat,lon;...".
+     * Returns false if the format is invalid or unparseable.
+     */
+    public boolean containsPoint(final double latitude, final double longitude) {
+        try {
+            final String[] tokens = geographicBoundaries.split(";");
+            final int n = tokens.length;
+            if (n < 3) {
+                return false;
+            }
+            final double[] lats = new double[n];
+            final double[] lons = new double[n];
+            for (int k = 0; k < n; k++) {
+                final String[] parts = tokens[k].trim().split(",");
+                lats[k] = Double.parseDouble(parts[0].trim());
+                lons[k] = Double.parseDouble(parts[1].trim());
+            }
+            // Ray casting: horizontal ray from (latitude, longitude) going right
+            boolean inside = false;
+            for (int i = 0, j = n - 1; i < n; j = i++) {
+                final double yi = lats[i], xi = lons[i];
+                final double yj = lats[j], xj = lons[j];
+                if (((yi > latitude) != (yj > latitude))
+                        && (longitude < (xj - xi) * (latitude - yi) / (yj - yi) + xi)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        } catch (final Exception e) {
+            return false;
+        }
+    }
+
     @Override
     public String toString() {
         return String.format(
