@@ -1,5 +1,6 @@
 package jpa;
 
+import aircraft.repositories.AircraftRepository;
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
 import customercollaborator.repositories.CustomerCollaboratorRepository;
@@ -123,6 +124,16 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     @Override
     public AircraftModelRepository aircraftModels(final TransactionalContext autoTx) {
         return new JpaAircraftModelRepository(autoTx);
+    }
+
+    @Override
+    public AircraftRepository aircraft() {
+        return new JpaAircraftRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public AircraftRepository aircraft(final TransactionalContext autoTx) {
+        return new JpaAircraftRepository(autoTx);
     }
 
     @Override

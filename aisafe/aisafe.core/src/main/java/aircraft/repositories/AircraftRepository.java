@@ -44,4 +44,12 @@ public interface AircraftRepository extends DomainRepository<AircraftId, Aircraf
         * @return list of aircraft with the given registration country, never null
         */
         List<Aircraft> findByRegistrationCountry(String registrationCountry);
+
+        /**
+         * Find an aircraft by its registration number (case-insensitive).
+         *
+         * @param registrationNumber registration number to search for
+         * @return optional containing the aircraft if present
+         */
+        java.util.Optional<Aircraft> findByRegistrationNumber(String registrationNumber);
 }

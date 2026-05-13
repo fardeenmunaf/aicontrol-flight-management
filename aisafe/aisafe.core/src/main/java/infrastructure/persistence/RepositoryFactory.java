@@ -1,5 +1,6 @@
 package infrastructure.persistence;
 
+import aircraft.repositories.AircraftRepository;
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
 import aircontrolarea.repositories.AirControlAreaRepository;
@@ -72,6 +73,10 @@ public interface RepositoryFactory {
     AircraftModelRepository aircraftModels();
 
     AircraftModelRepository aircraftModels(TransactionalContext autoTx);
+
+    AircraftRepository aircraft();
+
+    AircraftRepository aircraft(TransactionalContext autoTx);
 
     /**
      * Air control area repositories
