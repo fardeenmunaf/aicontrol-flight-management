@@ -29,7 +29,7 @@ rebuild-all.bat
 ./rebuild-all.sh
 ```
 
-This will compile and package all project modules (Backoffice, Bootstrap, DSL, Simulation, etc.).
+This will compile and package all project modules (Backoffice, DSL, Simulation, etc.).
 
 ---
 
@@ -113,13 +113,11 @@ After choosing your database option (H2 or PostgreSQL) and setting the environme
 
 **Windows:**
 ```bat
-run-bootstrap.bat
 run-backoffice.bat
 ```
 
 **Linux / macOS:**
 ```sh
-./run-bootstrap.sh
 ./run-backoffice.sh
 ```
 
