@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '0 2 * * *'  # nightly às 02:00 UTC
+    - cron: '0 2 * * *'
 
 jobs:
   build:
@@ -24,6 +24,7 @@ jobs:
           cache: maven
 
       - name: Build, test and verify with Maven
+        working-directory: aisafe
         run: mvn -B clean verify
 
       - name: Upload JaCoCo report
@@ -31,5 +32,5 @@ jobs:
         if: always()
         with:
           name: jacoco-report
-          path: target/site/jacoco/
+          path: aisafe/target/site/jacoco/
           if-no-files-found: warn
