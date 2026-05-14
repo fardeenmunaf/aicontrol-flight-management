@@ -22,9 +22,22 @@ public class RegisterAircraftModelUI extends AbstractUI {
     protected boolean doShow() {
         try {
             final String modelName = Console.readLine("Model name");
+            if (modelName == null || modelName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Model name cannot be empty");
+            }
+            
             final String makerName = Console.readLine("Manufacturer name");
+            if (makerName == null || makerName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Manufacturer name cannot be empty");
+            }
+            
             final String makerCountry = Console.readLine("Manufacturer country");
+            if (makerCountry == null || makerCountry.trim().isEmpty()) {
+                throw new IllegalArgumentException("Manufacturer country cannot be empty");
+            }
+            
             final AircraftType type = readAircraftType();
+            final int numberOfEngines = readInt("Number of engines (0 if none)");
 
             final Double emptyWeight = readDouble("Empty weight (kg)");
             final Double maximumTakeOffWeight = readDouble("Maximum take-off weight (kg)");
@@ -37,12 +50,12 @@ public class RegisterAircraftModelUI extends AbstractUI {
             final Double dragCoefficient = readDouble("Drag coefficient (Cd)");
             final Double liftCoefficient = readDouble("Lift coefficient (Cl)");
 
-            final List<String> engineModelNames = readEngineModelNames();
+            final List<String> engineModelNames = readEngineModelNames(numberOfEngines);
 
             final AircraftModelDTO dto = new AircraftModelDTO(
-                    modelName,
-                    makerName,
-                    makerCountry,
+                    modelName.trim(),
+                    makerName.trim(),
+                    makerCountry.trim(),
                     type,
                     emptyWeight,
                     maximumTakeOffWeight,
@@ -54,6 +67,7 @@ public class RegisterAircraftModelUI extends AbstractUI {
                     wingSpan,
                     dragCoefficient,
                     liftCoefficient,
+                    numberOfEngines,
                     engineModelNames
             );
 
@@ -85,7 +99,16 @@ public class RegisterAircraftModelUI extends AbstractUI {
         return values[choice - 1];
     }
 
-    private List<String> readEngineModelNames() {
+    private List<String> readEngineModelNames(final int numberOfEngines) {
+
+        if (numberOfEngines < 0) {
+            throw new IllegalArgumentException("Number of engines cannot be negative");
+        }
+
+        if (numberOfEngines == 0) {
+            System.out.println("No engine models will be associated with this aircraft model.");
+            return new ArrayList<>();
+        }
 
         final List<EngineModel> available = new ArrayList<>();
         PersistenceContext.repositories().engineModels().findAll().forEach(available::add);
@@ -97,24 +120,29 @@ public class RegisterAircraftModelUI extends AbstractUI {
         System.out.println("Available engine models:");
         for (int i = 0; i < available.size(); i++) {
             final EngineModel em = available.get(i);
-            // assume EngineModel has a name() method
             System.out.printf("%d - %s%n", i + 1, em.name());
         }
 
-        System.out.println("Select at least one certified engine model by number.");
-        System.out.println("Type one number per line. Leave blank to finish selection.");
+        System.out.printf("Select exactly %d engine model(s) by number.%n", numberOfEngines);
+        System.out.printf("You can select up to %d engine(s), or skip by pressing 0.%n", numberOfEngines);
+        System.out.println("0 - Finish selection");
 
         final List<String> names = new ArrayList<>();
-        while (true) {
-            final String raw = Console.readLine("Engine model number").trim();
-            if (raw.isEmpty()) {
+        while (names.size() < numberOfEngines) {
+            final String input = Console.readLine("Engine model number");
+            if (input == null) {
+                throw new IllegalArgumentException("Engine model selection was interrupted");
+            }
+            final String raw = input.trim();
+            if ("0".equals(raw)) {
+                System.out.println("Selection finished.");
                 break;
             }
             final int choice;
             try {
                 choice = Integer.parseInt(raw);
             } catch (final NumberFormatException ex) {
-                System.out.println("Invalid number: " + raw);
+                System.out.println("Invalid number: " + raw + " (type only the list number, e.g. 1)");
                 continue;
             }
             if (choice < 1 || choice > available.size()) {
@@ -122,11 +150,10 @@ public class RegisterAircraftModelUI extends AbstractUI {
                 continue;
             }
             final EngineModel selected = available.get(choice - 1);
+            System.out.println("Selected: " + selected.name());
             names.add(selected.name());
-        }
-
-        if (names.isEmpty()) {
-            throw new IllegalArgumentException("At least one certified engine model is required");
+            available.remove(choice - 1);
+            System.out.printf("Selected %d/%d engine(s)%n", names.size(), numberOfEngines);
         }
 
         return names;
@@ -134,6 +161,9 @@ public class RegisterAircraftModelUI extends AbstractUI {
 
     private int readInt(final String prompt) {
         final String raw = Console.readLine(prompt);
+        if (raw == null) {
+            throw new IllegalArgumentException("Input was interrupted or no value provided");
+        }
         try {
             return Integer.parseInt(raw.trim());
         } catch (final NumberFormatException ex) {
@@ -143,6 +173,9 @@ public class RegisterAircraftModelUI extends AbstractUI {
 
     private Double readDouble(final String prompt) {
         final String raw = Console.readLine(prompt);
+        if (raw == null) {
+            throw new IllegalArgumentException("Input was interrupted or no value provided");
+        }
         try {
             return Double.parseDouble(raw.trim());
         } catch (final NumberFormatException ex) {

@@ -11,6 +11,9 @@ public class AircraftModelsMenuUI extends AbstractUI {
 
     private static final int RETURN_OPTION = 0;
     private static final int REGISTER_AIRCRAFT_MODEL_OPTION = 1;
+    private static final int VIEW_AVAILABLE_AIRCRAFT_MODEL_OPTION = 2;
+    private static final int ADD_ENGINE_MODEL_OPTION = 3;
+    private static final int REMOVE_ENGINE_MODEL_OPTION = 4;
 
     public void mainLoop() {
         boolean exit;
@@ -30,6 +33,9 @@ public class AircraftModelsMenuUI extends AbstractUI {
         final Menu menu = new Menu("Aircraft Models");
 
         menu.addItem(REGISTER_AIRCRAFT_MODEL_OPTION, "Register Aircraft Model", new RegisterAircraftModelAction());
+        menu.addItem(VIEW_AVAILABLE_AIRCRAFT_MODEL_OPTION, "View Available Aircraft Models", new ViewAircraftModelAction());
+        menu.addItem(ADD_ENGINE_MODEL_OPTION, "Add Engine Model to Aircraft Model", new AddEngineModelToAircraftAction());
+        menu.addItem(REMOVE_ENGINE_MODEL_OPTION, "Remove Engine Model from Aircraft Model", new RemoveEngineModelFromAircraftAction());
         menu.addItem(RETURN_OPTION, "Return", Actions.SUCCESS);
 
         return menu;
@@ -40,4 +46,3 @@ public class AircraftModelsMenuUI extends AbstractUI {
         return "Aircraft Models Management";
     }
 }
-

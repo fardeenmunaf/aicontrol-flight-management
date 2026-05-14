@@ -10,6 +10,8 @@ import eapli.framework.infrastructure.authz.application.AuthorizationService;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import shared.domain.AirControlAreaId;
 
+import java.util.Optional;
+
 public class RegisterAirportController {
 
     private final AuthorizationService authz = AuthzRegistry.authorizationService();
@@ -21,6 +23,11 @@ public class RegisterAirportController {
             final AirControlAreaRepository airControlAreaRepository) {
         this.airportRepository = airportRepository;
         this.airControlAreaRepository = airControlAreaRepository;
+    }
+
+    public Optional<AirControlArea> findAreaForCoordinates(final double latitude, final double longitude) {
+        authz.ensureAuthenticatedUserHasAnyOf(AISafeRoles.BACKOFFICE_OPERATOR);
+        return airControlAreaRepository.findContaining(latitude, longitude);
     }
 
     public Airport registerAirport(

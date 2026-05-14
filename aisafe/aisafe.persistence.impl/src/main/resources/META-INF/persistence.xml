@@ -33,10 +33,10 @@
         <class>eapli.framework.infrastructure.authz.domain.model.Role</class>
         <class>eapli.framework.infrastructure.authz.domain.model.RoleSet</class>
         <class>eapli.framework.infrastructure.authz.domain.model.RoleAssignment</class>
-
+        <class>customercollaborator.domain.CustomerCollaborator</class>
         <properties>
             <property name="jakarta.persistence.jdbc.driver"   value="org.h2.Driver"/>
-            <property name="jakarta.persistence.jdbc.url"      value="jdbc:h2:./aisafe_db;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER,VALUE"/>
+            <property name="jakarta.persistence.jdbc.url"      value="jdbc:h2:tcp://localhost:9092/mem:aisafe;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER,VALUE"/>
             <property name="jakarta.persistence.jdbc.user"     value="admin"/>
             <property name="jakarta.persistence.jdbc.password" value="admin"/>
 
@@ -75,6 +75,7 @@
         <class>aircraftmodel.domain.AircraftModel</class>
         <class>aircontrolarea.domain.AirControlArea</class>
         <class>airtransportcompany.domain.AirTransportCompany</class>
+        <class>customercollaborator.domain.CustomerCollaborator</class>
         <class>eapli.framework.infrastructure.authz.domain.model.SystemUser</class>
         <class>eapli.framework.infrastructure.authz.domain.model.Role</class>
         <class>eapli.framework.infrastructure.authz.domain.model.RoleSet</class>

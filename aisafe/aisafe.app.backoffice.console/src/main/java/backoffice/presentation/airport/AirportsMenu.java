@@ -11,6 +11,13 @@ public class AirportsMenu extends AbstractUI {
     private static final int RETURN_OPTION = 0;
     private static final int REGISTER_AIRPORT_OPTION = 1;
 
+    public void mainLoop() {
+        boolean exit;
+        do {
+            exit = doShow();
+        } while (!exit);
+    }
+
     @Override
     protected boolean doShow() {
         final Menu menu = new Menu("Airports");

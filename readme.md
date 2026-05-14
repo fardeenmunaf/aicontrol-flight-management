@@ -17,7 +17,21 @@ This integrated system is composed of several core modules:
 
 ## 3. How to Build
 
-*To Do*
+Before running the project, you must compile all modules. Use the appropriate script for your operating system:
+
+**Windows:**
+```bat
+rebuild-all.bat
+```
+
+**Linux / macOS:**
+```sh
+./rebuild-all.sh
+```
+
+This will compile and package all project modules (Backoffice, DSL, Simulation, etc.).
+
+---
 
 ## 4. How to Execute Tests
 
@@ -25,7 +39,87 @@ This integrated system is composed of several core modules:
 
 ## 5. How to Run
 
-*To Do*
+### Prerequisites
+
+- Java 17+ installed
+- (Optional) PostgreSQL 18 installed, if using a relational database
+
+---
+
+### Option A — In-Memory H2 Database (No setup required)
+
+If you want to run the application using the embedded H2 in-memory database, start the H2 server first:
+
+**Windows:**
+```bat
+start-h2-server.bat
+```
+
+**Linux / macOS:**
+```sh
+./start-h2-server.sh
+```
+
+Then proceed to launch the application modules as described below (without setting any environment variables).
+
+---
+
+### Option B — PostgreSQL Database
+
+#### 1. Install and Configure PostgreSQL
+
+1. Install **PostgreSQL 18**.
+2. Open **pgAdmin 4**.
+3. Create a new database named **`aisafe`**:
+   - Right-click on *Databases* → *Create* → *Database...*
+   - Set the name to `aisafe` and save.
+4. Test the connection to confirm it is working.
+
+#### 2. Set Environment Variables
+
+Before launching the application, configure the following environment variables in your terminal session:
+
+**Windows — PowerShell:**
+```powershell
+$env:AISAFE_PERSISTENCE_UNIT="aisafe-pu-postgres"
+$env:AISAFE_DB_URL="jdbc:postgresql://localhost:5432/aisafe"
+$env:AISAFE_DB_USERNAME="postgres"
+$env:AISAFE_DB_PASSWORD="postgres"
+```
+
+**Windows — CMD:**
+```cmd
+set AISAFE_PERSISTENCE_UNIT=aisafe-pu-postgres
+set AISAFE_DB_URL=jdbc:postgresql://localhost:5432/aisafe
+set AISAFE_DB_USERNAME=postgres
+set AISAFE_DB_PASSWORD=postgres
+```
+
+**Linux / macOS:**
+```sh
+export AISAFE_PERSISTENCE_UNIT=aisafe-pu-postgres
+export AISAFE_DB_URL=jdbc:postgresql://localhost:5432/aisafe
+export AISAFE_DB_USERNAME=postgres
+export AISAFE_DB_PASSWORD=postgres
+```
+
+> **Note:** These variables must be set in the **same terminal session** where you will run the scripts below. If you open a new terminal, you will need to set them again.
+
+---
+
+### Launching the Application
+
+After choosing your database option (H2 or PostgreSQL) and setting the environment variables (if using PostgreSQL), launch the application modules in order:
+
+**Windows:**
+```bat
+run-backoffice.bat
+```
+
+**Linux / macOS:**
+```sh
+./run-backoffice.sh
+```
 
 ## 6. How to Install/Deploy into Another Machine (or Virtual Machine)
 

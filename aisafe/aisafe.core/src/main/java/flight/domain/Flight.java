@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Version;
 
 import eapli.framework.domain.model.AggregateRoot;
@@ -11,6 +12,8 @@ import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
 import shared.domain.FlightId;
+import aircraft.domain.Aircraft;
+import aircraft.domain.AircraftOperationStatus;
 
 @Entity
 public class Flight implements AggregateRoot<FlightId> {
@@ -29,6 +32,8 @@ public class Flight implements AggregateRoot<FlightId> {
     private FlightType type;
     private Instant scheduledDepartureTime;
     private Instant scheduledArrivalTime;
+    @ManyToOne
+    private Aircraft aircraft;
 
     public Flight(final String flightDesignator, final FlightType type, final Instant scheduledDepartureTime, final Instant scheduledArrivalTime) {
         Preconditions.noneNull(type, scheduledDepartureTime, scheduledArrivalTime);
@@ -43,6 +48,20 @@ public class Flight implements AggregateRoot<FlightId> {
         this.scheduledDepartureTime = scheduledDepartureTime;
         this.scheduledArrivalTime = scheduledArrivalTime;
         this.flightId = FlightId.newId();
+    }
+
+    /**
+     * Associate an aircraft with this flight.
+     * Used by application layer when assigning an aircraft to a flight.
+     */
+    public void assignAircraft(final Aircraft aircraft) {
+        if (aircraft == null) {
+            throw new IllegalArgumentException("Assigned aircraft cannot be null");
+        }
+        if (aircraft.operationStatus() == AircraftOperationStatus.DECOMISSIONED) {
+            throw new IllegalStateException("Cannot assign a decommissioned aircraft to a flight");
+        }
+        this.aircraft = aircraft;
     }
 
     protected Flight() {
@@ -83,5 +102,9 @@ public class Flight implements AggregateRoot<FlightId> {
 
     public Instant scheduledArrivalTime() {
         return scheduledArrivalTime;
+    }
+
+    public Aircraft aircraft() {
+        return aircraft;
     }
 }

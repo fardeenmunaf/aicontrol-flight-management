@@ -1,6 +1,7 @@
 package aircraft.domain;
 
 import aircraftmodel.domain.AircraftModel;
+import airtransportcompany.domain.AirTransportCompany;
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.strings.util.StringPredicates;
@@ -8,6 +9,8 @@ import eapli.framework.validations.Preconditions;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Version;
 import shared.domain.AircraftId;
@@ -27,29 +30,31 @@ public class Aircraft implements AggregateRoot<AircraftId> {
     private CabinConfiguration cabinConfiguration;
 
     @ManyToOne
+    private AirTransportCompany airTransportCompany;
+
+    @ManyToOne
     private AircraftModel aircraftModel;
 
-    private String registrationNumber; //int ou string?
+    private String registrationNumber; 
     private String registrationCountry;
-    private String operationStatus;
+    @Enumerated(EnumType.STRING)
+    private AircraftOperationStatus operationStatus;
     private int flightCrewCount;
 
     public Aircraft(final String registrationNumber,
                     final String registrationCountry,
-                    final String operationStatus,
+                    final AircraftOperationStatus operationStatus,
                     final int flightCrewCount,
                     final AircraftModel aircraftModel,
-                    final CabinConfiguration cabinConfiguration) {
+                    final CabinConfiguration cabinConfiguration,
+                    final AirTransportCompany airTransportCompany) {
 
-        Preconditions.noneNull(registrationNumber, registrationCountry, operationStatus, aircraftModel, cabinConfiguration);
+        Preconditions.noneNull(registrationNumber, registrationCountry, operationStatus, aircraftModel, cabinConfiguration, airTransportCompany);
         if (StringPredicates.isNullOrEmpty(registrationNumber)) {
             throw new IllegalArgumentException("Registration number should neither be null nor empty");
         }
         if (StringPredicates.isNullOrEmpty(registrationCountry)) {
             throw new IllegalArgumentException("Registration country should neither be null nor empty");
-        }
-        if (StringPredicates.isNullOrEmpty(operationStatus)) {
-            throw new IllegalArgumentException("Operation status should neither be null nor empty");
         }
         if (flightCrewCount < 0) {
             throw new IllegalArgumentException("Flight crew count cannot be negative");
@@ -61,6 +66,7 @@ public class Aircraft implements AggregateRoot<AircraftId> {
         this.flightCrewCount = flightCrewCount;
         this.aircraftModel = aircraftModel;
         this.cabinConfiguration = cabinConfiguration;
+        this.airTransportCompany = airTransportCompany;
         this.aircraftId = AircraftId.newId();
     }
 
@@ -100,7 +106,7 @@ public class Aircraft implements AggregateRoot<AircraftId> {
         return flightCrewCount;
     }
 
-    public String operationStatus() {
+    public AircraftOperationStatus operationStatus() {
         return operationStatus;
     }
 
@@ -110,5 +116,21 @@ public class Aircraft implements AggregateRoot<AircraftId> {
 
     public CabinConfiguration cabinConfiguration() {
         return cabinConfiguration;
+    }
+
+    public AirTransportCompany airTransportCompany() {
+        return airTransportCompany;
+    }
+
+    /**
+     * Decommission this aircraft (retire it from service).
+     * 
+     * @throws IllegalStateException if the aircraft is already decommissioned
+     */
+    public void decommission() {
+        if (this.operationStatus == AircraftOperationStatus.DECOMISSIONED) {
+            throw new IllegalStateException("Aircraft is already decommissioned");
+        }
+        this.operationStatus = AircraftOperationStatus.DECOMISSIONED;
     }
 }

@@ -6,6 +6,7 @@ public class AirportsMenuAction implements Action {
 
     @Override
     public boolean execute() {
-        return new AirportsMenu().show();
+        new AirportsMenu().mainLoop();
+        return false;
     }
 }

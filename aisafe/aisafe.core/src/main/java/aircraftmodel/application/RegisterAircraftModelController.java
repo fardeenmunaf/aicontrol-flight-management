@@ -32,8 +32,21 @@ public class RegisterAircraftModelController {
             throw new IllegalArgumentException("Aircraft model data is required");
         }
 
-        if (dto.engineModelNames == null || dto.engineModelNames.isEmpty()) {
-            throw new IllegalArgumentException("At least one certified engine model must be associated");
+        if (dto.numberOfEngines < 0) {
+            throw new IllegalArgumentException("Number of engines cannot be negative");
+        }
+
+        if (dto.numberOfEngines == 0) {
+            if (dto.engineModelNames != null && !dto.engineModelNames.isEmpty()) {
+                throw new IllegalArgumentException("No engine models must be selected when number of engines is zero");
+            }
+        } else {
+            final int numSelected = (dto.engineModelNames == null) ? 0 : dto.engineModelNames.size();
+            if (numSelected > dto.numberOfEngines) {
+                throw new IllegalArgumentException(String.format(
+                        "Cannot select more than %d engine model(s) for this aircraft model",
+                        dto.numberOfEngines));
+            }
         }
 
         if (!aircraftModelRepository.findByModelNameAndMaker(dto.modelName, dto.makerName).isEmpty()) {
@@ -57,6 +70,7 @@ public class RegisterAircraftModelController {
                 dto.dragCoefficient,
                 dto.liftCoefficient,
                 dto.modelName,
+                dto.numberOfEngines,
                 new AircraftModelMaker(dto.makerName, dto.makerCountry)
         );
 
@@ -65,10 +79,6 @@ public class RegisterAircraftModelController {
             if (name != null && !name.trim().isEmpty()) {
                 uniqueEngineNames.add(name.trim());
             }
-        }
-
-        if (uniqueEngineNames.isEmpty()) {
-            throw new IllegalArgumentException("At least one certified engine model must be associated");
         }
 
         if (dto.emptyWeight <= 0 ||
@@ -82,6 +92,10 @@ public class RegisterAircraftModelController {
                 dto.dragCoefficient <= 0 ||
                 dto.liftCoefficient <= 0) {
             throw new IllegalArgumentException("All flight characteristics must be positive");
+        }
+
+        if (dto.numberOfEngines > 0 && uniqueEngineNames.isEmpty()) {
+            throw new IllegalArgumentException("At least one certified engine model must be associated");
         }
 
         for (final String engineName : uniqueEngineNames) {

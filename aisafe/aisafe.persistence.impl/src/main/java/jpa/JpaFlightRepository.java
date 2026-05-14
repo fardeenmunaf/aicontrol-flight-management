@@ -4,6 +4,7 @@ import eapli.framework.domain.repositories.TransactionalContext;
 import flight.domain.Flight;
 import flight.repository.FlightRepository;
 import flight.domain.FlightStatus;
+import shared.domain.AircraftId;
 import shared.domain.FlightId;
 
 import java.time.Instant;
@@ -53,6 +54,26 @@ public class JpaFlightRepository extends BaseJpaRepositoryBase<Flight, FlightId,
         final Map<String, Object> params = new HashMap<>();
         params.put("flightDesignator", flightDesignator);
         return matchOne("e.flightDesignator = :flightDesignator", params);
+    }
+    
+    @Override
+    public List<Flight> findByAircraftAndStatus(final AircraftId aircraftId, final FlightStatus status) {
+        if (aircraftId == null || status == null) {
+            return Collections.emptyList();
+        }
+        final Map<String, Object> params = new HashMap<>();
+        params.put("aircraftId", aircraftId);
+        params.put("now", Instant.now());
+        switch (status) {
+            case SCHEDULED:
+                return match("e.aircraft.aircraftId = :aircraftId AND e.scheduledDepartureTime > :now", params);
+            case AIRBORNE:
+                return match("e.aircraft.aircraftId = :aircraftId AND e.scheduledDepartureTime <= :now AND e.scheduledArrivalTime >= :now", params);
+            case COMPLETED:
+                return match("e.aircraft.aircraftId = :aircraftId AND e.scheduledArrivalTime < :now", params);
+            default:
+                return Collections.emptyList();
+        }
     }
     
 }

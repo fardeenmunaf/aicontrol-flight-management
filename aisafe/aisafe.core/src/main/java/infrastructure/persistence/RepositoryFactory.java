@@ -1,8 +1,10 @@
 package infrastructure.persistence;
 
+import aircraft.repositories.AircraftRepository;
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
 import aircontrolarea.repositories.AirControlAreaRepository;
+import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import enginemodel.repositories.EngineModelRepository;
 import user.repository.UserRepository;
@@ -72,10 +74,18 @@ public interface RepositoryFactory {
 
     AircraftModelRepository aircraftModels(TransactionalContext autoTx);
 
+    AircraftRepository aircraft();
+
+    AircraftRepository aircraft(TransactionalContext autoTx);
+
     /**
      * Air control area repositories
      */
     AirControlAreaRepository airControlAreas();
+
+    airtransportcompany.repositories.AirTransportCompanyRepository airTransportCompanies(TransactionalContext autoTx);
+
+    airtransportcompany.repositories.AirTransportCompanyRepository airTransportCompanies();
 
     AirControlAreaRepository airControlAreas(TransactionalContext autoTx);
 
@@ -87,4 +97,7 @@ public interface RepositoryFactory {
 
     SimulationRepository simulations(TransactionalContext autoTx);
 
+    CustomerCollaboratorRepository customerCollaborators();
+
+    CustomerCollaboratorRepository customerCollaborators(TransactionalContext autoTx);
 }

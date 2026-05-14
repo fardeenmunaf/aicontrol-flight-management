@@ -263,6 +263,7 @@ The lifecycle constraint at termination illustrates a *cross-aggregate lifecycle
 
 - The combination of model name and `AircraftMaker` must be globally unique (composite key invariant).
 - At least one certified `EngineModel` (`EngineModelId`) must always be associated — the last engine cannot be removed.
+- The 'number of engines' attribute must be a positive integer and consistent with the number of associated `EngineModel` entries.
 - All aerodynamic parameters (`dragCoefficient`, `liftCoefficient`, `wingArea`, `wingSpan`) must be strictly positive, as they feed directly into the lift/drag physics equations in the simulation.
 - `maximumTakeOffWeight` ≥ `maximumZeroFuelWeight` ≥ `emptyWeight` is a structural physics invariant.
 

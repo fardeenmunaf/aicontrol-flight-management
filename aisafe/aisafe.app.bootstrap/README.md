@@ -19,6 +19,10 @@ Typical bootstrapped data includes:
 - Uses the application services from `aisafe.core` to create entities through the proper domain layer
 - Is **not** deployed in production — only used locally and in CI test environments
 
+## Configuration
+
+The bootstrapper respects the same persistence configuration used by the apps. By default it uses the in-memory H2 unit (`aisafe-pu`). To seed a PostgreSQL database, set `AISAFE_PERSISTENCE_UNIT=aisafe-pu-postgres` and the optional JDBC overrides before running `run-bootstrap.sh` or `run-bootstrap.bat`.
+
 ## Dependencies
 
 - `aisafe.core` — application services

@@ -1,7 +1,9 @@
 package jpa;
 
+import aircraft.repositories.AircraftRepository;
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
+import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import eapli.framework.infrastructure.repositories.impl.jpa.JpaAutoTxRepository;
 import user.repository.UserRepository;
@@ -15,6 +17,9 @@ import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
 import pilot.repository.PilotRepository;
 import simulation.repository.SimulationRepository;
+import aircontrolarea.repositories.AirControlAreaRepository;
+import airtransportcompany.repositories.AirTransportCompanyRepository;
+
 
 /**
  * JPA implementation of RepositoryFactory.
@@ -122,13 +127,33 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     }
 
     @Override
-    public aircontrolarea.repositories.AirControlAreaRepository airControlAreas() {
+    public AircraftRepository aircraft() {
+        return new JpaAircraftRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public AircraftRepository aircraft(final TransactionalContext autoTx) {
+        return new JpaAircraftRepository(autoTx);
+    }
+
+    @Override
+    public AirControlAreaRepository airControlAreas() {
         return new JpaAirControlAreaRepository(PersistenceSettings.getPersistenceUnitName());
     }
 
     @Override
-    public aircontrolarea.repositories.AirControlAreaRepository airControlAreas(final TransactionalContext autoTx) {
+    public AirControlAreaRepository airControlAreas(final TransactionalContext autoTx) {
         return new JpaAirControlAreaRepository(autoTx);
+    }
+
+    @Override
+    public AirTransportCompanyRepository airTransportCompanies() {
+        return new JpaAirTransportCompanyRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public AirTransportCompanyRepository airTransportCompanies(final TransactionalContext autoTx) {
+        return new JpaAirTransportCompanyRepository(autoTx);
     }
 
     @Override
@@ -159,5 +184,14 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     @Override
     public SimulationRepository simulations(final TransactionalContext autoTx) {
         return new JpaSimulationRepository(autoTx);
+    }
+
+    @Override
+    public CustomerCollaboratorRepository customerCollaborators() {
+        return new JpaCustomerCollaboratorRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+    @Override
+    public CustomerCollaboratorRepository customerCollaborators(final TransactionalContext autoTx) {
+        return new JpaCustomerCollaboratorRepository(autoTx);
     }
 }

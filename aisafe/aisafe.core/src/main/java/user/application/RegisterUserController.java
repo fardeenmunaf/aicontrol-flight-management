@@ -23,27 +23,59 @@ public class RegisterUserController {
 
     public User registerUser(final String email, final String rawPassword,
                              final String name, final String phoneNumber,
-                             final Role domainRole) {
+                             final Set<Role> domainRoles) {
         authz.ensureAuthenticatedUserHasAnyOf(AISafeRoles.ADMIN);
 
         final var nameParts = splitName(name);
+        // Convert domain roles to authz roles
+        Set<eapli.framework.infrastructure.authz.domain.model.Role> authzRoles = domainRoles.stream()
+                .map(this::toAuthzRole)
+                .collect(java.util.stream.Collectors.toSet());
         AuthzRegistry.userService().registerNewUser(
                 email,
                 rawPassword,
                 nameParts[0],
                 nameParts[1],
                 email,
-                Set.of(toAuthzRole(domainRole))
+                authzRoles
         );
 
         // Domain User — handles business data
         final var domainUser = new User(
                 email, name, phoneNumber,
                 null, null, "ACTIVE",
-                Set.of(domainRole),
+                domainRoles,
                 UserId.valueOf(email)
         );
         return userRepository.save(domainUser);
+    }
+
+    /**
+     * Edit a user's phone number and roles (admin only). Cannot change email, password, or name.
+     * @param email User's email (identifier)
+     * @param newPhoneNumber New phone number
+     * @param newRoles New set of roles
+     * @return Updated User
+     */
+    public User editUser(final String email, final String newPhoneNumber, final Set<Role> newRoles) {
+        authz.ensureAuthenticatedUserHasAnyOf(AISafeRoles.ADMIN);
+        var userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new IllegalArgumentException("User not found");
+        }
+        var user = userOpt.get();
+        // Create a new User instance with updated phone and roles, keeping other fields
+        var updatedUser = new User(
+                user.email(),
+                user.name(),
+                newPhoneNumber,
+                user.activeSecurityClearanceExpiry(),
+                user.skillsAssessmentDueDate(),
+                user.status(),
+                newRoles,
+                user.userId()
+        );
+        return userRepository.save(updatedUser);
     }
 
     private String[] splitName(final String name) {
