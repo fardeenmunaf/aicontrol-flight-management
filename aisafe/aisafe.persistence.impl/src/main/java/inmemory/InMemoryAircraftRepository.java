@@ -5,6 +5,7 @@ import aircraft.domain.CabinConfiguration;
 import aircraft.repositories.AircraftRepository;
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
 import shared.domain.AircraftId;
+import shared.domain.AirTransportCompanyId;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,5 +65,15 @@ public class InMemoryAircraftRepository
             return Optional.empty();
         }
         return Optional.of(result.get(0));
+    }
+
+    @Override
+    public List<Aircraft> findByAirTransportCompanyId(final AirTransportCompanyId companyId) {
+        if (companyId == null) {
+            return List.of();
+        }
+        final List<Aircraft> result = new ArrayList<>();
+        match(a -> a.airTransportCompany() != null && a.airTransportCompany().identity().equals(companyId)).forEach(result::add);
+        return result;
     }
 }

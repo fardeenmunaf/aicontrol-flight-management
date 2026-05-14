@@ -12,6 +12,7 @@ public class AirTransportCompaniesMenuUI extends AbstractUI {
     private static final int RETURN_OPTION = 0;
     private static final int REGISTER_COMPANY_OPTION = 1;
     private static final int LIST_COMPANIES_OPTION = 2;
+    private static final int LIST_FLEET_OPTION = 3;
 
     public void mainLoop() {
         boolean exit;
@@ -32,6 +33,7 @@ public class AirTransportCompaniesMenuUI extends AbstractUI {
 
         menu.addItem(REGISTER_COMPANY_OPTION, "Register New Company", new RegisterAirTransportCompanyAction());
         menu.addItem(LIST_COMPANIES_OPTION, "List All Companies", new ListAirTransportCompaniesAction());
+        menu.addItem(LIST_FLEET_OPTION, "List Company Fleet", new ListFleetATCMenuAction());
         menu.addItem(RETURN_OPTION, "Return", Actions.SUCCESS);
 
         return menu;

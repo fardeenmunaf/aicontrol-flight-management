@@ -5,6 +5,7 @@ import aircraft.domain.CabinConfiguration;
 import aircraft.repositories.AircraftRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import shared.domain.AircraftId;
+import shared.domain.AirTransportCompanyId;
 
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,7 @@ public class JpaAircraftRepository
      * @param registrationNumber the registration number to search for
      * @return optional containing the aircraft if found
      */
+    @Override
     public Optional<Aircraft> findByRegistrationNumber(final String registrationNumber) {
         if (registrationNumber == null || registrationNumber.isBlank()) {
             return Optional.empty();
@@ -63,5 +65,14 @@ public class JpaAircraftRepository
         final var result = match("e.aircraftId = :regNum",
                 Map.of("regNum", AircraftId.valueOf(registrationNumber)));
         return result.stream().findFirst();
+    }
+
+    @Override
+    public List<Aircraft> findByAirTransportCompanyId(final AirTransportCompanyId companyId) {
+        if (companyId == null) {
+            return List.of();
+        }
+        return match("e.airTransportCompany.airTransportCompanyId = :companyId",
+                Map.of("companyId", companyId));
     }
 }
