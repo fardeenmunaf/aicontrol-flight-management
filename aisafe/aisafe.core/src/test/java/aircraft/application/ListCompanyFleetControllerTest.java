@@ -265,6 +265,11 @@ class ListCompanyFleetControllerTest {
         }
 
         @Override
+        public boolean existsByAircraftModel(final AircraftModelId aircraftModelId) {
+            return false;
+        }
+
+        @Override
         public List<Aircraft> findByOperationStatus(final String operationStatus) {
             return List.of();
         }

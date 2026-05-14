@@ -199,4 +199,17 @@ public class AircraftModel implements AggregateRoot<AircraftModelId> {
     public Set<EngineModel> supportedEngineModels() {
         return Set.copyOf(supportedEngineModels);
     }
+
+    public void removeEngineModel(final EngineModel engineModel) {
+        Preconditions.noneNull(engineModel);
+        if (supportedEngineModels.size() <= 1) {
+            throw new IllegalStateException(
+                    "Cannot remove the last certified engine model from an aircraft model");
+        }
+        final boolean removed = supportedEngineModels.remove(engineModel);
+        if (!removed) {
+            throw new IllegalArgumentException(
+                    "Engine model is not associated with this aircraft model");
+        }
+    }
 }

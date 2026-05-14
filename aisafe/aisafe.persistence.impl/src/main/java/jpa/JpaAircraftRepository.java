@@ -6,6 +6,7 @@ import aircraft.repositories.AircraftRepository;
 import eapli.framework.domain.repositories.TransactionalContext;
 import shared.domain.AircraftId;
 import shared.domain.AirTransportCompanyId;
+import shared.domain.AircraftModelId;
 
 import java.util.List;
 import java.util.Map;
@@ -74,5 +75,15 @@ public class JpaAircraftRepository
         }
         return match("e.airTransportCompany.airTransportCompanyId = :companyId",
                 Map.of("companyId", companyId));
+    }
+
+    @Override
+    public boolean existsByAircraftModel(final AircraftModelId aircraftModelId) {
+        if (aircraftModelId == null) {
+            return false;
+        }
+        final var result = match("e.aircraftModel.aircraftModelId = :modelId",
+                Map.of("modelId", aircraftModelId));
+        return !result.isEmpty();
     }
 }

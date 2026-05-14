@@ -5,6 +5,7 @@ import aircraft.domain.Aircraft;
 import aircraft.domain.CabinConfiguration;
 import shared.domain.AircraftId;
 import shared.domain.AirTransportCompanyId;
+import shared.domain.AircraftModelId;
 
 import java.util.List;
 
@@ -62,4 +63,6 @@ public interface AircraftRepository extends DomainRepository<AircraftId, Aircraf
      * @return list of aircraft owned by the company, never null
      */
     List<Aircraft> findByAirTransportCompanyId(AirTransportCompanyId companyId);
+
+    boolean existsByAircraftModel(AircraftModelId aircraftModelId);
 }

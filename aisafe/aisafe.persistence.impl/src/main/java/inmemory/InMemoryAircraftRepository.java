@@ -6,6 +6,7 @@ import aircraft.repositories.AircraftRepository;
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
 import shared.domain.AircraftId;
 import shared.domain.AirTransportCompanyId;
+import shared.domain.AircraftModelId;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,5 +76,16 @@ public class InMemoryAircraftRepository
         final List<Aircraft> result = new ArrayList<>();
         match(a -> a.airTransportCompany() != null && a.airTransportCompany().identity().equals(companyId)).forEach(result::add);
         return result;
+    }
+
+    @Override
+    public boolean existsByAircraftModel(final AircraftModelId aircraftModelId) {
+        if (aircraftModelId == null) {
+            return false;
+        }
+        return match(a -> a.aircraftModel() != null
+                && a.aircraftModel().identity().equals(aircraftModelId))
+                .iterator()
+                .hasNext();
     }
 }
