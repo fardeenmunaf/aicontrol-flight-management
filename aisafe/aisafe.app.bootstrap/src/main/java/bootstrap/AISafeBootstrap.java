@@ -27,13 +27,13 @@ public final class AISafeBootstrap {
         new EngineModelBootstrap(repositories.engineModels()).execute();
         new AircraftModelBootstrap(repositories.aircraftModels(), repositories.engineModels()).execute();
         new AirControlAreaBootstrap(repositories.airControlAreas()).execute();
+        new AirportBootstrap(repositories.airports(), repositories.airControlAreas()).execute();
         new CustomerCollaboratorBootstrap(
                 repositories.users(),
                 repositories.customerCollaborators(),
                 repositories.airTransportCompanies(),
                 repositories.airControlAreas()
         ).execute();
-
         System.out.println("AISafe bootstrap completed.");
     }
 }
