@@ -1,0 +1,40 @@
+[ {
+  "flightDesignator" : "EK756",
+  "type" : "regular",
+  "route" : {
+    "reference" : "EK234",
+    "origin" : "LIS",
+    "destination" : "DXB"
+  },
+  "legs" : [ {
+    "departure" : {
+      "airport" : "LIS",
+      "date" : "2026-05-21",
+      "time" : "08:00"
+    },
+    "arrival" : {
+      "airport" : "DXB",
+      "date" : "2026-05-21",
+      "time" : "18:00"
+    },
+    "fuel" : {
+      "quantity" : 40200.0,
+      "unit" : "l"
+    },
+    "segments" : [ {
+      "mode" : "cruise",
+      "from" : {
+        "latitude" : 41.262891,
+        "longitude" : 67.67,
+        "altitude" : 34.0,
+        "altitudeUnit" : "m"
+      },
+      "to" : {
+        "latitude" : 42.0,
+        "longitude" : 23.23,
+        "altitude" : 600.0,
+        "altitudeUnit" : "m"
+      }
+    } ]
+  } ]
+} ]

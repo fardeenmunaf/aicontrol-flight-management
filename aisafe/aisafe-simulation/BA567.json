@@ -1,0 +1,40 @@
+[ {
+  "flightDesignator" : "BA567",
+  "type" : "regular",
+  "route" : {
+    "reference" : "BA901",
+    "origin" : "OPO",
+    "destination" : "BCN"
+  },
+  "legs" : [ {
+    "departure" : {
+      "airport" : "OPO",
+      "date" : "2026-05-05",
+      "time" : "08:00"
+    },
+    "arrival" : {
+      "airport" : "BCN",
+      "date" : "2026-05-05",
+      "time" : "09:30"
+    },
+    "fuel" : {
+      "quantity" : 4000.0,
+      "unit" : "l"
+    },
+    "segments" : [ {
+      "mode" : "cruise",
+      "from" : {
+        "latitude" : 57.093,
+        "longitude" : -6.324,
+        "altitude" : 900.0,
+        "altitudeUnit" : "m"
+      },
+      "to" : {
+        "latitude" : 32.0,
+        "longitude" : -7.923,
+        "altitude" : 2000.0,
+        "altitudeUnit" : "m"
+      }
+    } ]
+  } ]
+} ]
