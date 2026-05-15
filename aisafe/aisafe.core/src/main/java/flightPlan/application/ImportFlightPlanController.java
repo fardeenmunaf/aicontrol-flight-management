@@ -12,6 +12,10 @@ import node.repository.NodeRepository;
 import shared.domain.AirportId;
 import shared.domain.FlightPlanId;
 import shared.domain.NodeId;
+import aircraftmodel.repositories.AircraftModelRepository;
+import airport.repositories.AirportRepository;
+import airport.domain.Airport;
+import shared.domain.AircraftModelId;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -28,22 +32,29 @@ public class ImportFlightPlanController {
 
     private final FlightPlanRepository flightPlanRepository;
     private final NodeRepository nodeRepository;
+    private final AircraftModelRepository aircraftModelRepository;
+    private final AirportRepository airportRepository;
 
     public ImportFlightPlanController(final FlightPlanRepository flightPlanRepository,
-                                      final NodeRepository nodeRepository) {
+                                      final NodeRepository nodeRepository,
+                                      final AircraftModelRepository aircraftModelRepository,
+                                      final AirportRepository airportRepository) {
         this.flightPlanRepository = Objects.requireNonNull(flightPlanRepository);
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
+        this.aircraftModelRepository = Objects.requireNonNull(aircraftModelRepository);
+        this.airportRepository = Objects.requireNonNull(airportRepository);
     }
 
     /**
      * Persists a flight plan imported from a validated DSL file.
      * Segments are anchored to new transient Node entities created from the DSL coordinates.
      */
-    public FlightPlan importFlightPlan(final String designator, final List<LegImportRequest> legs) {
+    public FlightPlan importFlightPlan(final String designator, final String aircraftId, final List<LegImportRequest> legs) {
         AuthzRegistry.authorizationService().ensureAuthenticatedUserHasAnyOf(
                 AISafeRoles.AIR_TRANSPORT_COMPANY_COLLABORATOR, AISafeRoles.PILOT);
 
         Objects.requireNonNull(designator, "designator");
+        Objects.requireNonNull(aircraftId, "aircraftId");
         if (legs == null || legs.isEmpty()) {
             throw new IllegalArgumentException("At least one leg is required");
         }
@@ -53,23 +64,31 @@ public class ImportFlightPlanController {
             throw new IllegalArgumentException("Flight plan '" + designator + "' already exists in the system");
         }
 
+        // Validate aircraft
+        if (aircraftModelRepository.findByModelName(aircraftId).isEmpty()) {
+            throw new IllegalArgumentException("Aircraft model '" + aircraftId + "' not found in the system");
+        }
+
         final double totalFuel = legs.stream().mapToDouble(l -> l.fuelQuantity).sum();
         final LegImportRequest firstLeg = legs.get(0);
         final Instant departureDateTime = toInstant(firstLeg.departureDate, firstLeg.departureTime);
 
-        final FlightPlan plan = new FlightPlan(planId, departureDateTime, totalFuel, 0, 0.0);
+        final FlightPlan plan = new FlightPlan(planId, aircraftId, departureDateTime, totalFuel, 0, 0.0);
 
         for (final LegImportRequest legReq : legs) {
             final Instant legDeparture = toInstant(legReq.departureDate, legReq.departureTime);
             final Instant legArrival = toInstant(legReq.arrivalDate, legReq.arrivalTime);
+
+            final AirportId departureId = resolveAirportId(legReq.departureAirportCode);
+            final AirportId arrivalId = resolveAirportId(legReq.arrivalAirportCode);
 
             final FlightLeg leg = new FlightLeg(
                     legReq.sequenceNumber,
                     legDeparture,
                     legArrival,
                     legReq.fuelQuantity,
-                    AirportId.valueOf(legReq.departureAirportCode),
-                    AirportId.valueOf(legReq.arrivalAirportCode));
+                    departureId,
+                    arrivalId);
 
             for (final SegmentImportRequest segReq : legReq.segments) {
                 final Node startNode = nodeRepository.save(new Node(
@@ -89,6 +108,13 @@ public class ImportFlightPlanController {
         }
 
         return flightPlanRepository.save(plan);
+    }
+
+    private AirportId resolveAirportId(final String code) {
+        return airportRepository.findByIataCode(code)
+                .or(() -> airportRepository.findByIcaoCode(code))
+                .map(Airport::identity)
+                .orElseThrow(() -> new IllegalArgumentException("Airport not found: " + code));
     }
 
     private static Instant toInstant(final String date, final String time) {

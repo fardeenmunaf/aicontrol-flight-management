@@ -1,6 +1,6 @@
 package airtransport.presentation;
 
-import airtransport.presentation.flightplan.ImportFlightPlanAction;
+import airtransport.presentation.flightplan.CreateFlightPlanAction;
 import eapli.framework.presentation.console.AbstractUI;
 import eapli.framework.actions.menu.Menu;
 import eapli.framework.presentation.console.menu.MenuItemRenderer;
@@ -17,7 +17,7 @@ public class MainMenu extends AbstractUI {
     protected boolean doShow() {
         final Menu menu = new Menu();
         menu.addItem(FLEET_OPTION, "Fleet Management", new FleetMenuAction());
-        menu.addItem(FLIGHT_PLAN_OPTION, "Create Flight Plan", new ImportFlightPlanAction());
+        menu.addItem(FLIGHT_PLAN_OPTION, "Create Flight Plan", new CreateFlightPlanAction());
         menu.addItem(EXIT_OPTION, "Exit", () -> true);
         final MenuRenderer renderer = new VerticalMenuRenderer(menu, MenuItemRenderer.DEFAULT);
         return renderer.render();

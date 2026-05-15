@@ -3,6 +3,7 @@
 
 flight TP7777 {
     type:  regular;
+    aircraft:  A320;
     route: RP001 from LIS to BCN;
 
     leg {

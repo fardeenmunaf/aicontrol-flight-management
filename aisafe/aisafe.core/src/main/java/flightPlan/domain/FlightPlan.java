@@ -19,7 +19,6 @@ import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
 import eapli.framework.validations.Preconditions;
 
-
 @Entity
 public class FlightPlan implements AggregateRoot<FlightPlanId> {
 
@@ -39,18 +38,21 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
     @Enumerated(EnumType.STRING)
     private FlightPlanStatus status;
 
+    private String aircraftId;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "flight_plan_ref")
     @OrderBy("sequenceNumber ASC")
     private List<FlightLeg> legs = new ArrayList<>();
 
-    public FlightPlan(final FlightPlanId flightPlanId, final Instant departureDateTime,
-                      final double fuelQuantity, final int passengerLoad, final double cargoLoad) {
-        Preconditions.noneNull(flightPlanId, departureDateTime);
+    public FlightPlan(final FlightPlanId flightPlanId, final String aircraftId, final Instant departureDateTime,
+            final double fuelQuantity, final int passengerLoad, final double cargoLoad) {
+        Preconditions.noneNull(flightPlanId, aircraftId, departureDateTime);
         Preconditions.ensure(fuelQuantity > 0, "Fuel quantity must be strictly positive");
         Preconditions.ensure(passengerLoad >= 0, "Passenger load must be non-negative");
         Preconditions.ensure(cargoLoad >= 0, "Cargo load must be non-negative");
         this.flightPlanId = flightPlanId;
+        this.aircraftId = aircraftId;
         this.departureDateTime = departureDateTime;
         this.fuelQuantity = fuelQuantity;
         this.passengerLoad = passengerLoad;
@@ -94,7 +96,8 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
     }
 
     /**
-     * Voids a previously tested plan — e.g., when new weather data is inserted (US082).
+     * Voids a previously tested plan — e.g., when new weather data is inserted
+     * (US082).
      */
     public void voidTest() {
         if (this.status != FlightPlanStatus.TESTED) {
@@ -143,6 +146,9 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
         return status;
     }
 
+    public String aircraftId() {
+        return aircraftId;
+    }
 
     public List<FlightLeg> legs() {
         return Collections.unmodifiableList(legs);

@@ -2,6 +2,7 @@
 
 flight TP1234 {
     type:  private;
+    aircraft:  A320;
     route: AA123 from OPO to MAD;
 
     leg {

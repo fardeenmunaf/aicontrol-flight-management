@@ -2,6 +2,7 @@
 
 flight TP1234 {
     type:  regular;
+    aircraft:  A320;
     route: AA123 from OPO to MAD;
 
     leg {
@@ -14,6 +15,7 @@ flight TP1234 {
 
 flight TP1234 {
     type:  charter;
+    aircraft:  A320;
     route: BB456 from LIS to BCN;
 
     leg {

@@ -32,14 +32,17 @@ import java.util.Map;
 
 /**
  * Guides the pilot through every field defined in the FlightDSL grammar,
- * builds a DSL document from the answers, validates it (lexical → syntactic → semantic)
+ * builds a DSL document from the answers, validates it (lexical → syntactic →
+ * semantic)
  * and imports the result if valid.
  */
-public class ImportFlightPlanUI extends AbstractUI {
+public class CreateFlightPlanUI extends AbstractUI {
 
     private final ImportFlightPlanController controller = new ImportFlightPlanController(
             PersistenceContext.repositories().flightPlans(),
-            PersistenceContext.repositories().nodes());
+            PersistenceContext.repositories().nodes(),
+            PersistenceContext.repositories().aircraftModels(),
+            PersistenceContext.repositories().airports());
 
     private final FlightDslProcessor processor = new FlightDslProcessor();
 
@@ -76,16 +79,21 @@ public class ImportFlightPlanUI extends AbstractUI {
         // flightPlan: FLIGHT ID LBRACE type route leg+ RBRACE
         final String designator = prompt("Flight designator", "TP1234",
                 "Two uppercase letters + 1-4 digits + optional letter suffix");
-        final String type       = promptChoice("Flight type", new String[]{"regular", "charter"}, "regular");
-        final String routeRef   = prompt("Route reference identifier", "AA123", "Letter followed by letters/digits");
-        final String origin     = prompt("Route origin airport code (IATA or ICAO)", "OPO", "3-letter IATA or 4-letter ICAO, uppercase");
-        final String dest       = prompt("Route destination airport code (IATA or ICAO)", "MAD", "3-letter IATA or 4-letter ICAO, uppercase");
+        final String type = promptChoice("Flight type", new String[] { "regular", "charter" }, "regular");
+        final String aircraftId = prompt("Aircraft registration", "A380",
+                "Aircraft registration identifier (e.g. A380 or 777-200ER)");
+        final String routeRef = prompt("Route reference identifier", "AA123", "Letter followed by letters/digits");
+        final String origin = prompt("Route origin airport code (IATA or ICAO)", "OPO",
+                "3-letter IATA or 4-letter ICAO, uppercase");
+        final String dest = prompt("Route destination airport code (IATA or ICAO)", "MAD",
+                "3-letter IATA or 4-letter ICAO, uppercase");
 
         sb.append("flight ").append(designator).append(" {\n");
-        sb.append("    type:  ").append(type).append(";\n");
-        sb.append("    route: ").append(routeRef)
-          .append(" from ").append(origin)
-          .append(" to ").append(dest).append(";\n");
+        sb.append("    type:      ").append(type).append(";\n");
+        sb.append("    aircraft:  ").append(aircraftId).append(";\n");
+        sb.append("    route:     ").append(routeRef)
+                .append(" from ").append(origin)
+                .append(" to ").append(dest).append(";\n");
 
         // leg+
         int legNum = 1;
@@ -96,7 +104,7 @@ public class ImportFlightPlanUI extends AbstractUI {
             buildLeg(sb);
             sb.append("    }\n");
             legNum++;
-        } while (confirm("Add another leg?"));
+        } while (confirm("Add another leg?", false));
 
         sb.append("}\n");
         return sb.toString();
@@ -107,7 +115,7 @@ public class ImportFlightPlanUI extends AbstractUI {
         buildDeparture(sb);
         buildArrival(sb);
         buildFuel(sb);
-        if (confirm("Add optional flight profile (climb/descend tables)?")) {
+        if (confirm("Add optional flight profile (climb/descend tables)?", false)) {
             buildProfile(sb);
         }
         int segNum = 1;
@@ -116,7 +124,7 @@ public class ImportFlightPlanUI extends AbstractUI {
             System.out.println("  -- Segment " + segNum + " --");
             buildSegment(sb);
             segNum++;
-        } while (confirm("  Add another segment to this leg?"));
+        } while (confirm("  Add another segment to this leg?", false));
     }
 
     /** departure: DEPARTURE LBRACE airport date time RBRACE */
@@ -124,13 +132,13 @@ public class ImportFlightPlanUI extends AbstractUI {
         System.out.println();
         System.out.println("  Departure:");
         final String airport = prompt("    Airport code", "OPO", "e.g. OPO (IATA) or LPPR (ICAO)");
-        final String date    = prompt("    Date", "2026-05-05", "YYYY-MM-DD");
-        final String time    = prompt("    Time", "08:00", "HH:MM  (24-hour clock)");
+        final String date = prompt("    Date", "2026-05-05", "YYYY-MM-DD");
+        final String time = prompt("    Time", "08:00", "HH:MM  (24-hour clock)");
         sb.append("        departure {\n")
-          .append("            airport: ").append(airport).append(";\n")
-          .append("            date:    ").append(date).append(";\n")
-          .append("            time:    ").append(time).append(";\n")
-          .append("        }\n");
+                .append("            airport: ").append(airport).append(";\n")
+                .append("            date:    ").append(date).append(";\n")
+                .append("            time:    ").append(time).append(";\n")
+                .append("        }\n");
     }
 
     /** arrival: ARRIVAL LBRACE airport date time RBRACE */
@@ -138,83 +146,86 @@ public class ImportFlightPlanUI extends AbstractUI {
         System.out.println();
         System.out.println("  Arrival:");
         final String airport = prompt("    Airport code", "MAD", "e.g. MAD (IATA) or LEMD (ICAO)");
-        final String date    = prompt("    Date", "2026-05-05", "YYYY-MM-DD");
-        final String time    = prompt("    Time", "09:30", "HH:MM  (24-hour clock)");
+        final String date = prompt("    Date", "2026-05-05", "YYYY-MM-DD");
+        final String time = prompt("    Time", "09:30", "HH:MM  (24-hour clock)");
         sb.append("        arrival {\n")
-          .append("            airport: ").append(airport).append(";\n")
-          .append("            date:    ").append(date).append(";\n")
-          .append("            time:    ").append(time).append(";\n")
-          .append("        }\n");
+                .append("            airport: ").append(airport).append(";\n")
+                .append("            date:    ").append(date).append(";\n")
+                .append("            time:    ").append(time).append(";\n")
+                .append("        }\n");
     }
 
     /** fuel: FUEL LBRACE QUANTITY COLON positiveNumber unit SEMI RBRACE */
     private void buildFuel(final StringBuilder sb) {
         System.out.println();
         System.out.println("  Fuel:");
-        final String qty  = prompt("    Quantity (must be > 0)", "40200", "Positive integer or decimal, e.g. 40200  or  18500.5");
-        final String unit = promptChoice("    Unit", new String[]{"kg", "l"}, "kg");
+        final String qty = prompt("    Quantity (must be > 0)", "40200",
+                "Positive integer or decimal, e.g. 40200  or  18500.5");
+        final String unit = promptChoice("    Unit", new String[] { "kg", "l" }, "kg");
         sb.append("        fuel {\n")
-          .append("            quantity: ").append(qty).append(" ").append(unit).append(";\n")
-          .append("        }\n");
+                .append("            quantity: ").append(qty).append(" ").append(unit).append(";\n")
+                .append("        }\n");
     }
 
     /**
      * profile: PROFILE LBRACE profileEntry+ RBRACE
      * profileEntry: climbEntry | descendEntry
-     * climbEntry:   CLIMB   [ altitude: num unit, speed: num unit ];
-     * descendEntry: DESCEND [ altitude: num unit, speed: num unit, rate: signedNumber ];
+     * climbEntry: CLIMB [ altitude: num unit, speed: num unit ];
+     * descendEntry: DESCEND [ altitude: num unit, speed: num unit, rate:
+     * signedNumber ];
      */
     private void buildProfile(final StringBuilder sb) {
         System.out.println();
         System.out.println("  Flight Profile:");
         sb.append("        profile {\n");
         do {
-            final String kind = promptChoice("    Entry type", new String[]{"climb", "descend"}, "climb");
-            final String alt      = prompt("      Altitude value (>= 0)", "1000", "e.g. 0  or  10000");
-            final String altUnit  = promptChoice("      Altitude unit", new String[]{"m", "ft"}, "m");
-            final String spd      = prompt("      Speed value (> 0)", "210", "e.g. 210  or  300");
-            final String spdUnit  = promptChoice("      Speed unit", new String[]{"kts", "m/s"}, "kts");
+            final String kind = promptChoice("    Entry type", new String[] { "climb", "descend" }, "climb");
+            final String alt = prompt("      Altitude value (>= 0)", "1000", "e.g. 0  or  10000");
+            final String altUnit = promptChoice("      Altitude unit", new String[] { "m", "ft" }, "m");
+            final String spd = prompt("      Speed value (> 0)", "210", "e.g. 210  or  300");
+            final String spdUnit = promptChoice("      Speed unit", new String[] { "kts", "m/s" }, "kts");
 
             if ("climb".equals(kind)) {
                 sb.append("            climb   [ altitude: ").append(alt).append(" ").append(altUnit)
-                  .append(", speed: ").append(spd).append(" ").append(spdUnit).append(" ];\n");
+                        .append(", speed: ").append(spd).append(" ").append(spdUnit).append(" ];\n");
             } else {
                 final String rate = prompt("      Rate of descent (must be negative)", "-10",
                         "Negative integer or decimal, e.g. -10  or  -7.5");
                 sb.append("            descend [ altitude: ").append(alt).append(" ").append(altUnit)
-                  .append(", speed: ").append(spd).append(" ").append(spdUnit)
-                  .append(", rate: ").append(rate).append(" ];\n");
+                        .append(", speed: ").append(spd).append(" ").append(spdUnit)
+                        .append(", rate: ").append(rate).append(" ];\n");
             }
-        } while (confirm("    Add another profile entry?"));
+        } while (confirm("    Add another profile entry?", false));
         sb.append("        }\n");
     }
 
     /**
      * segment: SEGMENT LBRACE mode from-coord to-coord RBRACE
-     * coord:   LPAREN signedNumber COMMA signedNumber COMMA ALTITUDE COLON positiveNumber unit RPAREN
+     * coord: LPAREN signedNumber COMMA signedNumber COMMA ALTITUDE COLON
+     * positiveNumber unit RPAREN
      */
     private void buildSegment(final StringBuilder sb) {
-        final String mode = promptChoice("    Mode", new String[]{"climb", "cruise", "descend"}, "cruise");
+        final String mode = promptChoice("    Mode", new String[] { "climb", "cruise", "descend" }, "cruise");
 
         System.out.println("    From coordinate:");
-        final String fromLat     = prompt("      Latitude", "41.262891",  "Signed decimal, e.g. 41.262891  or  -8.68522");
-        final String fromLon     = prompt("      Longitude", "-8.68522",  "Signed decimal");
-        final String fromAlt     = prompt("      Altitude value (>= 0)", "69",  "Positive number, e.g. 69");
-        final String fromAltUnit = promptChoice("      Altitude unit", new String[]{"m", "ft"}, "m");
+        final String fromLat = prompt("      Latitude", "41.262891", "Signed decimal, e.g. 41.262891  or  -8.68522");
+        final String fromLon = prompt("      Longitude", "-8.68522", "Signed decimal");
+        final String fromAlt = prompt("      Altitude value (>= 0)", "69", "Positive number, e.g. 69");
+        final String fromAltUnit = promptChoice("      Altitude unit", new String[] { "m", "ft" }, "m");
 
         System.out.println("    To coordinate (must differ from From):");
-        final String toLat     = prompt("      Latitude", "42.0",    "Signed decimal");
-        final String toLon     = prompt("      Longitude", "-8.01",  "Signed decimal");
-        final String toAlt     = prompt("      Altitude value (>= 0)", "9249", "Positive number");
-        final String toAltUnit = promptChoice("      Altitude unit", new String[]{"m", "ft"}, "m");
+        final String toLat = prompt("      Latitude", "42.0", "Signed decimal");
+        final String toLon = prompt("      Longitude", "-8.01", "Signed decimal");
+        final String toAlt = prompt("      Altitude value (>= 0)", "9249", "Positive number");
+        final String toAltUnit = promptChoice("      Altitude unit", new String[] { "m", "ft" }, "m");
 
         sb.append("        segment {\n")
-          .append("            mode: ").append(mode).append(";\n")
-          .append("            from: (").append(fromLat).append(", ").append(fromLon)
-          .append(", altitude: ").append(fromAlt).append(" ").append(fromAltUnit).append(");\n")
-          .append("            to:   (").append(toLat).append(", ").append(toLon)
-          .append(", altitude: ").append(toAlt).append(" ").append(toAltUnit).append(");\n")
-          .append("        }\n");
+                .append("            mode: ").append(mode).append(";\n")
+                .append("            from: (").append(fromLat).append(", ").append(fromLon)
+                .append(", altitude: ").append(fromAlt).append(" ").append(fromAltUnit).append(");\n")
+                .append("            to:   (").append(toLat).append(", ").append(toLon)
+                .append(", altitude: ").append(toAlt).append(" ").append(toAltUnit).append(");\n")
+                .append("        }\n");
     }
 
     // -------------------------------------------------------------------------
@@ -252,7 +263,7 @@ public class ImportFlightPlanUI extends AbstractUI {
 
         exportToJson(result.document());
 
-        if (!confirm("Import this flight plan into the system?")) {
+        if (!confirm("Import this flight plan into the system?", true)) {
             System.out.println("Import cancelled.");
             return;
         }
@@ -262,7 +273,7 @@ public class ImportFlightPlanUI extends AbstractUI {
         for (final FlightPlanAst fp : result.document().flightPlans()) {
             try {
                 final List<LegImportRequest> legReqs = buildLegRequests(fp.legs());
-                final FlightPlan saved = controller.importFlightPlan(fp.flightDesignator(), legReqs);
+                final FlightPlan saved = controller.importFlightPlan(fp.flightDesignator(), fp.aircraftId(), legReqs);
                 System.out.println("  Imported: " + saved.identity());
                 ok++;
             } catch (final Exception e) {
@@ -277,7 +288,7 @@ public class ImportFlightPlanUI extends AbstractUI {
         final String firstName = document.flightPlans().isEmpty()
                 ? "flight_plan"
                 : document.flightPlans().get(0).flightDesignator();
-        final Path outputDir = Paths.get("aisafe-simulation");
+        final Path outputDir = Paths.get("aisafe-simulation/flightplans");
         final String defaultPath = outputDir.resolve(firstName + ".json").toString();
         final String raw = Console.readLine("  Export JSON to file [" + defaultPath + "]");
         final String filePath = (raw == null || raw.trim().isEmpty()) ? defaultPath : raw.trim();
@@ -287,6 +298,7 @@ public class ImportFlightPlanUI extends AbstractUI {
             final Map<String, Object> planMap = new LinkedHashMap<>();
             planMap.put("flightDesignator", fp.flightDesignator());
             planMap.put("type", fp.type().name().toLowerCase());
+            planMap.put("aircraftId", fp.aircraftId());
 
             final Map<String, String> routeMap = new LinkedHashMap<>();
             routeMap.put("reference", fp.routeReference());
@@ -420,17 +432,21 @@ public class ImportFlightPlanUI extends AbstractUI {
     /** Prompts for a value restricted to a fixed set of options. */
     private String promptChoice(final String label, final String[] options, final String example) {
         final String opts = String.join(" | ", options);
-        final String raw  = Console.readLine("  " + label + " (" + opts + ") [" + example + "]");
+        final String raw = Console.readLine("  " + label + " (" + opts + ") [" + example + "]");
         if (raw == null || raw.trim().isEmpty()) {
             return example;
         }
         return raw.trim().toLowerCase();
     }
 
-    /** yes/no confirmation; defaults to 'no'. */
-    private boolean confirm(final String question) {
-        final String raw = Console.readLine("  " + question + " (yes/no) [no]");
-        return raw != null && raw.trim().equalsIgnoreCase("yes");
+    /** yes/no confirmation; defaults to the specified value. */
+    private boolean confirm(final String question, final boolean defaultYes) {
+        final String defStr = defaultYes ? "yes" : "no";
+        final String raw = Console.readLine("  " + question + " (yes/no) [" + defStr + "]");
+        if (raw == null || raw.trim().isEmpty()) {
+            return defaultYes;
+        }
+        return raw.trim().equalsIgnoreCase("yes");
     }
 
     @Override

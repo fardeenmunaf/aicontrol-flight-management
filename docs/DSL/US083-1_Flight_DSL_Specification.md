@@ -46,6 +46,7 @@ A DSL file may contain **one or more `flight` blocks**. All flight identifiers w
 Flight
 ├── ID              (unique flight identifier within the file)
 ├── Type            (regular | charter)
+├── Aircraft        (aircraft registration identifier)
 ├── Route
 │   ├── Reference   (route name identifier)
 │   ├── Origin      (IATA or ICAO airport code)
@@ -86,7 +87,8 @@ Flight
 
 | Entity | Description |
 |---|---|
-| **Flight** | The top-level construct. Represents a complete flight operation with a unique identifier, a type, a route reference, and one or more legs. |
+| **Flight** | The top-level construct. Represents a complete flight operation with a unique identifier, a type, an aircraft assignment, a route reference, and one or more legs. |
+| **Aircraft** | The registration identifier of the aircraft assigned to the flight. This is used for simulation and physics calculations. |
 | **Leg** | A single non-stop journey between two airports. A flight with intermediate stops has multiple legs. Each leg is self-contained with its own departure, arrival, fuel, profile, and segments. |
 | **Departure** | The origin point of a leg: airport code, date, and scheduled time of departure. |
 | **Arrival** | The destination point of a leg: airport code, date, and scheduled time of arrival. |
@@ -144,6 +146,7 @@ Reserved words that define the structure of the language. They may not be used a
 | `regular` | Flight type value |
 | `charter` | Flight type value |
 | `type` | Introduces the flight type field |
+| `aircraft` | Introduces the aircraft registration field |
 | `airport` | Introduces an airport code field |
 | `from` | Introduces the route origin airport or a segment start coordinate |
 | `to` | Introduces the route destination airport or a segment end coordinate |
@@ -246,8 +249,9 @@ A valid DSL file contains **one or more `flight` blocks**. All flight identifier
 
 ```
 flight <ID> {
-    type:  <flight-type>;
-    route: <route-name> from <airport-code> to <airport-code>;
+    type:      <flight-type>;
+    aircraft:  <ID>;
+    route:     <route-name> from <airport-code> to <airport-code>;
 
     leg { ... }
     leg { ... }   // one or more legs
@@ -323,6 +327,7 @@ segment {
 ```
 flight
 ├── type
+├── aircraft
 ├── route <name> from <origin> to <destination>
 └── leg [1..*]
     ├── departure
@@ -355,6 +360,7 @@ A condensed reference of every block and its mandatory vs. optional fields.
 | Field | Type | Mandatory | Description |
 |---|---|---|---|
 | `type` | keyword (`regular`\|`charter`) | Yes | Type of flight |
+| `aircraft` | identifier | Yes | Aircraft registration identifier |
 | `route` | identifier + `from` airport + `to` airport | Yes | Route reference with explicit origin and destination airports |
 | `leg` | block | Yes (1 or more) | One leg per non-stop journey segment |
 
@@ -411,8 +417,9 @@ This example is derived from the JSON reference (`Flight_Plan_v0a.json`) and rep
 // Regular flight TP1234, route AA123
 
 flight TP1234 {
-    type:  regular;
-    route: AA123 from OPO to MAD;
+    type:      regular;
+    aircraft:  A320;
+    route:     AA123 from OPO to MAD;
 
     leg {
 

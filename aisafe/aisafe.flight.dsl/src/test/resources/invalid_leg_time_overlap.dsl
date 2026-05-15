@@ -2,6 +2,7 @@
 
 flight TP5678 {
     type:  regular;
+    aircraft:  A320;
     route: TP001 from OPO to BCN;
 
     leg {

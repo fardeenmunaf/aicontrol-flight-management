@@ -16,6 +16,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import shared.domain.FlightPlanId;
 import shared.domain.NodeId;
+import aircraftmodel.domain.AircraftModel;
+import aircraftmodel.domain.AircraftType;
+import aircraftmodel.repositories.AircraftModelRepository;
+import airport.domain.Airport;
+import airport.repositories.AirportRepository;
+import shared.domain.AircraftModelId;
+import shared.domain.AirportId;
 
 import java.time.Instant;
 import java.util.List;
@@ -27,30 +34,37 @@ import static org.junit.jupiter.api.Assertions.*;
 class ImportFlightPlanControllerTest {
 
     private static final String PILOT_EMAIL = "import.pilot@test.com";
-    private static final String PASSWORD    = "Password123";
+    private static final String PASSWORD = "Password123";
 
     private final StubFlightPlanRepository planRepo = new StubFlightPlanRepository();
-    private final StubNodeRepository       nodeRepo = new StubNodeRepository();
+    private final StubNodeRepository nodeRepo = new StubNodeRepository();
+    private final StubAircraftModelRepository aircraftRepo = new StubAircraftModelRepository();
+    private final StubAirportRepository airportRepo = new StubAirportRepository();
 
     @BeforeAll
     static void setupAuth() {
         try {
             AuthzRegistry.configure(new InMemoryUserRepository(), new AISafePasswordPolicy(), new PlainTextEncoder());
-        } catch (final Exception ignored) {}
+        } catch (final Exception ignored) {
+        }
         try {
-            AuthzRegistry.userService().registerNewUser(PILOT_EMAIL, PASSWORD, "P", "P", PILOT_EMAIL, Set.of(AISafeRoles.PILOT));
-        } catch (final Exception ignored) {}
+            AuthzRegistry.userService().registerNewUser(PILOT_EMAIL, PASSWORD, "P", "P", PILOT_EMAIL,
+                    Set.of(AISafeRoles.PILOT));
+        } catch (final Exception ignored) {
+        }
     }
 
     @BeforeEach
     void setup() {
         planRepo.clear();
         nodeRepo.clear();
+        aircraftRepo.clear();
+        airportRepo.clear();
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
     }
 
     private ImportFlightPlanController controller() {
-        return new ImportFlightPlanController(planRepo, nodeRepo);
+        return new ImportFlightPlanController(planRepo, nodeRepo, aircraftRepo, airportRepo);
     }
 
     private LegImportRequest singleLeg() {
@@ -62,33 +76,31 @@ class ImportFlightPlanControllerTest {
 
     @Test
     void ensureFlightPlanIsImportedSuccessfully() {
-        final FlightPlan plan = controller().importFlightPlan("TP1234", List.of(singleLeg()));
+        final FlightPlan plan = controller().importFlightPlan("TP1234", "A320", List.of(singleLeg()));
         assertNotNull(plan);
     }
 
     @Test
     void ensureNullDesignatorIsRejected() {
-        assertThrows(NullPointerException.class, () ->
-                controller().importFlightPlan(null, List.of(singleLeg())));
+        assertThrows(NullPointerException.class,
+                () -> controller().importFlightPlan(null, "A320", List.of(singleLeg())));
     }
 
     @Test
     void ensureEmptyLegsListIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().importFlightPlan("TP1234", List.of()));
+        assertThrows(IllegalArgumentException.class, () -> controller().importFlightPlan("TP1234", "A320", List.of()));
     }
 
     @Test
     void ensureNullLegsIsRejected() {
-        assertThrows(Exception.class, () ->
-                controller().importFlightPlan("TP1234", null));
+        assertThrows(Exception.class, () -> controller().importFlightPlan("TP1234", "A320", null));
     }
 
     @Test
     void ensureDuplicateDesignatorIsRejected() {
-        controller().importFlightPlan("TP-DUPE", List.of(singleLeg()));
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().importFlightPlan("TP-DUPE", List.of(singleLeg())));
+        controller().importFlightPlan("TP-DUPE", "A320", List.of(singleLeg()));
+        assertThrows(IllegalArgumentException.class,
+                () -> controller().importFlightPlan("TP-DUPE", "A320", List.of(singleLeg())));
     }
 
     @Test
@@ -97,7 +109,7 @@ class ImportFlightPlanControllerTest {
                 "2026-05-05", "11:00", "2026-05-05", "12:30",
                 38000.0, "MAD", "BCN",
                 List.of(new SegmentImportRequest(40.49, -3.56, 41.29, 2.07)));
-        final FlightPlan plan = controller().importFlightPlan("TP5678", List.of(singleLeg(), leg2));
+        final FlightPlan plan = controller().importFlightPlan("TP5678", "A320", List.of(singleLeg(), leg2));
         assertNotNull(plan);
     }
 
@@ -105,23 +117,84 @@ class ImportFlightPlanControllerTest {
             extends InMemoryDomainRepository<FlightPlan, FlightPlanId>
             implements FlightPlanRepository {
 
-        void clear() { data().clear(); }
+        void clear() {
+            data().clear();
+        }
 
         @Override
         public Optional<FlightPlan> findByFlightPlanId(final FlightPlanId id) {
             return matchOne(p -> p.identity().equals(id));
         }
 
-        @Override public Iterable<FlightPlan> findByStatus(final FlightPlanStatus s) { return List.of(); }
-        @Override public Iterable<FlightPlan> findByDepartureBetween(final Instant a, final Instant b) { return List.of(); }
+        @Override
+        public Iterable<FlightPlan> findByStatus(final FlightPlanStatus s) {
+            return List.of();
+        }
+
+        @Override
+        public Iterable<FlightPlan> findByDepartureBetween(final Instant a, final Instant b) {
+            return List.of();
+        }
     }
 
     static class StubNodeRepository
             extends InMemoryDomainRepository<Node, NodeId>
             implements NodeRepository {
 
+        void clear() {
+            data().clear();
+        }
+
+        @Override
+        public Optional<Node> findByDesignation(final String d) {
+            return Optional.empty();
+        }
+    }
+
+    static class DummyAirport extends Airport {
+        private final AirportId id = AirportId.newId();
+        DummyAirport() { super(); }
+        @Override public AirportId identity() { return id; }
+    }
+
+    static class DummyAircraftModel extends AircraftModel {
+        private final AircraftModelId id;
+        DummyAircraftModel(AircraftModelId id) { super(); this.id = id; }
+        @Override public AircraftModelId identity() { return id; }
+    }
+
+    static class StubAircraftModelRepository
+            extends InMemoryDomainRepository<AircraftModel, AircraftModelId>
+            implements AircraftModelRepository {
+
         void clear() { data().clear(); }
 
-        @Override public Optional<Node> findByDesignation(final String d) { return Optional.empty(); }
+        @Override
+        public Optional<AircraftModel> ofIdentity(final AircraftModelId id) {
+            return Optional.of(new DummyAircraftModel(id));
+        }
+
+        @Override public List<AircraftModel> findByType(AircraftType type) { return List.of(); }
+        @Override public List<AircraftModel> findByMakerName(String makerName) { return List.of(); }
+        @Override public List<AircraftModel> findByModelName(String modelName) { return List.of(); }
+        @Override public List<AircraftModel> findByModelNameAndMaker(String modelName, String makerName) { return List.of(); }
+        @Override public List<AircraftModel> findAllAircraftModels() { return List.of(); }
+    }
+
+    static class StubAirportRepository
+            extends InMemoryDomainRepository<Airport, AirportId>
+            implements AirportRepository {
+
+        void clear() { data().clear(); }
+
+        @Override
+        public Optional<Airport> findByIataCode(String code) {
+            return Optional.of(new DummyAirport());
+        }
+
+        @Override
+        public Optional<Airport> findByIcaoCode(String code) {
+            return Optional.empty();
+        }
     }
 }

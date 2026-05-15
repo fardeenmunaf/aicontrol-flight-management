@@ -2,6 +2,7 @@
 
 flight TP9999 {
     type:  regular;
+    aircraft:  A320;
     route: XX001 from OPO to OPO;
 
     leg {

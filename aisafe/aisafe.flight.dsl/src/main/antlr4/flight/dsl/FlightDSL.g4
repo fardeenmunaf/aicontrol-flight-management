@@ -9,6 +9,7 @@ start
 flightPlan
     : FLIGHT ID LBRACE
         TYPE COLON flightType SEMI
+        AIRCRAFT COLON ID SEMI
         ROUTE COLON ID FROM airportCode TO airportCode SEMI
         leg+
       RBRACE
@@ -145,6 +146,7 @@ FROM      : [Ff][Rr][Oo][Mm] ;
 TO        : [Tt][Oo] ;
 REGULAR   : [Rr][Ee][Gg][Uu][Ll][Aa][Rr] ;
 CHARTER   : [Cc][Hh][Aa][Rr][Tt][Ee][Rr] ;
+AIRCRAFT  : [Aa][Ii][Rr][Cc][Rr][Aa][Ff][Tt] ;
 
 // Units
 

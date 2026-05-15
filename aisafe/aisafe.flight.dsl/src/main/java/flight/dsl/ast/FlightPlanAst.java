@@ -7,6 +7,7 @@ public class FlightPlanAst {
 
     private final String flightDesignator;
     private final FlightTypeAst type;
+    private final String aircraftId;
     private final String routeReference;
     private final String routeOrigin;
     private final String routeDestination;
@@ -14,12 +15,14 @@ public class FlightPlanAst {
 
     public FlightPlanAst(final String flightDesignator,
                          final FlightTypeAst type,
+                         final String aircraftId,
                          final String routeReference,
                          final String routeOrigin,
                          final String routeDestination,
                          final List<LegAst> legs) {
         this.flightDesignator = Objects.requireNonNull(flightDesignator, "flightDesignator");
         this.type = Objects.requireNonNull(type, "type");
+        this.aircraftId = Objects.requireNonNull(aircraftId, "aircraftId");
         this.routeReference = Objects.requireNonNull(routeReference, "routeReference");
         this.routeOrigin = Objects.requireNonNull(routeOrigin, "routeOrigin");
         this.routeDestination = Objects.requireNonNull(routeDestination, "routeDestination");
@@ -32,6 +35,10 @@ public class FlightPlanAst {
 
     public FlightTypeAst type() {
         return type;
+    }
+
+    public String aircraftId() {
+        return aircraftId;
     }
 
     public String routeReference() {

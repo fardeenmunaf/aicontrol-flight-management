@@ -2,11 +2,11 @@ package airtransport.presentation.flightplan;
 
 import eapli.framework.actions.Action;
 
-public class ImportFlightPlanAction implements Action {
+public class CreateFlightPlanAction implements Action {
 
     @Override
     public boolean execute() {
-        new ImportFlightPlanUI().show();
+        new CreateFlightPlanUI().show();
         return false;
     }
 }

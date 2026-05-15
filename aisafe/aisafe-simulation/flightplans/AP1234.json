@@ -1,0 +1,47 @@
+[
+  {
+    "flightDesignator": "AP1234",
+    "type": "regular",
+    "aircraftId": "A380",
+    "route": {
+      "reference": "AA132",
+      "origin": "OPO",
+      "destination": "MAD"
+    },
+    "legs": [
+      {
+        "departure": {
+          "airport": "OPO",
+          "date": "2026-05-05",
+          "time": "08:00"
+        },
+        "arrival": {
+          "airport": "MAD",
+          "date": "2026-05-05",
+          "time": "09:30"
+        },
+        "fuel": {
+          "quantity": 40200.0,
+          "unit": "kg"
+        },
+        "segments": [
+          {
+            "mode": "cruise",
+            "from": {
+              "latitude": 41.262891,
+              "longitude": -8.68522,
+              "altitude": 69.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 42.0,
+              "longitude": -8.01,
+              "altitude": 9249.0,
+              "altitudeUnit": "m"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

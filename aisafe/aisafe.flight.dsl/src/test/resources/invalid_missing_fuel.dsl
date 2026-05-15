@@ -1,5 +1,6 @@
 flight TP1234 {
     type:  regular;
+    aircraft:  A320;
     route: AA123 from OPO to MAD;
 
     leg {
