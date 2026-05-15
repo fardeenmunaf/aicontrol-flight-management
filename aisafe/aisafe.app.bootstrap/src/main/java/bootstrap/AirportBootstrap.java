@@ -97,33 +97,4 @@ public class AirportBootstrap {
         System.out.println("Airport bootstrapped from XML: " + iataCode + " (" + icaoCode + ") in area " + area.get().areaCode());
     }
 
-    private void registerIfAbsent(
-            final String name,
-            final String town,
-            final String country,
-            final String iataCode,
-            final String icaoCode,
-            final Double elevation,
-            final Double latitude,
-            final Double longitude,
-            final String areaCode) {
-
-        if (airportRepository.findByIataCode(iataCode).isPresent()
-                || airportRepository.findByIcaoCode(icaoCode).isPresent()) {
-            return;
-        }
-
-        final List<AirControlArea> areas = airControlAreaRepository.findByAreaCode(areaCode);
-        if (areas.isEmpty()) {
-            System.out.println("Air control area not found, skipping airport: " + iataCode + " (area=" + areaCode + ")");
-            return;
-        }
-
-        final Airport airport = new Airport(
-                name, town, country, iataCode, icaoCode, elevation,
-                new AirportCoordinates(latitude, longitude), areas.get(0));
-
-        airportRepository.save(airport);
-        System.out.println("Airport bootstrapped: " + iataCode + " (" + icaoCode + ")");
-    }
 }

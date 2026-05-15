@@ -141,37 +141,4 @@ public class AircraftModelBootstrap {
         System.out.println("Aircraft model bootstrapped from XML: " + modelName);
     }
 
-    private void registerIfAbsent(final String modelName,
-            final String makerName,
-            final String makerCountry,
-            final AircraftType type,
-            final Double emptyWeight,
-            final Double maximumTakeOffWeight,
-            final Double maximumZeroFuelWeight,
-            final Double maximumFuelCapacity,
-            final Double serviceCeiling,
-            final Double cruiseSpeed,
-            final Double wingArea,
-            final Double wingSpan,
-            final Double dragCoefficient,
-            final Double liftCoefficient,
-            final int numberOfEngines,
-            final String engineModelName1,
-            final String engineModelName2) {
-
-        if (!aircraftModelRepository.findByModelNameAndMaker(modelName, makerName).isEmpty()) {
-            return;
-        }
-
-        final var model = new AircraftModel(
-                type, emptyWeight, maximumTakeOffWeight, maximumZeroFuelWeight,
-                maximumFuelCapacity, serviceCeiling, cruiseSpeed, wingArea,
-                wingSpan, dragCoefficient, liftCoefficient, modelName,
-                numberOfEngines, new AircraftModelMaker(makerName, makerCountry));
-
-        engineModelRepository.findByName(engineModelName1).ifPresent(model::addSupportedEngineModel);
-        engineModelRepository.findByName(engineModelName2).ifPresent(model::addSupportedEngineModel);
-
-        aircraftModelRepository.save(model);
-    }
 }
