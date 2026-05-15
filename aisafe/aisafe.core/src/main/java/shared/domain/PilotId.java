@@ -2,6 +2,7 @@ package shared.domain;
 
 import java.util.UUID;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
@@ -11,6 +12,8 @@ import eapli.framework.strings.util.StringPredicates;
 public class PilotId implements ValueObject, Comparable<PilotId> {
 
     private static final long serialVersionUID = 1L;
+
+    @Column(name = "pilot_id")
 
     private String value;
 
