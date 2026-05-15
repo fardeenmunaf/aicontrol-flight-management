@@ -7,6 +7,8 @@ import aircraft.repositories.AircraftRepository;
 import aircraftmodel.domain.AircraftModel;
 import aircraftmodel.domain.AircraftModelMaker;
 import aircraftmodel.domain.AircraftType;
+import enginemodel.domain.*;
+import enginemodel.domain.EngineModelMaker;
 import airtransportcompany.domain.AirTransportCompany;
 import auth.domain.AISafeRoles;
 import auth.infrastructure.AISafePasswordPolicy;
@@ -45,6 +47,7 @@ class ListCompanyFleetControllerTest {
     private CabinConfiguration cabinConfig;
     private AirTransportCompany company;
     private AirTransportCompany company2;
+    private EngineModel engineModel;
 
     @BeforeAll
     static void setupAuth() {
@@ -70,6 +73,13 @@ class ListCompanyFleetControllerTest {
                 new AircraftModelMaker("Boeing", "USA")
         );
 
+        engineModel = new EngineModel(
+                "CFM56-7B", EngineType.TURBOFAN, 121.0, 0.38, 121000.0, 98000.0, 0.62,
+                new EngineModelMaker("CFM", "France"),
+                new FuelProperties(FuelType.JET_A, 0.80, 43.0)
+        );
+        aircraftModel.addSupportedEngineModel(engineModel);
+
         cabinConfig = new CabinConfiguration(150, 12, 6);
 
         company = new AirTransportCompany("TAP Air Portugal", "TP", "TAP");
@@ -94,7 +104,7 @@ class ListCompanyFleetControllerTest {
     void ensureSingleAircraftCanBeListed() {
         final Aircraft aircraft = new Aircraft(
                 "CS-TPA", "Portugal", AircraftOperationStatus.IN_SERVICE,
-                2, aircraftModel, cabinConfig, company
+                2, aircraftModel, engineModel, cabinConfig, company
         );
         aircraftRepo.add(aircraft);
 
@@ -113,11 +123,11 @@ class ListCompanyFleetControllerTest {
     @Test
     void ensureMultipleAircraftCanBeListed() {
         aircraftRepo.add(new Aircraft("CS-TPA", "Portugal", AircraftOperationStatus.IN_SERVICE,
-                2, aircraftModel, cabinConfig, company));
+                2, aircraftModel, engineModel, cabinConfig, company));
         aircraftRepo.add(new Aircraft("CS-TPB", "Portugal", AircraftOperationStatus.MAINTENANCE,
-                2, aircraftModel, cabinConfig, company));
+                2, aircraftModel, engineModel, cabinConfig, company));
         aircraftRepo.add(new Aircraft("CS-TPC", "Portugal", AircraftOperationStatus.IN_SERVICE,
-                2, aircraftModel, cabinConfig, company));
+                2, aircraftModel, engineModel, cabinConfig, company));
 
         final List<aircraft.dto.AircraftDTO> result =
                 new ListCompanyFleetController(aircraftRepo, collaboratorRepo)
@@ -142,9 +152,9 @@ class ListCompanyFleetControllerTest {
     @Test
     void ensureFleetIncludesRetiredAircraft() {
         aircraftRepo.add(new Aircraft("CS-TPA", "Portugal", AircraftOperationStatus.IN_SERVICE,
-                2, aircraftModel, cabinConfig, company));
+                2, aircraftModel, engineModel, cabinConfig, company));
         aircraftRepo.add(new Aircraft("CS-TPB", "Portugal", AircraftOperationStatus.DECOMISSIONED,
-                2, aircraftModel, cabinConfig, company));
+                2, aircraftModel, engineModel, cabinConfig, company));
 
         final List<aircraft.dto.AircraftDTO> result =
                 new ListCompanyFleetController(aircraftRepo, collaboratorRepo)
@@ -165,7 +175,7 @@ class ListCompanyFleetControllerTest {
     void ensureATCCCannotViewAnotherCompanyFleet() {
         // Add aircraft to company 2
         aircraftRepo.add(new Aircraft("A1", "Country", AircraftOperationStatus.IN_SERVICE,
-                2, aircraftModel, cabinConfig, company2));
+                2, aircraftModel, engineModel, cabinConfig, company2));
 
         // ATCC1 is logged in but assigned to company 1
         // They should not see aircraft from company 2
@@ -191,7 +201,7 @@ class ListCompanyFleetControllerTest {
     @Test
     void ensureFCOCannotListFleet() {
         aircraftRepo.add(new Aircraft("CS-TPA", "Portugal", AircraftOperationStatus.IN_SERVICE,
-                2, aircraftModel, cabinConfig, company));
+                2, aircraftModel, engineModel, cabinConfig, company));
 
         AuthzRegistry.authenticationService().authenticate(FCO_EMAIL, PASSWORD);
 
@@ -215,7 +225,7 @@ class ListCompanyFleetControllerTest {
     void ensureFleetEntryShowsAllRequiredFields() {
         final Aircraft aircraft = new Aircraft(
                 "CS-TPA", "Portugal", AircraftOperationStatus.IN_SERVICE,
-                2, aircraftModel, cabinConfig, company
+                2, aircraftModel, engineModel, cabinConfig, company
         );
         aircraftRepo.add(aircraft);
 

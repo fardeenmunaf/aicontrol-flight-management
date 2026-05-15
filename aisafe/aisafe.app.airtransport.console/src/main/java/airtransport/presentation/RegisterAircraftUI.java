@@ -9,6 +9,7 @@ import eapli.framework.presentation.console.AbstractUI;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import aircraft.domain.AircraftOperationStatus;
 import aircraftmodel.domain.AircraftModel;
+import enginemodel.domain.EngineModel;
 import eapli.framework.io.util.Console;
 import shared.domain.UserId;
 
@@ -20,7 +21,8 @@ public class RegisterAircraftUI extends AbstractUI {
             PersistenceContext.repositories().aircraft(),
             PersistenceContext.repositories().aircraftModels(),
             PersistenceContext.repositories().customerCollaborators(),
-            PersistenceContext.repositories().airTransportCompanies());
+            PersistenceContext.repositories().airTransportCompanies(),
+            PersistenceContext.repositories().engineModels());
 
     @Override
     protected boolean doShow() {
@@ -65,6 +67,24 @@ public class RegisterAircraftUI extends AbstractUI {
             final AircraftModel selectedModel = models.get(modelChoice - 1);
             final String aircraftModelId = selectedModel.aircraftModelId().toString();
 
+            final List<EngineModel> supportedEngines = new java.util.ArrayList<>(selectedModel.supportedEngineModels());
+            if (supportedEngines.isEmpty()) {
+                System.out.println("No certified engines found for this model. Contact admin.");
+                return true;
+            }
+
+            System.out.println("Certified engines for " + selectedModel.modelName() + ":");
+            for (int i = 0; i < supportedEngines.size(); i++) {
+                System.out.printf("%d) %s\n", i + 1, supportedEngines.get(i).name());
+            }
+
+            final int engineChoice = readInt("Select installed engine number");
+            if (engineChoice < 1 || engineChoice > supportedEngines.size()) {
+                throw new IllegalArgumentException("Invalid engine option");
+            }
+            final EngineModel selectedEngine = supportedEngines.get(engineChoice - 1);
+            final String engineModelId = selectedEngine.identity().toString();
+
             final double payloadBudgetKg = selectedModel.maximumZeroFuelWeight() - selectedModel.emptyWeight() - 500.0;
             final int estimatedMaxPeople = (int) Math.floor(Math.max(0.0, payloadBudgetKg) / 100.0);
 
@@ -90,7 +110,7 @@ public class RegisterAircraftUI extends AbstractUI {
                 );
             }
 
-            controller.registerAircraft(registrationNumber, registrationCountry, operationStatus, flightCrew, aircraftModelId, econ, bus, first);
+            controller.registerAircraft(registrationNumber, registrationCountry, operationStatus, flightCrew, aircraftModelId, engineModelId, econ, bus, first);
             System.out.println("Aircraft registered successfully for " + company.name() + ".");
         } catch (final Exception e) {
             System.out.println("Error: " + e.getMessage());

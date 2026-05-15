@@ -15,7 +15,10 @@ import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.infrastructure.authz.application.AuthorizationService;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import shared.domain.AircraftModelId;
+import shared.domain.EngineModelId;
 import shared.domain.UserId;
+import enginemodel.domain.EngineModel;
+import enginemodel.repositories.EngineModelRepository;
 
 public class RegisterAircraftController {
 
@@ -24,15 +27,18 @@ public class RegisterAircraftController {
     private final AircraftModelRepository aircraftModelRepository;
     private final CustomerCollaboratorRepository collaboratorRepository;
     private final AirTransportCompanyRepository companyRepository;
+    private final EngineModelRepository engineModelRepository;
 
     public RegisterAircraftController(final AircraftRepository aircraftRepository,
                                       final AircraftModelRepository aircraftModelRepository,
                                       final CustomerCollaboratorRepository collaboratorRepository,
-                                      final AirTransportCompanyRepository companyRepository) {
+                                      final AirTransportCompanyRepository companyRepository,
+                                      final EngineModelRepository engineModelRepository) {
         this.aircraftRepository = aircraftRepository;
         this.aircraftModelRepository = aircraftModelRepository;
         this.collaboratorRepository = collaboratorRepository;
         this.companyRepository = companyRepository;
+        this.engineModelRepository = engineModelRepository;
     }
 
     /**
@@ -43,6 +49,7 @@ public class RegisterAircraftController {
                                      final AircraftOperationStatus operationStatus,
                                      final int flightCrewCount,
                                      final String aircraftModelId,
+                                     final String engineModelId,
                                      final int economySeats,
                                      final int businessSeats,
                                      final int firstSeats) {
@@ -66,6 +73,10 @@ public class RegisterAircraftController {
         final AircraftModel model = aircraftModelRepository
                 .ofIdentity(AircraftModelId.valueOf(aircraftModelId))
                 .orElseThrow(() -> new IllegalArgumentException("Aircraft model does not exist"));
+
+        final EngineModel engine = engineModelRepository
+                .ofIdentity(EngineModelId.valueOf(engineModelId))
+                .orElseThrow(() -> new IllegalArgumentException("Engine model does not exist"));
 
         final int totalSeats = economySeats + businessSeats + firstSeats;
         final int totalPeople = totalSeats + flightCrewCount;
@@ -102,6 +113,7 @@ public class RegisterAircraftController {
             operationStatus,
             flightCrewCount,
             model,
+            engine,
             cabin,
             company
         );

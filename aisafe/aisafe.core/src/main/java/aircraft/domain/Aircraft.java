@@ -1,6 +1,7 @@
 package aircraft.domain;
 
 import aircraftmodel.domain.AircraftModel;
+import enginemodel.domain.EngineModel;
 import airtransportcompany.domain.AirTransportCompany;
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
@@ -35,6 +36,9 @@ public class Aircraft implements AggregateRoot<AircraftId> {
     @ManyToOne
     private AircraftModel aircraftModel;
 
+    @ManyToOne
+    private EngineModel engineModel;
+
     private String registrationNumber; 
     private String registrationCountry;
     @Enumerated(EnumType.STRING)
@@ -46,10 +50,15 @@ public class Aircraft implements AggregateRoot<AircraftId> {
                     final AircraftOperationStatus operationStatus,
                     final int flightCrewCount,
                     final AircraftModel aircraftModel,
+                    final EngineModel engineModel,
                     final CabinConfiguration cabinConfiguration,
                     final AirTransportCompany airTransportCompany) {
 
-        Preconditions.noneNull(registrationNumber, registrationCountry, operationStatus, aircraftModel, cabinConfiguration, airTransportCompany);
+        Preconditions.noneNull(registrationNumber, registrationCountry, operationStatus, aircraftModel, engineModel, cabinConfiguration, airTransportCompany);
+
+        if (!aircraftModel.supportedEngineModels().contains(engineModel)) {
+            throw new IllegalArgumentException("The selected engine is not certified for this aircraft model");
+        }
         if (StringPredicates.isNullOrEmpty(registrationNumber)) {
             throw new IllegalArgumentException("Registration number should neither be null nor empty");
         }
@@ -65,6 +74,7 @@ public class Aircraft implements AggregateRoot<AircraftId> {
         this.operationStatus = operationStatus;
         this.flightCrewCount = flightCrewCount;
         this.aircraftModel = aircraftModel;
+        this.engineModel = engineModel;
         this.cabinConfiguration = cabinConfiguration;
         this.airTransportCompany = airTransportCompany;
         this.aircraftId = AircraftId.newId();
@@ -112,6 +122,10 @@ public class Aircraft implements AggregateRoot<AircraftId> {
 
     public AircraftModel aircraftModel() {
         return aircraftModel;
+    }
+
+    public EngineModel engineModel() {
+        return engineModel;
     }
 
     public CabinConfiguration cabinConfiguration() {

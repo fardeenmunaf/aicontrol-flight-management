@@ -6,8 +6,15 @@ import aircontrolarea.repositories.AirControlAreaRepository;
 import airport.domain.Airport;
 import airport.domain.AirportCoordinates;
 import airport.repositories.AirportRepository;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
 import java.util.List;
+import java.util.Optional;
 
 public class AirportBootstrap {
 
@@ -22,17 +29,72 @@ public class AirportBootstrap {
     }
 
     public void execute() {
-        registerIfAbsent("Francisco Sá Carneiro Airport", "Porto", "Portugal", "OPO", "LPPR",
-                69.0, 41.2421, -8.6781, "LPPC");
+        bootstrapFromXml("aisafe.app.bootstrap/TestSet00_Airports.xml");
+    }
 
-        registerIfAbsent("Humberto Delgado Airport", "Lisbon", "Portugal", "LIS", "LPPT",
-                114.0, 38.7742, -9.1342, "LPPC");
+    private void bootstrapFromXml(final String filePath) {
+        try {
+            final File file = new File(filePath);
+            if (!file.exists()) {
+                System.out.println("XML file not found: " + filePath);
+                return;
+            }
 
-        registerIfAbsent("Adolfo Suarez Madrid-Barajas Airport", "Madrid", "Spain", "MAD", "LEMD",
-                610.0, 40.4895, -3.5643, "LECM");
+            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            final DocumentBuilder builder = factory.newDocumentBuilder();
+            final Document doc = builder.parse(file);
+            doc.getDocumentElement().normalize();
 
-        registerIfAbsent("Josep Tarradellas Barcelona-El Prat Airport", "Barcelona", "Spain", "BCN", "LEBL",
-                4.0, 41.2971, 2.0785, "LECM");
+            final NodeList airportNodes = doc.getElementsByTagName("airport");
+            for (int i = 0; i < airportNodes.getLength(); i++) {
+                final Element airportElement = (Element) airportNodes.item(i);
+                final String iataCode = airportElement.getAttribute("id");
+                final String name = airportElement.getElementsByTagName("name").item(0).getTextContent();
+                final String town = airportElement.getElementsByTagName("town").item(0).getTextContent();
+                final String country = airportElement.getElementsByTagName("country").item(0).getTextContent();
+
+                final Element locationElement = (Element) airportElement.getElementsByTagName("location").item(0);
+                final double latitude = Double.parseDouble(locationElement.getElementsByTagName("latitude").item(0).getTextContent());
+                final double longitude = Double.parseDouble(locationElement.getElementsByTagName("longitude").item(0).getTextContent());
+                
+                final String altitudeText = locationElement.getElementsByTagName("altitude").item(0).getTextContent();
+                final double elevation = Double.parseDouble(altitudeText.split(" ")[0]);
+
+                final String icaoCode = "X" + iataCode; // Placeholder ICAO
+
+                registerFromXml(name, town, country, iataCode, icaoCode, elevation, latitude, longitude);
+            }
+        } catch (final Exception e) {
+            System.err.println("Error bootstrapping airports from XML: " + e.getMessage());
+        }
+    }
+
+    private void registerFromXml(
+            final String name,
+            final String town,
+            final String country,
+            final String iataCode,
+            final String icaoCode,
+            final Double elevation,
+            final Double latitude,
+            final Double longitude) {
+
+        if (airportRepository.findByIataCode(iataCode).isPresent()) {
+            return;
+        }
+
+        final Optional<AirControlArea> area = airControlAreaRepository.findContaining(latitude, longitude);
+        if (area.isEmpty()) {
+            System.out.println("No air control area found for airport: " + iataCode + " at (" + latitude + ", " + longitude + ")");
+            return;
+        }
+
+        final Airport airport = new Airport(
+                name, town, country, iataCode, icaoCode, elevation,
+                new AirportCoordinates(latitude, longitude), area.get());
+
+        airportRepository.save(airport);
+        System.out.println("Airport bootstrapped from XML: " + iataCode + " (" + icaoCode + ") in area " + area.get().areaCode());
     }
 
     private void registerIfAbsent(
