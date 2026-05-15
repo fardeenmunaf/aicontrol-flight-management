@@ -10,6 +10,7 @@ public class AirportsMenu extends AbstractUI {
 
     private static final int RETURN_OPTION = 0;
     private static final int REGISTER_AIRPORT_OPTION = 1;
+    private static final int LIST_AIRPORTS_OPTION = 2;
 
     public void mainLoop() {
         boolean exit;
@@ -24,6 +25,8 @@ public class AirportsMenu extends AbstractUI {
 
         menu.addItem(REGISTER_AIRPORT_OPTION, "Register Airport",
                 new RegisterAirportAction());
+        menu.addItem(LIST_AIRPORTS_OPTION, "List Airports",
+                new ListAirportsAction());
 
         menu.addItem(RETURN_OPTION, "Return", () -> true);
 

@@ -86,9 +86,6 @@ public class Airport implements AggregateRoot<AirportId> {
         if (!normalizedIcao.matches("[A-Z]{4}")) {
             throw new IllegalArgumentException("Airport ICAO code must have exactly 4 letters");
         }
-        if (elevation < 0) {
-            throw new IllegalArgumentException("Airport elevation should not be negative");
-        }
 
         this.airportId = AirportId.newId();
         this.name = name.trim();
