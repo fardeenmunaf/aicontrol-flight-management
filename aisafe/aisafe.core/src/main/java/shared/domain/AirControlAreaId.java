@@ -2,6 +2,7 @@ package shared.domain;
 
 import java.util.UUID;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
@@ -11,6 +12,8 @@ import eapli.framework.strings.util.StringPredicates;
 public class AirControlAreaId implements ValueObject, Comparable<AirControlAreaId> {
 
     private static final long serialVersionUID = 1L;
+
+    @Column(name = "air_control_area_id")
 
     private String value;
 

@@ -3,6 +3,7 @@ package shared.domain;
 import java.util.UUID;
 
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
@@ -12,6 +13,8 @@ import eapli.framework.strings.util.StringPredicates;
 public class UserId implements ValueObject, Comparable<UserId> {
 
     private static final long serialVersionUID = 1L;
+
+    @Column(name = "user_id")
 
     private String value;
 

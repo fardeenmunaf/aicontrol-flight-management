@@ -26,8 +26,8 @@ public class CustomerCollaboratorsMenu extends AbstractUI {
         final Menu menu = new Menu("Customer Collaborators");
         menu.addItem(REGISTER_OPTION, "Register customer collaborator", new RegisterCustomerCollaboratorAction());
         menu.addItem(LIST_OPTION, "List customer collaborators", new ListCustomerCollaboratorsAction());
-        menu.addItem(UPDATE_OPTION, "Update customer collaborator contact information", new UpdateCustomerCollaboratorAction());
         menu.addItem(DISABLE_OPTION, "Disable customer collaborator", new DisableCustomerCollaboratorAction());
+        menu.addItem(UPDATE_OPTION, "Update customer collaborator contact information", new UpdateCustomerCollaboratorAction());
         menu.addItem(RETURN_OPTION, "Return", () -> true);
 
         final MenuRenderer renderer = new VerticalMenuRenderer(menu, MenuItemRenderer.DEFAULT);

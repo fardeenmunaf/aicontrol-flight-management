@@ -5,12 +5,6 @@ import java.util.Map;
 
 import eapli.framework.util.Utility;
 
-/**
- * Handles loading of database-specific properties from application configuration.
- * Manages JPA persistence unit configuration and extended properties.
- *
- * @author LAPR4 Team
- */
 @Utility
 public final class PersistenceSettings {
     private static final String DEFAULT_PERSISTENCE_UNIT = "aisafe-pu";
@@ -20,53 +14,33 @@ public final class PersistenceSettings {
     private static final String AISAFE_DB_USERNAME = "aisafe.db.username";
     private static final String AISAFE_DB_PASSWORD = "aisafe.db.password";
 
-    private PersistenceSettings() {
-        // ensure utility
-    }
+    // H2 in-memory defaults
+    private static final String DEFAULT_DIALECT  = "org.hibernate.dialect.H2Dialect";
+    private static final String DEFAULT_DRIVER   = "org.h2.Driver";
+    private static final String DEFAULT_URL = "jdbc:h2:~/aisafe-dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=VALUE";
+    private static final String DEFAULT_USERNAME = "sa";
+    private static final String DEFAULT_PASSWORD = "";
 
-    /**
-     * Get the JPA persistence unit name.
-     * Loads from system properties or defaults to "aisafe-pu".
-     *
-     * @return the persistence unit name
-     */
+    private PersistenceSettings() {}
+
     public static String getPersistenceUnitName() {
         return System.getProperty("aisafe.persistence.unit", DEFAULT_PERSISTENCE_UNIT);
     }
 
-    /**
-     * Get extended persistence properties for JPA configuration.
-     * These properties override or supplement the persistence.xml configuration.
-     *
-     * @return a map of JPA properties
-     */
     public static Map<String, Object> getExtendedPersistenceProperties() {
         final Map<String, Object> properties = new HashMap<>();
 
-        // Get database configuration from system properties
-        String dialect = System.getProperty(AISAFE_DB_DIALECT);
-        String driver = System.getProperty(AISAFE_DB_DRIVER);
-        String url = System.getProperty(AISAFE_DB_URL);
-        String username = System.getProperty(AISAFE_DB_USERNAME);
-        String password = System.getProperty(AISAFE_DB_PASSWORD);
-
-        // Apply properties if configured
-        if (dialect != null && !dialect.isBlank()) {
-            properties.put("hibernate.dialect", dialect);
-        }
-        if (driver != null && !driver.isBlank()) {
-            properties.put("jakarta.persistence.jdbc.driver", driver);
-        }
-        if (url != null && !url.isBlank()) {
-            properties.put("jakarta.persistence.jdbc.url", url);
-        }
-        if (username != null && !username.isBlank()) {
-            properties.put("jakarta.persistence.jdbc.user", username);
-        }
-        if (password != null && !password.isBlank()) {
-            properties.put("jakarta.persistence.jdbc.password", password);
-        }
+        properties.put("hibernate.dialect",              getOrDefault(AISAFE_DB_DIALECT,  DEFAULT_DIALECT));
+        properties.put("jakarta.persistence.jdbc.driver", getOrDefault(AISAFE_DB_DRIVER,  DEFAULT_DRIVER));
+        properties.put("jakarta.persistence.jdbc.url",   getOrDefault(AISAFE_DB_URL,      DEFAULT_URL));
+        properties.put("jakarta.persistence.jdbc.user",  getOrDefault(AISAFE_DB_USERNAME, DEFAULT_USERNAME));
+        properties.put("jakarta.persistence.jdbc.password", System.getProperty(AISAFE_DB_PASSWORD, DEFAULT_PASSWORD));
 
         return properties;
+    }
+
+    private static String getOrDefault(String propertyKey, String defaultValue) {
+        String value = System.getProperty(propertyKey);
+        return (value != null && !value.isBlank()) ? value : defaultValue;
     }
 }
