@@ -8,18 +8,20 @@ public class WeatherLoginUI extends AbstractUI {
 
     @Override
     protected boolean doShow() {
-        final String email = Console.readLine("Email");
-        final String password = Console.readLine("Password");
+        boolean authenticated = false;
+        while (!authenticated) {
+            final String email = Console.readLine("Email");
+            final String password = Console.readLine("Password");
 
-        final boolean authenticated = AuthzRegistry.authenticationService()
-                .authenticate(email, password)
-                .isPresent();
+            authenticated = AuthzRegistry.authenticationService()
+                    .authenticate(email, password)
+                    .isPresent();
 
-        if (!authenticated) {
-            System.out.println("Invalid credentials.");
+            if (!authenticated) {
+                System.out.println("Invalid credentials. Please try again.");
+            }
         }
-
-        return authenticated;
+        return true;
     }
 
     @Override
