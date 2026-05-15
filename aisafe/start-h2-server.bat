@@ -15,4 +15,4 @@ echo Starting H2 Server...
 start "H2 Server" cmd /k java -cp "%H2_JAR%" org.h2.tools.Server -tcp -tcpPort 9092 -ifNotExists
 
 echo H2 server started in another window.
-pause
+exit /b 0

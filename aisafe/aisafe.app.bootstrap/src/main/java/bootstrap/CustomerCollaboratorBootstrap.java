@@ -39,7 +39,7 @@ public class CustomerCollaboratorBootstrap {
         // Air Transport Company Collaborators
         registerAirTransportCollaboratorIfAbsent("atcc1@tap.pt", "Password123", "ATCC One", "910000001", "TP", "Operations Manager");
         registerAirTransportCollaboratorIfAbsent("atcc1@ryanair.ie", "Password123", "ATCC RyanAir", "911000001", "FR", "Fleet Manager");
-
+        
         // Air Control Area Collaborators
         registerAirControlAreaCollaboratorIfAbsent("fco1@aisafe.pt", "Password123", "FCO One", "920000001", "LPPC", "Area Supervisor");
     }
