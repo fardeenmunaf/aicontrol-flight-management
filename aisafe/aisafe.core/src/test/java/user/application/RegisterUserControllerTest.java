@@ -62,6 +62,27 @@ class RegisterUserControllerTest extends UserApplicationTestSupport {
                 () -> assertEquals("single.name@aisafe.com", result.email())
         );
     }
+
+    @Test
+    void ensureEditUserUpdatesPhoneNumberAndRoles() {
+        final User result = new RegisterUserController(userRepository).editUser(
+                "existing@aisafe.com",
+                "+351987654321",
+                Set.of(Role.PILOT));
+
+        assertAll(
+                () -> assertNotNull(result),
+                () -> assertEquals("+351987654321", result.phoneNumber()),
+                () -> assertTrue(result.roles().contains(Role.PILOT))
+        );
+    }
+
+    @Test
+    void ensureEditNonExistentUserIsRejected() {
+        assertThrows(IllegalArgumentException.class, () ->
+                new RegisterUserController(userRepository).editUser(
+                        "nonexistent@aisafe.com", "+351987654321", Set.of(Role.PILOT)));
+    }
 }
 
 

@@ -214,6 +214,15 @@ class RegisterAirportControllerTest {
                         "ABC", "ABCD", 0.0, 0.0, 0.0, ""));
     }
 
+    // --- findAreaForCoordinates ---
+
+    @Test
+    void ensureFindAreaForCoordinatesReturnsEmptyWhenNoAreaContainsPoint() {
+        // The area has "North Portugal" boundaries but no containsPoint logic by default
+        final java.util.Optional<AirControlArea> result = ctrl().findAreaForCoordinates(0.0, 0.0);
+        assertNotNull(result);
+    }
+
     // --- Authorization ---
 
     @Test

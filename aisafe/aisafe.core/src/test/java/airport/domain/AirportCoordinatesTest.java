@@ -62,4 +62,11 @@ class AirportCoordinatesTest {
     void ensureNullLongitudeIsRejected() {
         assertThrows(Exception.class, () -> new AirportCoordinates(0.0, null));
     }
+
+    @Test
+    void ensureProtectedOrmConstructorIsExercised() {
+        // Exercise the protected ORM no-arg constructor via anonymous subclass
+        final AirportCoordinates coords = new AirportCoordinates() { };
+        assertNotNull(coords);
+    }
 }

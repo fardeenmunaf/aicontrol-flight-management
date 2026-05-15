@@ -91,9 +91,10 @@ class AirportTest {
     // --- Elevation ---
 
     @Test
-    void ensureNegativeElevationIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                new Airport("Test", "City", "Country", "OPO", "LPPR", -1.0, COORDS, AREA));
+    void ensureNegativeElevationIsAllowed() {
+        // Airports below sea level exist (e.g. Schiphol, -4 m)
+        final Airport airport = new Airport("Test", "City", "Country", "OPO", "LPPR", -4.0, COORDS, AREA);
+        assertEquals(-4.0, airport.elevation());
     }
 
     // --- Null fields ---

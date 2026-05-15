@@ -142,4 +142,18 @@ class CustomerCollaboratorTest {
                 UserId.valueOf("other@test.com"), CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager");
         assertNotEquals(c1, c2);
     }
+
+    @Test
+    void ensureCollaboratorSameAsItself() {
+        final CustomerCollaborator c = new CustomerCollaborator(
+                USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager");
+        assertTrue(c.sameAs(c));
+    }
+
+    @Test
+    void ensureCollaboratorSameAsNullIsFalse() {
+        final CustomerCollaborator c = new CustomerCollaborator(
+                USER, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager");
+        assertFalse(c.sameAs(null));
+    }
 }

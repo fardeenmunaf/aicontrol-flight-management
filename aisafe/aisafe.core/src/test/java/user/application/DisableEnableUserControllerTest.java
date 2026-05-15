@@ -47,6 +47,26 @@ class DisableEnableUserControllerTest extends UserApplicationTestSupport {
         assertDoesNotThrow(() -> controller.disableUser("missing@aisafe.com"));
         assertDoesNotThrow(() -> controller.enableUser("missing@aisafe.com"));
     }
+
+    @Test
+    void ensureAllUsersReturnsAllPersistedUsers() {
+        final User user1 = user("allusers1@aisafe.com", "User One", "ACTIVE", Set.of(Role.PILOT));
+        final User user2 = user("allusers2@aisafe.com", "User Two", "ACTIVE", Set.of(Role.PILOT));
+        userRepository.add(user1);
+        userRepository.add(user2);
+
+        final DisableEnableUserController controller = new DisableEnableUserController(userRepository);
+        final java.util.List<User> all = controller.allUsers();
+        assertEquals(2, all.size());
+    }
+
+    @Test
+    void ensureAllUsersWithEmptyRepositoryReturnsEmptyList() {
+        final DisableEnableUserController controller = new DisableEnableUserController(userRepository);
+        final java.util.List<User> all = controller.allUsers();
+        assertNotNull(all);
+        assertTrue(all.isEmpty());
+    }
 }
 
 
