@@ -17,7 +17,7 @@ public final class PersistenceSettings {
     // H2 in-memory defaults
     private static final String DEFAULT_DIALECT  = "org.hibernate.dialect.H2Dialect";
     private static final String DEFAULT_DRIVER   = "org.h2.Driver";
-    private static final String DEFAULT_URL = "jdbc:h2:~/aisafe-dev;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=VALUE";
+    private static final String DEFAULT_URL = "jdbc:h2:tcp://localhost/~/aisafe-dev;NON_KEYWORDS=VALUE";
     private static final String DEFAULT_USERNAME = "sa";
     private static final String DEFAULT_PASSWORD = "";
 
