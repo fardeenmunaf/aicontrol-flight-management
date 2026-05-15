@@ -21,13 +21,13 @@ public class AircraftModelBootstrap {
     private final EngineModelRepository engineModelRepository;
 
     public AircraftModelBootstrap(final AircraftModelRepository aircraftModelRepository,
-                                  final EngineModelRepository engineModelRepository) {
+            final EngineModelRepository engineModelRepository) {
         this.aircraftModelRepository = aircraftModelRepository;
         this.engineModelRepository = engineModelRepository;
     }
 
     public void execute() {
-        bootstrapFromXml("aisafe.app.bootstrap/TestSet00_Aircraft.xml");
+        bootstrapFromXml("aisafe.app.bootstrap/TestSet00_AircraftModels.xml");
     }
 
     private void bootstrapFromXml(final String filePath) {
@@ -48,7 +48,8 @@ public class AircraftModelBootstrap {
                 final Element aircraftElement = (Element) aircraftNodes.item(i);
                 final String modelName = aircraftElement.getAttribute("model_ID");
                 final String makerName = aircraftElement.getElementsByTagName("maker").item(0).getTextContent();
-                final AircraftType type = AircraftType.valueOf(aircraftElement.getElementsByTagName("type").item(0).getTextContent().toUpperCase());
+                final AircraftType type = AircraftType
+                        .valueOf(aircraftElement.getElementsByTagName("type").item(0).getTextContent().toUpperCase());
 
                 final double emptyWeight = parseValueWithUnit(aircraftElement, "EWeight");
                 final double maximumTakeOffWeight = parseValueWithUnit(aircraftElement, "MTOW");
@@ -57,16 +58,18 @@ public class AircraftModelBootstrap {
                 final double maximumFuelCapacity = parseValueWithUnit(aircraftElement, "fuel_capacity");
 
                 final Element motorization = (Element) aircraftElement.getElementsByTagName("motorization").item(0);
-                final int numberOfEngines = Integer.parseInt(motorization.getElementsByTagName("number_motors").item(0).getTextContent());
+                final int numberOfEngines = Integer
+                        .parseInt(motorization.getElementsByTagName("number_motors").item(0).getTextContent());
                 final double serviceCeiling = parseValueWithUnit(motorization, "cruise_altitude");
                 final double cruiseSpeed = parseValueWithUnit(motorization, "cruise_speed");
 
                 final double wingArea = parseValueWithUnit(aircraftElement, "wing_area");
                 final double wingSpan = parseValueWithUnit(aircraftElement, "wing_span");
-                
+
                 final Element dragFunc = (Element) aircraftElement.getElementsByTagName("Cdrag_function").item(0);
                 final Element firstItem = (Element) dragFunc.getElementsByTagName("iten").item(0);
-                final double dragCoefficient = Double.parseDouble(firstItem.getElementsByTagName("Cdrag_0").item(0).getTextContent());
+                final double dragCoefficient = Double
+                        .parseDouble(firstItem.getElementsByTagName("Cdrag_0").item(0).getTextContent());
                 final double liftCoefficient = 1.2; // Default if not in XML
 
                 final String engineName = motorization.getElementsByTagName("motor").item(0).getTextContent();
@@ -90,8 +93,9 @@ public class AircraftModelBootstrap {
             switch (unit) {
                 case "US":
                     // If weight/mass, lbs to kg; if altitude, ft to m.
-                    // We distinguish by tag name or context. 
-                    if (tagName.contains("Weight") || tagName.contains("MTOW") || tagName.contains("payload") || tagName.contains("capacity")) {
+                    // We distinguish by tag name or context.
+                    if (tagName.contains("Weight") || tagName.contains("MTOW") || tagName.contains("payload")
+                            || tagName.contains("capacity")) {
                         value *= 0.45359237;
                     } else if (tagName.contains("altitude") || tagName.contains("Ceiling")) {
                         value *= 0.3048;
@@ -110,10 +114,10 @@ public class AircraftModelBootstrap {
     }
 
     private void registerFromXml(final String modelName, final String makerName, final AircraftType type,
-                                 final double emptyWeight, final double mtow, final double mzfw,
-                                 final double fuelCapacity, final double ceiling, final double speed,
-                                 final double area, final double span, final double drag,
-                                 final double lift, final int engines, final String engineName) {
+            final double emptyWeight, final double mtow, final double mzfw,
+            final double fuelCapacity, final double ceiling, final double speed,
+            final double area, final double span, final double drag,
+            final double lift, final int engines, final String engineName) {
 
         if (!aircraftModelRepository.findByModelNameAndMaker(modelName, makerName).isEmpty()) {
             return;
@@ -121,8 +125,7 @@ public class AircraftModelBootstrap {
 
         final var model = new AircraftModel(
                 type, emptyWeight, mtow, mzfw, fuelCapacity, ceiling, speed, area, span, drag, lift, modelName,
-                engines, new AircraftModelMaker(makerName, "Unknown")
-        );
+                engines, new AircraftModelMaker(makerName, "Unknown"));
 
         // Try to find the engine by name (normalizing spaces)
         final String normalizedEngine = engineName.replace(" ", "");
@@ -139,22 +142,22 @@ public class AircraftModelBootstrap {
     }
 
     private void registerIfAbsent(final String modelName,
-                                  final String makerName,
-                                  final String makerCountry,
-                                  final AircraftType type,
-                                  final Double emptyWeight,
-                                  final Double maximumTakeOffWeight,
-                                  final Double maximumZeroFuelWeight,
-                                  final Double maximumFuelCapacity,
-                                  final Double serviceCeiling,
-                                  final Double cruiseSpeed,
-                                  final Double wingArea,
-                                  final Double wingSpan,
-                                  final Double dragCoefficient,
-                                  final Double liftCoefficient,
-                                  final int numberOfEngines,
-                                  final String engineModelName1,
-                                  final String engineModelName2) {
+            final String makerName,
+            final String makerCountry,
+            final AircraftType type,
+            final Double emptyWeight,
+            final Double maximumTakeOffWeight,
+            final Double maximumZeroFuelWeight,
+            final Double maximumFuelCapacity,
+            final Double serviceCeiling,
+            final Double cruiseSpeed,
+            final Double wingArea,
+            final Double wingSpan,
+            final Double dragCoefficient,
+            final Double liftCoefficient,
+            final int numberOfEngines,
+            final String engineModelName1,
+            final String engineModelName2) {
 
         if (!aircraftModelRepository.findByModelNameAndMaker(modelName, makerName).isEmpty()) {
             return;
@@ -164,8 +167,7 @@ public class AircraftModelBootstrap {
                 type, emptyWeight, maximumTakeOffWeight, maximumZeroFuelWeight,
                 maximumFuelCapacity, serviceCeiling, cruiseSpeed, wingArea,
                 wingSpan, dragCoefficient, liftCoefficient, modelName,
-                numberOfEngines, new AircraftModelMaker(makerName, makerCountry)
-        );
+                numberOfEngines, new AircraftModelMaker(makerName, makerCountry));
 
         engineModelRepository.findByName(engineModelName1).ifPresent(model::addSupportedEngineModel);
         engineModelRepository.findByName(engineModelName2).ifPresent(model::addSupportedEngineModel);
