@@ -33,7 +33,7 @@ public class ListAircraftUI extends AbstractUI {
 
             System.out.println("Fleet for: " + company.name());
             System.out.println();
-            
+
             controller.listAll().forEach(a -> {
                 if (a.airTransportCompany() != null && a.airTransportCompany().identity().equals(company.identity())) {
                     System.out.println("Registration: " + a.registrationNumber() + " | Country: " + a.registrationCountry() + " | Status: " + a.operationStatus());
