@@ -1,0 +1,87 @@
+All the formulas are for the 16 cell.
+
+A               B       C       D       E
+1 Time step	60	s			
+2 Wing area	845	m^2			
+3 Aspect ratio	7.53				
+4 e	0.84				
+5 Empty weight	2.77E+05	kg			
+6 Payload	42800	Kg			
+7 Fuel	50000	l	Fuel	40200	kg
+8 Thrust	0	0.9	Velocity (M)		
+9	        3.38E+05 1.80E+05 Thrust (N)		
+10 Lambda	1.76E+05				
+11 Thrust laps rate	9.60E-01				
+12 TSFC	1.60E-04	N/N/S			
+13 Num Engines	4				
+
+
+
+A16-A50 Altitude = Cumulative Altitude in the previous cell
+B16-B50 Mass = Empty Weight + Payload + Fuel
+C16-C50 Temperature =IF(A16<=11000,A16*Constants!$B$2+Constants!$B$1,216.7)
+D16-D50 Preassure =IF(A16<=11000, Constants!$B$4*(1-0.0065*Climb!A16/Constants!$B$1)^5.2561, 22632*EXP(9.81*(11000-A16)/Constants!$B$6/C16))	
+E16-E50 Air density =D16/(Constants!$B$6*Climb!C16)
+F16-F50 Speed of sound =SQRT(Constants!$B$8*Constants!$B$6*Climb!C18)
+G16-G50 IAS =VLOOKUP(TRUNC(A16/1000),Flight!$A$3:$C$17,3,FALSE)
+H16-H50 Mtrue =SQRT(5*((Constants!$B$3/Climb!E16*((1+0.2*(Climb!G16/661.5)^2)^3.5-1)+1)^0.286-1))
+I16-I50 TAS (m/s) =H16*F16
+J16-J50 TAS (Knot) =I16/Constants!$B$9
+K16-K50 Lift coef. =2*B16*Constants!$B$7/(Climb!E16*Climb!$B$2*Climb!I16^2)	
+L16-L50 Cdrag_0	=0.02
+M16-M50 Drag coef. =K16^2/(PI()*$B$3*$B$4)+L16
+N16-N50 Drag =0.5*E16*Climb!I16^2*Climb!$B$2*Climb!M16
+O16-O50 Thrust =($B$9-$B$10*H16)*(E16/Constants!$B$3)^$B$11
+P16-P50 Total Thrust =O16*$B$13
+Q16-Q50 dh/dt =(P16-N16)*I16/B16/Constants!$B$7
+R16-R50 Climbing angle =ASIN(Q16/I16)
+S16-S50 dW/dt =P16*$B$1*$B$12/Constants!$B$7
+T16-T50 Distance =I17*COS(R17)*$B$1	
+U16-U50 New mass =B16-S16	
+V16-V50 Cumulative distance = =T16 (adding the previous one, since this is the first one is just 16)
+W16-W50 Cumulative altitude =A16+Q16*$B$1
+X16-X50 Flight time =$B$1
+Y16-Y50 Remaining Fuel =$E$7-B16+U16
+
+
+
+
+Phases - Differences: (each phase in a page on the excel file)
+
+Climb
+Cruise - Thrust = Drag
+Descend - Thrust * 0.1
+Constants
+Flight
+
+Constants:
+A     B     C      D                 
+1 T0	288.2	K	Reference temperature at sea level
+2 λ	-0.0065	K/m	temperature lapse rate
+3 ρ	1.225	kg/m^3	air density at sea level
+4 p	101325	N/m^2	air pressure at sea level
+5 a	340.3	m/s	speed of sound at sea level
+6 R	287	N-m/K	universal gas constant
+7 g	9.81	m/s^2	
+8 gamma	1.4		"ratio of specific heat at constant volume"
+9 knot	0.514444	m/s	
+10 Rearth	6.37E+06		
+
+Altitude	T	Density	Speed of sound	
+0	288.2	1.225	340.3	
+1000				
+2000				
+3000				
+4000				
+5000				
+6000				
+7000				
+8000				
+9000				
+10000				
+11000	216.7	0.364	295.1	
+12000	216.7	0.311	295.1	
+13000	216.7	0.266	295.1	
+14000	216.7	0.227	295.1	
+15000	216.7	0.194	295.1	
+16000	216.7	0.169	295.1	

@@ -94,28 +94,102 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
         strncpy(flight->callsign, designator->valuestring, CALLSIGN_LEN - 1);
         flight->callsign[CALLSIGN_LEN - 1] = '\0';
     }
-    
+
+    // Parse aircraft physical properties
+    cJSON *aircraft = cJSON_GetObjectItemCaseSensitive(fp, "aircraft");
+    if (cJSON_IsObject(aircraft)) {
+        cJSON *item;
+        item = cJSON_GetObjectItemCaseSensitive(aircraft, "emptyWeight");
+        if (cJSON_IsNumber(item)) flight->properties.empty_weight = item->valuedouble;
+        item = cJSON_GetObjectItemCaseSensitive(aircraft, "wingArea");
+        if (cJSON_IsNumber(item)) flight->properties.wing_area = item->valuedouble;
+        item = cJSON_GetObjectItemCaseSensitive(aircraft, "aspectRatio");
+        if (cJSON_IsNumber(item)) flight->properties.aspect_ratio = item->valuedouble;
+        item = cJSON_GetObjectItemCaseSensitive(aircraft, "oswaldEfficiency");
+        if (cJSON_IsNumber(item)) flight->properties.oswald_efficiency = item->valuedouble;
+        item = cJSON_GetObjectItemCaseSensitive(aircraft, "cd0");
+        if (cJSON_IsNumber(item)) flight->properties.cd0 = item->valuedouble;
+        item = cJSON_GetObjectItemCaseSensitive(aircraft, "numberOfEngines");
+        if (cJSON_IsNumber(item)) flight->properties.num_engines = item->valueint;
+    }
+
+    // Parse engine properties
+    cJSON *engine = cJSON_GetObjectItemCaseSensitive(fp, "engine");
+    if (cJSON_IsObject(engine)) {
+        cJSON *item;
+        item = cJSON_GetObjectItemCaseSensitive(engine, "thrustSeaLevelStopped");
+        if (cJSON_IsNumber(item)) flight->properties.thrust_sea_level_stopped = item->valuedouble;
+        item = cJSON_GetObjectItemCaseSensitive(engine, "thrustSeaLevelCruise");
+        if (cJSON_IsNumber(item)) flight->properties.thrust_sea_level_cruise = item->valuedouble;
+        item = cJSON_GetObjectItemCaseSensitive(engine, "thrustLapseRate");
+        if (cJSON_IsNumber(item)) flight->properties.thrust_lapse_rate = item->valuedouble;
+        item = cJSON_GetObjectItemCaseSensitive(engine, "thrustSpecificFuelConsumption");
+        if (cJSON_IsNumber(item)) flight->properties.tsfc = item->valuedouble;
+    }
+
+    // Parse legs: collect waypoints and compute initial mass from first leg
     cJSON *legs = cJSON_GetObjectItemCaseSensitive(fp, "legs");
     int wp_index = 0;
+    bool first_leg = true;
     if (cJSON_IsArray(legs)) {
         cJSON *leg;
         cJSON_ArrayForEach(leg, legs) {
+            // Use first leg's fuel and payload to compute initial mass
+            if (first_leg) {
+                double fuel_liters = 0.0;
+                cJSON *fuel_obj = cJSON_GetObjectItemCaseSensitive(leg, "fuel");
+                if (cJSON_IsObject(fuel_obj)) {
+                    cJSON *qty  = cJSON_GetObjectItemCaseSensitive(fuel_obj, "quantity");
+                    cJSON *unit = cJSON_GetObjectItemCaseSensitive(fuel_obj, "unit");
+                    if (cJSON_IsNumber(qty)) {
+                        if (cJSON_IsString(unit) && strcmp(unit->valuestring, "kg") == 0)
+                            flight->initial_fuel_mass = qty->valuedouble;
+                        else
+                            flight->initial_fuel_mass = qty->valuedouble * FUEL_DENSITY_KG_PER_L;
+                        fuel_liters = qty->valuedouble;
+                        (void)fuel_liters;
+                    }
+                }
+                cJSON *payload_obj = cJSON_GetObjectItemCaseSensitive(leg, "payload");
+                if (cJSON_IsObject(payload_obj)) {
+                    cJSON *qty = cJSON_GetObjectItemCaseSensitive(payload_obj, "quantity");
+                    if (cJSON_IsNumber(qty)) flight->payload = qty->valuedouble;
+                }
+                flight->initial_mass = flight->properties.empty_weight + flight->payload + flight->initial_fuel_mass;
+                flight->current_mass = flight->initial_mass;
+                first_leg = false;
+            }
+
             cJSON *segments = cJSON_GetObjectItemCaseSensitive(leg, "segments");
             if (cJSON_IsArray(segments)) {
                 cJSON *segment;
                 cJSON_ArrayForEach(segment, segments) {
                     if (wp_index >= MAX_WAYPOINTS) break;
-                    
+
+                    // Add "from" of first segment in first leg as the departure waypoint
+                    if (wp_index == 0) {
+                        cJSON *from = cJSON_GetObjectItemCaseSensitive(segment, "from");
+                        if (cJSON_IsObject(from)) {
+                            cJSON *lat = cJSON_GetObjectItemCaseSensitive(from, "latitude");
+                            cJSON *lon = cJSON_GetObjectItemCaseSensitive(from, "longitude");
+                            cJSON *alt = cJSON_GetObjectItemCaseSensitive(from, "altitude");
+                            if (cJSON_IsNumber(lat)) flight->flight_plan.waypoints[wp_index].pos.latitude = lat->valuedouble;
+                            if (cJSON_IsNumber(lon)) flight->flight_plan.waypoints[wp_index].pos.longitude = lon->valuedouble;
+                            if (cJSON_IsNumber(alt)) flight->flight_plan.waypoints[wp_index].pos.altitude = alt->valuedouble;
+                            flight->flight_plan.waypoints[wp_index].target_speed = 250.0;
+                            wp_index++;
+                        }
+                    }
+
+                    if (wp_index >= MAX_WAYPOINTS) break;
                     cJSON *to = cJSON_GetObjectItemCaseSensitive(segment, "to");
                     if (cJSON_IsObject(to)) {
                         cJSON *lat = cJSON_GetObjectItemCaseSensitive(to, "latitude");
                         cJSON *lon = cJSON_GetObjectItemCaseSensitive(to, "longitude");
                         cJSON *alt = cJSON_GetObjectItemCaseSensitive(to, "altitude");
-                        
                         if (cJSON_IsNumber(lat)) flight->flight_plan.waypoints[wp_index].pos.latitude = lat->valuedouble;
                         if (cJSON_IsNumber(lon)) flight->flight_plan.waypoints[wp_index].pos.longitude = lon->valuedouble;
                         if (cJSON_IsNumber(alt)) flight->flight_plan.waypoints[wp_index].pos.altitude = alt->valuedouble;
-                        
                         flight->flight_plan.waypoints[wp_index].target_speed = 250.0;
                         wp_index++;
                     }
@@ -125,8 +199,11 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
     }
     flight->flight_plan.num_waypoints = wp_index;
     flight->flight_plan.current_waypoint_index = 0;
-    
-    printf("Loaded flight plan for %s with %d waypoints.\n", flight->callsign, flight->flight_plan.num_waypoints);
+
+    printf("Loaded flight plan for %s with %d waypoints. empty=%.0f payload=%.0f fuel=%.0f initial_mass=%.0f kg\n",
+           flight->callsign, flight->flight_plan.num_waypoints,
+           flight->properties.empty_weight, flight->payload,
+           flight->initial_fuel_mass, flight->initial_mass);
     
     shm->num_flights++;
     

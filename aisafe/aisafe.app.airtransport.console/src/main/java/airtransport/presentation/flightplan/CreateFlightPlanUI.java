@@ -42,7 +42,8 @@ public class CreateFlightPlanUI extends AbstractUI {
             PersistenceContext.repositories().flightPlans(),
             PersistenceContext.repositories().nodes(),
             PersistenceContext.repositories().aircraftModels(),
-            PersistenceContext.repositories().airports());
+            PersistenceContext.repositories().airports(),
+            PersistenceContext.repositories().airTransportCompanies());
 
     private final FlightDslProcessor processor = new FlightDslProcessor();
 

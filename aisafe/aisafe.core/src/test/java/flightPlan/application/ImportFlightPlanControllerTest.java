@@ -23,6 +23,9 @@ import airport.domain.Airport;
 import airport.repositories.AirportRepository;
 import shared.domain.AircraftModelId;
 import shared.domain.AirportId;
+import airtransportcompany.domain.AirTransportCompany;
+import airtransportcompany.repositories.AirTransportCompanyRepository;
+import shared.domain.AirTransportCompanyId;
 
 import java.time.Instant;
 import java.util.List;
@@ -40,6 +43,7 @@ class ImportFlightPlanControllerTest {
     private final StubNodeRepository nodeRepo = new StubNodeRepository();
     private final StubAircraftModelRepository aircraftRepo = new StubAircraftModelRepository();
     private final StubAirportRepository airportRepo = new StubAirportRepository();
+    private final StubAirTransportCompanyRepository companyRepo = new StubAirTransportCompanyRepository();
 
     @BeforeAll
     static void setupAuth() {
@@ -60,11 +64,12 @@ class ImportFlightPlanControllerTest {
         nodeRepo.clear();
         aircraftRepo.clear();
         airportRepo.clear();
+        companyRepo.clear();
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
     }
 
     private ImportFlightPlanController controller() {
-        return new ImportFlightPlanController(planRepo, nodeRepo, aircraftRepo, airportRepo);
+        return new ImportFlightPlanController(planRepo, nodeRepo, aircraftRepo, airportRepo, companyRepo);
     }
 
     private LegImportRequest singleLeg() {
@@ -111,6 +116,11 @@ class ImportFlightPlanControllerTest {
                 List.of(new SegmentImportRequest(40.49, -3.56, 41.29, 2.07)));
         final FlightPlan plan = controller().importFlightPlan("TP5678", "A320", List.of(singleLeg(), leg2));
         assertNotNull(plan);
+    }
+
+    @Test
+    void ensureInvalidCompanyCallsignIsRejected() {
+        assertThrows(IllegalArgumentException.class, () -> controller().importFlightPlan("XX1234", "A320", List.of(singleLeg())));
     }
 
     static class StubFlightPlanRepository
@@ -195,6 +205,31 @@ class ImportFlightPlanControllerTest {
         @Override
         public Optional<Airport> findByIcaoCode(String code) {
             return Optional.empty();
+        }
+    }
+
+    static class StubAirTransportCompanyRepository
+            extends InMemoryDomainRepository<AirTransportCompany, AirTransportCompanyId>
+            implements AirTransportCompanyRepository {
+
+        void clear() { data().clear(); }
+
+        @Override
+        public List<AirTransportCompany> findByName(String name) {
+            return List.of();
+        }
+
+        @Override
+        public List<AirTransportCompany> findByIataCode(String iataCode) {
+            if ("TP".equals(iataCode)) {
+                return List.of(new AirTransportCompany("TAP", "TP", "TAP"));
+            }
+            return List.of();
+        }
+
+        @Override
+        public List<AirTransportCompany> findByIcaoCode(String icaoCode) {
+            return List.of();
         }
     }
 }

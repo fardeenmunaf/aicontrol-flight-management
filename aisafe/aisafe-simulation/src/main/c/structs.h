@@ -12,6 +12,9 @@
 #define MAX_WAYPOINTS 50
 #define CALLSIGN_LEN 16
 
+// Jet-A fuel density: 50000 L → 40200 kg (from simulation spec)
+#define FUEL_DENSITY_KG_PER_L 0.804
+
 // Represents a 3D position at a specific timestamp
 typedef struct {
     double latitude;
@@ -29,12 +32,16 @@ typedef struct {
 
 // Represents an aircraft's physical properties for the physics engine
 typedef struct {
-    double mass;
-    double wing_area;
-    double max_thrust;
-    double cd0;             // Zero-lift drag coefficient
-    double aspect_ratio;
-    double oswald_efficiency;
+    double empty_weight;          // kg
+    double wing_area;             // m^2
+    double aspect_ratio;          // wingspan^2 / wing_area
+    double oswald_efficiency;     // Oswald efficiency factor (e)
+    double cd0;                   // Zero-lift drag coefficient
+    int    num_engines;
+    double thrust_sea_level_stopped;  // N per engine, at Mach 0
+    double thrust_sea_level_cruise;   // N per engine, at Mach 0.9 (used to derive lambda)
+    double thrust_lapse_rate;         // altitude correction exponent
+    double tsfc;                      // Thrust Specific Fuel Consumption (N/N/s)
 } AircraftProperties;
 
 // Represents a flight plan waypoint
@@ -55,12 +62,17 @@ typedef struct {
     int id;
     char callsign[CALLSIGN_LEN];
     pid_t process_id;       // PID of the child process simulating this flight
-    
+
     Position current_pos;
     Velocity velocity;
     AircraftProperties properties;
     FlightPlan flight_plan;
-    
+
+    double payload;              // kg: passenger + cargo mass for this leg
+    double initial_fuel_mass;   // kg: fuel loaded at leg start
+    double initial_mass;        // kg: emptyWeight + payload + initial_fuel_mass
+    double current_mass;        // kg: decreases as fuel burns during simulation
+
     bool is_active;
     bool violation_detected;
 } Flight;
