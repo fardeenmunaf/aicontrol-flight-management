@@ -1,4 +1,12 @@
 @echo off
+echo Starting H2...
+call "%~dp0start-h2-server.bat"
+timeout /t 2 /nobreak >nul
+
+echo Running Bootstrap...
+call "%~dp0run-bootstrap.bat"
+pause
+
 :menu
 cls
 echo ================================
@@ -7,16 +15,14 @@ echo ================================
 echo.
 echo 1 - Backoffice Console
 echo 2 - Weather Client
-echo 3 - Air Control Console
-echo 4 - Air Transport Console
+echo 3 - Air Transport Console
 echo 0 - Exit
 echo.
 set /p choice=Select an option:
 
 if "%choice%"=="1" goto backoffice
 if "%choice%"=="2" goto weather
-if "%choice%"=="3" goto aircontrol
-if "%choice%"=="4" goto airtransport
+if "%choice%"=="3" goto airtransport
 if "%choice%"=="0" exit
 
 goto menu
@@ -33,14 +39,8 @@ call run-weatherclient.bat
 pause
 goto menu
 
-:aircontrol
-echo Running Air Control...
-echo (Not implemented yet)
-pause
-goto menu
-
 :airtransport
 echo Running Air Transport...
-echo (Not implemented yet)
+call run-airtransport.bat
 pause
 goto menu

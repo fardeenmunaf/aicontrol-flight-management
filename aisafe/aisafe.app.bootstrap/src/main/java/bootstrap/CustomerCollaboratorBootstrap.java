@@ -36,67 +36,71 @@ public class CustomerCollaboratorBootstrap {
     }
 
     public void execute() {
-        registerAirTransportCompanyCollaborator();
-        registerAirControlAreaCollaborator();
+        // Air Transport Company Collaborators
+        registerAirTransportCollaboratorIfAbsent("atcc1@tap.pt", "Password123", "ATCC One", "910000001", "TP", "Operations Manager");
+        registerAirTransportCollaboratorIfAbsent("atcc1@ryanair.ie", "Password123", "ATCC RyanAir", "911000001", "FR", "Fleet Manager");
+        
+        // Air Control Area Collaborators
+        registerAirControlAreaCollaboratorIfAbsent("fco1@aisafe.pt", "Password123", "FCO One", "920000001", "LPPC", "Area Supervisor");
     }
 
-    private void registerAirTransportCompanyCollaborator() {
-        final String iataCode = "TP";
-        final String email = "atcc1@tap.pt";
-
+    private void registerAirTransportCollaboratorIfAbsent(final String email,
+                                                           final String password,
+                                                           final String name,
+                                                           final String phoneNumber,
+                                                           final String iataCode,
+                                                           final String position) {
         if (userRepository.findByEmail(email).isPresent()) {
-            System.out.println("User already exists: " + email);
             return;
         }
 
         final List<AirTransportCompany> companies = airTransportCompanyRepository.findByIataCode(iataCode);
         if (companies.isEmpty()) {
-            System.out.println("TAP Air Portugal (TP) not found. Skipping collaborator creation.");
+            System.out.println("Air Transport Company with IATA code " + iataCode + " not found. Skipping collaborator " + email);
             return;
         }
 
         final AirTransportCompanyId companyId = companies.get(0).identity();
-
         registerUserAndCollaborator(
                 email,
-                "Password123",
-                "ATCC One",
-                "910000001",
+                password,
+                name,
+                phoneNumber,
                 Role.AIR_TRANSPORT_COMPANY_COLLABORATOR,
                 CustomerType.AIR_TRANSPORT_COMPANY,
                 companyId,
                 null,
-                "Operations Manager"
+                position
         );
     }
 
-    private void registerAirControlAreaCollaborator() {
-        final String areaCode = "LPPC";
-        final String email = "fco1@aisafe.pt";
-
+    private void registerAirControlAreaCollaboratorIfAbsent(final String email,
+                                                             final String password,
+                                                             final String name,
+                                                             final String phoneNumber,
+                                                             final String areaCode,
+                                                             final String position) {
         if (userRepository.findByEmail(email).isPresent()) {
-            System.out.println("User already exists: " + email);
             return;
         }
 
         final List<AirControlArea> areas = airControlAreaRepository.findByAreaCode(areaCode);
         if (areas.isEmpty()) {
-            System.out.println("Air Control Area LPPC not found. Skipping collaborator creation.");
+            System.out.println("Air Control Area with code " + areaCode + " not found. Skipping collaborator " + email);
             return;
         }
 
         final AirControlAreaId areaId = areas.get(0).identity();
-
         registerUserAndCollaborator(
                 email,
-                "Password123",
-                "FCO One",
-                "920000001",
+                password,
+                name,
+                phoneNumber,
                 Role.FLIGHT_CONTROL_OPERATOR,
                 CustomerType.AIR_CONTROL_AREA,
                 null,
                 areaId,
-                "Area Supervisor"
+                position
         );
     }
 

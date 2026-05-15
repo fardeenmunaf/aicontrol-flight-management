@@ -2,6 +2,7 @@ package shared.domain;
 
 import java.util.UUID;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 import eapli.framework.domain.model.ValueObject;
@@ -11,6 +12,8 @@ import eapli.framework.validations.Preconditions;
 public class FlightPlanId implements ValueObject, Comparable<FlightPlanId> {
 
     private static final long serialVersionUID = 1L;
+
+    @Column(name = "flight_plan_id")
 
     private String id;
 
