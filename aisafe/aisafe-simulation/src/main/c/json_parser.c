@@ -194,58 +194,57 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
 
     cJSON *legs = cJSON_GetObjectItemCaseSensitive(fp, "legs");
     int wp_index = 0;
-    bool first_leg = true; // we only read fuel and payload from the first leg
+    int leg_index = 0;
 
     if (cJSON_IsArray(legs)) {
         cJSON *leg;
-        cJSON_ArrayForEach(leg, legs) { // iterate over every leg in the array
+        cJSON_ArrayForEach(leg, legs) {
+            if (leg_index >= MAX_LEGS) {
+                fprintf(stderr, "[%s] Too many legs (max %d). Skipping remaining.\n",
+                        flight->callsign, MAX_LEGS);
+                break;
+            }
 
-            // ── mass budget (first leg only) ──────────────────────────────────
-            if (first_leg) {
-                double fuel_liters = 0.0;
-                cJSON *fuel_obj = cJSON_GetObjectItemCaseSensitive(leg, "fuel");
-                if (cJSON_IsObject(fuel_obj)) {
-                    cJSON *qty  = cJSON_GetObjectItemCaseSensitive(fuel_obj, "quantity");
-                    cJSON *unit = cJSON_GetObjectItemCaseSensitive(fuel_obj, "unit");
-                    if (cJSON_IsNumber(qty)) {
-                        // If JSON stores kg directly, use as-is; otherwise convert L → kg
-                        if (cJSON_IsString(unit) && strcmp(unit->valuestring, "kg") == 0)
-                            flight->initial_fuel_mass = qty->valuedouble;
-                        else
-                            flight->initial_fuel_mass = qty->valuedouble * FUEL_DENSITY_KG_PER_L;
-                        fuel_liters = qty->valuedouble;
-                        (void)fuel_liters; // suppress unused-variable warning
-                    }
+            Leg *cur_leg = &flight->legs[leg_index];
+
+            // ── fuel ──────────────────────────────────────────────────────────
+            cJSON *fuel_obj = cJSON_GetObjectItemCaseSensitive(leg, "fuel");
+            if (cJSON_IsObject(fuel_obj)) {
+                cJSON *qty  = cJSON_GetObjectItemCaseSensitive(fuel_obj, "quantity");
+                cJSON *unit = cJSON_GetObjectItemCaseSensitive(fuel_obj, "unit");
+                if (cJSON_IsNumber(qty)) {
+                    if (cJSON_IsString(unit) && strcmp(unit->valuestring, "kg") == 0)
+                        cur_leg->fuel_mass = qty->valuedouble;
+                    else
+                        cur_leg->fuel_mass = qty->valuedouble * FUEL_DENSITY_KG_PER_L;
                 }
+            }
 
-                cJSON *payload_obj = cJSON_GetObjectItemCaseSensitive(leg, "payload");
-                if (cJSON_IsObject(payload_obj)) {
-                    cJSON *qty = cJSON_GetObjectItemCaseSensitive(payload_obj, "quantity");
-                    if (cJSON_IsNumber(qty)) flight->payload = qty->valuedouble;
+            // ── payload ───────────────────────────────────────────────────────
+            cJSON *payload_obj = cJSON_GetObjectItemCaseSensitive(leg, "payload");
+            if (cJSON_IsObject(payload_obj)) {
+                cJSON *qty = cJSON_GetObjectItemCaseSensitive(payload_obj, "quantity");
+                if (cJSON_IsNumber(qty)) cur_leg->payload = qty->valuedouble;
+            }
+
+            // ── departure offset ──────────────────────────────────────────────
+            cJSON *dep_obj = cJSON_GetObjectItemCaseSensitive(leg, "departure");
+            if (cJSON_IsObject(dep_obj)) {
+                cJSON *dep_time = cJSON_GetObjectItemCaseSensitive(dep_obj, "time");
+                if (cJSON_IsString(dep_time)) {
+                    int dh = 0, dm = 0;
+                    sscanf(dep_time->valuestring, "%d:%d", &dh, &dm);
+                    double depart_s = dh * 3600.0 + dm * 60.0;
+                    cur_leg->departure_offset_s = depart_s - shm->config.sim_start_seconds;
                 }
-
-                // Total take-off mass = structural + payload + fuel
-                flight->initial_mass = flight->properties.empty_weight
-                                       + flight->payload
-                                       + flight->initial_fuel_mass;
-                flight->current_mass = flight->initial_mass; // will decrease as fuel burns
-
-                // ── departure offset ──────────────────────────────────────────────
-                cJSON *dep_obj = cJSON_GetObjectItemCaseSensitive(leg, "departure");
-                if (cJSON_IsObject(dep_obj)) {
-                    cJSON *dep_time = cJSON_GetObjectItemCaseSensitive(dep_obj, "time");
-                    if (cJSON_IsString(dep_time)) {
-                        int dh = 0, dm = 0;
-                        sscanf(dep_time->valuestring, "%d:%d", &dh, &dm);
-                        double depart_s = dh * 3600.0 + dm * 60.0;
-                        flight->departure_offset_s = depart_s - shm->config.sim_start_seconds;
-                    }
-                }
-
-                first_leg = false;
             }
 
             // ── waypoints from segments ───────────────────────────────────────
+            // waypoint_start_index: for leg 0, it is 1 (we skip the ground departure
+            // waypoint at index 0 and start navigating toward the top-of-climb).
+            // For subsequent legs the departure point is already the last waypoint of
+            // the previous leg, so no "from" is added and start_index = current wp_index.
+            int leg_wp_start_before = wp_index;
 
             cJSON *segments = cJSON_GetObjectItemCaseSensitive(leg, "segments");
             if (cJSON_IsArray(segments)) {
@@ -253,7 +252,6 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
                 cJSON_ArrayForEach(segment, segments) {
                     if (wp_index >= MAX_WAYPOINTS) break;
 
-                    // Read the segment mode ("climb", "cruise", "descend")
                     FlightPhase seg_phase = PHASE_CLIMB;
                     cJSON *mode_json = cJSON_GetObjectItemCaseSensitive(segment, "mode");
                     if (cJSON_IsString(mode_json)) {
@@ -263,10 +261,8 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
                             seg_phase = PHASE_DESCEND;
                     }
 
-                    // For the very first segment, add the "from" position as
-                    // waypoint 0 (the departure airport ground position).
-                    // Also seed current_pos so the aircraft starts there.
-
+                    // Add the "from" position only for the very first segment of leg 0.
+                    // That seeds current_pos and waypoint[0] (the departure ground position).
                     if (wp_index == 0) {
                         cJSON *from = cJSON_GetObjectItemCaseSensitive(segment, "from");
                         if (cJSON_IsObject(from)) {
@@ -293,10 +289,6 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
 
                     if (wp_index >= MAX_WAYPOINTS) break;
 
-                    // Every segment's "to" becomes the next waypoint, tagged with
-                    // the segment's mode so the simulation knows the phase when
-                    // flying toward this point.
-
                     cJSON *to = cJSON_GetObjectItemCaseSensitive(segment, "to");
                     if (cJSON_IsObject(to)) {
                         cJSON *lat = cJSON_GetObjectItemCaseSensitive(to, "latitude");
@@ -314,12 +306,29 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
                     }
                 }
             }
+
+            // Record the waypoint slice owned by this leg.
+            // Leg 0: start=1 (skip the ground departure at index 0), end=wp_index-1
+            // Leg N: start=leg_wp_start_before (first "to" added for this leg), end=wp_index-1
+            cur_leg->waypoint_start_index = (leg_index == 0) ? 1 : leg_wp_start_before;
+            cur_leg->waypoint_end_index   = wp_index - 1;
+
+            leg_index++;
         }
     }
 
-    flight->flight_plan.num_waypoints = wp_index;
-    // Start heading toward waypoint 1 (top-of-climb); waypoint 0 is the departure
-    // ground position where the aircraft already is.
+    flight->num_legs    = leg_index;
+    flight->current_leg = 0;
+    flight->leg_just_completed = false;
+
+    // Bootstrap mass budget and departure from leg 0
+    flight->payload            = flight->legs[0].payload;
+    flight->initial_fuel_mass  = flight->legs[0].fuel_mass;
+    flight->initial_mass       = flight->properties.empty_weight + flight->payload + flight->initial_fuel_mass;
+    flight->current_mass       = flight->initial_mass;
+    flight->departure_offset_s = flight->legs[0].departure_offset_s;
+
+    flight->flight_plan.num_waypoints          = wp_index;
     flight->flight_plan.current_waypoint_index = 1;
 
     printf("Loaded flight plan for %s: departs at offset %.0fs (%.0f min). "
