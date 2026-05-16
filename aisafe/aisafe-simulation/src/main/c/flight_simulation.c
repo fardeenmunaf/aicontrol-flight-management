@@ -354,6 +354,8 @@ void run_flight_process(SharedMemoryData *shm, int flight_index, int pipe_write_
             f->flight_plan.current_waypoint_index = next->waypoint_start_index;
             f->leg_just_completed                 = true;
             f->is_active                          = true;  // reset BEFORE sem_post — no race
+            f->initial_mass                       = f->properties.empty_weight + next->payload + next->fuel_mass;
+            f->fuel_exhaustion_reported           = false;
         }
 
         msg.new_pos = f->current_pos; // copy of the updated position

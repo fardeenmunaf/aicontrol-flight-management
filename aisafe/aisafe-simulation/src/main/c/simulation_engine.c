@@ -670,8 +670,8 @@ int main() {
     printf("╚══════════════════════════════════════════════════════╝\n");
     printf("Total violations detected: %d\n", shm->total_violations_detected);
     for (int i = 0; i < shm->num_flights; i++) {
-        bool in_scope = (shm->flights[i].departure_offset_s >= 0.0 &&
-                         shm->flights[i].departure_offset_s < shm->config.end_time);
+        bool in_scope = (shm->flights[i].legs[0].departure_offset_s >= 0.0 &&
+                         shm->flights[i].legs[0].departure_offset_s < shm->config.end_time);
         if (!in_scope) continue;
         printf("  %-8s : %s\n",
                shm->flights[i].callsign,
