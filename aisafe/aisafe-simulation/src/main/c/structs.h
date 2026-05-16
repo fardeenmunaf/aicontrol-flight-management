@@ -162,6 +162,19 @@ typedef struct {
     bool fuel_exhaustion_reported;   // true once the parent has counted a fuel-exhaustion violation
 } Flight;
 
+// ── Position history  ──────────────────────────────────────────────
+//
+// The parent process accumulates every validated position update it receives
+// from each flight process through the pipe.  MAX_HISTORY is chosen to be
+// larger than the maximum number of simulation steps (end_time / time_step).
+
+#define MAX_HISTORY 200
+
+typedef struct {
+    Position entries[MAX_HISTORY]; // chronological list of past positions
+    int      count;                // how many entries are currently stored
+} PositionHistory;
+
 // ── Pipe (IPC) message types ──────────────────────────────────────────────────
 
 // Every message that a child sends to the parent through the pipe has this type tag.

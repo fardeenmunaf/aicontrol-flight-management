@@ -1,9 +1,17 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -Isrc/main/c -Isrc/main/c/libs
-LDFLAGS = -lm -lrt
 
-simulation_engine: simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o
-	$(CC) $(CFLAGS) simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o -o simulation_engine $(LDFLAGS)
+# -lrt é necessário no Linux (shm_open, sem_open); no macOS essas funções
+# estão na libc padrão, por isso não existe a biblioteca separada.
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+    LDFLAGS = -lm
+else
+    LDFLAGS = -lm -lrt
+endif
+
+simulation_engine: simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o
+	$(CC) $(CFLAGS) simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o -o simulation_engine $(LDFLAGS)
 
 simulation_engine.o: src/main/c/simulation_engine.c
 	$(CC) $(CFLAGS) -c src/main/c/simulation_engine.c
@@ -20,17 +28,24 @@ json_parser.o: src/main/c/json_parser.c
 flight_simulation.o: src/main/c/flight_simulation.c
 	$(CC) $(CFLAGS) -c src/main/c/flight_simulation.c
 
+position_tracker.o: src/main/c/position_tracker.c
+	$(CC) $(CFLAGS) -c src/main/c/position_tracker.c
+
 test_physics: src/main/c/test_physics.c src/main/c/physics.c
 	$(CC) $(CFLAGS) src/main/c/test_physics.c src/main/c/physics.c -o test_physics $(LDFLAGS)
+
+test_position_tracker: src/main/c/test_position_tracker.c src/main/c/position_tracker.c
+	$(CC) $(CFLAGS) src/main/c/test_position_tracker.c src/main/c/position_tracker.c -o test_position_tracker $(LDFLAGS)
 
 run: simulation_engine
 	./simulation_engine > simulation_output.txt 2>&1
 	@echo "Simulation complete. Output written to simulation_output.txt"
 
-test: test_physics
+test: test_physics test_position_tracker
 	./test_physics
+	./test_position_tracker
 
 clean:
-	rm -f *.o simulation_engine test_physics
+	rm -f *.o simulation_engine test_physics test_position_tracker
 
 .PHONY: run test clean

@@ -11,6 +11,7 @@
 #include "structs.h"
 #include "json_parser.h"
 #include "flight_simulation.h"
+#include "position_tracker.h"
 
 // Name of the POSIX shared memory object that all processes share.
 // The leading '/' is required by the POSIX spec for shm_open names.
@@ -494,6 +495,11 @@ int main() {
     // Storage for one PipeMessage per flight per step (re-used each iteration).
     PipeMessage step_msgs[MAX_FLIGHTS];
 
+    // Position history: one buffer per flight, filled by the parent as
+    // it reads validated updates from each flight's pipe
+    static PositionHistory histories[MAX_FLIGHTS];
+    for (int i = 0; i < MAX_FLIGHTS; i++) histories[i].count = 0;
+
     // ── 6.5  Step-lock simulation loop (parent only) ───────────────────────────
     //
     // This loop advances the simulation one time step at a time.
@@ -619,7 +625,25 @@ int main() {
         {
             if (!was_active[i]) continue;
             ssize_t n = read(pipe_fds[i][0], &step_msgs[i], sizeof(PipeMessage)); //read (pipe of the child, store in array, size)
-            (void)n;
+
+            // Validate the received position and track it.
+            // A complete, valid update is appended to this flight's history so that
+            // past positions are available for safety analysis .
+            // An incomplete read or invalid coordinates are rejected without
+            // corrupting the stored data (TC05).
+            if (n == (ssize_t)sizeof(PipeMessage) &&
+                step_msgs[i].type == MSG_POSITION_UPDATE) {
+                if (is_valid_position(&step_msgs[i].new_pos)) {
+                    append_position(&histories[i], &step_msgs[i].new_pos);
+                } else {
+                    printf("[WARN] Flight %d sent invalid position "
+                           "(lat=%.4f lon=%.4f alt=%.2f) — update rejected\n",
+                           step_msgs[i].flight_id,
+                           step_msgs[i].new_pos.latitude,
+                           step_msgs[i].new_pos.longitude,
+                           step_msgs[i].new_pos.altitude);
+                }
+            }
         }
 
         // ── ADVANCE the simulation clock ──────────────────────────────────────
@@ -686,6 +710,25 @@ int main() {
                shm->flights[i].callsign,
                shm->flights[i].violation_detected ? "HAD VIOLATION" : "clean");
     }
+
+    // ── US101 — Position history report ───────────────────────────────────────
+    printf("\n");
+    printf("╔══════════════════════════════════════════════════════╗\n");
+    printf("║           POSITION HISTORY (US101)                   ║\n");
+    printf("╚══════════════════════════════════════════════════════╝\n");
+    printf("%-8s  %6s  %s\n", "FLIGHT", "STEPS", "LAST KNOWN POSITION");
+    printf("%-8s  %6s  %s\n", "--------", "------", "--------------------------------------------");
+    for (int i = 0; i < shm->num_flights; i++) {
+        if (histories[i].count == 0) continue;
+        Position *last = &histories[i].entries[histories[i].count - 1];
+        printf("%-8s  %6d  lat=%8.4f  lon=%9.4f  alt=%7.0f m\n",
+               shm->flights[i].callsign,
+               histories[i].count,
+               last->latitude,
+               last->longitude,
+               last->altitude);
+    }
+    printf("\n");
 
     // Close the parent's pipe read ends before freeing shared memory
     for (int i = 0; i < shm->num_flights; i++)
