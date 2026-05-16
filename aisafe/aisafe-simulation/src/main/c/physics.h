@@ -1,73 +1,71 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
-#define PHYSICS_GRAVITY 9.80665
+// ---------- ISA atmosphere ----------
 
-/**
- * @brief Calculates the lift force acting on the aircraft.
- * 
- * @param cl Lift coefficient
- * @param area Area of the wings (m^2)
- * @param air_density Density of the air (kg/m^3)
- * @param velocity Velocity of the aircraft relative to the air (m/s)
- * @return Lift force (N)
- */
-double calculate_lift_force(double cl, double area, double air_density, double velocity);
+// T = T0 + lambda*h  (h <= 11000 m),  T = 216.65 K above tropopause
+double isa_temperature(double altitude_m);
 
-/**
- * @brief Calculates the drag force acting on the aircraft.
- * 
- * @param cd Drag coefficient
- * @param area Area of the wings (m^2)
- * @param air_density Density of the air (kg/m^3)
- * @param velocity Velocity of the aircraft relative to the air (m/s)
- * @return Drag force (N)
- */
-double calculate_drag_force(double cd, double area, double air_density, double velocity);
+// p = P0*(1 - 0.0065*h/T0)^5.2561  below tropopause
+// p = 22632 * exp(-g*(h-11000)/(R*T_trop))  above
+double isa_pressure(double altitude_m);
 
-/**
- * @brief Calculates the lift coefficient.
- * 
- * @param mass Mass of the aircraft (kg)
- * @param area Area of the wings (m^2)
- * @param air_density Density of the air (kg/m^3)
- * @param velocity Velocity of the aircraft relative to the air (m/s)
- * @return Lift coefficient
- */
-double calculate_lift_coefficient(double mass, double area, double air_density, double velocity);
+// rho = p / (R * T)
+double isa_air_density(double altitude_m);
 
-/**
- * @brief Calculates the drag coefficient.
- * 
- * @param cd0 Zero-lift drag coefficient
- * @param cl Lift coefficient
- * @param aspect_ratio Aspect ratio of the wing (wing span^2 / wing area)
- * @param e Oswald efficiency number
- * @return Drag coefficient
- */
-double calculate_drag_coefficient(double cd0, double cl, double aspect_ratio, double e);
+// a = sqrt(gamma * R * T)
+double isa_speed_of_sound(double altitude_m);
 
-/**
- * @brief Calculates the engine thrust at a specific altitude.
- * 
- * @param thrust_sea_level Thrust at sea level (N)
- * @param density_altitude Air density at current altitude (kg/m^3)
- * @param density_sea_level Air density at sea level (kg/m^3)
- * @return Thrust at the given altitude (N)
- */
-double calculate_thrust_at_altitude(double thrust_sea_level, double density_altitude, double density_sea_level);
+// ---------- Speed ----------
 
-/**
- * @brief Calculates the range of the aircraft in cruise flight.
- * 
- * @param true_air_speed True air speed (m/s)
- * @param tsfc Thrust specific fuel consumption (N/N/s or kg/N/s depending on convention, using SI units)
- * @param lift_force Lift force (N)
- * @param drag_force Drag force (N)
- * @param initial_weight Initial weight of the aircraft (N)
- * @param final_weight Final weight of the aircraft (N)
- * @return Range of the aircraft (m)
- */
-double calculate_range(double true_air_speed, double tsfc, double lift_force, double drag_force, double initial_weight, double final_weight);
+// Mach from IAS (knots) and current air density.
+// Formula (from sim spec, H16):
+//   M = sqrt(5 * ((rho0/rho * ((1 + 0.2*(IAS/661.5)^2)^3.5 - 1) + 1)^0.2857 - 1))
+double calculate_mach(double ias_knots, double air_density);
+
+// TAS (m/s) = Mach * speed_of_sound_at_altitude
+double calculate_tas(double mach, double altitude_m);
+
+// ---------- Aerodynamics ----------
+
+// Cl = 2*W / (rho * S * V^2)
+double calculate_lift_coefficient(double mass, double area,
+                                  double air_density, double velocity);
+
+// Cd = Cd0 + Cl^2 / (pi * AR * e)
+double calculate_drag_coefficient(double cd0, double cl,
+                                  double aspect_ratio, double e);
+
+// L = 0.5 * rho * V^2 * S * Cl
+double calculate_lift_force(double cl, double area,
+                            double air_density, double velocity);
+
+// D = 0.5 * rho * V^2 * S * Cd
+double calculate_drag_force(double cd, double area,
+                            double air_density, double velocity);
+
+// ---------- Thrust ----------
+
+// Thrust for ONE engine (N).
+// T = (thrust_stopped - lambda * mach) * (rho/rho0)^lapse_rate
+// lambda is derived from the two sea-level reference points:
+//   lambda = (thrust_stopped - thrust_cruise) / 0.9
+double calculate_thrust(double thrust_stopped, double thrust_cruise,
+                        double lapse_rate, double mach, double air_density);
+
+// ---------- Step computations ----------
+
+// dh/dt (m/s) = (total_thrust - drag) * tas / (mass * g)
+double calculate_climb_rate(double total_thrust, double drag,
+                            double tas, double mass);
+
+// Fuel burned in one time step (kg).
+// dW = total_thrust * tsfc * dt / g
+// TSFC unit: N/N/s (weight-specific fuel consumption)
+double calculate_fuel_burn(double total_thrust, double tsfc, double dt);
+
+// Horizontal distance covered in one time step (m).
+// dist = tas * cos(asin(climb_rate / tas)) * dt
+double calculate_step_distance(double tas, double climb_rate, double dt);
 
 #endif /* PHYSICS_H */

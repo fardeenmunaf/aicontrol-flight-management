@@ -418,46 +418,40 @@ int main(int argc, char **argv) {
 
     // ── fork one child per flight ──────────────────────────────────────────────
     pid_t pids[MAX_FLIGHTS];
+    memset(pids, 0, sizeof(pids)); // 0 = not forked; set to child PID when forked
+
     for (int i = 0; i < shm->num_flights; i++) {
         shm->flights[i].process_id = 0;
 
-        // Flush stdout before fork so the parent's buffered output is not
-        // duplicated or interleaved with the child's first printf.
+        if (!shm->flights[i].is_active) {
+            // Out-of-scope flight — no child process needed
+            continue;
+        }
+
         fflush(stdout);
-        pid_t pid = fork(); // duplicate the current process
+        pid_t pid = fork();
         if (pid < 0) {
             perror("fork failed");
-            cleanup(shm, pids, i, parent_pid, step_sems, main_sem);
+            cleanup(shm, pids, shm->num_flights, parent_pid, step_sems, main_sem);
             return EXIT_FAILURE;
         }
 
         if (pid == 0) {
             // ════════════ CHILD PROCESS ════════════════════════════════════════
-            // Close all pipe ends this child does not own:
-            //   - its own read end (child only writes, never reads)
-            //   - both ends of every OTHER flight's pipe (not our business)
-
             for (int j = 0; j < shm->num_flights; j++) {
-                close(pipe_fds[j][0]);              // child never reads any pipe
-                if (j != i) close(pipe_fds[j][1]); // close other flights' write ends
+                close(pipe_fds[j][0]);
+                if (j != i) close(pipe_fds[j][1]);
             }
-
-            // Hand off to the flight simulation loop.
-            // pipe_fds[i][1] is this child's write end — it sends positions to parent.
-            // step_sems[i]   is this child's "go" semaphore — parent posts to wake it.
-            // main_sem       is shared — child posts here when its step is done.
-
             run_flight_process(shm, i, pipe_fds[i][1], step_sems[i], main_sem);
-
-            close(pipe_fds[i][1]); // close write end before exiting
-            exit(EXIT_SUCCESS);    // child exits; parent's waitpid() will reap it
+            close(pipe_fds[i][1]);
+            exit(EXIT_SUCCESS);
             // ════════════ END OF CHILD ═════════════════════════════════════════
         }
 
-        // ── Parent continues here after each fork ─────────────────────────────
         pids[i] = pid;
-        shm->flights[i].process_id = pid; // store so cleanup can waitpid
-        printf("Forked child PID %d for flight %s\n", pid, shm->flights[i].callsign);
+        shm->flights[i].process_id = pid;
+        printf("Forked child PID %d for flight %s (departs at offset %.0fs)\n",
+               pid, shm->flights[i].callsign, shm->flights[i].departure_offset_s);
     }
 
     // Parent closes ALL write ends — it only reads from the pipes.
