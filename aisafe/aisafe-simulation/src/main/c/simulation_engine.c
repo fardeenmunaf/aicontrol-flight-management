@@ -542,7 +542,7 @@ int main() {
             Flight *f = &shm->flights[i];
             if (!f->is_active) continue;
             double fuel_rem = f->initial_fuel_mass;
-            int last_wp = f->flight_plan.num_waypoints - 1;
+            int last_wp = f->legs[0].waypoint_end_index;
             double dest_lat = f->flight_plan.waypoints[last_wp].pos.latitude;
             double dest_lon = f->flight_plan.waypoints[last_wp].pos.longitude;
             const double R = 6371000.0;
@@ -552,7 +552,7 @@ int main() {
             double dlon = (dest_lon - f->current_pos.longitude) * M_PI / 180.0;
             double a = sin(dlat/2)*sin(dlat/2) + cos(lat1)*cos(lat2)*sin(dlon/2)*sin(dlon/2);
             double dist_to_dest = R * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
-            double cruise_alt = f->flight_plan.waypoints[1].pos.altitude;
+            double cruise_alt = f->flight_plan.waypoints[f->legs[0].waypoint_start_index].pos.altitude;
             printf("%-8s %-7s %8.4f %9.4f %7.0f %8.1f %5.0f %6s %8s %9s %6s  %6s %5s %7s  %6s %6s  %8s %8s  %8s %8s  %7s  %6s %7s  %6.0f %7.0f\n",
                    f->callsign, "GATE   ",
                    f->current_pos.latitude, f->current_pos.longitude,
@@ -639,6 +639,20 @@ int main() {
             double remaining_fuel = f->current_mass - f->properties.empty_weight - f->payload;
             printf("[%s] Landed at destination. Remaining fuel: %.0f kg | Total mass: %.0f kg\n",
                    f->callsign, remaining_fuel, f->current_mass);
+        }
+
+        // Intermediate leg completion: child set leg_just_completed=true and is_active=true.
+        // Parent clears the flag here (child is blocked on step_sem — no concurrent write).
+        for (int i = 0; i < shm->num_flights; i++) {
+            if (!was_active[i] || !shm->flights[i].leg_just_completed) continue;
+            shm->flights[i].leg_just_completed = false;
+            Flight *f = &shm->flights[i];
+            printf("[%s] Arrived at intermediate stop. Leg %d complete. "
+                   "Next leg (leg %d) departs at offset %.0fs.\n",
+                   f->callsign,
+                   f->current_leg - 1,   // just-completed leg (already incremented in child)
+                   f->current_leg,
+                   f->departure_offset_s);
         }
 
         fflush(stdout);
