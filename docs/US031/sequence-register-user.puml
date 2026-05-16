@@ -1,0 +1,83 @@
+@startuml sequence-register-user
+title US031 — Register User: Sequence Diagram (Manual via Console)
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Administrator" as Admin
+participant "UsersMenuUI" as MenuUI #DDEEFF
+participant "RegisterUserAction" as Action #DDEEFF
+participant "RegisterUserUI" as UI #DDEEFF
+participant "RegisterUserController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AuthzUserService\n(AuthzRegistry)" as AuthzSvc #FFE8E8
+participant "UserRepository" as Repo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Admin -> MenuUI : selects "Register New User"
+MenuUI -> Action : execute()
+Action -> UI : show()
+
+== Data Collection ==
+
+UI -> Admin : prompt full name
+Admin -> UI : "John Doe"
+
+UI -> Admin : prompt email (@aisafe.com enforced)
+Admin -> UI : "john.doe@aisafe.com"
+note right of UI
+  readAisafeEmail() validates
+  that email ends with @aisafe.com.
+  Throws IllegalArgumentException
+  if pattern does not match.
+end note
+
+UI -> Admin : prompt phone number
+Admin -> UI : "+351912345678"
+
+UI -> Admin : prompt password
+Admin -> UI : "Secret1234!"
+
+UI -> Admin : display available roles\nand prompt selection
+Admin -> UI : "2,4" (BACKOFFICE_OPERATOR, PILOT)
+
+== Authorization Check ==
+
+UI -> Ctrl : registerUser(email, password, name, phone, roles)
+
+Ctrl -> Authz : ensureAuthenticatedUserHasAnyOf(ADMIN)
+alt not ADMIN
+    Authz --> Ctrl : throws AuthorizationException
+    Ctrl --> UI : propagates exception
+    UI -> Admin : "Error: ..."
+    return
+end
+
+== Auth Framework Registration ==
+
+Ctrl -> Ctrl : splitName("John Doe") → ["John", "Doe"]
+Ctrl -> Ctrl : toAuthzRole(BACKOFFICE_OPERATOR) → AISafeRoles.BACKOFFICE_OPERATOR\ntoAuthzRole(PILOT) → AISafeRoles.PILOT
+
+Ctrl -> AuthzSvc : registerNewUser(email, password,\n  firstName, lastName, username, authzRoles)
+AuthzSvc -> DB : persist SystemUser (eapli authz)
+AuthzSvc --> Ctrl : SystemUser created
+
+== Domain User Persistence ==
+
+Ctrl -> Ctrl : new User(email, name, phone,\n  null, null, "ACTIVE", domainRoles, UserId.valueOf(email))
+
+Ctrl -> Repo : save(domainUser)
+Repo -> DB : persist User entity\n(AppUser + user_roles tables)
+DB --> Repo : saved User
+Repo --> Ctrl : User
+
+Ctrl --> UI : User registered
+
+== Feedback ==
+
+UI -> Admin : "User registered successfully."
+
+@enduml

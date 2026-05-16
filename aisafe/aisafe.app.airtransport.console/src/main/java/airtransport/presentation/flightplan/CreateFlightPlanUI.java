@@ -119,13 +119,21 @@ public class CreateFlightPlanUI extends AbstractUI {
         if (confirm("Add optional flight profile (climb/descend tables)?", false)) {
             buildProfile(sb);
         }
-        int segNum = 1;
-        do {
-            System.out.println();
-            System.out.println("  -- Segment " + segNum + " --");
-            buildSegment(sb);
-            segNum++;
-        } while (confirm("  Add another segment to this leg?", false));
+
+        System.out.println();
+        System.out.println("  -- Segment 1: CLIMB --");
+        System.out.println("  (Enter the coordinates for the climb phase)");
+        buildSegment(sb, "climb");
+
+        System.out.println();
+        System.out.println("  -- Segment 2: CRUISE --");
+        System.out.println("  (Enter the coordinates for the cruise phase)");
+        buildSegment(sb, "cruise");
+
+        System.out.println();
+        System.out.println("  -- Segment 3: DESCEND --");
+        System.out.println("  (Enter the coordinates for the descend phase)");
+        buildSegment(sb, "descend");
     }
 
     /** departure: DEPARTURE LBRACE airport date time RBRACE */
@@ -205,9 +213,7 @@ public class CreateFlightPlanUI extends AbstractUI {
      * coord: LPAREN signedNumber COMMA signedNumber COMMA ALTITUDE COLON
      * positiveNumber unit RPAREN
      */
-    private void buildSegment(final StringBuilder sb) {
-        final String mode = promptChoice("    Mode", new String[] { "climb", "cruise", "descend" }, "cruise");
-
+    private void buildSegment(final StringBuilder sb, final String mode) {
         System.out.println("    From coordinate:");
         final String fromLat = prompt("      Latitude", "41.262891", "Signed decimal, e.g. 41.262891  or  -8.68522");
         final String fromLon = prompt("      Longitude", "-8.68522", "Signed decimal");
