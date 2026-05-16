@@ -12,6 +12,7 @@
 
 #define MAX_FLIGHTS   100   // maximum number of simultaneous flights the sim supports
 #define MAX_WAYPOINTS  50   // maximum route points per flight plan
+#define MAX_LEGS       10   // maximum number of sequential legs per flight
 #define CALLSIGN_LEN   16   // characters for a flight ID, e.g. "TP1234\0"
 
 // Jet-A fuel density used to convert litres to kg when the JSON stores volume
@@ -84,6 +85,18 @@ typedef struct {
     int current_waypoint_index;     // which waypoint we are currently heading toward
 } FlightPlan;
 
+// ── Per-leg data ──────────────────────────────────────────────────────────────
+// One entry per leg. Populated by the JSON parser before fork().
+// Read-only during simulation — only the child reads these to reset state.
+
+typedef struct {
+    double departure_offset_s;   // seconds from sim t=0 when this leg departs
+    double fuel_mass;            // kg of fuel loaded for this leg
+    double payload;              // kg of passengers + cargo for this leg
+    int    waypoint_start_index; // index into flight_plan.waypoints[] of this leg's first navigation target
+    int    waypoint_end_index;   // index of this leg's destination waypoint (inclusive)
+} Leg;
+
 // ── Physics step data — all 25 intermediate values for one time-step ──────────
 //
 // compute_physics_step() fills one of these per step.
@@ -137,6 +150,11 @@ typedef struct {
     FlightPhase current_phase;  // updated each step — parent reads to detect transitions
 
     double departure_offset_s;  // seconds from sim t=0 when this flight departs; child waits until current_time >= this
+
+    Leg  legs[MAX_LEGS];     // per-leg data array; legs[0] = first leg
+    int  num_legs;           // total legs; 1 for a simple A→B flight
+    int  current_leg;        // index into legs[], starts at 0, incremented on leg completion
+    bool leg_just_completed; // child sets true when a leg ends; parent reads and clears it
 
     bool is_active;                  // true while flying OR waiting to depart; child sets false when it lands
     bool violation_detected;         // true if this flight ever had any violation
