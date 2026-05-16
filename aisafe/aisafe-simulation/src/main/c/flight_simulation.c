@@ -74,19 +74,16 @@ static void advance_position(double *lat_deg, double *lon_deg,
 // destination as the waypoint is).  We stop short of the last waypoint so the
 // arrival check can fire normally.
 
-static void advance_waypoints(Flight *f, double dist_to_dest,
-                               double dest_lat, double dest_lon) {
+static void advance_waypoints(Flight *f, double dist_to_dest, double dest_lat, double dest_lon) {
     int last = f->flight_plan.num_waypoints - 1;
     while (f->flight_plan.current_waypoint_index < last) {
         int wi = f->flight_plan.current_waypoint_index;
-        double dist_wp_to_dest = haversine_m(
-            f->flight_plan.waypoints[wi].pos.latitude,
-            f->flight_plan.waypoints[wi].pos.longitude,
-            dest_lat, dest_lon);
-        if (dist_to_dest <= dist_wp_to_dest)
+        double dist_wp_to_dest = haversine_m(f->flight_plan.waypoints[wi].pos.latitude, f->flight_plan.waypoints[wi].pos.longitude, dest_lat, dest_lon);
+        if (dist_to_dest <= dist_wp_to_dest) {
             f->flight_plan.current_waypoint_index++;
-        else
+        } else {
             break;
+        }
     }
 }
 
@@ -114,15 +111,13 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 
     // We always fly toward the LAST waypoint (the destination airport).
 
-    int last_wp    = f->flight_plan.num_waypoints - 1;
+    int last_wp = f->flight_plan.num_waypoints - 1;
     double dest_lat = f->flight_plan.waypoints[last_wp].pos.latitude;
     double dest_lon = f->flight_plan.waypoints[last_wp].pos.longitude;
 
     // How far is the aircraft from the destination right now?
 
-    double dist_to_dest = haversine_m(f->current_pos.latitude,
-                                       f->current_pos.longitude,
-                                       dest_lat, dest_lon);
+    double dist_to_dest = haversine_m(f->current_pos.latitude, f->current_pos.longitude, dest_lat, dest_lon);
 
     // ── phase via waypoint progression ───────────────────────────────────────
     // Advance past any intermediate waypoints the aircraft has already flown by,
@@ -155,11 +150,8 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 
     // ── aerodynamic forces ────────────────────────────────────────────────────
 
-    double cl   = calculate_lift_coefficient(f->current_mass,
-                                              f->properties.wing_area, rho, tas);
-    double cd   = calculate_drag_coefficient(f->properties.cd0, cl,
-                                              f->properties.aspect_ratio,
-                                              f->properties.oswald_efficiency);
+    double cl = calculate_lift_coefficient(f->current_mass, f->properties.wing_area, rho, tas);
+    double cd = calculate_drag_coefficient(f->properties.cd0, cl, f->properties.aspect_ratio, f->properties.oswald_efficiency);
     double lift = calculate_lift_force(cl, f->properties.wing_area, rho, tas);
     double drag = calculate_drag_force(cd, f->properties.wing_area, rho, tas);
 
@@ -167,11 +159,7 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 
     // Per-engine thrust from the altitude- and speed-corrected formula
 
-    double thrust_per_engine = calculate_thrust(
-        f->properties.thrust_sea_level_stopped,
-        f->properties.thrust_sea_level_cruise,
-        f->properties.thrust_lapse_rate,
-        mach, rho);
+    double thrust_per_engine = calculate_thrust(f->properties.thrust_sea_level_stopped, f->properties.thrust_sea_level_cruise, f->properties.thrust_lapse_rate, mach, rho);
 
     double total_thrust;
     switch (phase) {
@@ -216,13 +204,12 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 
     if (dist_to_dest <= horiz_dist) {
         fuel_burned *= dist_to_dest / horiz_dist; // burn only the travelled fraction
-        horiz_dist   = dist_to_dest;
-        f->current_pos.latitude  = dest_lat;
+        horiz_dist = dist_to_dest;
+        f->current_pos.latitude = dest_lat;
         f->current_pos.longitude = dest_lon;
     } else {
         // Move the lat/lon point along that bearing by horiz_dist metres
-        advance_position(&f->current_pos.latitude, &f->current_pos.longitude,
-                         horiz_dist, hdg);
+        advance_position(&f->current_pos.latitude, &f->current_pos.longitude, horiz_dist, hdg);
     }
 
     // Altitude changes by climb_rate * dt metres
@@ -243,8 +230,9 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
     // ── mass update ───────────────────────────────────────────────────────────
 
     f->current_mass -= fuel_burned;
-    if (f->current_mass < f->properties.empty_weight)
-        f->current_mass = f->properties.empty_weight; // can't have negative fuel mass
+    double min_mass = f->properties.empty_weight + f->payload;
+    if (f->current_mass < min_mass)
+        f->current_mass = min_mass; // fuel can't go negative — floor at dry mass + payload
 
     // ── update velocity struct for the parent's status display ────────────────
 
@@ -263,12 +251,6 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
     double new_dist = haversine_m(f->current_pos.latitude, f->current_pos.longitude,
                                    dest_lat, dest_lon);
     if (new_dist < ARRIVAL_THRESHOLD_M) {
-        // Remaining fuel = current mass minus everything that isn't fuel
-        double remaining_fuel = f->current_mass - f->properties.empty_weight - f->payload;
-        printf("[%s] Landed at destination. "
-               "Remaining fuel: %.0f kg | Total mass: %.0f kg\n",
-               f->callsign, remaining_fuel, f->current_mass);
-        fflush(stdout);
         f->is_active = false; // signal to parent that this process is done
     }
 
@@ -308,8 +290,7 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 // This is the EXECUTION ORDER synchronization pattern from the lectures:
 //   both semaphores start at 0, so each side blocks until the other signals.
 
-void run_flight_process(SharedMemoryData *shm, int flight_index,
-                        int pipe_write_fd, sem_t *step_sem, sem_t *main_sem) {
+void run_flight_process(SharedMemoryData *shm, int flight_index, int pipe_write_fd, sem_t *step_sem, sem_t *main_sem) {
     Flight *f = &shm->flights[flight_index];
 
     // Set the initial phase from the current target waypoint (set by the parser).
@@ -344,22 +325,13 @@ void run_flight_process(SharedMemoryData *shm, int flight_index,
         if (shm->termination_requested || !f->is_active)
             break;
 
-        // ── PRE-DEPARTURE HOLD ────────────────────────────────────────────────
-        // If the sim clock hasn't reached this flight's scheduled departure,
-        // skip physics for this step but still participate in the sync barrier.
-
-        if (shm->current_time < f->departure_offset_s) {
-            sem_post(main_sem);
-            continue;
-        }
-
         // ── COMPUTE ───────────────────────────────────────────────────────────
         // Run one physics step. This writes updated position, mass, and velocity
         // directly into shm->flights[flight_index] (shared memory — no copy needed).
         // It also fills msg.step with all 25 intermediate values for the UI table.
 
         PipeMessage msg;
-        msg.type      = MSG_POSITION_UPDATE;
+        msg.type = MSG_POSITION_UPDATE;
         msg.flight_id = f->id;
 
         compute_physics_step(shm, flight_index, &msg.step);
@@ -389,7 +361,5 @@ void run_flight_process(SharedMemoryData *shm, int flight_index,
             break;
     }
 
-    printf("[%s] Process exiting.\n", f->callsign);
-    fflush(stdout);
     // Child returns here → caller (in simulation_engine.c) calls exit(EXIT_SUCCESS)
 }

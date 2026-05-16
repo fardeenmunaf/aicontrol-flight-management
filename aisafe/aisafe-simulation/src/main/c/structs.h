@@ -138,8 +138,9 @@ typedef struct {
 
     double departure_offset_s;  // seconds from sim t=0 when this flight departs; child waits until current_time >= this
 
-    bool is_active;             // true while flying OR waiting to depart; child sets false when it lands
-    bool violation_detected;    // true if this flight ever came too close to another
+    bool is_active;                  // true while flying OR waiting to depart; child sets false when it lands
+    bool violation_detected;         // true if this flight ever had any violation
+    bool fuel_exhaustion_reported;   // true once the parent has counted a fuel-exhaustion violation
 } Flight;
 
 // ── Pipe (IPC) message types ──────────────────────────────────────────────────

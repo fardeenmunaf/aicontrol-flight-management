@@ -14,7 +14,6 @@
 
 // Name of the POSIX shared memory object that all processes share.
 // The leading '/' is required by the POSIX spec for shm_open names.
-// This name appears in /dev/shm/ on Linux.
 #define SHM_NAME "/aisafe_sim"
 
 // ── SECTION 1 — Shared memory setup ───────────────────────────────────────────
@@ -55,8 +54,7 @@ static SharedMemoryData *setup_shared_memory(void) {
     // MAP_SHARED = writes are visible to other processes (vs MAP_PRIVATE = copy-on-write)
     // fd, 0 = map from offset 0 of the shared memory object
 
-    SharedMemoryData *shm = mmap(NULL, sizeof(SharedMemoryData),
-                                 PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    SharedMemoryData *shm = mmap(NULL, sizeof(SharedMemoryData),PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); //address, bytes, permissions, share, object, offset
 
     // The fd is only needed to create the mapping; once mmap() succeeds, close it.
     // The mapping remains alive until munmap() is called — closing fd doesn't unmap it.
@@ -132,34 +130,24 @@ static void init_semaphores(pid_t pid, int n,
 //   dy (north-south) = Δlat * R                   — convergence at the poles
 // This is accurate within a few percent for separations under ~100 km.
 
-static void check_violations(SharedMemoryData *shm, double step_time) {
+static void check_violations(SharedMemoryData *shm, bool *was_active) {
     const double R = 6371000.0; // Earth's mean radius in metres
 
-    // Compare every unique pair (i, j) — no need to check (j, i) again
+    // ── proximity check ───────────────────────────────────────────────────────────
+    // Compare every unique pair (i, j) among flights that ran this step.
     for (int i = 0; i < shm->num_flights; i++) {
-        if (!shm->flights[i].is_active) continue;
-        if (step_time < shm->flights[i].departure_offset_s) continue; // at gate
+        if (!was_active[i] || !shm->flights[i].is_active) continue;
 
         for (int j = i + 1; j < shm->num_flights; j++) {
-            if (!shm->flights[j].is_active) continue;
-            if (step_time < shm->flights[j].departure_offset_s) continue; // at gate
+            if (!was_active[j] || !shm->flights[j].is_active) continue;
 
             Position *a = &shm->flights[i].current_pos;
             Position *b = &shm->flights[j].current_pos;
 
-            // Average latitude in radians — needed for the longitude correction
             double lat_avg = (a->latitude + b->latitude) / 2.0 * M_PI / 180.0;
-
-            // East-west distance: degree difference × metres-per-degree at this latitude
             double dx = (b->longitude - a->longitude) * M_PI / 180.0 * cos(lat_avg) * R;
-
-            // North-south distance: degree difference × metres-per-degree
             double dy = (b->latitude  - a->latitude)  * M_PI / 180.0 * R;
-
-            // Vertical separation — already in metres
             double dz = b->altitude - a->altitude;
-
-            // 3-D Euclidean distance
             double dist = sqrt(dx*dx + dy*dy + dz*dz);
 
             if (dist < shm->config.safety_distance_threshold) {
@@ -172,6 +160,21 @@ static void check_violations(SharedMemoryData *shm, double step_time) {
                        dist,
                        shm->config.safety_distance_threshold);
             }
+        }
+    }
+
+    // ── fuel exhaustion check ─────────────────────────────────────────────────────
+    // Report once per flight the first time it lands (or is caught) with 0 kg remaining.
+    for (int i = 0; i < shm->num_flights; i++) {
+        if (!was_active[i]) continue;
+        Flight *f = &shm->flights[i];
+        double fuel_rem = f->current_mass - f->properties.empty_weight - f->payload;
+        if (fuel_rem <= 0.0 && !f->fuel_exhaustion_reported) {
+            f->fuel_exhaustion_reported = true;
+            f->violation_detected = true;
+            shm->total_violations_detected++;
+            printf("  *** VIOLATION: %s fuel exhausted (0 kg remaining) ***\n",
+                   f->callsign);
         }
     }
 }
@@ -204,30 +207,38 @@ static void print_step_table(SharedMemoryData *shm,
                               FlightPhase *prev_ph,  // previous phase per flight
                               double sim_time,
                               int step_num, int total_steps,
-                              double step_time) {
+                              double step_time,
+                              bool *was_active) {    // which flights were active at step start
 
+    // Count flights still airborne AFTER this step (for the banner)
     int active = 0;
     for (int i = 0; i < shm->num_flights; i++)
         if (shm->flights[i].is_active && step_time >= shm->flights[i].departure_offset_s)
             active++;
+    // Also count flights still waiting to depart (not yet woken) — informational
+    int pending = 0;
+    for (int i = 0; i < shm->num_flights; i++)
+        if (shm->flights[i].is_active && step_time < shm->flights[i].departure_offset_s)
+            pending++;
 
     // ── step banner ───────────────────────────────────────────────────────────
     int wall_s = (int)(shm->config.sim_start_seconds + sim_time);
     printf("\n");
     printf("╔══════════════════════════════════════════════════════════════════════"
            "════════════════════════════════════════════════════════════════════╗\n");
-    printf("║  t=%7.0f s  [%02d:%02d]  |  step %3d / %-3d  |  active=%2d  |  violations=%3d"
-           "                                                               ║\n",
+    printf("║  t=%7.0f s  [%02d:%02d]  |  step %3d / %-3d  |  active=%2d  pending=%2d  |  violations=%3d"
+           "                                                      ║\n",
            sim_time, wall_s / 3600, (wall_s % 3600) / 60,
            step_num, total_steps,
-           active, shm->total_violations_detected);
+           active, pending, shm->total_violations_detected);
     printf("╚══════════════════════════════════════════════════════════════════════"
            "════════════════════════════════════════════════════════════════════╝\n");
 
     // ── phase transition banners ──────────────────────────────────────────────
+    // Use was_active so that a flight landing this step (is_active just became
+    // false) still shows its final phase transition (e.g. CRUISE → DESCEND).
     for (int i = 0; i < shm->num_flights; i++) {
-        if (!shm->flights[i].is_active) continue;
-        if (step_time < shm->flights[i].departure_offset_s) continue;
+        if (!was_active[i]) continue;
         FlightPhase cur = msgs[i].step.phase;
         if (cur != prev_ph[i]) {
             const char *from = phase_name(prev_ph[i]);
@@ -255,10 +266,11 @@ static void print_step_table(SharedMemoryData *shm,
            "--------","--------","-------",
            "------","-------","------","-------");
 
-    // ── one row per active flight ─────────────────────────────────────────────
+    // ── one row per flight that was active this step ───────────────────────────
+    // Including flights that just landed — their pipe message carries the landing
+    // step data (DESCEND phase, final position) so it's visible in the table.
     for (int i = 0; i < shm->num_flights; i++) {
-        if (!shm->flights[i].is_active) continue;
-        if (step_time < shm->flights[i].departure_offset_s) continue;
+        if (!was_active[i]) continue;
 
         Flight   *f  = &shm->flights[i];
         StepData *s  = &msgs[i].step;
@@ -346,14 +358,13 @@ static void cleanup(SharedMemoryData *shm, pid_t *pids, int n,
 
 // ── SECTION 6 — Main entry point ──────────────────────────────────────────────
 
-int main(int argc, char **argv) {
-    (void)argc; (void)argv; // suppress unused-parameter warnings
+int main() {
 
     printf("=== AISafe Simulation Engine starting ===\n");
 
     // ── 6.1  Create shared memory BEFORE fork ─────────────────────────────────
     // Must happen before fork() so children inherit the mmap'd region.
-    // After fork(), parent and children all point to the same physical RAM.
+    // After fork(), parent and children all point to the same physical memory.
 
     SharedMemoryData *shm = setup_shared_memory();
 
@@ -370,31 +381,26 @@ int main(int argc, char **argv) {
 
     // ── Scope validation: mark out-of-window flights inactive, count forkable ones ──
     int num_forked = 0;
-    int wall_start_h = (int)(shm->config.sim_start_seconds / 3600);
-    int wall_start_m = (int)(fmod(shm->config.sim_start_seconds, 3600.0) / 60.0);
-    int wall_end_s   = (int)(shm->config.sim_start_seconds + shm->config.end_time);
-    printf("Sim window: %02d:%02d → %02d:%02d (%d loaded flight plans)\n",
-           wall_start_h, wall_start_m,
-           wall_end_s / 3600, (wall_end_s % 3600) / 60,
-           shm->num_flights);
+    int sim_start_h = (int)(shm->config.sim_start_seconds / 3600);
+    int sim_start_m = (int)(fmod(shm->config.sim_start_seconds, 3600.0) / 60.0);
+    int sim_end_s   = (int)(shm->config.sim_start_seconds + shm->config.end_time);
 
-    for (int i = 0; i < shm->num_flights; i++) {
+    printf("Sim window: %02d:%02d → %02d:%02d (%d loaded flight plans)\n", sim_start_h, sim_start_m, sim_end_s / 3600, (sim_end_s % 3600) / 60, shm->num_flights);
+
+    for (int i = 0; i < shm->num_flights; i++) 
+    {
         Flight *f = &shm->flights[i];
-        bool in_scope = (f->departure_offset_s >= 0.0 &&
-                         f->departure_offset_s < shm->config.end_time);
+        bool in_scope = (f->departure_offset_s >= 0.0 && f->departure_offset_s < shm->config.end_time);
         if (in_scope) {
             num_forked++;
         } else {
             f->is_active = false;
-            printf("  [SKIP] %s: departure offset %.0fs is outside sim window [0, %.0fs]\n",
-                   f->callsign, f->departure_offset_s, shm->config.end_time);
+            printf("  [SKIP] %s: departure offset %.0fs is outside sim window [0, %.0fs]\n", f->callsign, f->departure_offset_s, shm->config.end_time);
         }
     }
-    printf("%d / %d flight plans in scope — forking %d child processes.\n",
-           num_forked, shm->num_flights, num_forked);
+    printf("%d / %d flight plans in scope — forking %d child processes.\n", num_forked, shm->num_flights, num_forked);
 
-    int total_steps = (int)((shm->config.end_time - shm->config.start_time)
-                             / shm->config.time_step);
+    int total_steps = (int)((shm->config.end_time - shm->config.start_time) / shm->config.time_step);
 
     // ── 6.3  Create named semaphores BEFORE fork ───────────────────────────────
     // sem_t* pointers are inherited by children after fork().
@@ -403,7 +409,7 @@ int main(int argc, char **argv) {
 
     sem_t *step_sems[MAX_FLIGHTS];
     sem_t *main_sem;
-    init_semaphores(parent_pid, shm->num_flights, step_sems, &main_sem);
+    init_semaphores(parent_pid, shm->num_flights, step_sems, &main_sem); //name, number, array of step semaphores, main semaphore
     shm->current_time = shm->config.start_time;
 
     // ── 6.4  Create pipes BEFORE fork ─────────────────────────────────────────
@@ -447,8 +453,8 @@ int main(int argc, char **argv) {
         if (pid == 0) {
             // ════════════ CHILD PROCESS ════════════════════════════════════════
             for (int j = 0; j < shm->num_flights; j++) {
-                close(pipe_fds[j][0]);
-                if (j != i) close(pipe_fds[j][1]);
+                close(pipe_fds[j][0]); //close read ends
+                if (j != i) close(pipe_fds[j][1]); //close write ends of other flights
             }
             run_flight_process(shm, i, pipe_fds[i][1], step_sems[i], main_sem);
             close(pipe_fds[i][1]);
@@ -457,28 +463,33 @@ int main(int argc, char **argv) {
         }
 
         pids[i] = pid;
-        shm->flights[i].process_id = pid;
-        printf("Forked child PID %d for flight %s (departs at offset %.0fs)\n",
-               pid, shm->flights[i].callsign, shm->flights[i].departure_offset_s);
+        shm->flights[i].process_id = pid; //set process id for flight
+        printf("Forked child PID %d for flight %s (departs at offset %.0fs)\n", pid, shm->flights[i].callsign, shm->flights[i].departure_offset_s);
     }
 
     // Parent closes ALL write ends — it only reads from the pipes.
     // Important: if the parent kept a write end open, read() would never return EOF.
 
     for (int i = 0; i < shm->num_flights; i++)
+    {
         close(pipe_fds[i][1]);
+    }
 
     // Startup barrier: wait for every child to post main_sem once (signals ready).
     // Guarantees all "Process started" lines appear before any simulation step output.
     for (int i = 0; i < num_forked; i++)
+    {
         sem_wait(main_sem);
+    }
 
     // After the startup barrier all children have set f->current_phase from their
     // initial position — read those values into prev_phase[] so transitions from
     // step 1 onward are correctly detected.
     FlightPhase prev_phase[MAX_FLIGHTS];
     for (int i = 0; i < shm->num_flights; i++)
+    {
         prev_phase[i] = shm->flights[i].current_phase;
+    }
 
     // Storage for one PipeMessage per flight per step (re-used each iteration).
     PipeMessage step_msgs[MAX_FLIGHTS];
@@ -499,61 +510,142 @@ int main(int argc, char **argv) {
 
     printf("\n--- Simulation running ---\n");
 
+    // ── Step 0: print initial state before any physics runs ───────────────────
+    {
+        int wall_s = (int)shm->config.sim_start_seconds;
+        printf("\n");
+        printf("╔══════════════════════════════════════════════════════════════════════"
+               "════════════════════════════════════════════════════════════════════╗\n");
+        printf("║  t=       0 s  [%02d:%02d]  |  step   0 / %-3d  |  active= 0  pending=%2d  |  violations=  0"
+               "                                                      ║\n",
+               wall_s / 3600, (wall_s % 3600) / 60,
+               (int)((shm->config.end_time - shm->config.start_time) / shm->config.time_step),
+               num_forked);
+        printf("╚══════════════════════════════════════════════════════════════════════"
+               "════════════════════════════════════════════════════════════════════╝\n");
+        printf("\n");
+        printf("%-8s %-7s %8s %9s %7s %8s %5s %6s %8s %9s %6s  %6s %5s %7s  %6s %6s  %8s %8s  %8s %8s  %7s  %6s %7s  %6s %6s\n",
+               "CALLSGN","PHASE","LAT(deg)","LON(deg)","ALT(m)","DEST(km)","CA(m)",
+               "T(K)","P(Pa)","rho","a(m/s)",
+               "IAS(kt)","Mach","TAS(m/s)",
+               "CL","CD","Lift(N)","Drag(N)",
+               "Te(N)","Tt(N)","VS(m/s)",
+               "dF(kg)","dD(km)","M(kg)","Frem(kg)");
+        printf("%-8s %-7s %8s %9s %7s %8s %5s %6s %8s %9s %6s  %6s %5s %7s  %6s %6s  %8s %8s  %8s %8s  %7s  %6s %7s  %6s %6s\n",
+               "--------","-------","--------","---------","-------","--------","-----",
+               "------","--------","---------","------",
+               "------","-----","-------",
+               "------","------","--------","--------",
+               "--------","--------","-------",
+               "------","-------","------","-------");
+        for (int i = 0; i < shm->num_flights; i++) {
+            Flight *f = &shm->flights[i];
+            if (!f->is_active) continue;
+            double fuel_rem = f->initial_fuel_mass;
+            int last_wp = f->flight_plan.num_waypoints - 1;
+            double dest_lat = f->flight_plan.waypoints[last_wp].pos.latitude;
+            double dest_lon = f->flight_plan.waypoints[last_wp].pos.longitude;
+            const double R = 6371000.0;
+            double lat1 = f->current_pos.latitude  * M_PI / 180.0;
+            double lat2 = dest_lat * M_PI / 180.0;
+            double dlat = (dest_lat - f->current_pos.latitude)  * M_PI / 180.0;
+            double dlon = (dest_lon - f->current_pos.longitude) * M_PI / 180.0;
+            double a = sin(dlat/2)*sin(dlat/2) + cos(lat1)*cos(lat2)*sin(dlon/2)*sin(dlon/2);
+            double dist_to_dest = R * 2.0 * atan2(sqrt(a), sqrt(1.0 - a));
+            double cruise_alt = f->flight_plan.waypoints[1].pos.altitude;
+            printf("%-8s %-7s %8.4f %9.4f %7.0f %8.1f %5.0f %6s %8s %9s %6s  %6s %5s %7s  %6s %6s  %8s %8s  %8s %8s  %7s  %6s %7s  %6.0f %7.0f\n",
+                   f->callsign, "GATE   ",
+                   f->current_pos.latitude, f->current_pos.longitude,
+                   f->current_pos.altitude,
+                   dist_to_dest / 1000.0, cruise_alt,
+                   "-","-","-","-", "-","-","-", "-","-","-","-", "-","-","-", "-","-",
+                   f->initial_mass, fuel_rem);
+        }
+    }
+
     int step_num = 0;
 
     while (shm->current_time < shm->config.end_time) {
 
-        // Count how many flights are still in the air this step
+        // Snapshot which flights this step should wake: active AND past departure.
+        // Pre-departure children stay blocked on their semaphore and cost nothing.
+        // was_active also captures flights that land THIS step (is_active flips to
+        // false inside the child, but we must still drain their pipe and show them).
+        double step_time = shm->current_time;
         int active = 0;
-        for (int i = 0; i < shm->num_flights; i++)
-            if (shm->flights[i].is_active) active++;
+        bool was_active[MAX_FLIGHTS];
+        for (int i = 0; i < shm->num_flights; i++) {
+            was_active[i] = shm->flights[i].is_active && step_time >= shm->flights[i].departure_offset_s;
+            if (was_active[i]) active++;
+        }
 
-        if (active == 0) break; // all flights have landed — no more work to do
+        if (active == 0) {
+            // No flying flights this step — check if any are still waiting to depart
+            bool any_pending = false;
+            for (int i = 0; i < shm->num_flights; i++)
+            {
+                if (shm->flights[i].is_active) 
+                { 
+                    any_pending = true; 
+                    break; 
+                }
+            }
+            if (!any_pending) break;
+            shm->current_time += shm->config.time_step;
+            continue;
+        }
 
         step_num++;
 
-        // ── SIGNAL: wake every active child ───────────────────────────────────
-        // sem_post() increments each step semaphore by 1.
-        // The child is blocked on sem_wait(step_sem) — this unblocks it.
-
+        // ── SIGNAL: wake only the flights flying this step ────────────────────
         for (int i = 0; i < shm->num_flights; i++)
-            if (shm->flights[i].is_active)
+        {
+            if (was_active[i])
+            {
                 sem_post(step_sems[i]);
+            }
+        }
 
-        // ── WAIT: block until every active child finishes ─────────────────────
-        // Each child posts main_sem once when it finishes its step.
-        // We call sem_wait() once per active flight, so we unblock only after
-        // ALL of them have posted — guaranteed synchronisation barrier.
-
+        // ── WAIT: block until every woken child finishes ──────────────────────
         for (int i = 0; i < active; i++)
+        {
             sem_wait(main_sem);
+        }
 
-        // ── DRAIN pipes: read one PipeMessage per flying flight ──────────────
-        // Pre-departure children do NOT write to the pipe, so we must skip them.
-        // step_time captures the clock value at which this step ran (before advance).
-
-        double step_time = shm->current_time;
-
-        for (int i = 0; i < shm->num_flights; i++) {
-            if (!shm->flights[i].is_active) continue;
-            if (step_time < shm->flights[i].departure_offset_s) continue;
-            ssize_t n = read(pipe_fds[i][0], &step_msgs[i], sizeof(PipeMessage));
-            (void)n; // read() blocks until full message arrives — size always matches
+        // ── DRAIN pipes ───────────────────────────────────────────────────────
+        // Read from all flights that ran this step, including those that just
+        // landed (is_active is now false but the pipe message was still written).
+        for (int i = 0; i < shm->num_flights; i++) 
+        {
+            if (!was_active[i]) continue;
+            ssize_t n = read(pipe_fds[i][0], &step_msgs[i], sizeof(PipeMessage)); //read (pipe of the child, store in array, size)
+            (void)n;
         }
 
         // ── ADVANCE the simulation clock ──────────────────────────────────────
         shm->current_time += shm->config.time_step;
 
-        // ── CHECK for safety violations ───────────────────────────────────────
-        check_violations(shm, step_time);
+        // ── CHECK for safety and fuel violations ──────────────────────────────
+        check_violations(shm, was_active);
 
         // ── PRINT the full per-step table ─────────────────────────────────────
         print_step_table(shm, step_msgs, prev_phase,
-                         shm->current_time, step_num, total_steps, step_time);
+                         shm->current_time, step_num, total_steps, step_time,
+                         was_active);
+
+        for (int i = 0; i < shm->num_flights; i++) {
+            if (!was_active[i] || shm->flights[i].is_active) continue;
+            Flight *f = &shm->flights[i];
+            double remaining_fuel = f->current_mass - f->properties.empty_weight - f->payload;
+            printf("[%s] Landed at destination. Remaining fuel: %.0f kg | Total mass: %.0f kg\n",
+                   f->callsign, remaining_fuel, f->current_mass);
+        }
+
+        fflush(stdout);
 
         // ── UPDATE prev_phase for next iteration ──────────────────────────────
         for (int i = 0; i < shm->num_flights; i++)
-            if (shm->flights[i].is_active && step_time >= shm->flights[i].departure_offset_s)
+            if (was_active[i])
                 prev_phase[i] = step_msgs[i].step.phase;
     }
 
@@ -564,6 +656,9 @@ int main(int argc, char **argv) {
     printf("╚══════════════════════════════════════════════════════╝\n");
     printf("Total violations detected: %d\n", shm->total_violations_detected);
     for (int i = 0; i < shm->num_flights; i++) {
+        bool in_scope = (shm->flights[i].departure_offset_s >= 0.0 &&
+                         shm->flights[i].departure_offset_s < shm->config.end_time);
+        if (!in_scope) continue;
         printf("  %-8s : %s\n",
                shm->flights[i].callsign,
                shm->flights[i].violation_detected ? "HAD VIOLATION" : "clean");

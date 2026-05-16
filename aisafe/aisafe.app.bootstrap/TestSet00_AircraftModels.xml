@@ -58,7 +58,7 @@
       </iten>
     </Cdrag_function>
   </aircraft>
-  <aircraft model_ID="A380" description= "Aibus A380">
+  <aircraft model_ID="A380" description= "Airbus A380">
 		<maker>Airbus</maker>
     <type>passenger</type>
 		<motorization>
