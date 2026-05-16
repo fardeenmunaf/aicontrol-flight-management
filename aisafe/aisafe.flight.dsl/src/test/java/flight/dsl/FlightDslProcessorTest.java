@@ -161,16 +161,32 @@ public class FlightDslProcessorTest {
     @Test
     void shouldProcessValidDslString() {
         final String dsl =
-                "flight TP0001 { type: regular; route: ZZ001 from OPO to MAD; " +
+                "flight TP0001 { type: regular; aircraft: A320; route: ZZ001 from OPO to MAD; " +
                 "leg { departure { airport: OPO; date: 2026-01-01; time: 06:00; } " +
                 "arrival { airport: MAD; date: 2026-01-01; time: 08:00; } " +
                 "fuel { quantity: 1 kg; } " +
-                "segment { mode: cruise; from: (41.26, -8.68, altitude: 69 m); to: (40.49, -3.56, altitude: 610 m); } } }";
+                "segment { mode: climb;   from: (41.262891, -8.68522, altitude: 69 m); to: (42.0, -8.01, altitude: 9249 m); } " +
+                "segment { mode: cruise;  from: (42.0, -8.01, altitude: 9249 m); to: (41.0, -4.3, altitude: 9249 m); } " +
+                "segment { mode: descend; from: (41.0, -4.3, altitude: 9249 m); to: (40.4895, -3.5643, altitude: 610 m); } } }";
 
         final FlightDslProcessingResult result = processor.process(dsl);
 
         assertTrue(result.isValid());
         assertEquals("TP0001", result.document().flightPlans().get(0).flightDesignator());
+    }
+
+    // 7.12 – missing cruise segment is a syntactic error
+    @Test
+    void shouldThrowParseExceptionForMissingCruiseSegment() throws Exception {
+        assertThrows(ParseCancellationException.class,
+                () -> processor.process(resourcePath("invalid_missing_cruise_segment.dsl")));
+    }
+
+    // 7.13 – wrong segment order (cruise before climb) is a syntactic error
+    @Test
+    void shouldThrowParseExceptionForWrongSegmentOrder() throws Exception {
+        assertThrows(ParseCancellationException.class,
+                () -> processor.process(resourcePath("invalid_wrong_segment_order.dsl")));
     }
 
     private Path resourcePath(final String resourceName) throws Exception {

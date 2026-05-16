@@ -24,7 +24,17 @@ public class FlightStructureListener extends FlightDSLBaseListener {
     }
 
     @Override
-    public void enterSegment(final FlightDSLParser.SegmentContext ctx) {
+    public void enterClimbSegment(final FlightDSLParser.ClimbSegmentContext ctx) {
+        summary.incrementSegmentCount();
+    }
+
+    @Override
+    public void enterCruiseSegment(final FlightDSLParser.CruiseSegmentContext ctx) {
+        summary.incrementSegmentCount();
+    }
+
+    @Override
+    public void enterDescendSegment(final FlightDSLParser.DescendSegmentContext ctx) {
         summary.incrementSegmentCount();
     }
 

@@ -19,10 +19,8 @@ flight TP1234 {
         fuel {
             quantity: 40200 kg;
         }
-        segment {
-            mode: cruise;
-            from: (41.26, -8.68, altitude: 9249 m);
-            to:   (41.26, -8.68, altitude: 9249 m);
-        }
-    }
+        segment { mode: climb;   from: (41.262891, -8.68522, altitude: 69 m);  to: (42.0, -8.01, altitude: 9249 m); }
+        segment { mode: cruise;  from: (41.26, -8.68, altitude: 9249 m); to: (41.26, -8.68, altitude: 9249 m); }
+        segment { mode: descend; from: (41.0, -4.3,   altitude: 9249 m); to: (40.4895, -3.5643, altitude: 610 m); }
+}
 }

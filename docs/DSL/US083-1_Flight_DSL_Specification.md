@@ -71,16 +71,19 @@ Flight
     │       ├── Altitude
     │       ├── Speed
     │       └── RateDescent
-    └── Segment [1..*]
-        ├── Mode          (climb | cruise | descend)
-        ├── Start
-        │   ├── Latitude
-        │   ├── Longitude
-        │   └── Altitude  (quantity + unit)
-        └── End
-            ├── Latitude
-            ├── Longitude
-            └── Altitude  (quantity + unit)
+    ├── Segment: climb    (exactly 1, must appear first)
+    │   ├── Start
+    │   │   ├── Latitude
+    │   │   ├── Longitude
+    │   │   └── Altitude  (quantity + unit)
+    │   └── End
+    │       ├── Latitude
+    │       ├── Longitude
+    │       └── Altitude  (quantity + unit)
+    ├── Segment: cruise   (exactly 1, must appear second)
+    │   ├── Start / End   (same structure)
+    └── Segment: descend  (exactly 1, must appear third)
+        └── Start / End   (same structure)
 ```
 
 ### 2.2 Entity Descriptions
@@ -94,13 +97,13 @@ Flight
 | **Arrival** | The destination point of a leg: airport code, date, and scheduled time of arrival. |
 | **Fuel** | The fuel load assigned to a leg, expressed as a strictly positive quantity with a unit (kg or l). |
 | **FlightProfile** | Optional climb and descent profiles, describing altitude/speed tables used for simulation. Descent entries also include a rate of descent. |
-| **Segment** | A linear path within a leg, characterised by a mode (climb, cruise, or descend), start and end 3D coordinates. Segments must cover the full spatial path of the leg. |
+| **Segment** | A linear path within a leg. Every leg must contain exactly three segments in order: `climb`, `cruise`, `descend`. Each is characterised by its fixed mode and start/end 3D coordinates covering the full spatial path of the leg. |
 
 ### 2.3 Key Constraints (Conceptual Level)
 
 - A DSL file must contain at least one `flight` block; all flight identifiers must be unique within the file.
 - A `flight` must have at least one `leg`.
-- Each `leg` must have exactly one `departure`, one `arrival`, one `fuel` block, and at least one `segment`.
+- Each `leg` must have exactly one `departure`, one `arrival`, one `fuel` block, and exactly three `segment` blocks in the fixed order: `climb`, `cruise`, `descend`.
 - The `FlightProfile` is optional but, if present, must contain at least one `climb` or one `descend` entry.
 - The arrival airport of leg *n* must equal the departure airport of leg *n+1* (leg sequence coherence).
 - The arrival time of leg *n* must be strictly before the departure time of leg *n+1*.
@@ -273,7 +276,10 @@ leg {
     arrival   { ... }
     fuel      { ... }
     profile   { ... }   // optional
-    segment   { ... }   // one or more segments
+
+    segment { mode: climb;   from: ...; to: ...; }   // mandatory, must be first
+    segment { mode: cruise;  from: ...; to: ...; }   // mandatory, must be second
+    segment { mode: descend; from: ...; to: ...; }   // mandatory, must be third
 }
 ```
 
@@ -312,11 +318,28 @@ profile {
 }
 ```
 
-### 4.6 Segment Block
+### 4.6 Segment Blocks
+
+Every leg must contain exactly three segment blocks in this exact order. The `mode` value is fixed for each position and is enforced by the grammar — any deviation is a syntactic error.
 
 ```
+// First segment — climb from departure elevation to cruise altitude
 segment {
-    mode: <climb | cruise | descend>;
+    mode: climb;
+    from: (<latitude>, <longitude>, altitude: <number> <unit>);
+    to:   (<latitude>, <longitude>, altitude: <number> <unit>);
+}
+
+// Second segment — cruise at constant altitude
+segment {
+    mode: cruise;
+    from: (<latitude>, <longitude>, altitude: <number> <unit>);
+    to:   (<latitude>, <longitude>, altitude: <number> <unit>);
+}
+
+// Third segment — descend from cruise altitude to destination elevation
+segment {
+    mode: descend;
     from: (<latitude>, <longitude>, altitude: <number> <unit>);
     to:   (<latitude>, <longitude>, altitude: <number> <unit>);
 }
@@ -343,10 +366,18 @@ flight
     ├── profile [0..1]
     │   ├── climb [0..*]   → altitude, speed
     │   └── descend [0..*] → altitude, speed, rate
-    └── segment [1..*]
-        ├── mode
-        ├── from → (lat, lon, altitude)
-        └── to   → (lat, lon, altitude)
+    ├── segment (climb)   [exactly 1, first]
+    │   ├── mode  = climb
+    │   ├── from  → (lat, lon, altitude)
+    │   └── to    → (lat, lon, altitude)
+    ├── segment (cruise)  [exactly 1, second]
+    │   ├── mode  = cruise
+    │   ├── from  → (lat, lon, altitude)
+    │   └── to    → (lat, lon, altitude)
+    └── segment (descend) [exactly 1, third]
+        ├── mode  = descend
+        ├── from  → (lat, lon, altitude)
+        └── to    → (lat, lon, altitude)
 ```
 
 ---
@@ -372,7 +403,9 @@ A condensed reference of every block and its mandatory vs. optional fields.
 | `arrival` | block | Yes | Arrival information |
 | `fuel` | block | Yes | Fuel load for this leg |
 | `profile` | block | No | Altitude/speed climb and descent tables |
-| `segment` | block | Yes (1 or more) | Spatial segments of the leg |
+| `segment` (climb)   | block | Yes | First segment: aircraft climbs from departure elevation to cruise altitude |
+| `segment` (cruise)  | block | Yes | Second segment: aircraft flies level at cruise altitude |
+| `segment` (descend) | block | Yes | Third segment: aircraft descends to destination elevation |
 
 ### `departure` / `arrival` blocks
 
@@ -398,11 +431,21 @@ A condensed reference of every block and its mandatory vs. optional fields.
 Each `climb` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0).  
 Each `descend` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0), `rate` (must be negative).
 
-### `segment` block
+### `segment` blocks
+
+Each leg contains exactly three segment blocks in the order below. The `mode` value is fixed per position and enforced syntactically — it is not a free choice.
+
+| Block | `mode` value | Mandatory | Description |
+|---|---|---|---|
+| First segment  | `climb`   | Yes | Climb from departure elevation to cruise altitude |
+| Second segment | `cruise`  | Yes | Level flight at cruise altitude |
+| Third segment  | `descend` | Yes | Descent from cruise altitude to destination elevation |
+
+All three segment blocks share the same field structure:
 
 | Field | Type | Mandatory | Description |
 |---|---|---|---|
-| `mode` | keyword (`climb`\|`cruise`\|`descend`) | Yes | Phase of flight for this segment |
+| `mode` | fixed keyword | Yes | Determined by block position (`climb`, `cruise`, or `descend`) |
 | `from` | coordinate tuple | Yes | Start point (lat, lon, altitude) |
 | `to` | coordinate tuple | Yes | End point (lat, lon, altitude); must differ from `from` |
 
@@ -785,6 +828,71 @@ flight TP1234 {
 
 ---
 
+### 7.12 Missing Cruise Segment — Syntactic Error
+
+```
+// ERROR: leg has climb and descend but no cruise segment
+
+flight TP1234 {
+    type:  regular;
+    route: AA123 from OPO to MAD;
+
+    leg {
+        departure { airport: OPO; date: 2026-05-05; time: 08:00; }
+        arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
+        fuel { quantity: 40200 kg; }
+        segment {
+            mode: climb;
+            from: (41.262891, -8.68522, altitude: 69 m);
+            to:   (42.0, -8.01, altitude: 9249 m);
+        }
+        segment {
+            mode: descend;
+            from: (41.0, -4.3, altitude: 9249 m);
+            to:   (40.4895, -3.5643, altitude: 610 m);
+        }
+    }
+}
+```
+**Expected error:** Syntactic — the parser expects a `segment { mode: cruise; ... }` as the second segment; finding `mode: descend` where `mode: cruise` is required is an unexpected token.
+
+---
+
+### 7.13 Wrong Segment Order — Syntactic Error
+
+```
+// ERROR: segments are in the wrong order (cruise before climb)
+
+flight TP1234 {
+    type:  regular;
+    route: AA123 from OPO to MAD;
+
+    leg {
+        departure { airport: OPO; date: 2026-05-05; time: 08:00; }
+        arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
+        fuel { quantity: 40200 kg; }
+        segment {
+            mode: cruise;    // wrong order — climb must come first
+            from: (42.0, -8.01, altitude: 9249 m);
+            to:   (41.0, -4.3,  altitude: 9249 m);
+        }
+        segment {
+            mode: climb;
+            from: (41.262891, -8.68522, altitude: 69 m);
+            to:   (42.0, -8.01, altitude: 9249 m);
+        }
+        segment {
+            mode: descend;
+            from: (41.0, -4.3, altitude: 9249 m);
+            to:   (40.4895, -3.5643, altitude: 610 m);
+        }
+    }
+}
+```
+**Expected error:** Syntactic — the parser expects the first segment to have `mode: climb`; encountering `mode: cruise` first is an unexpected token.
+
+---
+
 ## 8. Design Decisions and Notes
 
 ### 8.1 Why block-based syntax?
@@ -828,9 +936,19 @@ A single DSL file may describe a batch of flight plans (e.g. a day's schedule). 
 | Date / Time literals | `DATE_LITERAL` / `TIME_LITERAL` lexer rules |
 | Block structure | Parser rules (`flightPlan`, `leg`, `departure`, etc.) |
 | Route origin/destination | Inline `airportCode` references in the `flightPlan` parser rule |
+| Segment order/presence | Three separate parser rules (`climbSegment`, `cruiseSegment`, `descendSegment`) in fixed order inside `leg` |
 | Semantic constraints | `FlightSemanticValidator` traversing the AST built by `FlightAstBuilderVisitor` |
 
-### 8.8 Error reporting
+### 8.8 Why are segments required in fixed order (climb → cruise → descend)?
+
+Every real-world fixed-wing flight follows the same invariant sequence: the aircraft climbs from the departure airport, cruises at altitude, and then descends to the arrival airport. There is no valid combination that omits or reorders these phases — a flight cannot cruise without having climbed first, nor land without descending.
+
+Encoding this as a syntactic constraint (three distinct parser rules, `climbSegment cruiseSegment descendSegment`, in fixed order inside `leg`) rather than a semantic one has two advantages:
+
+1. **Earlier rejection** — a file with a missing or reordered segment is rejected at the parser stage, before semantic validation begins, producing a clearer error pointing directly at the offending token.
+2. **Simpler validator** — the semantic validator can assume the three segments are always present and always in order; it does not need to search for them or handle partial sets.
+
+### 8.9 Error reporting
 
 All three validation stages must produce clear, actionable errors:
 

@@ -92,7 +92,9 @@ public class FlightDSLTest {
             "invalid_missing_segment.dsl",
             "invalid_bad_date.dsl",
             "invalid_private_type.dsl",
-            "invalid_negative_fuel.dsl"
+            "invalid_negative_fuel.dsl",
+            "invalid_missing_cruise_segment.dsl",
+            "invalid_wrong_segment_order.dsl"
     })
     void shouldRejectLexicallyOrSyntacticallyInvalidFiles(String resourceName) {
         parseInvalid(resourceName);

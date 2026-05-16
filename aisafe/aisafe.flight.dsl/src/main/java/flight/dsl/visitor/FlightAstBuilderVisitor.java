@@ -67,9 +67,9 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
         final FuelAst fuel = (FuelAst) visitFuel(ctx.fuel());
         final ProfileAst profile = ctx.profile() == null ? null : (ProfileAst) visitProfile(ctx.profile());
         final List<SegmentAst> segments = new ArrayList<>();
-        for (final FlightDSLParser.SegmentContext segmentContext : ctx.segment()) {
-            segments.add((SegmentAst) visitSegment(segmentContext));
-        }
+        segments.add((SegmentAst) visitClimbSegment(ctx.climbSegment()));
+        segments.add((SegmentAst) visitCruiseSegment(ctx.cruiseSegment()));
+        segments.add((SegmentAst) visitDescendSegment(ctx.descendSegment()));
 
         final LegAst legAst = new LegAst(departure, arrival, fuel, profile, segments);
         register(legAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
@@ -160,9 +160,9 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
     }
 
     @Override
-    public Object visitSegment(final FlightDSLParser.SegmentContext ctx) {
+    public Object visitClimbSegment(final FlightDSLParser.ClimbSegmentContext ctx) {
         final SegmentAst segmentAst = new SegmentAst(
-                (SegmentModeAst) visitSegmentMode(ctx.segmentMode()),
+                SegmentModeAst.CLIMB,
                 (CoordinateAst) visitCoord(ctx.coord(0)),
                 (CoordinateAst) visitCoord(ctx.coord(1))
         );
@@ -171,14 +171,25 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
     }
 
     @Override
-    public Object visitSegmentMode(final FlightDSLParser.SegmentModeContext ctx) {
-        if (ctx.CLIMB() != null) {
-            return SegmentModeAst.CLIMB;
-        }
-        if (ctx.CRUISE() != null) {
-            return SegmentModeAst.CRUISE;
-        }
-        return SegmentModeAst.DESCEND;
+    public Object visitCruiseSegment(final FlightDSLParser.CruiseSegmentContext ctx) {
+        final SegmentAst segmentAst = new SegmentAst(
+                SegmentModeAst.CRUISE,
+                (CoordinateAst) visitCoord(ctx.coord(0)),
+                (CoordinateAst) visitCoord(ctx.coord(1))
+        );
+        register(segmentAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
+        return segmentAst;
+    }
+
+    @Override
+    public Object visitDescendSegment(final FlightDSLParser.DescendSegmentContext ctx) {
+        final SegmentAst segmentAst = new SegmentAst(
+                SegmentModeAst.DESCEND,
+                (CoordinateAst) visitCoord(ctx.coord(0)),
+                (CoordinateAst) visitCoord(ctx.coord(1))
+        );
+        register(segmentAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
+        return segmentAst;
     }
 
     @Override

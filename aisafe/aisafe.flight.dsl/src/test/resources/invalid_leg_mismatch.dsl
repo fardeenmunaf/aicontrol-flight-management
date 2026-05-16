@@ -19,12 +19,10 @@ flight TP5678 {
         fuel {
             quantity: 40200 kg;
         }
-        segment {
-            mode: cruise;
-            from: (41.26, -8.68, altitude: 69 m);
-            to:   (40.49, -3.56, altitude: 610 m);
-        }
-    }
+        segment { mode: climb;   from: (41.262891, -8.68522, altitude: 69 m);  to: (42.0, -8.01, altitude: 9249 m); }
+        segment { mode: cruise;  from: (42.0, -8.01, altitude: 9249 m); to: (41.0, -4.3, altitude: 9249 m); }
+        segment { mode: descend; from: (41.0, -4.3,  altitude: 9249 m); to: (40.4895, -3.5643, altitude: 610 m); }
+}
 
     leg {
         departure {
@@ -40,10 +38,8 @@ flight TP5678 {
         fuel {
             quantity: 38000 kg;
         }
-        segment {
-            mode: cruise;
-            from: (38.77, -9.13, altitude: 114 m);
-            to:   (41.29, 2.07, altitude: 4 m);
-        }
-    }
+        segment { mode: climb;   from: (38.7747, -9.1302, altitude: 114 m); to: (39.5, -7.0, altitude: 9249 m); }
+        segment { mode: cruise;  from: (39.5, -7.0, altitude: 9249 m); to: (41.0, 2.0, altitude: 9249 m); }
+        segment { mode: descend; from: (41.0, 2.0,  altitude: 9249 m); to: (41.2974, 2.0833, altitude: 4 m); }
+}
 }

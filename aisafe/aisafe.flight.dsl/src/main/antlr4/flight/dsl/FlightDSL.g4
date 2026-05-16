@@ -26,7 +26,9 @@ leg
         arrival
         fuel
         profile?
-        segment+
+        climbSegment
+        cruiseSegment
+        descendSegment
       RBRACE
     ;
 
@@ -78,18 +80,28 @@ descendEntry
       RBRACKET SEMI
     ;
 
-segment
+climbSegment
     : SEGMENT LBRACE
-        MODE COLON segmentMode SEMI
+        MODE COLON CLIMB SEMI
         FROM COLON coord SEMI
         TO COLON coord SEMI
       RBRACE
     ;
 
-segmentMode
-    : CLIMB
-    | CRUISE
-    | DESCEND
+cruiseSegment
+    : SEGMENT LBRACE
+        MODE COLON CRUISE SEMI
+        FROM COLON coord SEMI
+        TO COLON coord SEMI
+      RBRACE
+    ;
+
+descendSegment
+    : SEGMENT LBRACE
+        MODE COLON DESCEND SEMI
+        FROM COLON coord SEMI
+        TO COLON coord SEMI
+      RBRACE
     ;
 
 coord
