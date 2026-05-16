@@ -1,0 +1,94 @@
+[
+  {
+    "flightDesignator": "FR0004",
+    "type": "regular",
+    "route": {
+      "reference": "FR000",
+      "origin": "BCN",
+      "destination": "BRU"
+    },
+    "aircraft": {
+      "emptyWeight": 41413,
+      "wingArea": 125.08,
+      "aspectRatio": 10.24,
+      "oswaldEfficiency": 0.85,
+      "cd0": 0.0265,
+      "numberOfEngines": 2
+    },
+    "engine": {
+      "thrustSeaLevelStopped": 121436,
+      "thrustSeaLevelCruise": 85000,
+      "thrustLapseRate": 0.9,
+      "thrustSpecificFuelConsumption": 0.000165
+    },
+    "legs": [
+      {
+        "departure": {
+          "airport": "BCN",
+          "date": "2026-05-20",
+          "time": "09:00"
+        },
+        "arrival": {
+          "airport": "BRU",
+          "date": "2026-05-20",
+          "time": "11:15"
+        },
+        "fuel": {
+          "quantity": 10500.0,
+          "unit": "kg"
+        },
+        "payload": {
+          "quantity": 13600.0,
+          "unit": "kg"
+        },
+        "segments": [
+          {
+            "mode": "climb",
+            "from": {
+              "latitude": 41.2974,
+              "longitude": 2.0785,
+              "altitude": 4.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 43.2181,
+              "longitude": 2.5597,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "cruise",
+            "from": {
+              "latitude": 43.2181,
+              "longitude": 2.5597,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 48.9803,
+              "longitude": 4.0032,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "descend",
+            "from": {
+              "latitude": 48.9803,
+              "longitude": 4.0032,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 50.901,
+              "longitude": 4.4844,
+              "altitude": 184.0,
+              "altitudeUnit": "m"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

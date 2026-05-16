@@ -1,0 +1,94 @@
+[
+  {
+    "flightDesignator": "FR0008",
+    "type": "regular",
+    "route": {
+      "reference": "FR000",
+      "origin": "AMS",
+      "destination": "VIE"
+    },
+    "aircraft": {
+      "emptyWeight": 41413,
+      "wingArea": 125.08,
+      "aspectRatio": 10.24,
+      "oswaldEfficiency": 0.85,
+      "cd0": 0.0265,
+      "numberOfEngines": 2
+    },
+    "engine": {
+      "thrustSeaLevelStopped": 121436,
+      "thrustSeaLevelCruise": 85000,
+      "thrustLapseRate": 0.9,
+      "thrustSpecificFuelConsumption": 0.000165
+    },
+    "legs": [
+      {
+        "departure": {
+          "airport": "AMS",
+          "date": "2026-05-20",
+          "time": "08:00"
+        },
+        "arrival": {
+          "airport": "VIE",
+          "date": "2026-05-20",
+          "time": "10:15"
+        },
+        "fuel": {
+          "quantity": 9000.0,
+          "unit": "kg"
+        },
+        "payload": {
+          "quantity": 13600.0,
+          "unit": "kg"
+        },
+        "segments": [
+          {
+            "mode": "climb",
+            "from": {
+              "latitude": 52.3081,
+              "longitude": 4.7642,
+              "altitude": 4.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 51.4685,
+              "longitude": 7.1253,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "cruise",
+            "from": {
+              "latitude": 51.4685,
+              "longitude": 7.1253,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 48.9499,
+              "longitude": 14.2086,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "descend",
+            "from": {
+              "latitude": 48.9499,
+              "longitude": 14.2086,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 48.1103,
+              "longitude": 16.5697,
+              "altitude": 183.0,
+              "altitudeUnit": "m"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

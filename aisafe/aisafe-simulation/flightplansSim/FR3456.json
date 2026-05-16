@@ -18,8 +18,8 @@
     "engine": {
       "thrustSeaLevelStopped": 121436,
       "thrustSeaLevelCruise": 85000,
-      "thrustLapseRate": 0.90,
-      "thrustSpecificFuelConsumption": 1.65e-4
+      "thrustLapseRate": 0.9,
+      "thrustSpecificFuelConsumption": 0.000165
     },
     "legs": [
       {
@@ -43,15 +43,45 @@
         },
         "segments": [
           {
-            "mode": "cruise",
+            "mode": "climb",
             "from": {
               "latitude": 52.3105,
               "longitude": 4.7683,
-              "altitude": 0.0,
+              "altitude": 4.0,
               "altitudeUnit": "m"
             },
             "to": {
-              "latitude": 52.3620,
+              "latitude": 52.3208,
+              "longitude": 6.5153,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "cruise",
+            "from": {
+              "latitude": 52.3208,
+              "longitude": 6.5153,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 52.3517,
+              "longitude": 11.7563,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "descend",
+            "from": {
+              "latitude": 52.3517,
+              "longitude": 11.7563,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 52.362,
               "longitude": 13.5033,
               "altitude": 48.0,
               "altitudeUnit": "m"

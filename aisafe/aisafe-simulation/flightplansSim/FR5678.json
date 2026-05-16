@@ -3,7 +3,7 @@
     "flightDesignator": "FR5678",
     "type": "regular",
     "route": {
-      "reference": "FR567",
+      "reference": "FR000",
       "origin": "DUB",
       "destination": "BCN"
     },
@@ -18,20 +18,20 @@
     "engine": {
       "thrustSeaLevelStopped": 121436,
       "thrustSeaLevelCruise": 85000,
-      "thrustLapseRate": 0.90,
-      "thrustSpecificFuelConsumption": 1.65e-4
+      "thrustLapseRate": 0.9,
+      "thrustSpecificFuelConsumption": 0.000165
     },
     "legs": [
       {
         "departure": {
           "airport": "DUB",
           "date": "2026-05-20",
-          "time": "08:30"
+          "time": "13:00"
         },
         "arrival": {
           "airport": "BCN",
           "date": "2026-05-20",
-          "time": "13:00"
+          "time": "15:30"
         },
         "fuel": {
           "quantity": 12500.0,
@@ -43,11 +43,41 @@
         },
         "segments": [
           {
-            "mode": "cruise",
+            "mode": "climb",
             "from": {
               "latitude": 53.4213,
               "longitude": -6.2701,
               "altitude": 74.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 50.9965,
+              "longitude": -4.6004,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "cruise",
+            "from": {
+              "latitude": 50.9965,
+              "longitude": -4.6004,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 43.7219,
+              "longitude": 0.4088,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "descend",
+            "from": {
+              "latitude": 43.7219,
+              "longitude": 0.4088,
+              "altitude": 10000.0,
               "altitudeUnit": "m"
             },
             "to": {

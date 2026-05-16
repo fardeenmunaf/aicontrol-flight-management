@@ -18,20 +18,20 @@
     "engine": {
       "thrustSeaLevelStopped": 121436,
       "thrustSeaLevelCruise": 85000,
-      "thrustLapseRate": 0.90,
-      "thrustSpecificFuelConsumption": 1.65e-4
+      "thrustLapseRate": 0.9,
+      "thrustSpecificFuelConsumption": 0.000165
     },
     "legs": [
       {
         "departure": {
           "airport": "MAD",
           "date": "2026-05-20",
-          "time": "09:00"
+          "time": "10:00"
         },
         "arrival": {
           "airport": "CIA",
           "date": "2026-05-20",
-          "time": "11:20"
+          "time": "12:00"
         },
         "fuel": {
           "quantity": 11000.0,
@@ -43,11 +43,41 @@
         },
         "segments": [
           {
-            "mode": "cruise",
+            "mode": "climb",
             "from": {
               "latitude": 40.4839,
-              "longitude": -3.5680,
+              "longitude": -3.568,
               "altitude": 610.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 40.747,
+              "longitude": -0.3354,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "cruise",
+            "from": {
+              "latitude": 40.747,
+              "longitude": -0.3354,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 41.5363,
+              "longitude": 9.3623,
+              "altitude": 10000.0,
+              "altitudeUnit": "m"
+            }
+          },
+          {
+            "mode": "descend",
+            "from": {
+              "latitude": 41.5363,
+              "longitude": 9.3623,
+              "altitude": 10000.0,
               "altitudeUnit": "m"
             },
             "to": {
