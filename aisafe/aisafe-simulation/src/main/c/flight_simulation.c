@@ -206,6 +206,10 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
         horiz_dist = dist_to_dest;
         f->current_pos.latitude = dest_lat;
         f->current_pos.longitude = dest_lon;
+        // The aircraft is landing this step regardless of which waypoint the
+        // phase tracker was on — it must be descending to touch down.
+        phase = PHASE_DESCEND;
+        f->current_phase = phase;
     } else {
         // Move the lat/lon point along that bearing by horiz_dist metres
         advance_position(&f->current_pos.latitude, &f->current_pos.longitude, horiz_dist, hdg);

@@ -62,6 +62,7 @@ typedef struct {
 // ── Flight phase ──────────────────────────────────────────────────────────────
 
 typedef enum {
+    PHASE_GATE,     // aircraft at gate or between legs (not airborne)
     PHASE_CLIMB,    // aircraft climbing to cruise altitude
     PHASE_CRUISE,   // aircraft level at cruise altitude
     PHASE_DESCEND   // aircraft descending toward destination

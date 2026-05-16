@@ -195,6 +195,7 @@ static void check_violations(SharedMemoryData *shm, bool *was_active) {
 
 static const char *phase_name(FlightPhase p) {
     switch (p) {
+        case PHASE_GATE:    return "GATE   ";
         case PHASE_CLIMB:   return "CLIMB  ";
         case PHASE_CRUISE:  return "CRUISE ";
         case PHASE_DESCEND: return "DESCEND";
@@ -482,13 +483,12 @@ int main() {
         sem_wait(main_sem);
     }
 
-    // After the startup barrier all children have set f->current_phase from their
-    // initial position — read those values into prev_phase[] so transitions from
-    // step 1 onward are correctly detected.
+    // Initialize all flights as GATE so the first active step always prints
+    // GATE → CLIMB, regardless of what current_phase the child set initially.
     FlightPhase prev_phase[MAX_FLIGHTS];
     for (int i = 0; i < shm->num_flights; i++)
     {
-        prev_phase[i] = shm->flights[i].current_phase;
+        prev_phase[i] = PHASE_GATE;
     }
 
     // Storage for one PipeMessage per flight per step (re-used each iteration).
@@ -643,9 +643,13 @@ int main() {
 
         // Intermediate leg completion: child set leg_just_completed=true and is_active=true.
         // Parent clears the flag here (child is blocked on step_sem — no concurrent write).
+        // Track which flights completed a leg so prev_phase can be reset to GATE below.
+        bool leg_done[MAX_FLIGHTS];
+        for (int i = 0; i < shm->num_flights; i++) leg_done[i] = false;
         for (int i = 0; i < shm->num_flights; i++) {
             if (!was_active[i] || !shm->flights[i].leg_just_completed) continue;
             shm->flights[i].leg_just_completed = false;
+            leg_done[i] = true;
             Flight *f = &shm->flights[i];
             printf("[%s] Arrived at intermediate stop. Leg %d complete. "
                    "Next leg (leg %d) departs at offset %.0fs.\n",
@@ -661,6 +665,11 @@ int main() {
         for (int i = 0; i < shm->num_flights; i++)
             if (was_active[i])
                 prev_phase[i] = step_msgs[i].step.phase;
+        // Flights that just completed a leg are back at the gate — next step
+        // should show GATE → CLIMB rather than (old phase) → CLIMB.
+        for (int i = 0; i < shm->num_flights; i++)
+            if (leg_done[i])
+                prev_phase[i] = PHASE_GATE;
     }
 
     // ── 6.6  Wrap up and report ────────────────────────────────────────────────

@@ -1,314 +1,488 @@
 === AISafe Simulation Engine starting ===
-Loaded settings: start=0.0 end=34200.0 step=1800.0 dist=5000.0 max_viol=10 sim_start=21600s (06:00)
+Loaded settings: start=0.0 end=34200.0 step=900.0 dist=5000.0 max_viol=10 sim_start=21600s (06:00)
 Loaded flight plan for FR0009: departs at offset 10800s (180 min). empty=41413 payload=13600 fuel=12000 initial_mass=67013 kg
 Loaded flight plan for FR0013: departs at offset 14400s (240 min). empty=41413 payload=13600 fuel=7000 initial_mass=62013 kg
 Loaded flight plan for FR9012: departs at offset 14400s (240 min). empty=41413 payload=13600 fuel=11000 initial_mass=66013 kg
-Loaded flight plan for FR0012: departs at offset 19800s (330 min). empty=41413 payload=13600 fuel=8500 initial_mass=63513 kg
+Loaded flight plan for FR0012: departs at offset 18000s (300 min). empty=41413 payload=13600 fuel=8500 initial_mass=63513 kg
 Loaded flight plan for FR0016: departs at offset 0s (0 min). empty=41413 payload=13600 fuel=13500 initial_mass=68513 kg
 Loaded flight plan for FR0004: departs at offset 10800s (180 min). empty=41413 payload=13600 fuel=10500 initial_mass=65513 kg
 Loaded flight plan for FR0011: departs at offset 18000s (300 min). empty=41413 payload=13600 fuel=8500 initial_mass=63513 kg
 Loaded flight plan for FR0003: departs at offset 7200s (120 min). empty=41413 payload=13600 fuel=9500 initial_mass=64513 kg
-Loaded flight plan for FR0006: departs at offset 0s (0 min). empty=41413 payload=13600 fuel=4000 initial_mass=59013 kg
+Loaded flight plan for FR0006: departs at offset -3600s (-60 min). empty=41413 payload=13600 fuel=4000 initial_mass=59013 kg
 Loaded flight plan for FR0001: departs at offset 3600s (60 min). empty=41413 payload=13600 fuel=6500 initial_mass=61513 kg
 Loaded flight plan for FR0014: departs at offset 9000s (150 min). empty=41413 payload=13600 fuel=8000 initial_mass=63013 kg
 Loaded flight plan for FR3456: departs at offset 18000s (300 min). empty=41413 payload=13600 fuel=7000 initial_mass=62013 kg
 Loaded flight plan for FR0002: departs at offset 5400s (90 min). empty=41413 payload=13600 fuel=7000 initial_mass=62013 kg
 Loaded flight plan for FR0008: departs at offset 7200s (120 min). empty=41413 payload=13600 fuel=9000 initial_mass=64013 kg
 Loaded flight plan for FR0015: departs at offset 3600s (60 min). empty=41413 payload=13600 fuel=10500 initial_mass=65513 kg
-Loaded flight plan for FR5678: departs at offset 25200s (420 min). empty=41413 payload=13600 fuel=12500 initial_mass=67513 kg
+Loaded flight plan for FR5678: departs at offset 7200s (120 min). empty=41413 payload=13600 fuel=4000 initial_mass=59013 kg
 Loaded flight plan for FR0007: departs at offset 3600s (60 min). empty=41413 payload=13600 fuel=6500 initial_mass=61513 kg
-Loaded flight plan for FR1234: departs at offset 28800s (480 min). empty=41413 payload=13600 fuel=6000 initial_mass=61013 kg
+Loaded flight plan for FR1234: departs at offset 3600s (60 min). empty=41413 payload=13600 fuel=7500 initial_mass=62513 kg
 Loaded flight plan for FR0005: departs at offset 14400s (240 min). empty=41413 payload=13600 fuel=8500 initial_mass=63513 kg
-Loaded flight plan for FR0010: departs at offset 12600s (210 min). empty=41413 payload=13600 fuel=12000 initial_mass=67013 kg
-Loaded 20 flight(s). Simulation: 0 s -> 34200 s  (step 1800 s = 30 min)
+Loaded flight plan for FR0010: departs at offset 10800s (180 min). empty=41413 payload=13600 fuel=12000 initial_mass=67013 kg
+Loaded 20 flight(s). Simulation: 0 s -> 34200 s  (step 900 s = 15 min)
 Sim window: 06:00 → 15:30 (20 loaded flight plans)
-20 / 20 flight plans in scope — forking 20 child processes.
-Forked child PID 11520 for flight FR0009 (departs at offset 10800s)
-[FR0009] Process started (PID 11520). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
-Forked child PID 11521 for flight FR0013 (departs at offset 14400s)
-[FR0013] Process started (PID 11521). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
-Forked child PID 11522 for flight FR9012 (departs at offset 14400s)
-[FR9012] Process started (PID 11522). Initial mass: 66013 kg | Fuel: 11000 kg | Payload: 13600 kg
-Forked child PID 11523 for flight FR0012 (departs at offset 19800s)
-[FR0012] Process started (PID 11523). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
-Forked child PID 11524 for flight FR0016 (departs at offset 0s)
-[FR0016] Process started (PID 11524). Initial mass: 68513 kg | Fuel: 13500 kg | Payload: 13600 kg
-Forked child PID 11525 for flight FR0004 (departs at offset 10800s)
-[FR0004] Process started (PID 11525). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
-Forked child PID 11526 for flight FR0011 (departs at offset 18000s)
-[FR0011] Process started (PID 11526). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
-Forked child PID 11527 for flight FR0003 (departs at offset 7200s)
-[FR0003] Process started (PID 11527). Initial mass: 64513 kg | Fuel: 9500 kg | Payload: 13600 kg
-Forked child PID 11528 for flight FR0006 (departs at offset 0s)
-[FR0006] Process started (PID 11528). Initial mass: 59013 kg | Fuel: 4000 kg | Payload: 13600 kg
-Forked child PID 11529 for flight FR0001 (departs at offset 3600s)
-Forked child PID 11530 for flight FR0014 (departs at offset 9000s)
-[FR0001] Process started (PID 11529). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
-Forked child PID 11531 for flight FR3456 (departs at offset 18000s)
-[FR0014] Process started (PID 11530). Initial mass: 63013 kg | Fuel: 8000 kg | Payload: 13600 kg
-[FR3456] Process started (PID 11531). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
-Forked child PID 11532 for flight FR0002 (departs at offset 5400s)
-[FR0002] Process started (PID 11532). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
-Forked child PID 11533 for flight FR0008 (departs at offset 7200s)
-[FR0008] Process started (PID 11533). Initial mass: 64013 kg | Fuel: 9000 kg | Payload: 13600 kg
-Forked child PID 11534 for flight FR0015 (departs at offset 3600s)
-[FR0015] Process started (PID 11534). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
-Forked child PID 11535 for flight FR5678 (departs at offset 25200s)
-[FR5678] Process started (PID 11535). Initial mass: 67513 kg | Fuel: 12500 kg | Payload: 13600 kg
-Forked child PID 11536 for flight FR0007 (departs at offset 3600s)
-[FR0007] Process started (PID 11536). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
-Forked child PID 11537 for flight FR1234 (departs at offset 28800s)
-[FR1234] Process started (PID 11537). Initial mass: 61013 kg | Fuel: 6000 kg | Payload: 13600 kg
-Forked child PID 11538 for flight FR0005 (departs at offset 14400s)
-[FR0005] Process started (PID 11538). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
-[FR0010] Process started (PID 11539). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
-[FR0006] Landed at destination. Remaining fuel: -2636 kg | Total mass: 52377 kg
-[FR0006] Process exiting.
-Forked child PID 11539 for flight FR0010 (departs at offset 12600s)
+  [SKIP] FR0006: departure offset -3600s is outside sim window [0, 34200s]
+19 / 20 flight plans in scope — forking 19 child processes.
+Forked child PID 136078 for flight FR0009 (departs at offset 10800s)
+[FR0009] Process started (PID 136078). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
+Forked child PID 136079 for flight FR0013 (departs at offset 14400s)
+[FR0013] Process started (PID 136079). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
+Forked child PID 136080 for flight FR9012 (departs at offset 14400s)
+Forked child PID 136081 for flight FR0012 (departs at offset 18000s)
+[FR9012] Process started (PID 136080). Initial mass: 66013 kg | Fuel: 11000 kg | Payload: 13600 kg
+Forked child PID 136082 for flight FR0016 (departs at offset 0s)
+[FR0012] Process started (PID 136081). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
+[FR0016] Process started (PID 136082). Initial mass: 68513 kg | Fuel: 13500 kg | Payload: 13600 kg
+Forked child PID 136083 for flight FR0004 (departs at offset 10800s)
+[FR0004] Process started (PID 136083). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
+Forked child PID 136084 for flight FR0011 (departs at offset 18000s)
+[FR0011] Process started (PID 136084). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
+Forked child PID 136085 for flight FR0003 (departs at offset 7200s)
+[FR0003] Process started (PID 136085). Initial mass: 64513 kg | Fuel: 9500 kg | Payload: 13600 kg
+Forked child PID 136086 for flight FR0001 (departs at offset 3600s)
+[FR0001] Process started (PID 136086). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
+Forked child PID 136087 for flight FR0014 (departs at offset 9000s)
+[FR0014] Process started (PID 136087). Initial mass: 63013 kg | Fuel: 8000 kg | Payload: 13600 kg
+Forked child PID 136088 for flight FR3456 (departs at offset 18000s)
+[FR3456] Process started (PID 136088). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
+Forked child PID 136089 for flight FR0002 (departs at offset 5400s)
+[FR0002] Process started (PID 136089). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
+Forked child PID 136090 for flight FR0008 (departs at offset 7200s)
+[FR0008] Process started (PID 136090). Initial mass: 64013 kg | Fuel: 9000 kg | Payload: 13600 kg
+Forked child PID 136091 for flight FR0015 (departs at offset 3600s)
+[FR0015] Process started (PID 136091). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
+Forked child PID 136092 for flight FR5678 (departs at offset 7200s)
+[FR5678] Process started (PID 136092). Initial mass: 59013 kg | Fuel: 4000 kg | Payload: 13600 kg
+Forked child PID 136093 for flight FR0007 (departs at offset 3600s)
+[FR0007] Process started (PID 136093). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
+Forked child PID 136094 for flight FR1234 (departs at offset 3600s)
+[FR1234] Process started (PID 136094). Initial mass: 62513 kg | Fuel: 7500 kg | Payload: 13600 kg
+Forked child PID 136095 for flight FR0005 (departs at offset 14400s)
+[FR0005] Process started (PID 136095). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
+[FR0010] Process started (PID 136096). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
+Forked child PID 136096 for flight FR0010 (departs at offset 10800s)
 
 --- Simulation running ---
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=   1800 s  [06:30]  |  step   1 / 19   |  active= 2  |  violations=  0                                                               ║
+║  t=       0 s  [06:00]  |  step   0 / 38   |  active= 0  pending=19  |  violations=  0                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
 -------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0016   CLIMB    34.6657   13.5212   10000   1741.3 10000 287.61   100332    1.2153  340.0   250.0 0.379   129.0  0.5316 0.0368    672113    46572    105319   210638    31.48    6377   225.1   62136    7123
-FR0006   CLIMB    48.7921   10.9838    8000    299.1  8000 287.43    99999    1.2120  339.9   250.0 0.380   129.1  0.4582 0.0342    578918    43183    105044   210088    37.22    6360   222.5   52653       0
+FR0009   GATE     40.4936   -3.5668     609   1244.4 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   67013   12000
+FR0013   GATE     48.7233    2.3794      89    479.0  8000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   62013    7000
+FR9012   GATE     40.4839   -3.5680     610   1359.3 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   66013   11000
+FR0012   GATE     41.9298   12.4534      14    949.4 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   63513    8500
+FR0016   GATE     32.6635   13.1590      83   1741.3 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   68513   13500
+FR0004   GATE     41.2974    2.0785       4   1083.7 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   65513   10500
+FR0011   GATE     41.9028   12.4534      14    952.2 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   63513    8500
+FR0003   GATE     41.2974    2.0785       4    858.4 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   64513    9500
+FR0001   GATE     53.4213   -6.2701      74    470.7  8000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   61513    6500
+FR0014   GATE     43.4393    5.2214      25    986.7 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   63013    8000
+FR3456   GATE     52.3105    4.7683       4    593.1  8000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   62013    7000
+FR0002   GATE     53.4213   -6.2701      74    484.5  8000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   62013    7000
+FR0008   GATE     52.3081    4.7642       4    959.4 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   64013    9000
+FR0015   GATE     36.8510   10.2272      21   1216.7 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   65513   10500
+FR5678   GATE     50.0333    8.5706     111    299.1  8000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   59013    4000
+FR0007   GATE     52.3081    4.7642       4    664.1  8000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   61513    6500
+FR1234   GATE     38.7749   -9.1302     114    513.2 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   62513    7500
+FR0005   GATE     50.0333    8.5706     111    952.2 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   63513    8500
+FR0010   GATE     40.5206   -3.5668     609   1241.4 10000      -        -         -      -       -     -       -       -      -         -        -         -        -        -       -       -   67013   12000
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=   3600 s  [07:00]  |  step   2 / 19   |  active= 1  |  violations=  0                                                               ║
+║  t=    900 s  [06:15]  |  step   1 / 38   |  active= 1  pending=18  |  violations=  0                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0016: GATE    --> CLIMB   <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0016   CLIMB    33.6647   13.3380   10000   1741.3 10000 287.61   100332    1.2153  340.0   250.0 0.379   129.0  0.5316 0.0368    672113    46572    105319   210638    31.48    3189   112.6   65324   10311
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=   1800 s  [06:30]  |  step   2 / 38   |  active= 1  pending=18  |  violations=  0                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
 -------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0016   CLIMB    38.2466   14.2159   10000   1516.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4705 0.0346    609553    44821     34235    68471     8.69    2073   403.0   60063    5050
+FR0016   CLIMB    35.4564   13.6691   10000   1628.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4946 0.0354    640833    45925     34235    68471     7.88    1036   201.5   64288    9275
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=   5400 s  [07:30]  |  step   3 / 19   |  active= 4  |  violations=  0                                                               [FR0001] Landed at destination. Remaining fuel: -786 kg | Total mass: 54227 kg
-[FR0001] Process exiting.
-[FR0016] Landed at destination. Remaining fuel: 2219 kg | Total mass: 57232 kg
-[FR0016] Process exiting.
-[FR0002] Landed at destination. Remaining fuel: -338 kg | Total mass: 54675 kg
-[FR0002] Process exiting.
-[FR0007] Landed at destination. Remaining fuel: -1337 kg | Total mass: 53676 kg
-[FR0007] Process exiting.
-║
+║  t=   2700 s  [06:45]  |  step   3 / 38   |  active= 1  pending=18  |  violations=  0                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0016   CLIMB    37.2471   14.0154   10000   1427.2 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4868 0.0352    630665    45560     34235    68471     8.14    1036   201.5   63251    8238
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=   3600 s  [07:00]  |  step   4 / 38   |  active= 1  pending=18  |  violations=  0                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
   >>> FR0016: CLIMB   --> CRUISE  <<<
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
 -------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0016   CRUISE   41.8256   14.9832   10000   1113.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4548 0.0341    589217    44133     34235    44133     0.00    1336   403.3   58727    3714
-FR0001   CLIMB    52.7377   -3.1303    8000    470.7  8000 287.67   100439    1.2163  340.0   250.0 0.379   128.9  0.4771 0.0348    603443    44044    105407   210815    35.63    6382   223.1   55131     118
-FR0015   CLIMB    37.1690   12.7157   10000   1216.7 10000 288.01   101073    1.2225  340.2   250.0 0.378   128.7  0.5075 0.0359    642683    45488    105929   211859    33.32    6414   223.8   59099    4086
-FR0007   CLIMB    51.0320    7.2471    8000    664.1  8000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.4763 0.0348    603443    44086    106097   212195    35.83    6424   222.4   55089      76
+FR0016   CRUISE   39.0379   14.3787   10000   1225.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4789 0.0349    620497    45201     34235    45201     0.00     684   201.6   62567    7554
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=   7200 s  [08:00]  |  step   4 / 19   |  active= 4  |  violations=  0                                                               ║
+║  t=   4500 s  [07:15]  |  step   5 / 38   |  active= 5  pending=14  |  violations=  0                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  >>> FR0007: CLIMB   --> CRUISE  <<<
+  >>> FR0001: GATE    --> CLIMB   <<<
+  >>> FR0015: GATE    --> CLIMB   <<<
+  >>> FR0007: GATE    --> CLIMB   <<<
+  >>> FR1234: GATE    --> CLIMB   <<<
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
 -------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0016   CRUISE   45.3990   15.8415   10000    709.8 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4447 0.0337    576110    43702     34235    43702     0.00    1323   403.3   57404    2391
-FR0002   CLIMB    52.4128   -3.3911    8000    484.5  8000 287.67   100439    1.2163  340.0   250.0 0.379   128.9  0.4810 0.0350    608348    44216    105407   210815    35.31    6382   223.2   55631     618
-FR0015   CLIMB    37.6087   17.2432   10000    992.9 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4475 0.0338    579760    43821     34235    68471     9.53    2073   402.9   57026    2013
-FR0007   CRUISE   48.7842   11.1085    8000    441.8  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.3839 0.0319    540421    44891     43966    44891     0.00    1359   372.7   53730       0
+FR0016   CRUISE   40.8275   14.7609   10000   1024.0 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4737 0.0347    613785    44968     34235    44968     0.00     681   201.6   61887    6874
+FR0001   CLIMB    53.0898   -4.6877    8000    470.7  8000 287.67   100439    1.2163  340.0   250.0 0.379   128.9  0.4771 0.0348    603443    44044    105407   210815    35.63    3191   111.5   58322    3309
+FR0015   CLIMB    37.0165   11.4688   10000   1216.7 10000 288.01   101073    1.2225  340.2   250.0 0.378   128.7  0.5075 0.0359    642683    45488    105929   211859    33.32    3207   111.9   62306    7293
+FR0007   CLIMB    51.6766    6.0231    8000    664.1  8000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.4763 0.0348    603443    44086    106097   212195    35.83    3212   111.2   58301    3288
+FR1234   CLIMB    39.1720   -7.9409   10000    513.2 10000 287.41    99963    1.2117  339.9   250.0 0.380   129.1  0.4854 0.0351    613253    44366    105015   210029    34.88    3179   111.9   59334    4321
 
-╔═════════════════════════════════�[FR0015] Landed at destination. Remaining fuel: 601 kg | Total mass: 55614 kg
-[FR0015] Process exiting.
-[FR0008] Landed at destination. Remaining fuel: 190 kg | Total mass: 55203 kg
-[FR0003] Landed at destination. Remaining fuel: 1009 kg | Total mass: 56022 kg
-[FR0008] Process exiting.
-[FR0003] Process exiting.
-��════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=   9000 s  [08:30]  |  step   5 / 19   |  active= 3  |  violations=  0                                                               ║
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=   5400 s  [07:30]  |  step   6 / 38   |  active= 5  pending=14  |  violations=  0                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0001: CLIMB   --> CRUISE  <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0016   CRUISE   42.6158   15.1643   10000    822.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4686 0.0345    607107    44737     34235    44737     0.00     677   201.6   61209    6196
+FR0001   CRUISE   52.4902   -2.1001    8000    359.1  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4064 0.0325    572137    45807     43966    45807     0.00     693   186.3   57628    2615
+FR0015   CLIMB    37.2816   13.7179   10000   1104.8 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4718 0.0346    611221    44879     34235    68471     8.65    1036   201.5   61269    6256
+FR0007   CLIMB    50.5922    8.0497    8000    552.9  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4063 0.0325    571932    45801     43966    87932    15.25    1331   185.8   56970    1957
+FR1234   CLIMB    39.8560   -5.7661   10000    401.3 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4493 0.0339    582063    43897     34235    68471     9.46    1036   201.5   58297    3284
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=   6300 s  [07:45]  |  step   7 / 38   |  active= 4  pending=14  |  violations=  0                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0001: CRUISE  --> DESCEND <<<
+  >>> FR0002: GATE    --> CLIMB   <<<
   >>> FR0015: CLIMB   --> CRUISE  <<<
+  >>> FR0007: CLIMB   --> CRUISE  <<<
+  >>> FR1234: CLIMB   --> DESCEND <<<
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
 -------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0003   CLIMB    43.3040    2.1889   10000    858.4 10000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.4995 0.0356    632873    45136    106097   212195    33.95    6424   223.3   58089    3076
-FR0008   CLIMB    51.4415    7.6966   10000    959.4 10000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.4956 0.0355    627968    44958    106097   212195    34.25    6424   223.2   57589    2576
-FR0015   CRUISE   37.8738   21.8178   10000    590.0 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4318 0.0333    559425    43167     34235    43167     0.00    1307   403.3   55719     706
+FR0016   CRUISE   44.4026   15.5915   10000    620.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4635 0.0344    600463    44511     34235    44511     0.00     674   201.6   60536    5523
+FR0001   DESCEND  51.8850    0.2350    8000    172.8  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4016 0.0324    565334    45606     43966    45606     0.00     640   172.8   56988    1975
+FR0002   CLIMB    52.9257   -4.8138    8000    484.5  8000 287.67   100439    1.2163  340.0   250.0 0.379   128.9  0.4810 0.0350    608348    44216    105407   210815    35.31    3191   111.6   58822    3809
+FR0015   CRUISE   37.5041   15.9832   10000    903.3 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4639 0.0344    601054    44531     34235    44531     0.00     674   201.6   60595    5582
+FR0007   CRUISE   49.4712    9.9887    8000    367.1  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.3970 0.0323    558874    45418     43966    45418     0.00     688   186.3   56282    1269
+FR1234   DESCEND  40.4936   -3.5668   10000    199.8 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4414 0.0336    571895    43566     34235    43566     0.00     654   199.8   61113    5500
+[FR0001] Landed at destination. Remaining fuel: 1975 kg | Total mass: 56988 kg
+[FR1234] Arrived at intermediate stop. Leg 0 complete. Next leg (leg 1) departs at offset 16200s.
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  10800 s  [09:00]  |  step   6 / 19   |  active= 3  |  violations=  0                                                               ║
+║  t=   7200 s  [08:00]  |  step   8 / 38   |  active= 3  pending=14  |  violations=  0                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  >>> FR0003: CLIMB   --> CRUISE  <<<
-  >>> FR0008: CLIMB   --> CRUISE  <<<
+  >>> FR0002: CLIMB   --> CRUISE  <<<
+  >>> FR0007: CRUISE  --> DESCEND <<<
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
 -------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0003   CRUISE   46.9276    2.4081   10000    635.0 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4398 0.0336    569851    43500     34235    43500     0.00    1317   403.3   56772    1759
-FR0014   CLIMB    45.4443    5.1310   10000    986.7 10000 287.99   101025    1.2221  340.2   250.0 0.378   128.7  0.4882 0.0352    618158    44593    105890   211780    34.81    6412   223.1   56601    1588
-FR0008   CRUISE   49.7004   12.7081   10000    736.3 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4360 0.0335    564946    43343     34235    43343     0.00    1312   403.3   56277    1264
+FR0016   CRUISE   46.1877   16.0457   10000    419.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4584 0.0342    593854    44288     34235    44288     0.00     670   201.6   59865    4852
+FR0002   CRUISE   52.0600   -2.4572    8000    372.8  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4099 0.0326    577042    45954     43966    45954     0.00     696   186.3   58126    3113
+FR0015   CRUISE   37.6831   18.2608   10000    701.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4588 0.0342    594441    44308     34235    44308     0.00     671   201.6   59925    4912
+FR0007   DESCEND  48.3538   11.7861    8000    180.8  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.3922 0.0321    552129    45223     43966    45223     0.00     664   180.8   55618     605
+[FR0007] Landed at destination. Remaining fuel: 605 kg | Total mass: 55618 kg
 
-╔══════�[FR0014] Landed at destination. Remaining fuel: -868 kg | Total mass: 54145 kg
-[FR0014] Process exiting.
-�═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  12600 s  [09:30]  |  step   7 / 19   |  active= 3  |  violations=  0                                                               ║
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=   8100 s  [08:15]  |  step   9 / 38   |  active= 5  pending=11  |  violations=  0                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  >>> FR0014: CLIMB   --> CRUISE  <<<
+  >>> FR0016: CRUISE  --> DESCEND <<<
+  >>> FR0003: GATE    --> CLIMB   <<<
+  >>> FR0008: GATE    --> CLIMB   <<<
+  >>> FR5678: GATE    --> CLIMB   <<<
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
 -------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0009   CLIMB    42.5284   -3.0792   10000   1244.4 10000 284.19    94219    1.1550  337.9   250.0 0.389   131.4  0.5271 0.0367    657398    45722    100241   200483    30.93    6070   229.9   60943    5930
-FR0004   CLIMB    43.2827    2.5104   10000   1083.7 10000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.5073 0.0359    642683    45497    106097   212195    33.36    6424   223.6   59089    4076
-FR0014   CRUISE   49.0691    4.9499   10000    763.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4286 0.0332    555259    43036     34235    43036     0.00    1303   403.3   55298     285
+FR0016   DESCEND  47.8574   16.4985     183    217.4 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.5153 0.0362    587277    41270     34942     6988   -12.27     106   188.8   59759    4746
+FR0003   CLIMB    42.3007    2.1328   10000    858.4 10000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.4995 0.0356    632873    45136    106097   212195    33.95    3212   111.7   61301    6288
+FR0002   CRUISE   51.1491   -0.1925    8000    186.5  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4051 0.0325    570217    45750     43966    45750     0.00     693   186.3   57434    2421
+FR0008   CLIMB    51.8839    6.2445   10000    959.4 10000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.4956 0.0355    627968    44958    106097   212195    34.25    3212   111.6   60801    5788
+FR0015   CRUISE   37.8181   20.5480   10000    500.0 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4537 0.0340    587861    44088     34235    44088     0.00     667   201.6   59257    4244
+FR5678   CLIMB    49.4190    9.7924    8000    299.1  8000 287.43    99999    1.2120  339.9   250.0 0.380   129.1  0.4582 0.0342    578918    43183    105044   210088    37.22    3180   111.3   55833     820
+[FR0002] Landed at destination. Remaining fuel: 2421 kg | Total mass: 57434 kg
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  14400 s  [10:00]  |  step   8 / 19   |  active= 3  |  violations=  0                                                               ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  >>> FR0004: CLIMB   --> CRUISE  <<<
-
-CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0009   CLIMB    46.0899   -2.1424   10000   1014.5 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4614 0.0343    597854    44423     34235    68471     9.01    2073   403.0   58870    3857
-FR0004   CRUISE   46.8590    3.3660   10000    860.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4474 0.0338    579661    43818     34235    43818     0.00    1327   403.3   57762    2749
-FR0010   CLIMB    42.5552   -3.0779   10000   1241.4 10000 284.19    94219    1.1550  337.9   250.0 0.389   131.4  0.5271 0.0367    657398    45722    100241   200483    30.93    6070   229.[FR0013] Landed at destination. Remaining fuel: -309 kg | Total mass: 54704 kg
-[FR0013] Process exiting.
-[FR0009] Landed at destination. Remaining fuel: 2416 kg | Total mass: 57429 kg
-[FR0009] Process exiting.
-[FR0004] Landed at destination. Remaining fuel: 1405 kg | Total mass: 56418 kg
-[FR0004] Process exiting.
-9   60943    5930
-
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  16200 s  [10:30]  |  step   9 / 19   |  active= 6  |  violations=  0                                                               ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  >>> FR0009: CLIMB   --> CRUISE  <<<
-
-CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0009   CRUISE   49.6456   -1.0753   10000    611.6 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4457 0.0338    577518    43748     34235    43748     0.00    1324   403.3   57546    2533
-FR0013   CLIMB    48.1775    5.2943    8000    479.0  8000 287.57   100260    1.2146  340.0   250.0 0.379   129.0  0.4812 0.0350    608348    44207    105260   210520    35.27    6374   223.4   55639     626
-FR9012   CLIMB    40.8636   -0.8913   10000   1359.3 10000 284.19    94208    1.1549  337.9   250.0 0.389   131.4  0.5193 0.0364    647588    45346    100232   200464    31.48    6069   229.6   59944    4931
-FR0004   CRUISE   50.4280    4.3436   10000    456.8 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4374 0.0335    566647    43397     34235    43397     0.00    1314   403.3   56448    1435
-FR0005   CLIMB    48.1326    9.5923   10000    952.2 10000 287.43    99999    1.2120  339.9   250.0 0.380   129.1  0.4931 0.0354    623063    44719    105044   210088    34.27    6360   224.1   57153    2140
-FR0010   CLIMB    46.1164   -2.1384   10000   1011.6 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4614 0.0343    597854    44423     34235    68471     9.01    2073   403.0   58870    3857
-
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  18000 s  [11:00]  |  step  10 / 19   |  active= 3  |  violations=  0                                                               ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  >>> FR0005: CLIMB   --> CRUISE  <<<
-  >>> FR0010: CLIMB   --> CRUISE  <<<
-
-CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- ----[FR0010] Landed at destination. Remaining fuel: 2418 kg | Total mass: 57431 kg
-[FR0010] Process exiting.
-[FR0005] Landed at destination. Remaining fuel: -213 kg | Total mass: 54800 kg
-[FR0005] Process exiting.
-[FR9012] Landed at destination. Remaining fuel: 498 kg | Total mass: 55511 kg
-[FR3456] Landed at destination. Remaining fuel: -780 kg | Total mass: 54233 kg
-[FR9012] Process exiting.
-[FR3456] Process exiting.
----  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR9012   CLIMB    41.3779    3.8710   10000   1129.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4539 0.0340    588050    44095     34235    68471     9.29    2073   402.9   57871    2858
-FR0005   CRUISE   44.6910   11.2533   10000    728.2 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4327 0.0333    560666    43207     34235    43207     0.00    1308   403.3   55844     831
-FR0010   CRUISE   49.6717   -1.0681   10000    608.6 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4457 0.0338    577518    43748     34235    43748     0.00    1324   403.3   57546    2533
-
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  19800 s  [11:30]  |  step  11 / 19   |  active= 3  |  violations=  0                                                               ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  >>> FR9012: CLIMB   --> CRUISE  <<<
-
-CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR9012   CRUISE   41.6934    8.6986   10000    726.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4382 0.0335    567714    43431     34235    43431     0.00    1315   403.3   56556    1543
-FR0011   CLIMB    43.8189   11.6412   10000    952.2 10000 288.06   101157    1.2234  340.2   250.0 0.378   128.7  0.4919 0.0353    623063    44775    105999   211997    34.53    6418   223.1   57095    2082
-FR3456   CLIMB    52.4053    8.0417    8000    593.1  8000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.4802 0.0349    608348    44257    106097   212195    35.51    6424   222.5   55589     576
-
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  21600 s  [12:00]  |  step  12 / 19   |  active= 2  |  violations=  0                                                               ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  >>> FR0011: CLIMB   --> CRUISE  <<<
-
-CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ --[FR0011] Landed at destination. Remaining fuel: -272 kg | Total mass: 54741 kg
-[FR0011] Process exiting.
-[FR0012] Landed at destination. Remaining fuel: -263 kg | Total mass: 54750 kg
-[FR0012] Process exiting.
------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0012   CLIMB    43.8454   11.6384   10000    949.4 10000 288.06   101157    1.2234  340.2   250.0 0.378   128.7  0.4919 0.0353    623063    44775    105999   211997    34.53    6418   223.1   57095    2082
-FR0011   CRUISE   47.2664   10.0317   10000    729.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4323 0.0333    560099    43189     34235    43189     0.00    1308   403.3   55787     774
-
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  23400 s  [12:30]  |  step  13 / 19   |  active= 1  |  violations=  0                                                               ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-  >>> FR0012: CLIMB   --> CRUISE  <<<
-
-CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR0012   CRUISE   47.2917   10.0232   10000    726.3 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4323 0.0333    560099    43189     34235    43189     0.00    1308   403.3   55787     774
-
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  25200 s  [13:00]  |  step  14 / 19   |  active= 0  |  violations=  0                                                               ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-
-CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  27000 s  [13:30]  |  step  15 / 19   |  active= 1  |  violations=  0                                                               ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-
-CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR5678   CLIMB    51.6289   -4.7323   10000   1485.2 10000 287.67   100439    1.2163  340.0   250.0 0.379   128.9  0.5237 0.0365    662303    46199    105407   210815    32.05    6382   224.8   61131    6118
-
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  28800 s  [14:00]  |  step  16 / 19   |  active= 1  |  violations=  0                                                               ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-
-CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR5678   CLIMB    48.3713   -2.2602   10000   1260.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4629 0.0343    599691    44485     34235    68471     8.96    2073   403.0   59058    4045
-
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  30600 s  [14:30]  |  step  17 / 19   |  active= 2  |  violations=  0                                                               ║
+║  t=   9000 s  [08:30]  |  step  10 / 38   |  active= 3  pending=12  |  violations=  0                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
   >>> FR5678: CLIMB   --> CRUISE  <<<
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
--------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- ---[FR1234] Landed at destination. Remaining fuel: -1284 kg | Total mass: 53729 kg
-[FR1234] Process exiting.
-[FR5678] Landed at destination. Remaining fuel: 1376 kg | Total mass: 56389 kg
-[FR5678] Process exiting.
-----  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR5678   CRUISE   45.0645   -0.0860   10000    857.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4472 0.0338    579355    43808     34235    43808     0.00    1326   403.3   57731    2718
-FR1234   CLIMB    52.7382   -3.1327    8000    470.7  8000 287.67   100439    1.2163  340.0   250.0 0.379   128.9  0.4733 0.0347    598538    43874    105407   210815    35.96    6382   222.9   54631       0
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0016   DESCEND  48.1103   16.5697     183     28.6 10000 286.96    99146    1.2036  339.6   280.0 0.427   145.0  0.3706 0.0315    586239    49862    102518    20504    -7.26      68    28.6   59691    4678
+FR0003   CLIMB    44.1112    2.2354   10000    746.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4642 0.0344    601362    44541     34235    68471     8.92    1036   201.5   60264    5251
+FR0008   CLIMB    51.0722    8.8459   10000    847.9 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4604 0.0343    596457    44376     34235    68471     9.05    1036   201.5   59764    4751
+FR0015   CRUISE   37.9088   22.8422   10000    298.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4487 0.0339    581314    43872     34235    43872     0.00     664   201.6   58593    3580
+FR5678   CRUISE   48.3624   11.7707    8000    187.8  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.3891 0.0320    547719    45097     43966    45097     0.00     683   186.3   58713    4500
+[FR0016] Landed at destination. Remaining fuel: 4678 kg | Total mass: 59691 kg
+[FR5678] Arrived at intermediate stop. Leg 0 complete. Next leg (leg 1) departs at offset 19800s.
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  32400 s  [15:00]  |  step  18 / 19   |  active= 1  |  violations=  0                                                               ║
+║  t=   9900 s  [08:45]  |  step  11 / 38   |  active= 3  pending=11  |  violations=  0                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0003: CLIMB   --> CRUISE  <<<
+  >>> FR0014: GATE    --> CLIMB   <<<
+  >>> FR0008: CLIMB   --> CRUISE  <<<
+  >>> FR0015: CRUISE  --> DESCEND <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0003   CRUISE   45.9230    2.3445   10000    545.2 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4563 0.0341    591194    44199     34235    44199     0.00     669   201.6   59595    4582
+FR0014   CLIMB    44.4418    5.1770   10000    986.7 10000 287.99   101025    1.2221  340.2   250.0 0.378   128.7  0.4882 0.0352    618158    44593    105890   211780    34.81    3206   111.5   59807    4794
+FR0008   CRUISE   50.2041   11.3566   10000    646.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4525 0.0340    586289    44036     34235    44036     0.00     667   201.6   59098    4085
+FR0015   DESCEND  37.9364   23.9445      94     96.7 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.5043 0.0358    574799    40805     34942     6988   -12.36      54    96.7   58539    3526
+[FR0015] Landed at destination. Remaining fuel: 3526 kg | Total mass: 58539 kg
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  10800 s  [09:00]  |  step  12 / 38   |  active= 3  pending=11  |  violations=  0                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
 -------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
-FR5678   CRUISE   41.7209    1.8490   10000    454.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4371 0.0335    566344    43387     34235    43387     0.00    1314   403.3   56418    1405
+FR0003   CRUISE   47.7347    2.4610   10000    343.6 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4512 0.0339    584630    43981     34235    43981     0.00     666   201.6   58930    3917
+FR0014   CLIMB    46.2527    5.0927   10000    875.2 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4528 0.0340    586708    44050     34235    68471     9.33    1036   201.5   58771    3758
+FR0008   CRUISE   49.2839   13.7750   10000    444.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4475 0.0338    579749    43821     34235    43821     0.00     663   201.6   58434    3421
+  *** VIOLATION: FR0009 <-> FR0010  dist=2994 m  (threshold 5000 m) ***
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║  t=  34200 s  [15:30]  |  step  19 / 19   |  active= 0  |  violations=  0                                                               ║
+║  t=  11700 s  [09:15]  |  step  13 / 38   |  active= 5  pending= 8  |  violations=  1                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0009: GATE    --> CLIMB   <<<
+  >>> FR0004: GATE    --> CLIMB   <<<
+  >>> FR0003: CRUISE  --> DESCEND <<<
+  >>> FR0014: CLIMB   --> CRUISE  <<<
+  >>> FR0010: GATE    --> CLIMB   <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0009   CLIMB    41.5113   -3.3268   10000   1244.4 10000 284.19    94219    1.1550  337.9   250.0 0.389   131.4  0.5271 0.0367    657398    45722    100241   200483    30.93    3035   114.9   63978    8965
+FR0004   CLIMB    42.2903    2.2911   10000   1083.7 10000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.5073 0.0359    642683    45497    106097   212195    33.36    3212   111.8   62301    7288
+FR0003   DESCEND  49.0097    2.5479     119    141.9 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.5072 0.0359    578099    40927     34942     6988   -12.34      80   141.9   58850    3837
+FR0014   CRUISE   48.0651    5.0026   10000    673.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4450 0.0337    576540    43716     34235    43716     0.00     662   201.6   58109    3096
+FR0008   CRUISE   48.3151   16.1025   10000    243.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4424 0.0337    573242    43609     34235    43609     0.00     660   201.6   57774    2761
+FR0010   CLIMB    41.5382   -3.3262   10000   1241.4 10000 284.19    94219    1.1550  337.9   250.0 0.389   131.4  0.5271 0.0367    657398    45722    100241   200483    30.93    3035   114.9   63978    8965
+[FR0003] Landed at destination. Remaining fuel: 3837 kg | Total mass: 58850 kg
+  *** VIOLATION: FR0009 <-> FR0010  dist=2982 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  12600 s  [09:30]  |  step  14 / 38   |  active= 4  pending= 8  |  violations=  2                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0008: CRUISE  --> DESCEND <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0009   CLIMB    43.2942   -2.8873   10000   1129.5 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4844 0.0351    627626    45453     34235    68471     8.22    1036   201.5   62942    7929
+FR0004   CLIMB    44.0787    2.6916   10000    971.9 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4717 0.0346    611172    44877     34235    68471     8.65    1036   201.5   61264    6251
+FR0014   CRUISE   49.8775    4.9059   10000    472.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4400 0.0336    570048    43506     34235    43506     0.00     659   201.6   57450    2437
+FR0008   DESCEND  48.1103   16.5697     183     41.4 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4973 0.0355    566766    40510     34942     6988   -12.43      23    41.4   57751    2738
+FR0010   CLIMB    43.3210   -2.8854   10000   1126.5 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4844 0.0351    627626    45453     34235    68471     8.22    1036   201.5   62942    7929
+[FR0008] Landed at destination. Remaining fuel: 2738 kg | Total mass: 57751 kg
+  *** VIOLATION: FR0009 <-> FR0010  dist=2972 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  13500 s  [09:45]  |  step  15 / 38   |  active= 4  pending= 8  |  violations=  3                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0009: CLIMB   --> CRUISE  <<<
+  >>> FR0004: CLIMB   --> CRUISE  <<<
+  >>> FR0010: CLIMB   --> CRUISE  <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0009   CRUISE   45.0765   -2.4209   10000    927.9 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4766 0.0348    617458    45095     34235    45095     0.00     683   201.6   62259    7246
+FR0004   CRUISE   45.8669    3.1175   10000    770.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4639 0.0344    601004    44529     34235    44529     0.00     674   201.6   60590    5577
+FR0014   CRUISE   51.6897    4.8017   10000    270.5 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4350 0.0334    563588    43299     34235    43299     0.00     655   201.6   56795    1782
+FR0010   CRUISE   45.1032   -2.4177   10000    925.0 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4766 0.0348    617458    45095     34235    45095     0.00     683   201.6   62259    7246
+  *** VIOLATION: FR0009 <-> FR0010  dist=2965 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  14400 s  [10:00]  |  step  16 / 38   |  active= 3  pending= 8  |  violations=  4                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0014: CRUISE  --> DESCEND <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0009   CRUISE   46.8569   -1.9245   10000    726.3 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4714 0.0346    610761    44863     34235    44863     0.00     679   201.6   61580    6567
+FR0004   CRUISE   47.6535    3.5717   10000    568.8 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4588 0.0342    594391    44306     34235    44306     0.00     671   201.6   59920    4907
+FR0014   DESCEND  52.3081    4.7642       4     68.8 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4888 0.0352    557158    40164     34942     6988   -12.51      39    68.8   56756    1743
+FR0010   CRUISE   46.8834   -1.9199   10000    723.3 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4714 0.0346    610761    44863     34235    44863     0.00     679   201.6   61580    6567
+[FR0014] Landed at destination. Remaining fuel: 1743 kg | Total mass: 56756 kg
+  *** VIOLATION: FR0009 <-> FR0010  dist=2960 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  15300 s  [10:15]  |  step  17 / 38   |  active= 6  pending= 5  |  violations=  5                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0013: GATE    --> CLIMB   <<<
+  >>> FR9012: GATE    --> CLIMB   <<<
+  >>> FR0005: GATE    --> CLIMB   <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0009   CRUISE   48.6349   -1.3941   10000    524.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4663 0.0345    604099    44635     34235    44635     0.00     676   201.6   60904    5891
+FR0013   CLIMB    48.4596    3.8447    8000    479.0  8000 287.57   100260    1.2146  340.0   250.0 0.379   129.0  0.4812 0.0350    608348    44207    105260   210520    35.27    3187   111.7   58826    3813
+FR9012   CLIMB    40.6815   -2.2335   10000   1359.3 10000 284.19    94208    1.1549  337.9   250.0 0.389   131.4  0.5193 0.0364    647588    45346    100232   200464    31.48    3035   114.8   62978    7965
+FR0004   CRUISE   49.4382    4.0581   10000    367.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4537 0.0340    587812    44087     34235    44087     0.00     667   201.6   59252    4239
+FR0005   CLIMB    49.0841    9.0912   10000    952.2 10000 287.43    99999    1.2120  339.9   250.0 0.380   129.1  0.4931 0.0354    623063    44719    105044   210088    34.27    3180   112.0   60333    5320
+FR0010   CRUISE   48.6612   -1.3879   10000    521.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4663 0.0345    604099    44635     34235    44635     0.00     676   201.6   60904    5891
+  *** VIOLATION: FR0009 <-> FR0010  dist=2957 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  16200 s  [10:30]  |  step  18 / 38   |  active= 5  pending= 5  |  violations=  6                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0013: CLIMB   --> CRUISE  <<<
+  >>> FR0004: CRUISE  --> DESCEND <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0009   CRUISE   50.4104   -0.8249   10000    323.0 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4611 0.0343    597471    44410     34235    44410     0.00     672   201.6   60232    5219
+FR0013   CRUISE   47.9789    6.2541    8000    367.3  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4100 0.0326    577085    45955     43966    45955     0.00     696   186.3   58131    3118
+FR9012   CLIMB    40.9908    0.1267   10000   1244.5 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4769 0.0348    617819    45108     34235    68471     8.47    1036   201.5   61942    6929
+FR0004   DESCEND  50.9010    4.4844     184    165.5 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.5100 0.0360    581265    41044     34942     6988   -12.31      93   165.5   59160    4147
+FR0005   CLIMB    47.3714    9.9792   10000    840.2 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4568 0.0341    591864    44222     34235    68471     9.18    1036   201.5   59296    4283
+FR0010   CRUISE   50.4365   -0.8170   10000    320.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4611 0.0343    597471    44410     34235    44410     0.00     672   201.6   60232    5219
+[FR0004] Landed at destination. Remaining fuel: 4147 kg | Total mass: 59160 kg
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  17100 s  [10:45]  |  step  19 / 38   |  active= 3  pending= 4  |  violations=  6                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0009: CRUISE  --> DESCEND <<<
+  >>> FR0013: CRUISE  --> DESCEND <<<
+  >>> FR9012: CLIMB   --> CRUISE  <<<
+  >>> FR1234: GATE    --> CLIMB   <<<
+  >>> FR0005: CLIMB   --> CRUISE  <<<
+  >>> FR0010: CRUISE  --> DESCEND <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0009   DESCEND  51.4775   -0.4614      25    121.4 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.5184 0.0363    590876    41406     34942     6988   -12.24      68   121.4   60164    5151
+FR0013   DESCEND  47.4647    8.5492    8000    180.9  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4051 0.0325    570261    45752     43966    45752     0.00     673   180.9   57458    2445
+FR9012   CRUISE   41.2516    2.5090   10000   1043.0 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4690 0.0345    607651    44756     34235    44756     0.00     677   201.6   61264    6251
+FR1234   CLIMB    40.8623   -1.2274    9000    483.2  9000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4627 0.0343    599519    44479     34235    68471     8.97    1036   201.5   60077    4464
+FR0005   CRUISE   45.6508   10.8119   10000    638.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4490 0.0339    581697    43885     34235    43885     0.00     664   201.6   58632    3619
+FR0010   DESCEND  51.4775   -0.4614      25    118.4 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.5184 0.0363    590876    41406     34942     6988   -12.24      66   118.4   60166    5153
+[FR0009] Landed at destination. Remaining fuel: 5151 kg | Total mass: 60164 kg
+[FR0013] Landed at destination. Remaining fuel: 2445 kg | Total mass: 57458 kg
+[FR0010] Landed at destination. Remaining fuel: 5153 kg | Total mass: 60166 kg
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  18000 s  [11:00]  |  step  20 / 38   |  active= 3  pending= 4  |  violations=  6                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR1234: CLIMB   --> CRUISE  <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR9012   CRUISE   41.4631    4.9086   10000    841.3 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4639 0.0344    601004    44529     34235    44529     0.00     674   201.6   60590    5577
+FR1234   CRUISE   41.1718    1.0457    9000    281.7  9000 229.65    30741    0.4663  303.8   300.0 0.709   215.3  0.4359 0.0334    589351    45225     38885    45225     0.00     685   193.8   59392    3779
+FR0005   CRUISE   43.9246   11.5949   10000    437.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4439 0.0337    575180    43672     34235    43672     0.00     661   201.6   57971    2958
+  *** VIOLATION: FR0012 <-> FR0011  dist=2974 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  18900 s  [11:15]  |  step  21 / 38   |  active= 5  pending= 1  |  violations=  7                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0012: GATE    --> CLIMB   <<<
+  >>> FR0011: GATE    --> CLIMB   <<<
+  >>> FR3456: GATE    --> CLIMB   <<<
+  >>> FR1234: CRUISE  --> DESCEND <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR9012   CRUISE   41.6243    7.3220   10000    639.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4588 0.0342    594392    44306     34235    44306     0.00     671   201.6   59920    4907
+FR0012   CLIMB    42.8883   12.0523   10000    949.4 10000 288.06   101157    1.2234  340.2   250.0 0.378   128.7  0.4919 0.0353    623063    44775    105999   211997    34.53    3209   111.6   60304    5291
+FR0011   CLIMB    42.8616   12.0536   10000    952.2 10000 288.06   101157    1.2234  340.2   250.0 0.378   128.7  0.4919 0.0353    623063    44775    105999   211997    34.53    3209   111.6   60304    5291
+FR3456   CLIMB    52.3692    6.4032    8000    593.1  8000 288.12   101277    1.2245  340.3   250.0 0.378   128.6  0.4802 0.0349    608348    44257    106097   212195    35.51    3212   111.3   58801    3788
+FR1234   DESCEND  41.2974    2.0833       4     87.9  9000 229.65    30741    0.4663  303.8   280.0 0.664   201.8  0.4906 0.0353    582635    41926     39640     7928   -11.78      58    87.9   59334    3721
+FR0005   CRUISE   42.1933   12.3336   10000    235.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4389 0.0335    568694    43463     34235    43463     0.00     658   201.6   57313    2300
+[FR1234] Landed at destination. Remaining fuel: 3721 kg | Total mass: 59334 kg
+  *** VIOLATION: FR0012 <-> FR0011  dist=2931 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  19800 s  [11:30]  |  step  22 / 38   |  active= 4  pending= 1  |  violations=  8                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0005: CRUISE  --> DESCEND <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR9012   CRUISE   41.7349    9.7456   10000    438.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4537 0.0340    587812    44087     34235    44087     0.00     667   201.6   59252    4239
+FR0012   CLIMB    44.6157   11.2951   10000    837.8 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4566 0.0341    591581    44212     34235    68471     9.19    1036   201.5   59267    4254
+FR0011   CLIMB    44.5895   11.2991   10000    840.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4566 0.0341    591581    44212     34235    68471     9.19    1036   201.5   59267    4254
+FR3456   CLIMB    52.4169    9.1409    8000    481.9  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4098 0.0326    576837    45948     43966    87932    15.07    1331   185.8   57470    2457
+FR0005   DESCEND  41.9028   12.4534      14     33.8 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4933 0.0354    562240    40346     34942     6988   -12.47      19    33.8   57294    2281
+[FR0005] Landed at destination. Remaining fuel: 2281 kg | Total mass: 57294 kg
+  *** VIOLATION: FR0012 <-> FR0011  dist=2899 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  20700 s  [11:45]  |  step  23 / 38   |  active= 5  pending= 0  |  violations=  9                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR9012: CRUISE  --> DESCEND <<<
+  >>> FR0012: CLIMB   --> CRUISE  <<<
+  >>> FR0011: CLIMB   --> CRUISE  <<<
+  >>> FR3456: CLIMB   --> CRUISE  <<<
+  >>> FR5678: GATE    --> CLIMB   <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR9012   DESCEND  41.7921   12.0208     130    236.4 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.5100 0.0360    581266    41044     34942     6988   -12.31     106   188.8   59147    4134
+FR0012   CRUISE   46.3393   10.4909   10000    636.3 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4488 0.0339    581413    43875     34235    43875     0.00     664   201.6   58603    3590
+FR0011   CRUISE   46.3137   10.4977   10000    639.2 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4488 0.0339    581413    43875     34235    43875     0.00     664   201.6   58603    3590
+FR3456   CRUISE   52.4011   11.8878    8000    296.1  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4005 0.0324    563779    45561     43966    45561     0.00     690   186.3   56780    1767
+FR5678   CLIMB    48.2559   14.2783    8000    356.5  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4092 0.0326    575975    45922     43966    87932    15.10    1331   185.8   57382    3169
+  *** VIOLATION: FR0012 <-> FR0011  dist=2879 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  21600 s  [12:00]  |  step  24 / 38   |  active= 2  pending= 0  |  violations= 10                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR3456: CRUISE  --> DESCEND <<<
+  >>> FR5678: CLIMB   --> DESCEND <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR9012   DESCEND  41.7994   12.5949     130     47.6 10000 287.30    99773    1.2098  339.8   280.0 0.426   144.7  0.3663 0.0314    580228    49748    103032    20606    -7.27     114    47.6   59032    4019
+FR0012   CRUISE   48.0569    9.6344   10000    434.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4437 0.0337    574898    43663     34235    43663     0.00     661   201.6   57942    2929
+FR0011   CRUISE   48.0318    9.6442   10000    437.6 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4437 0.0337    574898    43663     34235    43663     0.00     661   201.6   57942    2929
+FR3456   DESCEND  52.3620   13.5033      48    109.7  8000 236.15    35598    0.5251  308.1   280.0 0.629   193.9  0.4511 0.0339    557013    41912     44771     8954   -11.47      85   109.7   56695    1682
+FR5678   DESCEND  48.1103   16.5697    8000    170.6  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.3999 0.0323    562917    45535     43966    45535     0.00     631   170.6   56751    2538
+[FR9012] Landed at destination. Remaining fuel: 4019 kg | Total mass: 59032 kg
+[FR3456] Landed at destination. Remaining fuel: 1682 kg | Total mass: 56695 kg
+[FR5678] Landed at destination. Remaining fuel: 2538 kg | Total mass: 56751 kg
+  *** VIOLATION: FR0012 <-> FR0011  dist=2871 m  (threshold 5000 m) ***
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  22500 s  [12:15]  |  step  25 / 38   |  active= 2  pending= 0  |  violations= 11                                                      ║
 ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 
 CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
 -------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0012   CRUISE   49.7677    8.7189   10000    233.0 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4387 0.0335    568414    43454     34235    43454     0.00     658   201.6   57284    2271
+FR0011   CRUISE   49.7433    8.7320   10000    235.9 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4387 0.0335    568414    43454     34235    43454     0.00     658   201.6   57284    2271
+
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║  t=  23400 s  [12:30]  |  step  26 / 38   |  active= 0  pending= 0  |  violations= 11                                                      ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+  >>> FR0012: CRUISE  --> DESCEND <<<
+  >>> FR0011: CRUISE  --> DESCEND <<<
+
+CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)       rho a(m/s)  IAS(kt)  Mach TAS(m/s)      CL     CD   Lift(N)  Drag(N)     Te(N)    Tt(N)  VS(m/s)  dF(kg)  dD(km)   M(kg) Frem(kg)
+-------- ------- -------- --------- ------- -------- ----- ------ -------- --------- ------  ------ ----- -------  ------ ------  -------- --------  -------- --------  -------  ------ -------  ------ -------
+FR0012   DESCEND  50.0333    8.5706     111     31.4 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4931 0.0354    561961    40336     34942     6988   -12.47      18    31.4   57267    2254
+FR0011   DESCEND  50.0333    8.5706     111     34.3 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4931 0.0354    561961    40336     34942     6988   -12.47      19    34.3   57265    2252
+[FR0012] Landed at destination. Remaining fuel: 2254 kg | Total mass: 57267 kg
+[FR0011] Landed at destination. Remaining fuel: 2252 kg | Total mass: 57265 kg
 
 ╔══════════════════════════════════════════════════════╗
 ║              SIMULATION COMPLETE                     ║
 ╚══════════════════════════════════════════════════════╝
-Total violations detected: 0
-  FR0009   : clean
+Total violations detected: 11
+  FR0009   : HAD VIOLATION
   FR0013   : clean
   FR9012   : clean
-  FR0012   : clean
+  FR0012   : HAD VIOLATION
   FR0016   : clean
   FR0004   : clean
-  FR0011   : clean
+  FR0011   : HAD VIOLATION
   FR0003   : clean
-  FR0006   : clean
   FR0001   : clean
   FR0014   : clean
   FR3456   : clean
@@ -319,4 +493,4 @@ Total violations detected: 0
   FR0007   : clean
   FR1234   : clean
   FR0005   : clean
-  FR0010   : clean
+  FR0010   : HAD VIOLATION
