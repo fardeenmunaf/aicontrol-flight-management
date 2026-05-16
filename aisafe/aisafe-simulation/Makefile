@@ -1,31 +1,36 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -Isrc/main/c -Isrc/main/c/libs
-LDFLAGS = -lm -lpthread
+LDFLAGS = -lm -lrt
 
-UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-    LDFLAGS += -lrt
-endif
+simulation_engine: simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o
+	$(CC) $(CFLAGS) simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o -o simulation_engine $(LDFLAGS)
 
-SRCS = src/main/c/simulation_engine.c \
-       src/main/c/physics.c \
-       src/main/c/libs/cJSON.c \
-       src/main/c/json_parser.c \
-       src/main/c/flight_simulation.c
+simulation_engine.o: src/main/c/simulation_engine.c
+	$(CC) $(CFLAGS) -c src/main/c/simulation_engine.c
 
-OBJS = $(SRCS:.c=.o)
+physics.o: src/main/c/physics.c
+	$(CC) $(CFLAGS) -c src/main/c/physics.c
 
-TARGET = simulation_engine
+cJSON.o: src/main/c/libs/cJSON.c
+	$(CC) $(CFLAGS) -c src/main/c/libs/cJSON.c
 
-all: $(TARGET)
+json_parser.o: src/main/c/json_parser.c
+	$(CC) $(CFLAGS) -c src/main/c/json_parser.c
 
-$(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+flight_simulation.o: src/main/c/flight_simulation.c
+	$(CC) $(CFLAGS) -c src/main/c/flight_simulation.c
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+test_physics: src/main/c/test_physics.c src/main/c/physics.c
+	$(CC) $(CFLAGS) src/main/c/test_physics.c src/main/c/physics.c -o test_physics $(LDFLAGS)
+
+run: simulation_engine
+	./simulation_engine > simulation_output.txt 2>&1
+	@echo "Simulation complete. Output written to simulation_output.txt"
+
+test: test_physics
+	./test_physics
 
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f *.o simulation_engine test_physics
 
-.PHONY: all clean
+.PHONY: run test clean
