@@ -186,7 +186,9 @@ class ImportFlightPlanControllerTest {
 
         @Override public List<AircraftModel> findByType(AircraftType type) { return List.of(); }
         @Override public List<AircraftModel> findByMakerName(String makerName) { return List.of(); }
-        @Override public List<AircraftModel> findByModelName(String modelName) { return List.of(); }
+        @Override public List<AircraftModel> findByModelName(String modelName) {
+            return List.of(new DummyAircraftModel(AircraftModelId.newId()));
+        }
         @Override public List<AircraftModel> findByModelNameAndMaker(String modelName, String makerName) { return List.of(); }
         @Override public List<AircraftModel> findAllAircraftModels() { return List.of(); }
     }
