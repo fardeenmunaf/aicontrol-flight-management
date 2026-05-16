@@ -337,6 +337,25 @@ void run_flight_process(SharedMemoryData *shm, int flight_index, int pipe_write_
 
         compute_physics_step(shm, flight_index, &msg.step);
 
+        // ── LEG TRANSITION ────────────────────────────────────────────────────
+        // compute_physics_step() sets is_active=false when the aircraft arrives
+        // at the current leg's destination.  If there is a next leg, reset all
+        // per-leg state and flip is_active back to true — BEFORE sem_post so the
+        // parent sees the updated state after sem_wait (happened-before guarantee).
+
+        if (!f->is_active && f->current_leg < f->num_legs - 1) {
+            f->current_leg++;
+            Leg *next = &f->legs[f->current_leg];
+
+            f->departure_offset_s                 = next->departure_offset_s;
+            f->payload                            = next->payload;
+            f->initial_fuel_mass                  = next->fuel_mass;
+            f->current_mass                       = f->properties.empty_weight + next->payload + next->fuel_mass;
+            f->flight_plan.current_waypoint_index = next->waypoint_start_index;
+            f->leg_just_completed                 = true;
+            f->is_active                          = true;  // reset BEFORE sem_post — no race
+        }
+
         msg.new_pos = f->current_pos; // copy of the updated position
 
         // ── REPORT via PIPE ───────────────────────────────────────────────────
