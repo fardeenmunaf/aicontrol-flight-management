@@ -344,6 +344,15 @@ void run_flight_process(SharedMemoryData *shm, int flight_index,
         if (shm->termination_requested || !f->is_active)
             break;
 
+        // ── PRE-DEPARTURE HOLD ────────────────────────────────────────────────
+        // If the sim clock hasn't reached this flight's scheduled departure,
+        // skip physics for this step but still participate in the sync barrier.
+
+        if (shm->current_time < f->departure_offset_s) {
+            sem_post(main_sem);
+            continue;
+        }
+
         // ── COMPUTE ───────────────────────────────────────────────────────────
         // Run one physics step. This writes updated position, mass, and velocity
         // directly into shm->flights[flight_index] (shared memory — no copy needed).
