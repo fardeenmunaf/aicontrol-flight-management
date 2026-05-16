@@ -313,7 +313,7 @@ static void cleanup(SharedMemoryData *shm, pid_t *pids, int n,
     // NULL = we don't care about the exit status; 0 = block until done.
 
     for (int i = 0; i < n; i++)
-        waitpid(pids[i], NULL, 0);
+        if (pids[i] > 0) waitpid(pids[i], NULL, 0);
 
     // Close and remove each step semaphore
     for (int i = 0; i < n; i++) {
