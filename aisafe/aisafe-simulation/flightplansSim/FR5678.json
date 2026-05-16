@@ -3,9 +3,9 @@
     "flightDesignator": "FR5678",
     "type": "regular",
     "route": {
-      "reference": "FR000",
-      "origin": "DUB",
-      "destination": "BCN"
+      "reference": "FR5678",
+      "origin": "FRA",
+      "destination": "VIE"
     },
     "aircraft": {
       "emptyWeight": 41413,
@@ -24,17 +24,17 @@
     "legs": [
       {
         "departure": {
-          "airport": "DUB",
+          "airport": "FRA",
           "date": "2026-05-20",
-          "time": "17:00"
+          "time": "08:00"
         },
         "arrival": {
-          "airport": "BCN",
+          "airport": "MUC",
           "date": "2026-05-20",
-          "time": "15:30"
+          "time": "09:55"
         },
         "fuel": {
-          "quantity": 12500.0,
+          "quantity": 4000.0,
           "unit": "kg"
         },
         "payload": {
@@ -44,48 +44,55 @@
         "segments": [
           {
             "mode": "climb",
-            "from": {
-              "latitude": 53.4213,
-              "longitude": -6.2701,
-              "altitude": 74.0,
-              "altitudeUnit": "m"
-            },
-            "to": {
-              "latitude": 50.9965,
-              "longitude": -4.6004,
-              "altitude": 10000.0,
-              "altitudeUnit": "m"
-            }
+            "from": { "latitude": 50.0333, "longitude": 8.5706,  "altitude": 111.0,  "altitudeUnit": "m" },
+            "to":   { "latitude": 49.6974, "longitude": 9.2137,  "altitude": 8000.0, "altitudeUnit": "m" }
           },
           {
             "mode": "cruise",
-            "from": {
-              "latitude": 50.9965,
-              "longitude": -4.6004,
-              "altitude": 10000.0,
-              "altitudeUnit": "m"
-            },
-            "to": {
-              "latitude": 43.7219,
-              "longitude": 0.4088,
-              "altitude": 10000.0,
-              "altitudeUnit": "m"
-            }
+            "from": { "latitude": 49.6974, "longitude": 9.2137,  "altitude": 8000.0, "altitudeUnit": "m" },
+            "to":   { "latitude": 48.6897, "longitude": 11.143,  "altitude": 8000.0, "altitudeUnit": "m" }
           },
           {
             "mode": "descend",
-            "from": {
-              "latitude": 43.7219,
-              "longitude": 0.4088,
-              "altitude": 10000.0,
-              "altitudeUnit": "m"
-            },
-            "to": {
-              "latitude": 41.2971,
-              "longitude": 2.0785,
-              "altitude": 4.0,
-              "altitudeUnit": "m"
-            }
+            "from": { "latitude": 48.6897, "longitude": 11.143,  "altitude": 8000.0, "altitudeUnit": "m" },
+            "to":   { "latitude": 48.3538, "longitude": 11.7861, "altitude": 447.0,  "altitudeUnit": "m" }
+          }
+        ]
+      },
+      {
+        "departure": {
+          "airport": "MUC",
+          "date": "2026-05-20",
+          "time": "11:30"
+        },
+        "arrival": {
+          "airport": "VIE",
+          "date": "2026-05-20",
+          "time": "13:00"
+        },
+        "fuel": {
+          "quantity": 4500.0,
+          "unit": "kg"
+        },
+        "payload": {
+          "quantity": 12800.0,
+          "unit": "kg"
+        },
+        "segments": [
+          {
+            "mode": "climb",
+            "from": { "latitude": 48.3538, "longitude": 11.7861, "altitude": 447.0,  "altitudeUnit": "m" },
+            "to":   { "latitude": 48.25,   "longitude": 12.8,    "altitude": 8000.0, "altitudeUnit": "m" }
+          },
+          {
+            "mode": "cruise",
+            "from": { "latitude": 48.25,   "longitude": 12.8,    "altitude": 8000.0, "altitudeUnit": "m" },
+            "to":   { "latitude": 48.2,    "longitude": 14.5,    "altitude": 8000.0, "altitudeUnit": "m" }
+          },
+          {
+            "mode": "descend",
+            "from": { "latitude": 48.2,    "longitude": 14.5,    "altitude": 8000.0, "altitudeUnit": "m" },
+            "to":   { "latitude": 48.1103, "longitude": 16.5697, "altitude": 183.0,  "altitudeUnit": "m" }
           }
         ]
       }
