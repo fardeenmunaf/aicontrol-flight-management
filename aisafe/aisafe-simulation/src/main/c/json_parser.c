@@ -229,6 +229,19 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
                                        + flight->payload
                                        + flight->initial_fuel_mass;
                 flight->current_mass = flight->initial_mass; // will decrease as fuel burns
+
+                // ── departure offset ──────────────────────────────────────────────
+                cJSON *dep_obj = cJSON_GetObjectItemCaseSensitive(leg, "departure");
+                if (cJSON_IsObject(dep_obj)) {
+                    cJSON *dep_time = cJSON_GetObjectItemCaseSensitive(dep_obj, "time");
+                    if (cJSON_IsString(dep_time)) {
+                        int dh = 0, dm = 0;
+                        sscanf(dep_time->valuestring, "%d:%d", &dh, &dm);
+                        double depart_s = dh * 3600.0 + dm * 60.0;
+                        flight->departure_offset_s = depart_s - shm->config.sim_start_seconds;
+                    }
+                }
+
                 first_leg = false;
             }
 
@@ -309,9 +322,11 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
     // ground position where the aircraft already is.
     flight->flight_plan.current_waypoint_index = 1;
 
-    printf("Loaded flight plan for %s with %d waypoints. "
+    printf("Loaded flight plan for %s: departs at offset %.0fs (%.0f min). "
            "empty=%.0f payload=%.0f fuel=%.0f initial_mass=%.0f kg\n",
-           flight->callsign, flight->flight_plan.num_waypoints,
+           flight->callsign,
+           flight->departure_offset_s,
+           flight->departure_offset_s / 60.0,
            flight->properties.empty_weight, flight->payload,
            flight->initial_fuel_mass, flight->initial_mass);
 
