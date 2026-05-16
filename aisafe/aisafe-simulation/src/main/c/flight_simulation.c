@@ -75,7 +75,7 @@ static void advance_position(double *lat_deg, double *lon_deg,
 // arrival check can fire normally.
 
 static void advance_waypoints(Flight *f, double dist_to_dest, double dest_lat, double dest_lon) {
-    int last = f->flight_plan.num_waypoints - 1;
+    int last = f->legs[f->current_leg].waypoint_end_index;
     while (f->flight_plan.current_waypoint_index < last) {
         int wi = f->flight_plan.current_waypoint_index;
         double dist_wp_to_dest = haversine_m(f->flight_plan.waypoints[wi].pos.latitude, f->flight_plan.waypoints[wi].pos.longitude, dest_lat, dest_lon);
@@ -111,7 +111,7 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 
     // We always fly toward the LAST waypoint (the destination airport).
 
-    int last_wp = f->flight_plan.num_waypoints - 1;
+    int last_wp  = f->legs[f->current_leg].waypoint_end_index;
     double dest_lat = f->flight_plan.waypoints[last_wp].pos.latitude;
     double dest_lon = f->flight_plan.waypoints[last_wp].pos.longitude;
 
@@ -127,8 +127,8 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
     int wi = f->flight_plan.current_waypoint_index;
     FlightPhase phase = f->flight_plan.waypoints[wi].segment_phase;
 
-    // Cruise altitude is the altitude stored at the top-of-climb waypoint (index 1).
-    double cruise_alt = f->flight_plan.waypoints[1].pos.altitude;
+    // Cruise altitude: top-of-climb waypoint for the current leg (waypoint_start_index).
+    double cruise_alt = f->flight_plan.waypoints[f->legs[f->current_leg].waypoint_start_index].pos.altitude;
 
     // ── atmosphere at current altitude ────────────────────────────────────────
 
@@ -195,8 +195,7 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 
     // Bearing from current position toward the destination
 
-    double hdg = bearing_rad(f->current_pos.latitude, f->current_pos.longitude,
-                              dest_lat, dest_lon);
+    double hdg = bearing_rad(f->current_pos.latitude, f->current_pos.longitude, dest_lat, dest_lon);
 
     // If the aircraft would reach the destination within this step, snap it
     // there rather than overshooting — otherwise it oscillates past the
@@ -215,17 +214,19 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
     // Altitude changes by climb_rate * dt metres
 
     f->current_pos.altitude += climb_rate * dt;
-    if (f->current_pos.altitude < 0.0)
+    if (f->current_pos.altitude < 0.0) {
         f->current_pos.altitude = 0.0;
+    }
 
     // Cap altitude at the target defined in the flight plan:
     // during climb, don't overshoot cruise altitude;
     // during descent, don't go below destination elevation.
     double target_alt = f->flight_plan.waypoints[wi].pos.altitude;
-    if (phase == PHASE_CLIMB && f->current_pos.altitude > target_alt)
+    if (phase == PHASE_CLIMB && f->current_pos.altitude > target_alt) {
         f->current_pos.altitude = target_alt;
-    else if (phase == PHASE_DESCEND && f->current_pos.altitude < target_alt)
+    } else if (phase == PHASE_DESCEND && f->current_pos.altitude < target_alt) {
         f->current_pos.altitude = target_alt;
+    }
 
     // ── mass update ───────────────────────────────────────────────────────────
 
