@@ -26,7 +26,7 @@
         "departure": {
           "airport": "FRA",
           "date": "2026-05-20",
-          "time": "06:00"
+          "time": "05:00"
         },
         "arrival": {
           "airport": "MUC",
