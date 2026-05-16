@@ -132,15 +132,17 @@ static void init_semaphores(pid_t pid, int n,
 //   dy (north-south) = Δlat * R                   — convergence at the poles
 // This is accurate within a few percent for separations under ~100 km.
 
-static void check_violations(SharedMemoryData *shm) {
+static void check_violations(SharedMemoryData *shm, double step_time) {
     const double R = 6371000.0; // Earth's mean radius in metres
 
     // Compare every unique pair (i, j) — no need to check (j, i) again
     for (int i = 0; i < shm->num_flights; i++) {
-        if (!shm->flights[i].is_active) continue; // skip landed flights
+        if (!shm->flights[i].is_active) continue;
+        if (step_time < shm->flights[i].departure_offset_s) continue; // at gate
 
         for (int j = i + 1; j < shm->num_flights; j++) {
             if (!shm->flights[j].is_active) continue;
+            if (step_time < shm->flights[j].departure_offset_s) continue; // at gate
 
             Position *a = &shm->flights[i].current_pos;
             Position *b = &shm->flights[j].current_pos;
@@ -201,19 +203,23 @@ static void print_step_table(SharedMemoryData *shm,
                               PipeMessage *msgs,     // one per flight (indexed by flight slot)
                               FlightPhase *prev_ph,  // previous phase per flight
                               double sim_time,
-                              int step_num, int total_steps) {
+                              int step_num, int total_steps,
+                              double step_time) {
 
     int active = 0;
     for (int i = 0; i < shm->num_flights; i++)
-        if (shm->flights[i].is_active) active++;
+        if (shm->flights[i].is_active && step_time >= shm->flights[i].departure_offset_s)
+            active++;
 
     // ── step banner ───────────────────────────────────────────────────────────
+    int wall_s = (int)(shm->config.sim_start_seconds + sim_time);
     printf("\n");
     printf("╔══════════════════════════════════════════════════════════════════════"
            "════════════════════════════════════════════════════════════════════╗\n");
-    printf("║  t=%7.0f s  |  step %3d / %-3d  |  active=%2d  |  violations=%3d         "
+    printf("║  t=%7.0f s  [%02d:%02d]  |  step %3d / %-3d  |  active=%2d  |  violations=%3d"
            "                                                               ║\n",
-           sim_time, step_num, total_steps,
+           sim_time, wall_s / 3600, (wall_s % 3600) / 60,
+           step_num, total_steps,
            active, shm->total_violations_detected);
     printf("╚══════════════════════════════════════════════════════════════════════"
            "════════════════════════════════════════════════════════════════════╝\n");
@@ -221,6 +227,7 @@ static void print_step_table(SharedMemoryData *shm,
     // ── phase transition banners ──────────────────────────────────────────────
     for (int i = 0; i < shm->num_flights; i++) {
         if (!shm->flights[i].is_active) continue;
+        if (step_time < shm->flights[i].departure_offset_s) continue;
         FlightPhase cur = msgs[i].step.phase;
         if (cur != prev_ph[i]) {
             const char *from = phase_name(prev_ph[i]);
@@ -251,6 +258,7 @@ static void print_step_table(SharedMemoryData *shm,
     // ── one row per active flight ─────────────────────────────────────────────
     for (int i = 0; i < shm->num_flights; i++) {
         if (!shm->flights[i].is_active) continue;
+        if (step_time < shm->flights[i].departure_offset_s) continue;
 
         Flight   *f  = &shm->flights[i];
         StepData *s  = &msgs[i].step;
@@ -520,13 +528,15 @@ int main(int argc, char **argv) {
         for (int i = 0; i < active; i++)
             sem_wait(main_sem);
 
-        // ── DRAIN pipes: read one PipeMessage per active flight ───────────────
-        // Each child wrote a PipeMessage after its step — it contains the new
-        // position AND all 25 intermediate physics values (StepData).
-        // We store each message so print_step_table() can format them cleanly.
+        // ── DRAIN pipes: read one PipeMessage per flying flight ──────────────
+        // Pre-departure children do NOT write to the pipe, so we must skip them.
+        // step_time captures the clock value at which this step ran (before advance).
+
+        double step_time = shm->current_time;
 
         for (int i = 0; i < shm->num_flights; i++) {
             if (!shm->flights[i].is_active) continue;
+            if (step_time < shm->flights[i].departure_offset_s) continue;
             ssize_t n = read(pipe_fds[i][0], &step_msgs[i], sizeof(PipeMessage));
             (void)n; // read() blocks until full message arrives — size always matches
         }
@@ -535,15 +545,15 @@ int main(int argc, char **argv) {
         shm->current_time += shm->config.time_step;
 
         // ── CHECK for safety violations ───────────────────────────────────────
-        check_violations(shm);
+        check_violations(shm, step_time);
 
         // ── PRINT the full per-step table ─────────────────────────────────────
         print_step_table(shm, step_msgs, prev_phase,
-                         shm->current_time, step_num, total_steps);
+                         shm->current_time, step_num, total_steps, step_time);
 
         // ── UPDATE prev_phase for next iteration ──────────────────────────────
         for (int i = 0; i < shm->num_flights; i++)
-            if (shm->flights[i].is_active)
+            if (shm->flights[i].is_active && step_time >= shm->flights[i].departure_offset_s)
                 prev_phase[i] = step_msgs[i].step.phase;
     }
 
