@@ -1,0 +1,147 @@
+@startuml class-diagram
+title US031 — Register Users: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.user" #DDEEFF {
+
+    class UsersMenuUI {
+        +doShow() : boolean
+        +headline() : String
+        -buildUsersMenu() : Menu
+    }
+
+    class RegisterUserAction {
+        +execute() : boolean
+    }
+
+    class RegisterUserUI {
+        -controller : RegisterUserController
+        +doShow() : boolean
+        +headline() : String
+        -doRegisterUser() : boolean
+        -readRoles() : Set<Role>
+        -readAisafeEmail(prompt) : String
+        -readInt(prompt) : int
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "user.application" #DDFFD8 {
+
+    class RegisterUserController {
+        -authz : AuthorizationService
+        -userRepository : UserRepository
+        +RegisterUserController(UserRepository)
+        +registerUser(email, rawPassword, name, phoneNumber, domainRoles) : User
+        -splitName(name) : String[]
+        -toAuthzRole(Role) : authz.Role
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "user.domain" #FFF3CD {
+
+    class User <<Entity>> <<AggregateRoot>> {
+        -email : String
+        -name : String
+        -phoneNumber : String
+        -activeSecurityClearanceExpiry : LocalDate
+        -skillsAssessmentDueDate : LocalDate
+        -status : String
+        -roles : Set<Role>
+        -userId : UserId
+        +User(email, name, phoneNumber, ...)
+        +identity() : UserId
+        +email() : String
+        +name() : String
+        +phoneNumber() : String
+        +status() : String
+        +roles() : Set<Role>
+        +isActive() : boolean
+    }
+
+    enum Role {
+        ADMIN
+        BACKOFFICE_OPERATOR
+        AIR_TRANSPORT_COMPANY_COLLABORATOR
+        PILOT
+        FLIGHT_CONTROL_OPERATOR
+        WEATHER_PERSON
+        --
+        -designation : String
+        +designation() : String
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class UserId <<ValueObject>> <<Embeddable>> {
+        -value : String
+        +UserId(value)
+        +valueOf(value) : UserId
+        +newId() : UserId
+        +compareTo(other) : int
+        +toString() : String
+    }
+}
+
+' ─── Repository ─────────────────────────────────────────────────────────────
+package "user.repository" #F0E6FF {
+    interface UserRepository <<DomainRepository>> {
+        +findByEmail(email) : Optional<User>
+        +findAll() : Iterable<User>
+        +save(user) : User
+    }
+}
+
+' ─── Auth Infrastructure ─────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} ADMIN : Role
+        {static} BACKOFFICE_OPERATOR : Role
+        {static} AIR_TRANSPORT_COMPANY_COLLABORATOR : Role
+        {static} PILOT : Role
+        {static} FLIGHT_CONTROL_OPERATOR : Role
+        {static} WEATHER_PERSON : Role
+    }
+}
+
+' ─── Bootstrap ──────────────────────────────────────────────────────────────
+package "bootstrap" #FFE8CC {
+    class AISafeBootstrap <<utility>> {
+        {static} +main(args) : void
+    }
+
+    class UsersBootstrap {
+        -userRepository : UserRepository
+        +UsersBootstrap(UserRepository)
+        +execute() : void
+        -registerIfAbsent(email, password, name, role, domainRole, unused) : void
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+UsersMenuUI ..> RegisterUserAction : creates
+RegisterUserAction ..> RegisterUserUI : creates
+
+RegisterUserUI --> RegisterUserController : uses
+RegisterUserController --> UserRepository : uses
+RegisterUserController ..> User : creates
+RegisterUserController ..> AISafeRoles : uses
+RegisterUserController --> Role : maps
+
+User *-- UserId : identity
+User "1" *-- "1..*" Role : roles
+
+UsersBootstrap --> UserRepository : uses
+UsersBootstrap ..> User : creates
+UsersBootstrap ..> AISafeRoles : uses
+AISafeBootstrap ..> UsersBootstrap : executes
+
+@enduml
