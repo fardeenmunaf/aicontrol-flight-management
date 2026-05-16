@@ -197,11 +197,13 @@ class ImportFlightPlanControllerTest {
             extends InMemoryDomainRepository<Airport, AirportId>
             implements AirportRepository {
 
-        void clear() { data().clear(); }
+        private final java.util.Map<String, Airport> byIata = new java.util.HashMap<>();
+
+        void clear() { data().clear(); byIata.clear(); }
 
         @Override
         public Optional<Airport> findByIataCode(String code) {
-            return Optional.of(new DummyAirport());
+            return Optional.of(byIata.computeIfAbsent(code, k -> new DummyAirport()));
         }
 
         @Override
