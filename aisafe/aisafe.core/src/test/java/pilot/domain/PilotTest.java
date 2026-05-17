@@ -49,17 +49,17 @@ class PilotTest {
 
     @Test
     void ensureNullUserIdIsRejected() {
-        assertThrows(Exception.class, () -> new Pilot(null, PilotStatus.ACTIVE, Set.of()));
+        assertThrows(IllegalArgumentException.class, () -> new Pilot(null, PilotStatus.ACTIVE, Set.of()));
     }
 
     @Test
     void ensureNullStatusIsRejected() {
-        assertThrows(Exception.class, () -> new Pilot(USER_ID, null, Set.of()));
+        assertThrows(IllegalArgumentException.class, () -> new Pilot(USER_ID, null, Set.of()));
     }
 
     @Test
     void ensureNullCertificationsIsRejected() {
-        assertThrows(Exception.class, () -> new Pilot(USER_ID, PilotStatus.ACTIVE, null));
+        assertThrows(IllegalArgumentException.class, () -> new Pilot(USER_ID, PilotStatus.ACTIVE, null));
     }
 
     // --- certifiedAircraftModels defensive copy ---

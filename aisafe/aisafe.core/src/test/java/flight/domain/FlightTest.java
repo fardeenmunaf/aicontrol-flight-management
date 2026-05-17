@@ -77,19 +77,19 @@ class FlightTest {
 
     @Test
     void ensureNullTypeIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new Flight("TP123", null, NOW, LATER));
     }
 
     @Test
     void ensureNullDepartureTimeIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new Flight("TP123", FlightType.REGULAR, null, LATER));
     }
 
     @Test
     void ensureNullArrivalTimeIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new Flight("TP123", FlightType.REGULAR, NOW, null));
     }
 

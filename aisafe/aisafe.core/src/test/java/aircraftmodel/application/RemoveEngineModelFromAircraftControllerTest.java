@@ -171,7 +171,7 @@ class RemoveEngineModelFromAircraftControllerTest {
     @Test
     void ensureUnauthorizedUserCannotListModels() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () -> controller().listAircraftModelsWithMultipleEngines());
+        assertThrows(RuntimeException.class, () -> controller().listAircraftModelsWithMultipleEngines());
     }
 
     private static void safeRegister(final String email, final String password,

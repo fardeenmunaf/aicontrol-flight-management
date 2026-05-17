@@ -46,25 +46,25 @@ class AircraftPositionTest {
 
     @Test
     void ensureNullSimulationIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new AircraftPosition(null, START, 10000.0, velocity()));
     }
 
     @Test
     void ensureNullTimestampIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new AircraftPosition(simulation(), null, 10000.0, velocity()));
     }
 
     @Test
     void ensureNullAltitudeIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new AircraftPosition(simulation(), START, null, velocity()));
     }
 
     @Test
     void ensureNullVelocityVectorIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new AircraftPosition(simulation(), START, 10000.0, null));
     }
 

@@ -5,29 +5,31 @@ import aircontrolarea.repositories.AirControlAreaRepository;
 import airtransportcompany.domain.AirTransportCompany;
 import airtransportcompany.repositories.AirTransportCompanyRepository;
 import customercollaborator.application.DisableCustomerCollaboratorController;
+import customercollaborator.application.ListCustomerCollaboratorsController;
 import customercollaborator.domain.CustomerCollaborator;
-import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
 import infrastructure.persistence.PersistenceContext;
-import user.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DisableCustomerCollaboratorUI extends AbstractUI {
 
-    private final CustomerCollaboratorRepository collaboratorRepository =
-            PersistenceContext.repositories().customerCollaborators();
+    private final DisableCustomerCollaboratorController controller =
+            new DisableCustomerCollaboratorController(
+                    PersistenceContext.repositories().customerCollaborators(),
+                    PersistenceContext.repositories().users());
+
+    private final ListCustomerCollaboratorsController listController =
+            new ListCustomerCollaboratorsController(
+                    PersistenceContext.repositories().customerCollaborators());
+
     private final AirTransportCompanyRepository airTransportCompanyRepository =
             PersistenceContext.repositories().airTransportCompanies();
+
     private final AirControlAreaRepository airControlAreaRepository =
             PersistenceContext.repositories().airControlAreas();
-    private final UserRepository userRepository =
-            PersistenceContext.repositories().users();
-
-    private final DisableCustomerCollaboratorController controller =
-            new DisableCustomerCollaboratorController(collaboratorRepository, userRepository);
 
     @Override
     protected boolean doShow() {
@@ -69,7 +71,7 @@ public class DisableCustomerCollaboratorUI extends AbstractUI {
 
         final AirTransportCompany selected = companies.get(choice - 1);
         final List<CustomerCollaborator> collaborators = toList(
-                collaboratorRepository.findActiveByAirTransportCompanyId(selected.identity()));
+                listController.listActiveByAirTransportCompany(selected.identity().toString()));
 
         disableSelectedCollaborator(collaborators);
     }
@@ -94,7 +96,7 @@ public class DisableCustomerCollaboratorUI extends AbstractUI {
 
         final AirControlArea selected = areas.get(choice - 1);
         final List<CustomerCollaborator> collaborators = toList(
-                collaboratorRepository.findActiveByAirControlAreaId(selected.identity()));
+                listController.listActiveByAirControlArea(selected.identity().toString()));
 
         disableSelectedCollaborator(collaborators);
     }
@@ -121,10 +123,8 @@ public class DisableCustomerCollaboratorUI extends AbstractUI {
         try {
             controller.disable(selected.userId().toString());
             System.out.println("Collaborator disabled.");
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
-        } catch (Exception e) {
-            System.out.println("Error disabling collaborator: " + e.getMessage());
         }
     }
 

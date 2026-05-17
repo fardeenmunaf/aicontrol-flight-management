@@ -126,7 +126,7 @@ class RegisterAirTransportCompanyControllerTest {
     @Test
     void ensureUnauthorizedUserCannotRegisterCompany() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class,
+        assertThrows(RuntimeException.class,
                 () -> controller().registerCompany("Unauth Airlines", "UA", "UAL"));
     }
 

@@ -122,7 +122,7 @@ class RegisterAirControlAreaControllerTest {
     @Test
     void ensureUnauthorizedUserCannotRegisterArea() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class,
+        assertThrows(RuntimeException.class,
                 () -> controller().registerAirControlArea("PT-UNAUTH", 100.0, VALID_BOUNDARIES));
     }
 

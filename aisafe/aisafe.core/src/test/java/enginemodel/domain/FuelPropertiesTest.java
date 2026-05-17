@@ -18,17 +18,17 @@ class FuelPropertiesTest {
 
     @Test
     void ensureNullTypeIsRejected() {
-        assertThrows(Exception.class, () -> new FuelProperties(null, 0.8, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> new FuelProperties(null, 0.8, 43.2));
     }
 
     @Test
     void ensureNullDensityIsRejected() {
-        assertThrows(Exception.class, () -> new FuelProperties(FuelType.JET_A, null, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> new FuelProperties(FuelType.JET_A, null, 43.2));
     }
 
     @Test
     void ensureNullSpecificEnergyIsRejected() {
-        assertThrows(Exception.class, () -> new FuelProperties(FuelType.JET_A, 0.8, null));
+        assertThrows(IllegalArgumentException.class, () -> new FuelProperties(FuelType.JET_A, 0.8, null));
     }
 
     @Test

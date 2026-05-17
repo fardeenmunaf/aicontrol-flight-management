@@ -50,25 +50,25 @@ class SimulationReportTest {
 
     @Test
     void ensureNullTotalFlightsIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new SimulationReport(null, "OK", NOW, SIM_ID));
     }
 
     @Test
     void ensureNullValidationResultIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new SimulationReport(10, null, NOW, SIM_ID));
     }
 
     @Test
     void ensureNullGeneratedAtIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new SimulationReport(10, "OK", null, SIM_ID));
     }
 
     @Test
     void ensureNullSimulationIdIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new SimulationReport(10, "OK", NOW, null));
     }
 

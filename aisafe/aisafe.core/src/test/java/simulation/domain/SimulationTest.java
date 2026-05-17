@@ -39,17 +39,17 @@ class SimulationTest {
 
     @Test
     void ensureNullStatusIsRejected() {
-        assertThrows(Exception.class, () -> new Simulation(START, END, null));
+        assertThrows(IllegalArgumentException.class, () -> new Simulation(START, END, null));
     }
 
     @Test
     void ensureNullStartDateTimeIsRejected() {
-        assertThrows(Exception.class, () -> new Simulation(null, END, SimulationStatus.CREATED));
+        assertThrows(IllegalArgumentException.class, () -> new Simulation(null, END, SimulationStatus.CREATED));
     }
 
     @Test
     void ensureNullEndDateTimeIsRejected() {
-        assertThrows(Exception.class, () -> new Simulation(START, null, SimulationStatus.CREATED));
+        assertThrows(IllegalArgumentException.class, () -> new Simulation(START, null, SimulationStatus.CREATED));
     }
 
     @Test

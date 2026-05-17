@@ -79,7 +79,7 @@ class ListAirControlAreasControllerTest {
     @Test
     void ensureUnauthorizedUserCannotListAreas() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () -> controller().allAirControlAreas());
+        assertThrows(RuntimeException.class, () -> controller().allAirControlAreas());
     }
 
     private static void safeRegister(final String email, final String password,

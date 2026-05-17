@@ -112,37 +112,37 @@ class WeatherDataTest {
 
     @Test
     void ensureNullAirControlAreaIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new WeatherData(null, DT, 90.0, 5.0, 20.0, 1010.0));
     }
 
     @Test
     void ensureNullDateTimeIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new WeatherData("PT-NORTH", null, 90.0, 5.0, 20.0, 1010.0));
     }
 
     @Test
     void ensureNullWindDirectionIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new WeatherData("PT-NORTH", DT, null, 5.0, 20.0, 1010.0));
     }
 
     @Test
     void ensureNullWindSpeedIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new WeatherData("PT-NORTH", DT, 90.0, null, 20.0, 1010.0));
     }
 
     @Test
     void ensureNullTemperatureIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new WeatherData("PT-NORTH", DT, 90.0, 5.0, null, 1010.0));
     }
 
     @Test
     void ensureNullPressureIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new WeatherData("PT-NORTH", DT, 90.0, 5.0, 20.0, null));
     }
 

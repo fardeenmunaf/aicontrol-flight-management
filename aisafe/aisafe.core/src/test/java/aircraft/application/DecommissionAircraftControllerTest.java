@@ -144,7 +144,7 @@ class DecommissionAircraftControllerTest {
         aircraftRepo.save(aircraft);
 
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class,
+        assertThrows(RuntimeException.class,
                 () -> controller().decommissionAircraft(aircraft.identity().toString()));
     }
 

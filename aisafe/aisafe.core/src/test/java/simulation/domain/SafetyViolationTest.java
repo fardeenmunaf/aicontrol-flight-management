@@ -81,19 +81,19 @@ class SafetyViolationTest {
 
     @Test
     void ensureNullSimulationIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new SafetyViolation(null, TS, "HIGH", twoVectors(), twoAircraft()));
     }
 
     @Test
     void ensureNullTimestampIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new SafetyViolation(simulation(), null, "HIGH", twoVectors(), twoAircraft()));
     }
 
     @Test
     void ensureNullSeverityIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new SafetyViolation(simulation(), TS, null, twoVectors(), twoAircraft()));
     }
 
@@ -176,13 +176,13 @@ class SafetyViolationTest {
 
     @Test
     void ensureNullVectorsIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new SafetyViolation(simulation(), TS, "HIGH", null, twoAircraft()));
     }
 
     @Test
     void ensureNullAircraftIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), null));
     }
 }

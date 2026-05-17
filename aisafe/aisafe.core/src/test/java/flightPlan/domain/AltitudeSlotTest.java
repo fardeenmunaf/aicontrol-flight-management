@@ -23,27 +23,27 @@ class AltitudeSlotTest {
 
     @Test
     void ensureNegativeMinimumAltitudeIsRejected() {
-        assertThrows(Exception.class, () -> new AltitudeSlot(-1.0, 1000.0, 50.0));
+        assertThrows(IllegalArgumentException.class, () -> new AltitudeSlot(-1.0, 1000.0, 50.0));
     }
 
     @Test
     void ensureMaximumAltitudeLessThanMinimumIsRejected() {
-        assertThrows(Exception.class, () -> new AltitudeSlot(5000.0, 1000.0, 50.0));
+        assertThrows(IllegalArgumentException.class, () -> new AltitudeSlot(5000.0, 1000.0, 50.0));
     }
 
     @Test
     void ensureMaximumAltitudeEqualToMinimumIsRejected() {
-        assertThrows(Exception.class, () -> new AltitudeSlot(1000.0, 1000.0, 50.0));
+        assertThrows(IllegalArgumentException.class, () -> new AltitudeSlot(1000.0, 1000.0, 50.0));
     }
 
     @Test
     void ensureZeroWidthIsRejected() {
-        assertThrows(Exception.class, () -> new AltitudeSlot(0.0, 1000.0, 0.0));
+        assertThrows(IllegalArgumentException.class, () -> new AltitudeSlot(0.0, 1000.0, 0.0));
     }
 
     @Test
     void ensureNegativeWidthIsRejected() {
-        assertThrows(Exception.class, () -> new AltitudeSlot(0.0, 1000.0, -1.0));
+        assertThrows(IllegalArgumentException.class, () -> new AltitudeSlot(0.0, 1000.0, -1.0));
     }
 
     @Test

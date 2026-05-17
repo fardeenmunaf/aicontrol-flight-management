@@ -81,7 +81,7 @@ class DeleteEngineModelControllerTest {
     @Test
     void ensureUnauthorizedUserCannotListEngineModels() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () -> controller().activeEngineModels());
+        assertThrows(RuntimeException.class, () -> controller().activeEngineModels());
     }
 
     @Test
@@ -90,7 +90,7 @@ class DeleteEngineModelControllerTest {
         repo.save(engine);
 
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () -> controller().deleteEngineModel(engine));
+        assertThrows(RuntimeException.class, () -> controller().deleteEngineModel(engine));
     }
 
     private static void safeRegister(final String email, final String password,

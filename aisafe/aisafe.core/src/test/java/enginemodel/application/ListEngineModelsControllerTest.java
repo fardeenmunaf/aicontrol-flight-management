@@ -78,7 +78,7 @@ class ListEngineModelsControllerTest {
     @Test
     void ensureUnauthorizedUserCannotListEngineModels() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () -> controller().listEngineModels());
+        assertThrows(RuntimeException.class, () -> controller().listEngineModels());
     }
 
     private static void safeRegister(final String email, final String password,

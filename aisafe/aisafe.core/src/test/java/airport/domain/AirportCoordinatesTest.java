@@ -1,8 +1,13 @@
 package airport.domain;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AirportCoordinatesTest {
 
@@ -13,54 +18,38 @@ class AirportCoordinatesTest {
         assertEquals(-9.13, c.longitude());
     }
 
-    @Test
-    void ensureBoundaryLatitudeMaxIsAccepted() {
-        assertDoesNotThrow(() -> new AirportCoordinates(90.0, 0.0));
+    @ParameterizedTest
+    @ValueSource(doubles = { 90.0, -90.0, 0.0, 41.24 })
+    void ensureValidLatitudesAreAccepted(final double lat) {
+        assertDoesNotThrow(() -> new AirportCoordinates(lat, 0.0));
     }
 
-    @Test
-    void ensureBoundaryLatitudeMinIsAccepted() {
-        assertDoesNotThrow(() -> new AirportCoordinates(-90.0, 0.0));
+    @ParameterizedTest
+    @ValueSource(doubles = { 180.0, -180.0, 0.0, -8.67 })
+    void ensureValidLongitudesAreAccepted(final double lon) {
+        assertDoesNotThrow(() -> new AirportCoordinates(0.0, lon));
     }
 
-    @Test
-    void ensureBoundaryLongitudeMaxIsAccepted() {
-        assertDoesNotThrow(() -> new AirportCoordinates(0.0, 180.0));
+    @ParameterizedTest
+    @ValueSource(doubles = { 90.1, -90.1, 200.0 })
+    void ensureInvalidLatitudesAreRejected(final double lat) {
+        assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(lat, 0.0));
     }
 
-    @Test
-    void ensureBoundaryLongitudeMinIsAccepted() {
-        assertDoesNotThrow(() -> new AirportCoordinates(0.0, -180.0));
-    }
-
-    @Test
-    void ensureLatitudeAbove90IsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(90.1, 0.0));
-    }
-
-    @Test
-    void ensureLatitudeBelow90IsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(-90.1, 0.0));
-    }
-
-    @Test
-    void ensureLongitudeAbove180IsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(0.0, 180.1));
-    }
-
-    @Test
-    void ensureLongitudeBelow180IsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(0.0, -180.1));
+    @ParameterizedTest
+    @ValueSource(doubles = { 180.1, -180.1, 360.0 })
+    void ensureInvalidLongitudesAreRejected(final double lon) {
+        assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(0.0, lon));
     }
 
     @Test
     void ensureNullLatitudeIsRejected() {
-        assertThrows(Exception.class, () -> new AirportCoordinates(null, 0.0));
+        assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(null, 0.0));
     }
 
     @Test
     void ensureNullLongitudeIsRejected() {
-        assertThrows(Exception.class, () -> new AirportCoordinates(0.0, null));
+        assertThrows(IllegalArgumentException.class, () -> new AirportCoordinates(0.0, null));
     }
 
     @Test

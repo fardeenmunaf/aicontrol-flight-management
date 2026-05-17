@@ -173,7 +173,7 @@ class UpdateCustomerCollaboratorControllerTest {
         createCollaborator(email);
 
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 controller().updateCollaboratorContactInfo(email, "new@test.com", null));
     }
 

@@ -42,12 +42,12 @@ class SegmentTest {
 
     @Test
     void ensureNullStartNodeIsRejected() {
-        assertThrows(Exception.class, () -> new Segment(null, NODE_B, 90.0, 5.0));
+        assertThrows(IllegalArgumentException.class, () -> new Segment(null, NODE_B, 90.0, 5.0));
     }
 
     @Test
     void ensureNullEndNodeIsRejected() {
-        assertThrows(Exception.class, () -> new Segment(NODE_A, null, 90.0, 5.0));
+        assertThrows(IllegalArgumentException.class, () -> new Segment(NODE_A, null, 90.0, 5.0));
     }
 
     @Test
@@ -57,17 +57,17 @@ class SegmentTest {
 
     @Test
     void ensureNegativeWindDirectionIsRejected() {
-        assertThrows(Exception.class, () -> new Segment(NODE_A, NODE_B, -1.0, 5.0));
+        assertThrows(IllegalArgumentException.class, () -> new Segment(NODE_A, NODE_B, -1.0, 5.0));
     }
 
     @Test
     void ensureWindDirectionAt360IsRejected() {
-        assertThrows(Exception.class, () -> new Segment(NODE_A, NODE_B, 360.0, 5.0));
+        assertThrows(IllegalArgumentException.class, () -> new Segment(NODE_A, NODE_B, 360.0, 5.0));
     }
 
     @Test
     void ensureNegativeWindSpeedIsRejected() {
-        assertThrows(Exception.class, () -> new Segment(NODE_A, NODE_B, 90.0, -1.0));
+        assertThrows(IllegalArgumentException.class, () -> new Segment(NODE_A, NODE_B, 90.0, -1.0));
     }
 
     // --- addAltitudeSlot ---
@@ -83,7 +83,7 @@ class SegmentTest {
     @Test
     void ensureNullAltitudeSlotIsRejected() {
         final Segment segment = validSegment();
-        assertThrows(Exception.class, () -> segment.addAltitudeSlot(null));
+        assertThrows(IllegalArgumentException.class, () -> segment.addAltitudeSlot(null));
     }
 
     // --- equals / hashCode ---

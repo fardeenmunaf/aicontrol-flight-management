@@ -98,7 +98,7 @@ class ImportFlightPlanControllerTest {
 
     @Test
     void ensureNullLegsIsRejected() {
-        assertThrows(Exception.class, () -> controller().importFlightPlan("TP1234", "A380", null));
+        assertThrows(IllegalArgumentException.class, () -> controller().importFlightPlan("TP1234", "A380", null));
     }
 
     @Test

@@ -42,7 +42,7 @@ class ListUsersControllerTest extends UserApplicationTestSupport {
         eapli.framework.infrastructure.authz.application.AuthzRegistry.authorizationService().clearSession();
         eapli.framework.infrastructure.authz.application.AuthzRegistry.authenticationService().authenticate(LOGIN_EMAIL, LOGIN_PASSWORD);
 
-        assertThrows(Exception.class, () -> new ListUsersController(userRepository).allUsers());
+        assertThrows(RuntimeException.class, () -> new ListUsersController(userRepository).allUsers());
     }
 }
 

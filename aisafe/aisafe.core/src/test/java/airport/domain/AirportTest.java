@@ -3,7 +3,13 @@ package airport.domain;
 import aircontrolarea.domain.AirControlArea;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AirportTest {
 
@@ -101,19 +107,19 @@ class AirportTest {
 
     @Test
     void ensureNullNameIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Airport(null, "City", "Country", "OPO", "LPPR", 0.0, COORDS, AREA));
     }
 
     @Test
     void ensureNullAreaIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "Country", "OPO", "LPPR", 0.0, COORDS, null));
     }
 
     @Test
     void ensureNullCoordinatesIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Airport("Test", "City", "Country", "OPO", "LPPR", 0.0, null, AREA));
     }
 

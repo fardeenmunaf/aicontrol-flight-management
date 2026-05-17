@@ -235,7 +235,7 @@ class AddEngineModelToAircraftControllerTest {
     @Test
     void ensureUnauthorizedUserCannotListModels() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () -> controller().listAircraftModelsWithRemainingSlots());
+        assertThrows(RuntimeException.class, () -> controller().listAircraftModelsWithRemainingSlots());
     }
 
     private static void safeRegister(final String email, final String password,

@@ -205,7 +205,7 @@ class ListCompanyFleetControllerTest {
 
         AuthzRegistry.authenticationService().authenticate(FCO_EMAIL, PASSWORD);
 
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 new ListCompanyFleetController(aircraftRepo, collaboratorRepo)
                         .listCompanyFleet());
     }
@@ -214,7 +214,7 @@ class ListCompanyFleetControllerTest {
     void ensureUnauthenticatedUserCannotListFleet() {
         AuthzRegistry.authorizationService().clearSession();
 
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 new ListCompanyFleetController(aircraftRepo, collaboratorRepo)
                         .listCompanyFleet());
     }
