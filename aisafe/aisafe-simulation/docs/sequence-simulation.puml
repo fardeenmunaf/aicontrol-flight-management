@@ -49,8 +49,6 @@ loop for each time step
     Engine -> Sems ++: wake up active flights
     Sems --> Engine --
 
-    note over Child: unblocked — starts step
-
     Child -> Child: run physics step\n(position, altitude, speed, fuel burn)
 
     Child -> SHM ++: write updated position
@@ -94,7 +92,7 @@ end
 
 Engine -> Engine: print final summary\n(per-flight status, full position history)
 
-Engine -> Child: unblock and wait for exit
+Engine -> Child ++: unblock and wait for exit
 Child --> Engine --: all exited
 
 Engine -> Sems: remove semaphores
