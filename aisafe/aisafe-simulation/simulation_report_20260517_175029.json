@@ -1,0 +1,559 @@
+{
+  "reportVersion": "1.0",
+  "reportType": "SimulationReport",
+  "reportGeneratedAt": "2026-05-17T17:50:29",
+
+  "simulation": {
+    "totalFlights": 20,
+    "startTime": 0.0,
+    "endTime": 23400.0,
+    "durationSeconds": 23400.0,
+    "wallClockStart": "2026-05-17T17:50:28"
+  },
+
+  "safetyValidation": {
+    "totalViolationsDetected": 11,
+    "validationResult": "FAIL",
+    "maxViolationsThreshold": 100
+  },
+
+  "flightExecutionStatuses": [
+    {
+      "flightId": 0,
+      "callsign": "FR0009",
+      "completed": true,
+      "hadViolation": true,
+      "fuelRemainingKg": 5151.0,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 1,
+      "callsign": "FR0013",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 2445.0,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 2,
+      "callsign": "FR9012",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 4019.4,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 3,
+      "callsign": "FR0012",
+      "completed": true,
+      "hadViolation": true,
+      "fuelRemainingKg": 2253.9,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 4,
+      "callsign": "FR0016",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 4678.2,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 5,
+      "callsign": "FR0004",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 4146.6,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 6,
+      "callsign": "FR0011",
+      "completed": true,
+      "hadViolation": true,
+      "fuelRemainingKg": 2252.3,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 7,
+      "callsign": "FR0003",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 3837.0,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 8,
+      "callsign": "FR0006",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 4000.0,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 9,
+      "callsign": "FR0001",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 1975.0,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 10,
+      "callsign": "FR0014",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 1743.3,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 11,
+      "callsign": "FR3456",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 1681.7,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 12,
+      "callsign": "FR0002",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 2420.6,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 13,
+      "callsign": "FR0008",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 2738.1,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 14,
+      "callsign": "FR0015",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 3526.0,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 15,
+      "callsign": "FR5678",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 2537.6,
+      "legsCompleted": 1
+    },
+    {
+      "flightId": 16,
+      "callsign": "FR0007",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 605.0,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 17,
+      "callsign": "FR1234",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 3720.7,
+      "legsCompleted": 1
+    },
+    {
+      "flightId": 18,
+      "callsign": "FR0005",
+      "completed": true,
+      "hadViolation": false,
+      "fuelRemainingKg": 2281.0,
+      "legsCompleted": 0
+    },
+    {
+      "flightId": 19,
+      "callsign": "FR0010",
+      "completed": true,
+      "hadViolation": true,
+      "fuelRemainingKg": 5152.7,
+      "legsCompleted": 0
+    }
+  ],
+
+  "violationEvents": [
+    {
+      "violationId": 0,
+      "timestamp": 11700.0,
+      "wallClockTime": "2026-05-17T21:05:28",
+      "aircraftA": {
+        "flightId": 0,
+        "callsign": "FR0009",
+        "position": {
+          "latitude": 41.511252,
+          "longitude": -3.326848,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 131.40,
+          "headingDegrees": 10.01,
+          "verticalSpeedMsec": 30.93
+        }
+      },
+      "aircraftB": {
+        "flightId": 19,
+        "callsign": "FR0010",
+        "position": {
+          "latitude": 41.538175,
+          "longitude": -3.326183,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 131.40,
+          "headingDegrees": 10.04,
+          "verticalSpeedMsec": 30.93
+        }
+      },
+      "separationMeters": 2994.3
+    },
+    {
+      "violationId": 1,
+      "timestamp": 12600.0,
+      "wallClockTime": "2026-05-17T21:20:28",
+      "aircraftA": {
+        "flightId": 0,
+        "callsign": "FR0009",
+        "position": {
+          "latitude": 43.294192,
+          "longitude": -2.887332,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 10.17,
+          "verticalSpeedMsec": 8.22
+        }
+      },
+      "aircraftB": {
+        "flightId": 19,
+        "callsign": "FR0010",
+        "position": {
+          "latitude": 43.320976,
+          "longitude": -2.885434,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 10.19,
+          "verticalSpeedMsec": 8.22
+        }
+      },
+      "separationMeters": 2982.1
+    },
+    {
+      "violationId": 2,
+      "timestamp": 13500.0,
+      "wallClockTime": "2026-05-17T21:35:28",
+      "aircraftA": {
+        "flightId": 0,
+        "callsign": "FR0009",
+        "position": {
+          "latitude": 45.076547,
+          "longitude": -2.420947,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 10.47,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "aircraftB": {
+        "flightId": 19,
+        "callsign": "FR0010",
+        "position": {
+          "latitude": 45.103180,
+          "longitude": -2.417717,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 10.49,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "separationMeters": 2972.2
+    },
+    {
+      "violationId": 3,
+      "timestamp": 14400.0,
+      "wallClockTime": "2026-05-17T21:50:28",
+      "aircraftA": {
+        "flightId": 0,
+        "callsign": "FR0009",
+        "position": {
+          "latitude": 46.856882,
+          "longitude": -1.924540,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 10.79,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "aircraftB": {
+        "flightId": 19,
+        "callsign": "FR0010",
+        "position": {
+          "latitude": 46.883352,
+          "longitude": -1.919866,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 10.82,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "separationMeters": 2964.7
+    },
+    {
+      "violationId": 4,
+      "timestamp": 15300.0,
+      "wallClockTime": "2026-05-17T22:05:28",
+      "aircraftA": {
+        "flightId": 0,
+        "callsign": "FR0009",
+        "position": {
+          "latitude": 48.634923,
+          "longitude": -1.394099,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 11.15,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "aircraftB": {
+        "flightId": 19,
+        "callsign": "FR0010",
+        "position": {
+          "latitude": 48.661217,
+          "longitude": -1.387852,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 11.17,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "separationMeters": 2959.6
+    },
+    {
+      "violationId": 5,
+      "timestamp": 16200.0,
+      "wallClockTime": "2026-05-17T22:20:28",
+      "aircraftA": {
+        "flightId": 0,
+        "callsign": "FR0009",
+        "position": {
+          "latitude": 50.410351,
+          "longitude": -0.824921,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 11.54,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "aircraftB": {
+        "flightId": 19,
+        "callsign": "FR0010",
+        "position": {
+          "latitude": 50.436454,
+          "longitude": -0.816954,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": 11.57,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "separationMeters": 2956.9
+    },
+    {
+      "violationId": 6,
+      "timestamp": 18900.0,
+      "wallClockTime": "2026-05-17T23:05:28",
+      "aircraftA": {
+        "flightId": 3,
+        "callsign": "FR0012",
+        "position": {
+          "latitude": 42.888308,
+          "longitude": 12.052251,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 128.67,
+          "headingDegrees": -17.04,
+          "verticalSpeedMsec": 34.53
+        }
+      },
+      "aircraftB": {
+        "flightId": 6,
+        "callsign": "FR0011",
+        "position": {
+          "latitude": 42.861582,
+          "longitude": 12.053625,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 128.67,
+          "headingDegrees": -16.98,
+          "verticalSpeedMsec": 34.53
+        }
+      },
+      "separationMeters": 2973.9
+    },
+    {
+      "violationId": 7,
+      "timestamp": 19800.0,
+      "wallClockTime": "2026-05-17T23:20:28",
+      "aircraftA": {
+        "flightId": 3,
+        "callsign": "FR0012",
+        "position": {
+          "latitude": 44.615745,
+          "longitude": 11.295103,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": -17.31,
+          "verticalSpeedMsec": 9.19
+        }
+      },
+      "aircraftB": {
+        "flightId": 6,
+        "callsign": "FR0011",
+        "position": {
+          "latitude": 44.589540,
+          "longitude": 11.299091,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": -17.25,
+          "verticalSpeedMsec": 9.19
+        }
+      },
+      "separationMeters": 2931.0
+    },
+    {
+      "violationId": 8,
+      "timestamp": 20700.0,
+      "wallClockTime": "2026-05-17T23:35:28",
+      "aircraftA": {
+        "flightId": 3,
+        "callsign": "FR0012",
+        "position": {
+          "latitude": 46.339322,
+          "longitude": 10.490890,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": -17.83,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "aircraftB": {
+        "flightId": 6,
+        "callsign": "FR0011",
+        "position": {
+          "latitude": 46.313674,
+          "longitude": 10.497683,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": -17.78,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "separationMeters": 2899.2
+    },
+    {
+      "violationId": 9,
+      "timestamp": 21600.0,
+      "wallClockTime": "2026-05-17T23:50:28",
+      "aircraftA": {
+        "flightId": 3,
+        "callsign": "FR0012",
+        "position": {
+          "latitude": 48.056893,
+          "longitude": 9.634405,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": -18.40,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "aircraftB": {
+        "flightId": 6,
+        "callsign": "FR0011",
+        "position": {
+          "latitude": 48.031845,
+          "longitude": 9.644216,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": -18.35,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "separationMeters": 2879.1
+    },
+    {
+      "violationId": 10,
+      "timestamp": 22500.0,
+      "wallClockTime": "2026-05-18T00:05:28",
+      "aircraftA": {
+        "flightId": 3,
+        "callsign": "FR0012",
+        "position": {
+          "latitude": 49.767661,
+          "longitude": 8.718910,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": -19.03,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "aircraftB": {
+        "flightId": 6,
+        "callsign": "FR0011",
+        "position": {
+          "latitude": 49.743260,
+          "longitude": 8.731977,
+          "altitudeMeters": 10000.0
+        },
+        "velocity": {
+          "speedMsec": 224.05,
+          "headingDegrees": -18.97,
+          "verticalSpeedMsec": 0.00
+        }
+      },
+      "separationMeters": 2871.1
+    }
+  ]
+}

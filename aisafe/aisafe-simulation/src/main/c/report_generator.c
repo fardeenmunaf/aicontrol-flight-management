@@ -93,7 +93,7 @@ static void generate_json_report(SharedMemoryData *shm, const char *output_file)
     // Format wallClockStart as readable date/time
     char wall_clock_str[32];
     time_t wall_time = (time_t)report->wall_clock_start;
-    struct tm *timeinfo = localtime(&wall_time);
+    timeinfo = localtime(&wall_time);
     strftime(wall_clock_str, sizeof(wall_clock_str), "%Y-%m-%dT%H:%M:%S", timeinfo);
     fprintf(fp, "    \"wallClockStart\": \"%s\"\n", wall_clock_str);
     fprintf(fp, "  },\n");

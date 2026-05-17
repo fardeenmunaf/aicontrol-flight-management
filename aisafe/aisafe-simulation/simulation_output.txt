@@ -24,44 +24,44 @@ Loaded 20 flight(s). Simulation: 0 s -> 34200 s  (step 900 s = 15 min)
 Sim window: 06:00 → 15:30 (20 loaded flight plans)
   [SKIP] FR0006: departure offset -3600s is outside sim window [0, 34200s]
 19 / 20 flight plans in scope — forking 19 child processes.
-Forked child PID 81642 for flight FR0009 (departs at offset 10800s)
-[FR0009] Process started (PID 81642). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
-Forked child PID 81643 for flight FR0013 (departs at offset 14400s)
-[FR0013] Process started (PID 81643). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
-Forked child PID 81644 for flight FR9012 (departs at offset 14400s)
-Forked child PID 81645 for flight FR0012 (departs at offset 18000s)
-[FR9012] Process started (PID 81644). Initial mass: 66013 kg | Fuel: 11000 kg | Payload: 13600 kg
-[FR0012] Process started (PID 81645). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
-Forked child PID 81646 for flight FR0016 (departs at offset 0s)
-[FR0016] Process started (PID 81646). Initial mass: 68513 kg | Fuel: 13500 kg | Payload: 13600 kg
-Forked child PID 81647 for flight FR0004 (departs at offset 10800s)
-[FR0004] Process started (PID 81647). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
-Forked child PID 81648 for flight FR0011 (departs at offset 18000s)
-[FR0011] Process started (PID 81648). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
-Forked child PID 81649 for flight FR0003 (departs at offset 7200s)
-[FR0003] Process started (PID 81649). Initial mass: 64513 kg | Fuel: 9500 kg | Payload: 13600 kg
-Forked child PID 81650 for flight FR0001 (departs at offset 3600s)
-Forked child PID 81651 for flight FR0014 (departs at offset 9000s)
-[FR0001] Process started (PID 81650). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
-[FR0014] Process started (PID 81651). Initial mass: 63013 kg | Fuel: 8000 kg | Payload: 13600 kg
-Forked child PID 81652 for flight FR3456 (departs at offset 18000s)
-[FR3456] Process started (PID 81652). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
-Forked child PID 81653 for flight FR0002 (departs at offset 5400s)
-[FR0002] Process started (PID 81653). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
-Forked child PID 81654 for flight FR0008 (departs at offset 7200s)
-[FR0008] Process started (PID 81654). Initial mass: 64013 kg | Fuel: 9000 kg | Payload: 13600 kg
-Forked child PID 81655 for flight FR0015 (departs at offset 3600s)
-[FR0015] Process started (PID 81655). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
-Forked child PID 81656 for flight FR5678 (departs at offset 7200s)
-[FR5678] Process started (PID 81656). Initial mass: 59013 kg | Fuel: 4000 kg | Payload: 13600 kg
-Forked child PID 81657 for flight FR0007 (departs at offset 3600s)
-[FR0007] Process started (PID 81657). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
-Forked child PID 81658 for flight FR1234 (departs at offset 3600s)
-[FR1234] Process started (PID 81658). Initial mass: 62513 kg | Fuel: 7500 kg | Payload: 13600 kg
-Forked child PID 81659 for flight FR0005 (departs at offset 14400s)
-[FR0005] Process started (PID 81659). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
-[FR0010] Process started (PID 81660). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
-Forked child PID 81660 for flight FR0010 (departs at offset 10800s)
+Forked child PID 86294 for flight FR0009 (departs at offset 10800s)
+[FR0009] Process started (PID 86294). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
+Forked child PID 86295 for flight FR0013 (departs at offset 14400s)
+Forked child PID 86296 for flight FR9012 (departs at offset 14400s)
+[FR0013] Process started (PID 86295). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
+Forked child PID 86297 for flight FR0012 (departs at offset 18000s)
+[FR9012] Process started (PID 86296). Initial mass: 66013 kg | Fuel: 11000 kg | Payload: 13600 kg
+[FR0012] Process started (PID 86297). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
+Forked child PID 86298 for flight FR0016 (departs at offset 0s)
+[FR0016] Process started (PID 86298). Initial mass: 68513 kg | Fuel: 13500 kg | Payload: 13600 kg
+Forked child PID 86299 for flight FR0004 (departs at offset 10800s)
+[FR0004] Process started (PID 86299). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
+Forked child PID 86300 for flight FR0011 (departs at offset 18000s)
+[FR0011] Process started (PID 86300). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
+Forked child PID 86301 for flight FR0003 (departs at offset 7200s)
+[FR0003] Process started (PID 86301). Initial mass: 64513 kg | Fuel: 9500 kg | Payload: 13600 kg
+Forked child PID 86302 for flight FR0001 (departs at offset 3600s)
+[FR0001] Process started (PID 86302). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
+Forked child PID 86303 for flight FR0014 (departs at offset 9000s)
+[FR0014] Process started (PID 86303). Initial mass: 63013 kg | Fuel: 8000 kg | Payload: 13600 kg
+Forked child PID 86304 for flight FR3456 (departs at offset 18000s)
+[FR3456] Process started (PID 86304). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
+Forked child PID 86305 for flight FR0002 (departs at offset 5400s)
+[FR0002] Process started (PID 86305). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
+Forked child PID 86306 for flight FR0008 (departs at offset 7200s)
+[FR0008] Process started (PID 86306). Initial mass: 64013 kg | Fuel: 9000 kg | Payload: 13600 kg
+Forked child PID 86307 for flight FR0015 (departs at offset 3600s)
+[FR0015] Process started (PID 86307). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
+Forked child PID 86308 for flight FR5678 (departs at offset 7200s)
+[FR5678] Process started (PID 86308). Initial mass: 59013 kg | Fuel: 4000 kg | Payload: 13600 kg
+Forked child PID 86309 for flight FR0007 (departs at offset 3600s)
+[FR0007] Process started (PID 86309). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
+Forked child PID 86310 for flight FR1234 (departs at offset 3600s)
+[FR1234] Process started (PID 86310). Initial mass: 62513 kg | Fuel: 7500 kg | Payload: 13600 kg
+Forked child PID 86311 for flight FR0005 (departs at offset 14400s)
+[FR0005] Process started (PID 86311). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
+[FR0010] Process started (PID 86312). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
+Forked child PID 86312 for flight FR0010 (departs at offset 10800s)
 
 --- Simulation running ---
 
