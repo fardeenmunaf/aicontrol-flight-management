@@ -72,10 +72,16 @@ static void generate_json_report(SharedMemoryData *shm, const char *output_file)
     bool sim_passed = (report->total_violations_recorded == 0);
 
     fprintf(fp, "{\n");
-    fprintf(fp, "  \"reportVersion\": \"1.0\",\n");
-    fprintf(fp, "  \"reportType\": \"SimulationReport\",\n");
-    fprintf(fp, "  \"reportGeneratedAt\": \"%ld\",\n", (long)time(NULL));
-    fprintf(fp, "\n");
+     fprintf(fp, "  \"reportVersion\": \"1.0\",\n");
+     fprintf(fp, "  \"reportType\": \"SimulationReport\",\n");
+
+     // Format reportGeneratedAt as readable date/time
+     char report_time_str[32];
+     time_t now = time(NULL);
+     struct tm *timeinfo = localtime(&now);
+     strftime(report_time_str, sizeof(report_time_str), "%Y-%m-%dT%H:%M:%S", timeinfo);
+     fprintf(fp, "  \"reportGeneratedAt\": \"%s\",\n", report_time_str);
+     fprintf(fp, "\n");
 
     // Simulation overview
     fprintf(fp, "  \"simulation\": {\n");
@@ -83,7 +89,13 @@ static void generate_json_report(SharedMemoryData *shm, const char *output_file)
     fprintf(fp, "    \"startTime\": %.1f,\n", report->sim_start_time);
     fprintf(fp, "    \"endTime\": %.1f,\n", report->sim_end_time);
     fprintf(fp, "    \"durationSeconds\": %.1f,\n", report->sim_end_time - report->sim_start_time);
-    fprintf(fp, "    \"wallClockStart\": \"%ld\"\n", (long)report->wall_clock_start);
+
+    // Format wallClockStart as readable date/time
+    char wall_clock_str[32];
+    time_t wall_time = (time_t)report->wall_clock_start;
+    struct tm *timeinfo = localtime(&wall_time);
+    strftime(wall_clock_str, sizeof(wall_clock_str), "%Y-%m-%dT%H:%M:%S", timeinfo);
+    fprintf(fp, "    \"wallClockStart\": \"%s\"\n", wall_clock_str);
     fprintf(fp, "  },\n");
     fprintf(fp, "\n");
 
