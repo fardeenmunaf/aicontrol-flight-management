@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>           // time()
 #include <fcntl.h>          // O_CREAT, O_RDWR — flags for shm_open and sem_open
 #include <sys/mman.h>       // mmap, munmap, PROT_*, MAP_SHARED
 #include <sys/stat.h>       // mode constants (0666)
@@ -166,6 +167,20 @@ static void check_violations(SharedMemoryData *shm, bool *was_active,
                        shm->flights[j].callsign,
                        dist,
                        shm->config.safety_distance_threshold);
+
+                // US109: Record violation event in the report
+                if (shm->report.total_violations_recorded < MAX_RECORDED_VIOLATIONS) {
+                    ViolationEvent *evt = &shm->report.violations[shm->report.total_violations_recorded];
+                    evt->timestamp = shm->current_time;
+                    evt->flight_a_id = i;
+                    evt->flight_b_id = j;
+                    evt->pos_a = shm->flights[i].current_pos;
+                    evt->pos_b = shm->flights[j].current_pos;
+                    evt->vel_a = shm->flights[i].velocity;
+                    evt->vel_b = shm->flights[j].velocity;
+                    evt->distance = dist;
+                    shm->report.total_violations_recorded++;
+                }
 
                 // US102: notify both involved aircraft via SIGUSR1.
                 // The child's SIGUSR1 handler prints a user message and returns;
@@ -337,6 +352,41 @@ static void print_step_table(SharedMemoryData *shm,
     }
 }
 
+// ── US109: Finalize report with flight statuses ───────────────────────────────
+//
+// Called at the end of the main simulation loop to record final per-flight data
+// in the report. This includes completion status, violation flags, and fuel remaining.
+
+static void finalize_simulation_report(SharedMemoryData *shm, double sim_end_time) {
+    shm->report.sim_end_time = sim_end_time;
+
+    for (int i = 0; i < shm->num_flights; i++) {
+        Flight *f = &shm->flights[i];
+        FlightStatus *status = &shm->report.flight_statuses[i];
+
+        // Copy callsign
+        strncpy(status->callsign, f->callsign, CALLSIGN_LEN - 1);
+        status->callsign[CALLSIGN_LEN - 1] = '\0';
+
+        // Flight completed if not active AND didn't time-out waiting to depart
+        status->completed_successfully = !f->is_active &&
+                                         f->departure_offset_s < shm->config.end_time;
+
+        // Record violation history
+        status->had_violation = f->violation_detected;
+
+        // Final fuel remaining
+        double fuel_rem = f->current_mass - f->properties.empty_weight - f->payload;
+        status->fuel_remaining = (fuel_rem > 0) ? fuel_rem : 0.0;
+
+        // Number of completed legs
+        status->num_legs_completed = f->current_leg;
+    }
+
+    // Mark report as ready for generation
+    shm->report.report_ready = true;
+}
+
 // ── SECTION 5 — Simulation cleanup ────────────────────────────────────────────
 //
 // Everything created must be explicitly destroyed (POSIX resources don't
@@ -382,8 +432,9 @@ static void cleanup(SharedMemoryData *shm, pid_t *pids, int n,
     // Unmap the shared memory from this process's address space
     munmap(shm, sizeof(SharedMemoryData));
 
-    // Remove the shared memory object from /dev/shm
-    shm_unlink(SHM_NAME);
+    // Do not unlink the shared memory here.
+    // US109 needs the report generator to attach after the simulation ends.
+    // The report generator is responsible for removing the shared memory.
 }
 
 // ── SECTION 6 — Main entry point ──────────────────────────────────────────────
@@ -404,12 +455,20 @@ int main() {
 
     load_simulation_settings("simulation_settings.json", &shm->config);
     load_all_flight_plans("flightplansSim", shm);
-    printf("Loaded %d flight(s). Simulation: %.0f s -> %.0f s  (step %.0f s = %.0f min)\n",
-           shm->num_flights,
-           shm->config.start_time, shm->config.end_time,
-           shm->config.time_step, shm->config.time_step / 60.0);
+     printf("Loaded %d flight(s). Simulation: %.0f s -> %.0f s  (step %.0f s = %.0f min)\n",
+            shm->num_flights,
+            shm->config.start_time, shm->config.end_time,
+            shm->config.time_step, shm->config.time_step / 60.0);
 
-    // ── Scope validation: mark out-of-window flights inactive, count forkable ones ──
+     // ── US109: Initialize report structure ────────────────────────────────────────
+     shm->report.sim_start_time = shm->config.start_time;
+     shm->report.total_flights = shm->num_flights;
+     shm->report.total_violations_recorded = 0;
+     shm->report.report_ready = false;
+     time_t wall_start = time(NULL);
+     shm->report.wall_clock_start = (double)wall_start;
+
+     // ── Scope validation: mark out-of-window flights inactive, count forkable ones ──
     int num_forked = 0;
     int sim_start_h = (int)(shm->config.sim_start_seconds / 3600);
     int sim_start_m = (int)(fmod(shm->config.sim_start_seconds, 3600.0) / 60.0);
@@ -743,6 +802,9 @@ int main() {
     }
 
     // ── 6.6  Wrap up and report ────────────────────────────────────────────────
+    // US109: Finalize the simulation report with final flight statuses
+    finalize_simulation_report(shm, shm->current_time);
+
     printf("\n");
     printf("╔══════════════════════════════════════════════════════╗\n");
     printf("║              SIMULATION COMPLETE                     ║\n");

@@ -226,6 +226,55 @@ typedef struct {
 //         current_time, total_violations_detected, termination_requested are
 //         written by the parent and read by children.
 
+// ── US109 — Simulation Report Data ───────────────────────────────────────
+//
+// Records a single safety violation event with full context:
+// timestamp, both aircraft positions and velocities, separation distance.
+
+typedef struct {
+    double timestamp;           // simulation clock when violation occurred (seconds)
+    int flight_a_id;           // index of first aircraft
+    int flight_b_id;           // index of second aircraft
+    Position pos_a;            // position of flight_a at violation time
+    Position pos_b;            // position of flight_b at violation time
+    Velocity vel_a;            // velocity vector of flight_a
+    Velocity vel_b;            // velocity vector of flight_b
+    double distance;           // actual separation in metres (below threshold)
+} ViolationEvent;
+
+#define MAX_RECORDED_VIOLATIONS 1000
+
+// Per-flight execution status in the report
+typedef struct {
+    char callsign[CALLSIGN_LEN];
+    bool completed_successfully;
+    bool had_violation;
+    double fuel_remaining;      // kg at end of flight
+    double total_distance;      // metres flown
+    int num_legs_completed;     // how many legs finished
+} FlightStatus;
+
+// Complete simulation report (lives in shared memory for persistence)
+typedef struct {
+    // Simulation timing
+    double sim_start_time;      // simulation clock start (seconds)
+    double sim_end_time;        // simulation clock end (seconds)
+    double wall_clock_start;    // wall-clock seconds when sim began
+
+    // Totals
+    int total_flights;
+    int total_violations_recorded;
+
+    // Violation log
+    ViolationEvent violations[MAX_RECORDED_VIOLATIONS];
+
+    // Per-flight statuses
+    FlightStatus flight_statuses[MAX_FLIGHTS];
+
+    // Report generation flag (set by parent when sim completes)
+    bool report_ready;
+} SimulationReport;
+
 typedef struct {
     SimulationConfig config;        // simulation parameters — read-only after loading
     double current_time;            // global clock; advances in the parent's loop
@@ -235,6 +284,8 @@ typedef struct {
 
     int  total_violations_detected; // incremented by parent's violation checker
     bool termination_requested;     // parent sets this true → children exit their loops
+
+    SimulationReport report;        // US109 — report data accumulated during sim
 } SharedMemoryData;
 
 #endif /* STRUCTS_H */

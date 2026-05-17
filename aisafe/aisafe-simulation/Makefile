@@ -13,6 +13,9 @@ endif
 simulation_engine: simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o
 	$(CC) $(CFLAGS) simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o -o simulation_engine $(LDFLAGS)
 
+report_generator: report_generator.o
+	$(CC) $(CFLAGS) report_generator.o -o report_generator $(LDFLAGS)
+
 simulation_engine.o: src/main/c/simulation_engine.c
 	$(CC) $(CFLAGS) -c src/main/c/simulation_engine.c
 
@@ -31,6 +34,9 @@ flight_simulation.o: src/main/c/flight_simulation.c
 position_tracker.o: src/main/c/position_tracker.c
 	$(CC) $(CFLAGS) -c src/main/c/position_tracker.c
 
+report_generator.o: src/main/c/report_generator.c
+	$(CC) $(CFLAGS) -c src/main/c/report_generator.c
+
 test_physics: src/main/c/test_physics.c src/main/c/physics.c
 	$(CC) $(CFLAGS) src/main/c/test_physics.c src/main/c/physics.c -o test_physics $(LDFLAGS)
 
@@ -41,11 +47,17 @@ run: simulation_engine
 	./simulation_engine > simulation_output.txt 2>&1
 	@echo "Simulation complete. Output written to simulation_output.txt"
 
+run_with_report: simulation_engine report_generator
+	nohup ./simulation_engine > simulation_output.txt 2>&1 &
+	sleep 1
+	./report_generator
+	@echo "Simulation and report generation complete"
+
 test: test_physics test_position_tracker
 	./test_physics
 	./test_position_tracker
 
 clean:
-	rm -f *.o simulation_engine test_physics test_position_tracker
+	rm -f *.o simulation_engine report_generator test_physics test_position_tracker
 
-.PHONY: run test clean
+.PHONY: run run_with_report test clean
