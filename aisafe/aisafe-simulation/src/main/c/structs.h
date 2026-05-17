@@ -19,6 +19,10 @@
 
 #define FUEL_DENSITY_KG_PER_L  0.804   // 1 litre of Jet-A ≈ 0.804 kg
 
+// Leg scheduled_arrival_offset_s sentinel: arrival not in JSON
+
+#define ARRIVAL_OFFSET_NOT_SET (-1.0)  // scheduled_arrival_offset_s sentinel: arrival not in JSON
+
 // ── Basic physical types ───────────────────────────────────────────────────────
 
 // A 3-D position in space at a specific simulation time.
@@ -91,11 +95,12 @@ typedef struct {
 // Read-only during simulation — only the child reads these to reset state.
 
 typedef struct {
-    double departure_offset_s;   // seconds from sim t=0 when this leg departs
-    double fuel_mass;            // kg of fuel loaded for this leg
-    double payload;              // kg of passengers + cargo for this leg
-    int    waypoint_start_index; // index into flight_plan.waypoints[] of this leg's first navigation target
-    int    waypoint_end_index;   // index of this leg's destination waypoint (inclusive)
+    double departure_offset_s;       // seconds from sim t=0 when this leg departs
+    double scheduled_arrival_offset_s; // seconds from sim t=0; ARRIVAL_OFFSET_NOT_SET if arrival not in JSON (departure always required)
+    double fuel_mass;                // kg of fuel loaded for this leg
+    double payload;                  // kg of passengers + cargo for this leg
+    int    waypoint_start_index;     // index into flight_plan.waypoints[] of this leg's first navigation target
+    int    waypoint_end_index;       // index of this leg's destination waypoint (inclusive)
 } Leg;
 
 // ── Physics step data — all 25 intermediate values for one time-step ──────────

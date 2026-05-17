@@ -24,45 +24,44 @@ Loaded 20 flight(s). Simulation: 0 s -> 34200 s  (step 900 s = 15 min)
 Sim window: 06:00 → 15:30 (20 loaded flight plans)
   [SKIP] FR0006: departure offset -3600s is outside sim window [0, 34200s]
 19 / 20 flight plans in scope — forking 19 child processes.
-Forked child PID 25039 for flight FR0009 (departs at offset 10800s)
-[FR0009] Process started (PID 25039). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
-Forked child PID 25040 for flight FR0013 (departs at offset 14400s)
-[FR0013] Process started (PID 25040). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
-Forked child PID 25041 for flight FR9012 (departs at offset 14400s)
-[FR9012] Process started (PID 25041). Initial mass: 66013 kg | Fuel: 11000 kg | Payload: 13600 kg
-Forked child PID 25042 for flight FR0012 (departs at offset 18000s)
-Forked child PID 25043 for flight FR0016 (departs at offset 0s)
-[FR0012] Process started (PID 25042). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
-[FR0016] Process started (PID 25043). Initial mass: 68513 kg | Fuel: 13500 kg | Payload: 13600 kg
-Forked child PID 25044 for flight FR0004 (departs at offset 10800s)
-[FR0004] Process started (PID 25044). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
-Forked child PID 25045 for flight FR0011 (departs at offset 18000s)
-[FR0011] Process started (PID 25045). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
-Forked child PID 25046 for flight FR0003 (departs at offset 7200s)
-[FR0003] Process started (PID 25046). Initial mass: 64513 kg | Fuel: 9500 kg | Payload: 13600 kg
-Forked child PID 25047 for flight FR0001 (departs at offset 3600s)
-Forked child PID 25048 for flight FR0014 (departs at offset 9000s)
-[FR0001] Process started (PID 25047). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
-[FR0014] Process started (PID 25048). Initial mass: 63013 kg | Fuel: 8000 kg | Payload: 13600 kg
-Forked child PID 25049 for flight FR3456 (departs at offset 18000s)
-[FR3456] Process started (PID 25049). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
-Forked child PID 25050 for flight FR0002 (departs at offset 5400s)
-[FR0002] Process started (PID 25050). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
-Forked child PID 25051 for flight FR0008 (departs at offset 7200s)
-[FR0008] Process started (PID 25051). Initial mass: 64013 kg | Fuel: 9000 kg | Payload: 13600 kg
-Forked child PID 25052 for flight FR0015 (departs at offset 3600s)
-[FR0015] Process started (PID 25052). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
-Forked child PID 25053 for flight FR5678 (departs at offset 7200s)
-[FR5678] Process started (PID 25053). Initial mass: 59013 kg | Fuel: 4000 kg | Payload: 13600 kg
-Forked child PID 25054 for flight FR0007 (departs at offset 3600s)
-[FR0007] Process started (PID 25054). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
-Forked child PID 25055 for flight FR1234 (departs at offset 3600s)
-[FR1234] Process started (PID 25055). Initial mass: 62513 kg | Fuel: 7500 kg | Payload: 13600 kg
-Forked child PID 25056 for flight FR0005 (departs at offset 14400s)
-[FR0005] Process started (PID 25056). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
-[FR0010] Process started (PID 25057). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
-Forked child PID 25057 for flight FR0010 (departs at offset 10800s)
-[SIM] Violation detection thread started (US102/US106).
+Forked child PID 81642 for flight FR0009 (departs at offset 10800s)
+[FR0009] Process started (PID 81642). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
+Forked child PID 81643 for flight FR0013 (departs at offset 14400s)
+[FR0013] Process started (PID 81643). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
+Forked child PID 81644 for flight FR9012 (departs at offset 14400s)
+Forked child PID 81645 for flight FR0012 (departs at offset 18000s)
+[FR9012] Process started (PID 81644). Initial mass: 66013 kg | Fuel: 11000 kg | Payload: 13600 kg
+[FR0012] Process started (PID 81645). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
+Forked child PID 81646 for flight FR0016 (departs at offset 0s)
+[FR0016] Process started (PID 81646). Initial mass: 68513 kg | Fuel: 13500 kg | Payload: 13600 kg
+Forked child PID 81647 for flight FR0004 (departs at offset 10800s)
+[FR0004] Process started (PID 81647). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
+Forked child PID 81648 for flight FR0011 (departs at offset 18000s)
+[FR0011] Process started (PID 81648). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
+Forked child PID 81649 for flight FR0003 (departs at offset 7200s)
+[FR0003] Process started (PID 81649). Initial mass: 64513 kg | Fuel: 9500 kg | Payload: 13600 kg
+Forked child PID 81650 for flight FR0001 (departs at offset 3600s)
+Forked child PID 81651 for flight FR0014 (departs at offset 9000s)
+[FR0001] Process started (PID 81650). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
+[FR0014] Process started (PID 81651). Initial mass: 63013 kg | Fuel: 8000 kg | Payload: 13600 kg
+Forked child PID 81652 for flight FR3456 (departs at offset 18000s)
+[FR3456] Process started (PID 81652). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
+Forked child PID 81653 for flight FR0002 (departs at offset 5400s)
+[FR0002] Process started (PID 81653). Initial mass: 62013 kg | Fuel: 7000 kg | Payload: 13600 kg
+Forked child PID 81654 for flight FR0008 (departs at offset 7200s)
+[FR0008] Process started (PID 81654). Initial mass: 64013 kg | Fuel: 9000 kg | Payload: 13600 kg
+Forked child PID 81655 for flight FR0015 (departs at offset 3600s)
+[FR0015] Process started (PID 81655). Initial mass: 65513 kg | Fuel: 10500 kg | Payload: 13600 kg
+Forked child PID 81656 for flight FR5678 (departs at offset 7200s)
+[FR5678] Process started (PID 81656). Initial mass: 59013 kg | Fuel: 4000 kg | Payload: 13600 kg
+Forked child PID 81657 for flight FR0007 (departs at offset 3600s)
+[FR0007] Process started (PID 81657). Initial mass: 61513 kg | Fuel: 6500 kg | Payload: 13600 kg
+Forked child PID 81658 for flight FR1234 (departs at offset 3600s)
+[FR1234] Process started (PID 81658). Initial mass: 62513 kg | Fuel: 7500 kg | Payload: 13600 kg
+Forked child PID 81659 for flight FR0005 (departs at offset 14400s)
+[FR0005] Process started (PID 81659). Initial mass: 63513 kg | Fuel: 8500 kg | Payload: 13600 kg
+[FR0010] Process started (PID 81660). Initial mass: 67013 kg | Fuel: 12000 kg | Payload: 13600 kg
+Forked child PID 81660 for flight FR0010 (departs at offset 10800s)
 
 --- Simulation running ---
 
@@ -173,7 +172,9 @@ FR0015   CRUISE   37.5041   15.9832   10000    903.3 10000 223.15    26435    0.
 FR0007   CRUISE   49.4712    9.9887    8000    367.1  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.3970 0.0323    558874    45418     43966    45418     0.00     688   186.3   56282    1269
 FR1234   DESCEND  40.4936   -3.5668   10000    199.8 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4414 0.0336    571895    43566     34235    43566     0.00     654   199.8   61113    5500
 [FR0001] Landed at destination. Remaining fuel: 1975 kg | Total mass: 56988 kg
+         Sched: 08:20 | Actual: 07:45 | Deviation: -35 min (35 min EARLY)
 [FR1234] Arrived at intermediate stop. Leg 0 complete. Next leg (leg 1) departs at offset 16200s.
+         Sched: 09:00 | Actual: 07:45 | Deviation: -75 min (75 min EARLY)
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║  t=   7200 s  [08:00]  |  step   8 / 38   |  active= 3  pending=14  |  violations=  0                                                      ║
@@ -188,6 +189,7 @@ FR0002   CRUISE   52.0600   -2.4572    8000    372.8  8000 236.15    35598    0.
 FR0015   CRUISE   37.6831   18.2608   10000    701.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4588 0.0342    594441    44308     34235    44308     0.00     671   201.6   59925    4912
 FR0007   DESCEND  48.3538   11.7861    8000    180.8  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.3922 0.0321    552129    45223     43966    45223     0.00     664   180.8   55618     605
 [FR0007] Landed at destination. Remaining fuel: 605 kg | Total mass: 55618 kg
+         Sched: 08:30 | Actual: 08:00 | Deviation: -30 min (30 min EARLY)
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║  t=   8100 s  [08:15]  |  step   9 / 38   |  active= 5  pending=11  |  violations=  0                                                      ║
@@ -206,6 +208,7 @@ FR0008   CLIMB    51.8839    6.2445   10000    959.4 10000 288.12   101277    1.
 FR0015   CRUISE   37.8181   20.5480   10000    500.0 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4537 0.0340    587861    44088     34235    44088     0.00     667   201.6   59257    4244
 FR5678   CLIMB    49.4190    9.7924    8000    299.1  8000 287.43    99999    1.2120  339.9   250.0 0.380   129.1  0.4582 0.0342    578918    43183    105044   210088    37.22    3180   111.3   55833     820
 [FR0002] Landed at destination. Remaining fuel: 2421 kg | Total mass: 57434 kg
+         Sched: 08:40 | Actual: 08:15 | Deviation: -25 min (25 min EARLY)
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║  t=   9000 s  [08:30]  |  step  10 / 38   |  active= 3  pending=12  |  violations=  0                                                      ║
@@ -220,7 +223,9 @@ FR0008   CLIMB    51.0722    8.8459   10000    847.9 10000 223.15    26435    0.
 FR0015   CRUISE   37.9088   22.8422   10000    298.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4487 0.0339    581314    43872     34235    43872     0.00     664   201.6   58593    3580
 FR5678   CRUISE   48.3624   11.7707    8000    187.8  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.3891 0.0320    547719    45097     43966    45097     0.00     683   186.3   58713    4500
 [FR0016] Landed at destination. Remaining fuel: 4678 kg | Total mass: 59691 kg
+         Sched: 08:30 | Actual: 08:30 | Deviation: +0 min (0 min on time)
 [FR5678] Arrived at intermediate stop. Leg 0 complete. Next leg (leg 1) departs at offset 19800s.
+         Sched: 09:55 | Actual: 08:30 | Deviation: -85 min (85 min EARLY)
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║  t=   9900 s  [08:45]  |  step  11 / 38   |  active= 3  pending=11  |  violations=  0                                                      ║
@@ -237,6 +242,7 @@ FR0014   CLIMB    44.4418    5.1770   10000    986.7 10000 287.99   101025    1.
 FR0008   CRUISE   50.2041   11.3566   10000    646.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4525 0.0340    586289    44036     34235    44036     0.00     667   201.6   59098    4085
 FR0015   DESCEND  37.9364   23.9445      94     96.7 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.5043 0.0358    574799    40805     34942     6988   -12.36      54    96.7   58539    3526
 [FR0015] Landed at destination. Remaining fuel: 3526 kg | Total mass: 58539 kg
+         Sched: 09:30 | Actual: 08:45 | Deviation: -45 min (45 min EARLY)
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║  t=  10800 s  [09:00]  |  step  12 / 38   |  active= 3  pending=11  |  violations=  0                                                      ║
@@ -247,8 +253,8 @@ CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)      
 FR0003   CRUISE   47.7347    2.4610   10000    343.6 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4512 0.0339    584630    43981     34235    43981     0.00     666   201.6   58930    3917
 FR0014   CLIMB    46.2527    5.0927   10000    875.2 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4528 0.0340    586708    44050     34235    68471     9.33    1036   201.5   58771    3758
 FR0008   CRUISE   49.2839   13.7750   10000    444.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4475 0.0338    579749    43821     34235    43821     0.00     663   201.6   58434    3421
-[FR0010] SIGUSR1: safety violation detected.
 [FR0009] SIGUSR1: safety violation detected.
+[FR0010] SIGUSR1: safety violation detected.
   *** VIOLATION: FR0009 <-> FR0010  dist=2994 m  (threshold 5000 m) ***
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -269,6 +275,7 @@ FR0014   CRUISE   48.0651    5.0026   10000    673.7 10000 223.15    26435    0.
 FR0008   CRUISE   48.3151   16.1025   10000    243.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4424 0.0337    573242    43609     34235    43609     0.00     660   201.6   57774    2761
 FR0010   CLIMB    41.5382   -3.3262   10000   1241.4 10000 284.19    94219    1.1550  337.9   250.0 0.389   131.4  0.5271 0.0367    657398    45722    100241   200483    30.93    3035   114.9   63978    8965
 [FR0003] Landed at destination. Remaining fuel: 3837 kg | Total mass: 58850 kg
+         Sched: 10:00 | Actual: 09:15 | Deviation: -45 min (45 min EARLY)
 [FR0009] SIGUSR1: safety violation detected.
 [FR0010] SIGUSR1: safety violation detected.
   *** VIOLATION: FR0009 <-> FR0010  dist=2982 m  (threshold 5000 m) ***
@@ -286,6 +293,7 @@ FR0014   CRUISE   49.8775    4.9059   10000    472.1 10000 223.15    26435    0.
 FR0008   DESCEND  48.1103   16.5697     183     41.4 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4973 0.0355    566766    40510     34942     6988   -12.43      23    41.4   57751    2738
 FR0010   CLIMB    43.3210   -2.8854   10000   1126.5 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4844 0.0351    627626    45453     34235    68471     8.22    1036   201.5   62942    7929
 [FR0008] Landed at destination. Remaining fuel: 2738 kg | Total mass: 57751 kg
+         Sched: 10:15 | Actual: 09:30 | Deviation: -45 min (45 min EARLY)
 [FR0009] SIGUSR1: safety violation detected.
 [FR0010] SIGUSR1: safety violation detected.
   *** VIOLATION: FR0009 <-> FR0010  dist=2972 m  (threshold 5000 m) ***
@@ -319,6 +327,7 @@ FR0004   CRUISE   47.6535    3.5717   10000    568.8 10000 223.15    26435    0.
 FR0014   DESCEND  52.3081    4.7642       4     68.8 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4888 0.0352    557158    40164     34942     6988   -12.51      39    68.8   56756    1743
 FR0010   CRUISE   46.8834   -1.9199   10000    723.3 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4714 0.0346    610761    44863     34235    44863     0.00     679   201.6   61580    6567
 [FR0014] Landed at destination. Remaining fuel: 1743 kg | Total mass: 56756 kg
+         Sched: 10:30 | Actual: 10:00 | Deviation: -30 min (30 min EARLY)
 [FR0009] SIGUSR1: safety violation detected.
 [FR0010] SIGUSR1: safety violation detected.
   *** VIOLATION: FR0009 <-> FR0010  dist=2960 m  (threshold 5000 m) ***
@@ -338,8 +347,8 @@ FR9012   CLIMB    40.6815   -2.2335   10000   1359.3 10000 284.19    94208    1.
 FR0004   CRUISE   49.4382    4.0581   10000    367.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4537 0.0340    587812    44087     34235    44087     0.00     667   201.6   59252    4239
 FR0005   CLIMB    49.0841    9.0912   10000    952.2 10000 287.43    99999    1.2120  339.9   250.0 0.380   129.1  0.4931 0.0354    623063    44719    105044   210088    34.27    3180   112.0   60333    5320
 FR0010   CRUISE   48.6612   -1.3879   10000    521.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4663 0.0345    604099    44635     34235    44635     0.00     676   201.6   60904    5891
-[FR0010] SIGUSR1: safety violation detected.
 [FR0009] SIGUSR1: safety violation detected.
+[FR0010] SIGUSR1: safety violation detected.
   *** VIOLATION: FR0009 <-> FR0010  dist=2957 m  (threshold 5000 m) ***
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -357,6 +366,7 @@ FR0004   DESCEND  50.9010    4.4844     184    165.5 10000 223.15    26435    0.
 FR0005   CLIMB    47.3714    9.9792   10000    840.2 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4568 0.0341    591864    44222     34235    68471     9.18    1036   201.5   59296    4283
 FR0010   CRUISE   50.4365   -0.8170   10000    320.1 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4611 0.0343    597471    44410     34235    44410     0.00     672   201.6   60232    5219
 [FR0004] Landed at destination. Remaining fuel: 4147 kg | Total mass: 59160 kg
+         Sched: 11:15 | Actual: 10:30 | Deviation: -45 min (45 min EARLY)
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║  t=  17100 s  [10:45]  |  step  19 / 38   |  active= 3  pending= 4  |  violations=  6                                                      ║
@@ -377,8 +387,11 @@ FR1234   CLIMB    40.8623   -1.2274    9000    483.2  9000 223.15    26435    0.
 FR0005   CRUISE   45.6508   10.8119   10000    638.7 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4490 0.0339    581697    43885     34235    43885     0.00     664   201.6   58632    3619
 FR0010   DESCEND  51.4775   -0.4614      25    118.4 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.5184 0.0363    590876    41406     34942     6988   -12.24      66   118.4   60166    5153
 [FR0009] Landed at destination. Remaining fuel: 5151 kg | Total mass: 60164 kg
+         Sched: 11:00 | Actual: 10:45 | Deviation: -15 min (15 min EARLY)
 [FR0013] Landed at destination. Remaining fuel: 2445 kg | Total mass: 57458 kg
+         Sched: 11:15 | Actual: 10:45 | Deviation: -30 min (30 min EARLY)
 [FR0010] Landed at destination. Remaining fuel: 5153 kg | Total mass: 60166 kg
+         Sched: 11:30 | Actual: 10:45 | Deviation: -45 min (45 min EARLY)
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║  t=  18000 s  [11:00]  |  step  20 / 38   |  active= 3  pending= 4  |  violations=  6                                                      ║
@@ -411,6 +424,7 @@ FR3456   CLIMB    52.3692    6.4032    8000    593.1  8000 288.12   101277    1.
 FR1234   DESCEND  41.2974    2.0833       4     87.9  9000 229.65    30741    0.4663  303.8   280.0 0.664   201.8  0.4906 0.0353    582635    41926     39640     7928   -11.78      58    87.9   59334    3721
 FR0005   CRUISE   42.1933   12.3336   10000    235.4 10000 223.15    26435    0.4127  299.5   300.0 0.748   224.1  0.4389 0.0335    568694    43463     34235    43463     0.00     658   201.6   57313    2300
 [FR1234] Landed at destination. Remaining fuel: 3721 kg | Total mass: 59334 kg
+         Sched: 12:00 | Actual: 11:15 | Deviation: -45 min (45 min EARLY)
 [FR0012] SIGUSR1: safety violation detected.
 [FR0011] SIGUSR1: safety violation detected.
   *** VIOLATION: FR0012 <-> FR0011  dist=2931 m  (threshold 5000 m) ***
@@ -428,8 +442,9 @@ FR0011   CLIMB    44.5895   11.2991   10000    840.7 10000 223.15    26435    0.
 FR3456   CLIMB    52.4169    9.1409    8000    481.9  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.4098 0.0326    576837    45948     43966    87932    15.07    1331   185.8   57470    2457
 FR0005   DESCEND  41.9028   12.4534      14     33.8 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4933 0.0354    562240    40346     34942     6988   -12.47      19    33.8   57294    2281
 [FR0005] Landed at destination. Remaining fuel: 2281 kg | Total mass: 57294 kg
-[FR0011] SIGUSR1: safety violation detected.
+         Sched: 12:00 | Actual: 11:30 | Deviation: -30 min (30 min EARLY)
 [FR0012] SIGUSR1: safety violation detected.
+[FR0011] SIGUSR1: safety violation detected.
   *** VIOLATION: FR0012 <-> FR0011  dist=2899 m  (threshold 5000 m) ***
 
 ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
@@ -466,8 +481,11 @@ FR0011   CRUISE   48.0318    9.6442   10000    437.6 10000 223.15    26435    0.
 FR3456   DESCEND  52.3620   13.5033      48    109.7  8000 236.15    35598    0.5251  308.1   280.0 0.629   193.9  0.4511 0.0339    557013    41912     44771     8954   -11.47      85   109.7   56695    1682
 FR5678   DESCEND  48.1103   16.5697    8000    170.6  8000 236.15    35598    0.5251  308.1   300.0 0.672   207.0  0.3999 0.0323    562917    45535     43966    45535     0.00     631   170.6   56751    2538
 [FR9012] Landed at destination. Remaining fuel: 4019 kg | Total mass: 59032 kg
+         Sched: 12:00 | Actual: 12:00 | Deviation: +0 min (0 min on time)
 [FR3456] Landed at destination. Remaining fuel: 1682 kg | Total mass: 56695 kg
+         Sched: 12:30 | Actual: 12:00 | Deviation: -30 min (30 min EARLY)
 [FR5678] Landed at destination. Remaining fuel: 2538 kg | Total mass: 56751 kg
+         Sched: 13:00 | Actual: 12:00 | Deviation: -60 min (60 min EARLY)
 [FR0012] SIGUSR1: safety violation detected.
 [FR0011] SIGUSR1: safety violation detected.
   *** VIOLATION: FR0012 <-> FR0011  dist=2871 m  (threshold 5000 m) ***
@@ -492,7 +510,9 @@ CALLSGN  PHASE   LAT(deg)  LON(deg)  ALT(m) DEST(km) CA(m)   T(K)    P(Pa)      
 FR0012   DESCEND  50.0333    8.5706     111     31.4 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4931 0.0354    561961    40336     34942     6988   -12.47      18    31.4   57267    2254
 FR0011   DESCEND  50.0333    8.5706     111     34.3 10000 223.15    26435    0.4127  299.5   280.0 0.702   210.1  0.4931 0.0354    561961    40336     34942     6988   -12.47      19    34.3   57265    2252
 [FR0012] Landed at destination. Remaining fuel: 2254 kg | Total mass: 57267 kg
+         Sched: 13:30 | Actual: 12:30 | Deviation: -60 min (60 min EARLY)
 [FR0011] Landed at destination. Remaining fuel: 2252 kg | Total mass: 57265 kg
+         Sched: 13:00 | Actual: 12:30 | Deviation: -30 min (30 min EARLY)
 
 ╔══════════════════════════════════════════════════════╗
 ║              SIMULATION COMPLETE                     ║

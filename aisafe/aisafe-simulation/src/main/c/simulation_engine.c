@@ -232,6 +232,20 @@ static const char *phase_name(FlightPhase p) {
     }
 }
 
+static void print_arrival_deviation(double scheduled_offset_s,
+                                    double actual_offset_s,
+                                    double sim_start_s) {
+    if (scheduled_offset_s < 0.0) return;
+    int dev_min    = (int)((actual_offset_s - scheduled_offset_s) / 60.0);
+    int sched_wall = (int)(sim_start_s + scheduled_offset_s);
+    int act_wall   = (int)(sim_start_s + actual_offset_s);
+    const char *label = dev_min > 0 ? "LATE" : dev_min < 0 ? "EARLY" : "on time";
+    printf("         Sched: %02d:%02d | Actual: %02d:%02d | Deviation: %+d min (%d min %s)\n",
+           sched_wall / 3600, (sched_wall % 3600) / 60,
+           act_wall   / 3600, (act_wall   % 3600) / 60,
+           dev_min, abs(dev_min), label);
+}
+
 static void print_step_table(SharedMemoryData *shm,
                               PipeMessage *msgs,     // one per flight (indexed by flight slot)
                               FlightPhase *prev_ph,  // previous phase per flight
@@ -709,6 +723,9 @@ int main() {
             double remaining_fuel = f->current_mass - f->properties.empty_weight - f->payload;
             printf("[%s] Landed at destination. Remaining fuel: %.0f kg | Total mass: %.0f kg\n",
                    f->callsign, remaining_fuel, f->current_mass);
+            print_arrival_deviation(f->legs[f->current_leg].scheduled_arrival_offset_s,
+                                    shm->current_time,
+                                    shm->config.sim_start_seconds);
         }
 
         // Intermediate leg completion: child set leg_just_completed=true and is_active=true.
@@ -727,6 +744,9 @@ int main() {
                    f->current_leg - 1,   // just-completed leg (already incremented in child)
                    f->current_leg,
                    f->departure_offset_s);
+            print_arrival_deviation(f->legs[f->current_leg - 1].scheduled_arrival_offset_s,
+                                    shm->current_time,
+                                    shm->config.sim_start_seconds);
         }
 
         fflush(stdout);

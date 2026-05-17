@@ -206,6 +206,7 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
             }
 
             Leg *cur_leg = &flight->legs[leg_index];
+            cur_leg->scheduled_arrival_offset_s = ARRIVAL_OFFSET_NOT_SET;  // -1.0 = not specified in JSON
 
             // ── fuel ──────────────────────────────────────────────────────────
             cJSON *fuel_obj = cJSON_GetObjectItemCaseSensitive(leg, "fuel");
@@ -233,9 +234,23 @@ static void parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
                 cJSON *dep_time = cJSON_GetObjectItemCaseSensitive(dep_obj, "time");
                 if (cJSON_IsString(dep_time)) {
                     int dh = 0, dm = 0;
-                    sscanf(dep_time->valuestring, "%d:%d", &dh, &dm);
-                    double depart_s = dh * 3600.0 + dm * 60.0;
-                    cur_leg->departure_offset_s = depart_s - shm->config.sim_start_seconds;
+                    if (sscanf(dep_time->valuestring, "%d:%d", &dh, &dm) == 2) {
+                        double depart_s = dh * 3600.0 + dm * 60.0;
+                        cur_leg->departure_offset_s = depart_s - shm->config.sim_start_seconds;
+                    }
+                }
+            }
+
+            // ── arrival offset ────────────────────────────────────────────────
+            cJSON *arr_obj = cJSON_GetObjectItemCaseSensitive(leg, "arrival");
+            if (cJSON_IsObject(arr_obj)) {
+                cJSON *arr_time = cJSON_GetObjectItemCaseSensitive(arr_obj, "time");
+                if (cJSON_IsString(arr_time)) {
+                    int ah = 0, am = 0;
+                    if (sscanf(arr_time->valuestring, "%d:%d", &ah, &am) == 2) {
+                        double arrive_s = ah * 3600.0 + am * 60.0;
+                        cur_leg->scheduled_arrival_offset_s = arrive_s - shm->config.sim_start_seconds;
+                    }
                 }
             }
 
