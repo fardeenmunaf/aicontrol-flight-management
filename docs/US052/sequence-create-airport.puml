@@ -1,0 +1,132 @@
+@startuml sequence-create-airport
+title US052 — Create an Airport: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as Operator
+participant "AirportsMenu" as MenuUI #DDEEFF
+participant "RegisterAirportAction" as Action #DDEEFF
+participant "RegisterAirportUI" as UI #DDEEFF
+participant "RegisterAirportController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AirControlAreaRepository" as AreaRepo #F0E6FF
+participant "AirportRepository" as AirportRepo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Operator -> MenuUI ++ : selects "Register Airport"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Data Collection ==
+
+UI -> Operator : prompt airport data
+Operator -> UI : name, town, country,\nIATA, ICAO, elevation,\nlatitude, longitude
+
+== Detect Air Control Area ==
+
+UI -> Ctrl ++ : findAreaForCoordinates(latitude, longitude)
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+Authz --> Ctrl -- : ok
+
+Ctrl -> AreaRepo ++ : findContaining(latitude, longitude)
+AreaRepo -> DB ++ : SELECT AirControlArea
+DB --> AreaRepo -- : areas
+AreaRepo --> Ctrl -- : Optional<AirControlArea>
+Ctrl --> UI -- : Optional<AirControlArea>
+
+alt no containing area
+    UI -> AreaRepo ++ : findAll()
+    AreaRepo -> DB ++ : SELECT * FROM AirControlArea
+    DB --> AreaRepo -- : areas
+    AreaRepo --> UI -- : Iterable<AirControlArea>
+    UI -> Operator : display areas
+    Operator -> UI : selects Air Control Area
+end
+
+== Register Airport ==
+
+UI -> Ctrl ++ : registerAirport(data, airControlAreaId)
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+Authz --> Ctrl -- : ok
+
+Ctrl -> Ctrl ++ : validate mandatory fields,\ncodes and coordinates
+Ctrl --> Ctrl -- : ok
+
+Ctrl -> AirportRepo ++ : findByIataCode(normalizedIata)
+AirportRepo -> DB ++ : SELECT Airport WHERE iata_code = ?
+DB --> AirportRepo -- : result
+AirportRepo --> Ctrl -- : Optional<Airport>
+alt IATA already exists
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+Ctrl -> AirportRepo ++ : findByIcaoCode(normalizedIcao)
+AirportRepo -> DB ++ : SELECT Airport WHERE icao_code = ?
+DB --> AirportRepo -- : result
+AirportRepo --> Ctrl -- : Optional<Airport>
+alt ICAO already exists
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+Ctrl -> AreaRepo ++ : ofIdentity(AirControlAreaId.valueOf(id))
+AreaRepo -> DB ++ : SELECT AirControlArea
+DB --> AreaRepo -- : area
+AreaRepo --> Ctrl -- : Optional<AirControlArea>
+alt area missing
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+Ctrl -> Ctrl ++ : new Airport(...,\nnew AirportCoordinates(...), area)
+Ctrl --> Ctrl -- : Airport
+
+Ctrl -> AirportRepo ++ : save(airport)
+AirportRepo -> DB ++ : INSERT INTO Airport
+DB --> AirportRepo -- : saved
+AirportRepo --> Ctrl -- : Airport
+Ctrl --> UI -- : Airport
+
+== Feedback ==
+
+UI -> Operator : "Airport registered successfully."
+UI --> Action -- : true
+Action --> MenuUI -- : false
+MenuUI --> Operator -- : return
+
+@enduml

@@ -1,0 +1,151 @@
+@startuml sequence-disable-customer-collaborator
+title US064 — Disable a Customer's Collaborator: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as Operator
+participant "CustomerCollaboratorsMenu" as MenuUI #DDEEFF
+participant "DisableCustomerCollaboratorAction" as Action #DDEEFF
+participant "DisableCustomerCollaboratorUI" as UI #DDEEFF
+participant "ListCustomerCollaboratorsController" as ListCtrl #DDFFD8
+participant "DisableCustomerCollaboratorController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AirTransportCompanyRepository /\nAirControlAreaRepository" as CustomerRepo #F0E6FF
+participant "CustomerCollaboratorRepository" as CollabRepo #F0E6FF
+participant "UserRepository" as UserRepo #F0E6FF
+participant "UserService\n(AuthzRegistry)" as UserSvc #FFE8E8
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Operator -> MenuUI ++ : selects "Disable customer collaborator"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Customer and Collaborator Selection ==
+
+UI -> Operator : prompt customer type
+Operator -> UI : Air Transport Company or Air Control Area
+
+UI -> CustomerRepo ++ : findAll()
+CustomerRepo -> DB ++ : SELECT customers
+DB --> CustomerRepo -- : customers
+CustomerRepo --> UI -- : Iterable<Customer>
+
+alt no customers
+    UI -> Operator : "No customers available."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+UI -> Operator : display customers
+Operator -> UI : selects customer
+
+alt Air Transport Company selected
+    UI -> ListCtrl ++ : listActiveByAirTransportCompany(customerId)
+else Air Control Area selected
+    UI -> ListCtrl ++ : listActiveByAirControlArea(customerId)
+end
+
+ListCtrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+Authz --> ListCtrl -- : ok
+
+alt Air Transport Company selected
+    ListCtrl -> CollabRepo ++ : findActiveByAirTransportCompanyId(id)
+else Air Control Area selected
+    ListCtrl -> CollabRepo ++ : findActiveByAirControlAreaId(id)
+end
+CollabRepo -> DB ++ : SELECT active collaborators
+DB --> CollabRepo -- : collaborators
+CollabRepo --> ListCtrl -- : Iterable<CustomerCollaborator>
+ListCtrl --> UI -- : Iterable<CustomerCollaborator>
+
+alt no active collaborators
+    UI -> Operator : "No active collaborators found."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+UI -> Operator : display collaborators
+Operator -> UI : selects collaborator
+
+== Disable Collaborator ==
+
+UI -> Ctrl ++ : disable(selected.userId())
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+Authz --> Ctrl -- : ok
+
+Ctrl -> CollabRepo ++ : findByUserId(UserId.valueOf(userId))
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> Ctrl -- : Optional<CustomerCollaborator>
+alt collaborator missing
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+Ctrl -> UserRepo ++ : ofIdentity(userId)
+UserRepo -> DB ++ : SELECT User
+DB --> UserRepo -- : user
+UserRepo --> Ctrl -- : Optional<User>
+alt user missing
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+Ctrl -> Ctrl ++ : collaborator.disable()
+Ctrl --> Ctrl -- : ok
+
+Ctrl -> CollabRepo ++ : save(collaborator)
+CollabRepo -> DB ++ : UPDATE CustomerCollaborator
+DB --> CollabRepo -- : saved
+CollabRepo --> Ctrl -- : CustomerCollaborator
+
+Ctrl -> UserSvc ++ : userOfIdentity(Username.valueOf(user.email()))
+UserSvc --> Ctrl -- : Optional<SystemUser>
+
+opt system user exists
+    Ctrl -> UserSvc ++ : deactivateUser(systemUser)
+    UserSvc --> Ctrl -- : ok
+end
+
+Ctrl -> Ctrl ++ : user.disable()
+Ctrl --> Ctrl -- : ok
+
+Ctrl -> UserRepo ++ : save(user)
+UserRepo -> DB ++ : UPDATE User
+DB --> UserRepo -- : saved
+UserRepo --> Ctrl -- : User
+Ctrl --> UI -- : void
+
+== Feedback ==
+
+UI -> Operator : "Collaborator disabled."
+UI --> Action -- : false
+Action --> MenuUI -- : false
+MenuUI --> Operator -- : return
+
+@enduml

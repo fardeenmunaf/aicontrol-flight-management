@@ -1,0 +1,127 @@
+@startuml class-diagram
+title US062 — List Customer's Collaborators: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+package "backoffice.presentation.customercollaborator" #DDEEFF {
+    class CustomerCollaboratorsMenu {
+        +doShow() : boolean
+        +headline() : String
+        +mainLoop() : void
+    }
+
+    class ListCustomerCollaboratorsAction {
+        +execute() : boolean
+    }
+
+    class ListCustomerCollaboratorsUI {
+        -controller : ListCustomerCollaboratorsController
+        -airTransportCompanyRepository : AirTransportCompanyRepository
+        -airControlAreaRepository : AirControlAreaRepository
+        -userRepository : UserRepository
+        +doShow() : boolean
+        +headline() : String
+        -listFromAirTransportCompany() : void
+        -listFromAirControlArea() : void
+        -printCollaborators(collaborators) : void
+    }
+}
+
+package "customercollaborator.application" #DDFFD8 {
+    class ListCustomerCollaboratorsController {
+        -authz : AuthorizationService
+        -collaboratorRepository : CustomerCollaboratorRepository
+        +ListCustomerCollaboratorsController(CustomerCollaboratorRepository)
+        +listActiveByAirTransportCompany(companyId) : Iterable<CustomerCollaborator>
+        +listActiveByAirControlArea(areaId) : Iterable<CustomerCollaborator>
+    }
+}
+
+package "customercollaborator.domain" #FFF3CD {
+    class CustomerCollaborator <<Entity>> <<AggregateRoot>> {
+        -id : CustomerCollaboratorId
+        -userId : UserId
+        -customerType : CustomerType
+        -position : String
+        -active : boolean
+        +identity() : CustomerCollaboratorId
+        +userId() : UserId
+        +customerType() : CustomerType
+        +position() : String
+        +isActive() : boolean
+    }
+
+    enum CustomerType {
+        AIR_TRANSPORT_COMPANY
+        AIR_CONTROL_AREA
+    }
+}
+
+package "user.domain" #FFF3CD {
+    class User <<Entity>> <<AggregateRoot>> {
+        -userId : UserId
+        -email : String
+        +identity() : UserId
+        +email() : String
+    }
+}
+
+package "customercollaborator.repositories" #F0E6FF {
+    interface CustomerCollaboratorRepository <<DomainRepository>> {
+        +findActiveByAirTransportCompanyId(id) : Iterable<CustomerCollaborator>
+        +findActiveByAirControlAreaId(id) : Iterable<CustomerCollaborator>
+    }
+}
+
+package "airtransportcompany.repositories" #F0E6FF {
+    interface AirTransportCompanyRepository <<DomainRepository>> {
+        +findAll() : Iterable<AirTransportCompany>
+    }
+}
+
+package "aircontrolarea.repositories" #F0E6FF {
+    interface AirControlAreaRepository <<DomainRepository>> {
+        +findAll() : Iterable<AirControlArea>
+    }
+}
+
+package "user.repository" #F0E6FF {
+    interface UserRepository <<DomainRepository>> {
+        +ofIdentity(userId) : Optional<User>
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class CustomerCollaboratorId <<ValueObject>> <<Embeddable>>
+    class UserId <<ValueObject>> <<Embeddable>>
+    class AirTransportCompanyId <<ValueObject>> <<Embeddable>>
+    class AirControlAreaId <<ValueObject>> <<Embeddable>>
+}
+
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} BACKOFFICE_OPERATOR : Role
+    }
+}
+
+CustomerCollaboratorsMenu ..> ListCustomerCollaboratorsAction : creates
+ListCustomerCollaboratorsAction ..> ListCustomerCollaboratorsUI : creates
+
+ListCustomerCollaboratorsUI --> ListCustomerCollaboratorsController : uses
+ListCustomerCollaboratorsUI --> AirTransportCompanyRepository : uses
+ListCustomerCollaboratorsUI --> AirControlAreaRepository : uses
+ListCustomerCollaboratorsUI --> UserRepository : uses
+
+ListCustomerCollaboratorsController --> CustomerCollaboratorRepository : uses
+ListCustomerCollaboratorsController ..> AISafeRoles : uses
+
+CustomerCollaborator *-- CustomerCollaboratorId : identity
+CustomerCollaborator *-- CustomerType : type
+CustomerCollaborator --> UserId : user
+User *-- UserId : identity
+
+@enduml
