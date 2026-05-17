@@ -1,0 +1,113 @@
+@startuml sequence-register-aircraft-model
+title US055 — Register Aircraft Model: Sequence Diagram (Manual via Console)
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as BackOffice
+participant "AircraftManagerMenuUI" as MenuUI #DDEEFF
+participant "RegisterAircraftModelAction" as Action #DDEEFF
+participant "RegisterAircraftModelUI" as UI #DDEEFF
+participant "RegisterAircraftModelController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AircraftModelRepository" as ModelRepo #F0E6FF
+participant "EngineModelRepository" as EngineRepo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+BackOffice -> MenuUI ++ : selects "Register Aircraft Model"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+deactivate Action
+deactivate MenuUI
+
+UI -> BackOffice : prompt model name, manufacturer, country
+BackOffice -> UI ++ : "A320", "Airbus", "France"
+
+UI -> UI : readAircraftType()
+UI -> BackOffice : display types and prompt selection
+BackOffice -> UI ++ : "PASSENGER"
+
+UI -> UI : readInt("Number of engines")
+BackOffice -> UI ++ : 2
+
+UI -> UI : readDouble(...) for flight characteristics
+note right of UI
+  - emptyWeight
+  - mtow
+  - mzfw
+  - fuelCapacity
+  - serviceCeiling
+  - cruiseSpeed
+  - wingArea/Span
+  - drag/lift coefficients
+end note
+BackOffice -> UI ++ : numeric values
+
+UI -> UI : readEngineModelNames(2)
+UI -> BackOffice : display available engine models
+BackOffice -> UI ++ : selects "CFM56"
+
+== Registration ==
+
+UI -> UI : new AircraftModelDTO(...)
+UI -> Ctrl ++ : registerAircraftModel(dto)
+
+== Authorization Check ==
+
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI --> BackOffice -- : "Error: Access denied."
+    return
+end
+Authz --> Ctrl -- : ok
+
+== Validation & Persistence ==
+
+Ctrl -> ModelRepo ++ : findByModelNameAndMaker("A320", "Airbus")
+alt Model already exists
+    ModelRepo --> Ctrl -- : List with existing model
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI --> BackOffice -- : "Error: Aircraft model already exists"
+    return
+end
+ModelRepo --> Ctrl -- : empty list
+
+Ctrl -> Ctrl : validate characteristics (positive values)
+alt Invalid characteristics
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI --> BackOffice -- : "Error: Flight characteristics must be positive"
+    return
+end
+
+Ctrl -> Ctrl : new AircraftModel(dto)
+
+loop for each engineName in dto.engineModelNames
+    Ctrl -> EngineRepo ++ : findByName(engineName)
+    alt Engine not found
+        EngineRepo --> Ctrl -- : Optional.empty()
+        Ctrl --> UI -- : throws IllegalArgumentException
+        UI --> BackOffice -- : "Error: Engine model not found"
+        return
+    end
+    EngineRepo --> Ctrl -- : EngineModel
+    Ctrl -> Ctrl : model.addSupportedEngineModel(engine)
+end
+
+Ctrl -> ModelRepo ++ : save(model)
+ModelRepo -> DB ++ : persist AircraftModel
+DB --> ModelRepo -- : saved
+ModelRepo --> Ctrl -- : AircraftModel
+
+Ctrl --> UI -- : model
+
+== Feedback ==
+
+UI --> BackOffice -- : "Aircraft model registered successfully."
+
+@enduml
+

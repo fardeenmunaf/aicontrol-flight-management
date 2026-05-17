@@ -1,0 +1,68 @@
+@startuml sequence-list-fleet
+title US072 — List Aircraft Fleet: Sequence Diagram (Manual via Console)
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "ATCC" as ATCC
+participant "FleetMenuUI" as MenuUI #DDEEFF
+participant "ListAircraftAction" as Action #DDEEFF
+participant "ListAircraftUI" as UI #DDEEFF
+participant "ListAircraftController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "CustomerCollaboratorRepository" as CollabRepo #F0E6FF
+participant "AirTransportCompanyRepository" as CompanyRepo #F0E6FF
+participant "AircraftRepository" as AircraftRepo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+ATCC -> MenuUI ++ : selects "List Aircraft"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+deactivate Action
+deactivate MenuUI
+
+UI -> Authz ++ : session()
+Authz --> UI -- : Session with authenticatedUser()
+
+UI -> CollabRepo ++ : findByUserId(authenticatedUser.id())
+alt User is not a collaborator
+    CollabRepo --> UI -- : Optional.empty()
+    UI --> ATCC : "Error: Current user is not a customer collaborator"
+    return
+end
+CollabRepo --> UI -- : CustomerCollaborator
+
+UI -> CompanyRepo ++ : ofIdentity(collaborator.airTransportCompanyId())
+CompanyRepo --> UI -- : AirTransportCompany
+
+== Retrieve Fleet ==
+
+UI -> Ctrl ++ : listAll()
+Ctrl -> AircraftRepo ++ : findAll()
+AircraftRepo --> Ctrl -- : Iterable<Aircraft>
+Ctrl --> UI -- : Iterable<Aircraft>
+
+== Display Fleet ==
+
+loop for each aircraft in all aircrafts
+    alt aircraft.companyId == user.companyId
+        UI -> UI : display aircraft details (registration, country, status)
+    end
+end
+
+UI --> ATCC -- : display fleet table
+note right of ATCC
+  Each row shows:
+  - Registration Number
+  - Aircraft Model
+  - Operation Status
+  - Cabin Configuration
+end note
+
+== Navigation ==
+
+@enduml
+

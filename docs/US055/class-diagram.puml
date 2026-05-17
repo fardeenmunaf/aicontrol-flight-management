@@ -1,0 +1,183 @@
+@startuml class-diagram
+title US055 — Register Aircraft Model: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.aircraft" #DDEEFF {
+
+    class AircraftManagerMenuUI {
+        +doShow() : boolean
+        +headline() : String
+        -buildMenu() : Menu
+    }
+
+    class RegisterAircraftModelAction {
+        +execute() : boolean
+    }
+
+    class RegisterAircraftModelUI {
+        -controller : RegisterAircraftModelController
+        +doShow() : boolean
+        +headline() : String
+        -readAircraftType() : AircraftType
+        -readEngineModelNames(numberOfEngines) : List<String>
+        -readInt(prompt) : int
+        -readDouble(prompt) : Double
+        +show() : void
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "aircraftmodel.application" #DDFFD8 {
+
+    class RegisterAircraftModelController {
+        -authz : AuthorizationService
+        -aircraftModelRepository : AircraftModelRepository
+        -engineModelRepository : EngineModelRepository
+        +RegisterAircraftModelController(...)
+        +registerAircraftModel(dto) : AircraftModel
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "aircraftmodel.domain" #FFF3CD {
+
+    class AircraftModel <<Entity>> <<AggregateRoot>> {
+        -aircraftModelId : AircraftModelId
+        -modelName : String
+        -maker : AircraftModelMaker
+        -type : AircraftType
+        -emptyWeight : double
+        -maximumTakeOffWeight : double
+        -maximumZeroFuelWeight : double
+        -maximumFuelCapacity : double
+        -serviceCeiling : double
+        -cruiseSpeed : double
+        -wingArea : double
+        -wingSpan : double
+        -dragCoefficient : double
+        -liftCoefficient : double
+        -numberOfEngines : int
+        -supportedEngines : Set<EngineModel>
+        +AircraftModel(...)
+        +identity() : AircraftModelId
+        +modelName() : String
+        +maker() : AircraftModelMaker
+        +type() : AircraftType
+        +supportedEngineModels() : Set<EngineModel>
+        +addSupportedEngineModel(engine) : void
+        +numberOfEngines() : int
+    }
+
+    class AircraftType <<Enum>> {
+        PASSENGER
+        CARGO
+        MIXED
+    }
+
+    class AircraftModelMaker {
+        -name : String
+        -country : String
+        +AircraftModelMaker(name, country)
+        +name() : String
+        +country() : String
+    }
+}
+
+package "enginemodel.domain" #FFF3CD {
+    class EngineModel <<Entity>> <<AggregateRoot>> {
+        -engineModelId : EngineModelId
+        -name : String
+        -type : EngineType
+        -manufacturer : String
+        +name() : String
+        +type() : EngineType
+        +identity() : EngineModelId
+    }
+
+    enum EngineType {
+        TURBOFAN
+        TURBOPROP
+        PISTON
+        JET
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class AircraftModelId <<ValueObject>> <<Embeddable>> {
+        -modelName : String
+        -manufacturer : String
+        +valueOf(modelName, manufacturer) : AircraftModelId
+    }
+}
+
+' ─── Repository ─────────────────────────────────────────────────────────────
+package "aircraftmodel.repository" #F0E6FF {
+    interface AircraftModelRepository <<DomainRepository>> {
+        +findByModelNameAndMaker(name, maker) : List<AircraftModel>
+        +findAll() : Iterable<AircraftModel>
+        +save(model) : AircraftModel
+    }
+}
+
+package "enginemodel.repository" #F0E6FF {
+    interface EngineModelRepository <<DomainRepository>> {
+        +findByName(name) : Optional<EngineModel>
+        +findAll() : Iterable<EngineModel>
+    }
+}
+
+' ─── Auth Infrastructure ─────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} BACKOFFICE_OPERATOR : Role
+    }
+}
+
+' ─── DTO Layer ───────────────────────────────────────────────────────────────
+package "aircraftmodel.dto" #E8F5FF {
+    class AircraftModelDTO {
+        +modelName : String
+        +makerName : String
+        +makerCountry : String
+        +type : AircraftType
+        +emptyWeight : double
+        +maximumTakeOffWeight : double
+        +maximumZeroFuelWeight : double
+        +maximumFuelCapacity : double
+        +serviceCeiling : double
+        +cruiseSpeed : double
+        +wingArea : double
+        +wingSpan : double
+        +dragCoefficient : double
+        +liftCoefficient : double
+        +numberOfEngines : int
+        +engineModelNames : List<String>
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+AircraftManagerMenuUI ..> RegisterAircraftModelAction : creates
+RegisterAircraftModelAction ..> RegisterAircraftModelUI : creates
+
+RegisterAircraftModelUI --> RegisterAircraftModelController : uses
+RegisterAircraftModelUI --> AircraftModelDTO : creates
+
+RegisterAircraftModelController --> AircraftModelRepository : uses
+RegisterAircraftModelController --> EngineModelRepository : uses
+RegisterAircraftModelController ..> AircraftModel : creates
+RegisterAircraftModelController ..> AISafeRoles : uses
+
+AircraftModel *-- AircraftModelId : identity
+AircraftModel *-- AircraftModelMaker : maker
+AircraftModel *-- AircraftType : type
+AircraftModel "1" o-- "*" EngineModel : supportedEngines
+
+@enduml
+
