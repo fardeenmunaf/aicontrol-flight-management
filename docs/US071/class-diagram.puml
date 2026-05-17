@@ -1,0 +1,135 @@
+@startuml class-diagram
+title US071 — Decommission an Aircraft: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "airtransport.presentation" #DDEEFF {
+
+    class FleetMenuUI {
+        +doShow() : boolean
+        +headline() : String
+    }
+
+    class DecommissionAircraftAction {
+        +execute() : boolean
+    }
+
+    class DecommissionAircraftUI {
+        -controller : DecommissionAircraftController
+        +doShow() : boolean
+        +headline() : String
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "aircraft.application" #DDFFD8 {
+
+    class DecommissionAircraftController {
+        -authz : AuthorizationService
+        -aircraftRepository : AircraftRepository
+        -collaboratorRepository : CustomerCollaboratorRepository
+        -companyRepository : AirTransportCompanyRepository
+        -flightRepository : FlightRepository
+        +DecommissionAircraftController(AircraftRepository,\nCustomerCollaboratorRepository,\nAirTransportCompanyRepository, FlightRepository)
+        +decommissionAircraft(aircraftId) : void
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "aircraft.domain" #FFF3CD {
+
+    class Aircraft <<Entity>> <<AggregateRoot>> {
+        -aircraftId : AircraftId
+        -registrationNumber : String
+        -registrationCountry : String
+        -operationStatus : AircraftOperationStatus
+        -airTransportCompany : AirTransportCompany
+        +identity() : AircraftId
+        +operationStatus() : AircraftOperationStatus
+        +airTransportCompany() : AirTransportCompany
+        +decommission() : void
+    }
+
+    enum AircraftOperationStatus {
+        ACTIVE
+        MAINTENANCE
+        DECOMISSIONED
+    }
+}
+
+package "airtransportcompany.domain" #FFF3CD {
+    class AirTransportCompany <<Entity>> <<AggregateRoot>> {
+        -id : AirTransportCompanyId
+        +identity() : AirTransportCompanyId
+    }
+}
+
+package "flight.domain" #FFF3CD {
+    class Flight <<Entity>> <<AggregateRoot>> {
+        -status : FlightStatus
+    }
+    enum FlightStatus {
+        SCHEDULED
+        AIRBORNE
+        COMPLETED
+        CANCELLED
+    }
+}
+
+' ─── Repositories ────────────────────────────────────────────────────────────
+package "aircraft.repositories" #F0E6FF {
+    interface AircraftRepository <<DomainRepository>> {
+        +ofIdentity(id) : Optional<Aircraft>
+        +findAll() : Iterable<Aircraft>
+        +save(aircraft) : Aircraft
+    }
+}
+
+package "flight.repository" #F0E6FF {
+    interface FlightRepository <<DomainRepository>> {
+        +findByAircraftAndStatus(aircraftId, status) : List<Flight>
+    }
+}
+
+package "airtransportcompany.repositories" #F0E6FF {
+    interface AirTransportCompanyRepository <<DomainRepository>> {
+        +ofIdentity(id) : Optional<AirTransportCompany>
+    }
+}
+
+package "customercollaborator.repositories" #F0E6FF {
+    interface CustomerCollaboratorRepository <<DomainRepository>> {
+        +findByUserId(userId) : Optional<CustomerCollaborator>
+    }
+}
+
+' ─── Auth ────────────────────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} AIR_TRANSPORT_COMPANY_COLLABORATOR : Role
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+FleetMenuUI ..> DecommissionAircraftAction : creates
+DecommissionAircraftAction ..> DecommissionAircraftUI : creates
+
+DecommissionAircraftUI --> DecommissionAircraftController : uses
+
+DecommissionAircraftController --> AircraftRepository : uses
+DecommissionAircraftController --> CustomerCollaboratorRepository : uses
+DecommissionAircraftController --> AirTransportCompanyRepository : uses
+DecommissionAircraftController --> FlightRepository : uses
+DecommissionAircraftController ..> AISafeRoles : uses
+
+Aircraft *-- AircraftOperationStatus : operationStatus
+Aircraft --> AirTransportCompany : airTransportCompany
+Flight *-- FlightStatus : status
+
+@enduml

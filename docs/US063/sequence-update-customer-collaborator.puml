@@ -1,0 +1,129 @@
+@startuml sequence-update-customer-collaborator
+title US063 — Edit a Customer's Collaborator: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as Operator
+participant "CustomerCollaboratorsMenu" as MenuUI #DDEEFF
+participant "UpdateCustomerCollaboratorAction" as Action #DDEEFF
+participant "UpdateCustomerCollaboratorUI" as UI #DDEEFF
+participant "UpdateCustomerCollaboratorController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "CustomerCollaboratorRepository" as CollabRepo #F0E6FF
+participant "AirTransportCompanyRepository /\nAirControlAreaRepository" as CustomerRepo #F0E6FF
+participant "UserRepository" as UserRepo #F0E6FF
+participant "User" as User #FFF3CD
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+activate Operator
+Operator -> MenuUI ++ : selects "Edit Customer Collaborator"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Customer and Collaborator Selection ==
+
+UI -> Operator : prompt customer type
+Operator -> UI : Air Transport Company or Air Control Area
+
+UI -> CustomerRepo ++ : findAll()
+CustomerRepo -> DB ++ : SELECT customers
+DB --> CustomerRepo -- : customers
+CustomerRepo --> UI -- : Iterable<Customer>
+
+UI -> Operator : display customers
+Operator -> UI : selects customer
+
+alt Air Transport Company selected
+    UI -> CollabRepo ++ : findActiveByAirTransportCompanyId(selected.identity())
+    CollabRepo -> DB ++ : SELECT active ATC collaborators
+    DB --> CollabRepo -- : collaborators
+    CollabRepo --> UI -- : Iterable<CustomerCollaborator>
+else Air Control Area selected
+    UI -> CollabRepo ++ : findActiveByAirControlAreaId(selected.identity())
+    CollabRepo -> DB ++ : SELECT active ACA collaborators
+    DB --> CollabRepo -- : collaborators
+    CollabRepo --> UI -- : Iterable<CustomerCollaborator>
+end
+
+alt no active collaborators
+    UI -> Operator : "No active collaborators found."
+    return
+end
+
+UI -> UserRepo ++ : ofIdentity(collaborator.userId())
+UserRepo -> DB ++ : SELECT User
+DB --> UserRepo -- : user
+UserRepo --> UI -- : Optional<User>
+
+UI -> Operator : display collaborators
+Operator -> UI : selects collaborator\nand enters new email/phone
+
+alt no field provided
+    UI -> Operator : "At least one field must be provided for update."
+    return
+end
+
+== Authorization Check ==
+
+UI -> Ctrl ++ : updateCollaboratorContactInfo(userId, newEmail, newPhone)
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Operator : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+== Update ==
+
+Ctrl -> CollabRepo ++ : findByUserId(userId)
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> Ctrl -- : Optional<CustomerCollaborator>
+alt collaborator missing or disabled
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    return
+end
+
+Ctrl -> UserRepo ++ : ofIdentity(userId)
+UserRepo -> DB ++ : SELECT User
+DB --> UserRepo -- : user
+UserRepo --> Ctrl -- : Optional<User>
+alt user missing
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    return
+end
+
+opt new email provided
+    Ctrl -> User ++ : updateEmail(newEmail)
+    User --> Ctrl -- : ok
+end
+
+opt new phone provided
+    Ctrl -> User ++ : updatePhoneNumber(newPhone)
+    User --> Ctrl -- : ok
+end
+
+Ctrl -> UserRepo ++ : save(user)
+UserRepo -> DB ++ : UPDATE User
+DB --> UserRepo -- : saved
+UserRepo --> Ctrl -- : User
+
+Ctrl --> UI -- : User
+
+== Feedback ==
+
+UI -> Operator : "Customer collaborator information successfully updated."
+deactivate UI
+deactivate Action
+deactivate MenuUI
+deactivate Operator
+
+@enduml

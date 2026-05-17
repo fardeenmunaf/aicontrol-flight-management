@@ -1,0 +1,145 @@
+@startuml sequence-decommission-aircraft
+title US071 — Decommission an Aircraft: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Air Transport Company Collaborator" as Collaborator
+participant "FleetMenuUI" as MenuUI #DDEEFF
+participant "DecommissionAircraftAction" as Action #DDEEFF
+participant "DecommissionAircraftUI" as UI #DDEEFF
+participant "DecommissionAircraftController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "CustomerCollaboratorRepository" as CollabRepo #F0E6FF
+participant "AirTransportCompanyRepository" as CompanyRepo #F0E6FF
+participant "AircraftRepository" as AircraftRepo #F0E6FF
+participant "FlightRepository" as FlightRepo #F0E6FF
+participant "Aircraft" as Aircraft #FFF3CD
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+activate Collaborator
+Collaborator -> MenuUI ++ : selects "Decommission Aircraft"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Load Fleet ==
+
+UI -> Authz ++ : session()
+Authz --> UI -- : authenticated user
+
+UI -> CollabRepo ++ : findByUserId(userId)
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> UI -- : Optional<CustomerCollaborator>
+alt not an air transport company collaborator
+    UI -> Collaborator : "You are not assigned to an air transport company."
+    return
+end
+
+UI -> CompanyRepo ++ : ofIdentity(collaborator.airTransportCompanyId())
+CompanyRepo -> DB ++ : SELECT AirTransportCompany
+DB --> CompanyRepo -- : company
+CompanyRepo --> UI -- : Optional<AirTransportCompany>
+
+UI -> AircraftRepo ++ : findAll()
+AircraftRepo -> DB ++ : SELECT Aircraft
+DB --> AircraftRepo -- : aircraft
+AircraftRepo --> UI -- : Iterable<Aircraft>
+
+UI -> UI : filter company aircraft\nexcluding DECOMISSIONED
+alt no active aircraft
+    UI -> Collaborator : "No active aircraft available to decommission."
+    return
+end
+
+UI -> Collaborator : display active aircraft
+Collaborator -> UI : selects aircraft and confirms
+alt cancelled
+    UI -> Collaborator : "Decommissioning cancelled."
+    return
+end
+
+== Authorization Check ==
+
+UI -> Ctrl ++ : decommissionAircraft(aircraftId)
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(AIR_TRANSPORT_COMPANY_COLLABORATOR)
+alt not AIR_TRANSPORT_COMPANY_COLLABORATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Collaborator : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+== Ownership and Flight Checks ==
+
+Ctrl -> AircraftRepo ++ : ofIdentity(aircraftId)
+AircraftRepo -> DB ++ : SELECT Aircraft
+DB --> AircraftRepo -- : aircraft
+AircraftRepo --> Ctrl -- : Optional<Aircraft>
+alt aircraft missing
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Collaborator : "Error: ..."
+    return
+end
+
+Ctrl -> Authz ++ : session()
+Authz --> Ctrl -- : authenticated user
+
+Ctrl -> CollabRepo ++ : findByUserId(userId)
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> Ctrl -- : Optional<CustomerCollaborator>
+
+Ctrl -> CompanyRepo ++ : ofIdentity(collaborator.airTransportCompanyId())
+CompanyRepo -> DB ++ : SELECT AirTransportCompany
+DB --> CompanyRepo -- : company
+CompanyRepo --> Ctrl -- : Optional<AirTransportCompany>
+
+Ctrl -> Ctrl : validate aircraft belongs to company\nand is not already decommissioned
+alt invalid ownership or already decommissioned
+    Ctrl --> UI -- : throws IllegalStateException
+    UI -> Collaborator : "Error: ..."
+    return
+end
+
+Ctrl -> FlightRepo ++ : findByAircraftAndStatus(aircraft.identity(), SCHEDULED)
+FlightRepo -> DB ++ : SELECT scheduled flights
+DB --> FlightRepo -- : flights
+FlightRepo --> Ctrl -- : List<Flight>
+
+Ctrl -> FlightRepo ++ : findByAircraftAndStatus(aircraft.identity(), AIRBORNE)
+FlightRepo -> DB ++ : SELECT airborne flights
+DB --> FlightRepo -- : flights
+FlightRepo --> Ctrl -- : List<Flight>
+
+alt pending flights exist
+    Ctrl --> UI -- : throws IllegalStateException
+    UI -> Collaborator : "Error: Aircraft has pending flights..."
+    return
+end
+
+== Decommission ==
+
+Ctrl -> Aircraft ++ : decommission()
+Aircraft --> Ctrl -- : ok
+
+Ctrl -> AircraftRepo ++ : save(aircraft)
+AircraftRepo -> DB ++ : UPDATE Aircraft status
+DB --> AircraftRepo -- : saved
+AircraftRepo --> Ctrl -- : Aircraft
+
+Ctrl --> UI -- : void
+
+== Feedback ==
+
+UI -> Collaborator : "Aircraft decommissioned successfully."
+deactivate UI
+deactivate Action
+deactivate MenuUI
+deactivate Collaborator
+
+@enduml

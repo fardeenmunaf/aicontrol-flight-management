@@ -1,0 +1,141 @@
+@startuml class-diagram
+title US056 — Create an Aircraft Engine Model: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.enginemodel" #DDEEFF {
+
+    class EngineModelsMenuUI {
+        +doShow() : boolean
+        +headline() : String
+        -buildEngineModelsMenu() : Menu
+    }
+
+    class RegisterEngineModelAction {
+        +execute() : boolean
+    }
+
+    class RegisterEngineModelUI {
+        -controller : RegisterEngineModelController
+        +doShow() : boolean
+        +headline() : String
+        -readEngineType() : EngineType
+        -readFuelType() : FuelType
+        -readDouble(prompt) : Double
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "enginemodel.application" #DDFFD8 {
+
+    class RegisterEngineModelController {
+        -authz : AuthorizationService
+        -engineModelRepository : EngineModelRepository
+        +RegisterEngineModelController(EngineModelRepository)
+        +registerEngineModel(name, type, power, efficiency,\nthrustSeaLevelStopped, thrustSeaLevelCruise,\nthrustSpecificFuelConsumption, makerName,\nmakerCountry, fuelType, fuelDensity,\nfuelSpecificEnergy) : EngineModel
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "enginemodel.domain" #FFF3CD {
+
+    class EngineModel <<Entity>> <<AggregateRoot>> {
+        -engineModelId : EngineModelId
+        -name : String
+        -type : EngineType
+        -power : Double
+        -efficiency : Double
+        -thrustSeaLevelStopped : Double
+        -thrustSeaLevelCruise : Double
+        -thrustSpecificFuelConsumption : Double
+        -maker : EngineModelMaker
+        -fuelProperties : FuelProperties
+        +identity() : EngineModelId
+        +name() : String
+        +type() : EngineType
+        +maker() : EngineModelMaker
+        +fuelProperties() : FuelProperties
+    }
+
+    class EngineModelMaker <<ValueObject>> <<Embeddable>> {
+        -name : String
+        -country : String
+        +name() : String
+        +country() : String
+    }
+
+    class FuelProperties <<ValueObject>> <<Embeddable>> {
+        -type : FuelType
+        -density : Double
+        -specificEnergy : Double
+        +type() : FuelType
+        +density() : Double
+        +specificEnergy() : Double
+    }
+
+    enum EngineType {
+        TURBOFAN
+        TURBOPROP
+        TURBOJET
+        PISTON
+        ELECTRIC
+    }
+
+    enum FuelType {
+        JET_A
+        AVGAS
+        DIESEL
+        ELECTRIC
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class EngineModelId <<ValueObject>> <<Embeddable>> {
+        -value : String
+        +newId() : EngineModelId
+        +valueOf(value) : EngineModelId
+        +toString() : String
+    }
+}
+
+' ─── Repository ─────────────────────────────────────────────────────────────
+package "enginemodel.repositories" #F0E6FF {
+    interface EngineModelRepository <<DomainRepository>> {
+        +findAll() : Iterable<EngineModel>
+        +findByNameAndMakerName(name, makerName) : Optional<EngineModel>
+        +save(engineModel) : EngineModel
+    }
+}
+
+' ─── Auth ────────────────────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} BACKOFFICE_OPERATOR : Role
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+EngineModelsMenuUI ..> RegisterEngineModelAction : creates
+RegisterEngineModelAction ..> RegisterEngineModelUI : creates
+
+RegisterEngineModelUI --> RegisterEngineModelController : uses
+
+RegisterEngineModelController --> EngineModelRepository : uses
+RegisterEngineModelController ..> AISafeRoles : uses
+RegisterEngineModelController ..> EngineModelMaker : creates
+RegisterEngineModelController ..> FuelProperties : creates
+RegisterEngineModelController ..> EngineModel : creates
+
+EngineModel *-- EngineModelId : identity
+EngineModel *-- EngineModelMaker : maker
+EngineModel *-- FuelProperties : fuelProperties
+EngineModel *-- EngineType : type
+FuelProperties *-- FuelType : type
+
+@enduml

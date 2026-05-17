@@ -1,0 +1,121 @@
+@startuml class-diagram
+title US063 — Edit a Customer's Collaborator: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.customercollaborator" #DDEEFF {
+
+    class CustomerCollaboratorsMenu {
+        +doShow() : boolean
+        +headline() : String
+    }
+
+    class UpdateCustomerCollaboratorAction {
+        +execute() : boolean
+    }
+
+    class UpdateCustomerCollaboratorUI {
+        -controller : UpdateCustomerCollaboratorController
+        -collaboratorRepository : CustomerCollaboratorRepository
+        -airTransportCompanyRepository : AirTransportCompanyRepository
+        -airControlAreaRepository : AirControlAreaRepository
+        -userRepository : UserRepository
+        +doShow() : boolean
+        +headline() : String
+        -updateFromAirTransportCompany() : void
+        -updateFromAirControlArea() : void
+        -updateSelectedCollaborator(collaborators) : void
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "customercollaborator.application" #DDFFD8 {
+
+    class UpdateCustomerCollaboratorController {
+        -authz : AuthorizationService
+        -collaboratorRepository : CustomerCollaboratorRepository
+        -userRepository : UserRepository
+        +UpdateCustomerCollaboratorController(CustomerCollaboratorRepository, UserRepository)
+        +updateCollaboratorContactInfo(userId, newEmail, newPhoneNumber) : User
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "customercollaborator.domain" #FFF3CD {
+
+    class CustomerCollaborator <<Entity>> <<AggregateRoot>> {
+        -id : CustomerCollaboratorId
+        -userId : UserId
+        -customerType : CustomerType
+        -airTransportCompanyId : AirTransportCompanyId
+        -airControlAreaId : AirControlAreaId
+        -position : String
+        -active : boolean
+        +identity() : CustomerCollaboratorId
+        +userId() : UserId
+        +customerType() : CustomerType
+        +isActive() : boolean
+        +position() : String
+    }
+
+    enum CustomerType {
+        AIR_TRANSPORT_COMPANY
+        AIR_CONTROL_AREA
+    }
+}
+
+package "user.domain" #FFF3CD {
+    class User <<Entity>> <<AggregateRoot>> {
+        -userId : UserId
+        -email : String
+        -phoneNumber : String
+        +email() : String
+        +phoneNumber() : String
+        +updateEmail(newEmail) : void
+        +updatePhoneNumber(newPhone) : void
+    }
+}
+
+' ─── Repositories ────────────────────────────────────────────────────────────
+package "customercollaborator.repositories" #F0E6FF {
+    interface CustomerCollaboratorRepository <<DomainRepository>> {
+        +findByUserId(userId) : Optional<CustomerCollaborator>
+        +findActiveByAirTransportCompanyId(id) : Iterable<CustomerCollaborator>
+        +findActiveByAirControlAreaId(id) : Iterable<CustomerCollaborator>
+    }
+}
+
+package "user.repository" #F0E6FF {
+    interface UserRepository <<DomainRepository>> {
+        +ofIdentity(userId) : Optional<User>
+        +save(user) : User
+    }
+}
+
+' ─── Auth ────────────────────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} BACKOFFICE_OPERATOR : Role
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+CustomerCollaboratorsMenu ..> UpdateCustomerCollaboratorAction : creates
+UpdateCustomerCollaboratorAction ..> UpdateCustomerCollaboratorUI : creates
+
+UpdateCustomerCollaboratorUI --> UpdateCustomerCollaboratorController : uses
+UpdateCustomerCollaboratorUI --> CustomerCollaboratorRepository : uses
+
+UpdateCustomerCollaboratorController --> CustomerCollaboratorRepository : uses
+UpdateCustomerCollaboratorController --> UserRepository : uses
+UpdateCustomerCollaboratorController ..> AISafeRoles : uses
+
+CustomerCollaborator *-- CustomerType : customerType
+
+@enduml

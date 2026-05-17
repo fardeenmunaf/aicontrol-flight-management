@@ -1,0 +1,145 @@
+@startuml sequence-register-aircraft
+title US070 — Add an Aircraft to an Air Transport Company: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Air Transport Company Collaborator" as Collaborator
+participant "FleetMenuUI" as MenuUI #DDEEFF
+participant "RegisterAircraftAction" as Action #DDEEFF
+participant "RegisterAircraftUI" as UI #DDEEFF
+participant "RegisterAircraftController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "CustomerCollaboratorRepository" as CollabRepo #F0E6FF
+participant "AirTransportCompanyRepository" as CompanyRepo #F0E6FF
+participant "AircraftModelRepository" as ModelRepo #F0E6FF
+participant "EngineModelRepository" as EngineRepo #F0E6FF
+participant "AircraftRepository" as AircraftRepo #F0E6FF
+participant "Aircraft" as Aircraft #FFF3CD
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+activate Collaborator
+Collaborator -> MenuUI ++ : selects "Register Aircraft"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Load Company and Model Options ==
+
+UI -> Authz ++ : session()
+Authz --> UI -- : authenticated user
+
+UI -> CollabRepo ++ : findByUserId(userId)
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> UI -- : Optional<CustomerCollaborator>
+alt not an air transport company collaborator
+    UI -> Collaborator : "You are not assigned to an air transport company."
+    return
+end
+
+UI -> CompanyRepo ++ : ofIdentity(collaborator.airTransportCompanyId())
+CompanyRepo -> DB ++ : SELECT AirTransportCompany
+DB --> CompanyRepo -- : company
+CompanyRepo --> UI -- : Optional<AirTransportCompany>
+
+UI -> ModelRepo ++ : findAll()
+ModelRepo -> DB ++ : SELECT AircraftModel
+DB --> ModelRepo -- : aircraft models
+ModelRepo --> UI -- : Iterable<AircraftModel>
+alt no aircraft models
+    UI -> Collaborator : "No aircraft models available."
+    return
+end
+
+UI -> Collaborator : display models and certified engines
+Collaborator -> UI : selects model and engine\nenters registration, crew, seats, status
+
+alt seats exceed UI estimate
+    UI -> Collaborator : "Error: total seats exceed estimated seat limit"
+    return
+end
+
+== Authorization Check ==
+
+UI -> Ctrl ++ : registerAircraft(...)
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(AIR_TRANSPORT_COMPANY_COLLABORATOR)
+alt not AIR_TRANSPORT_COMPANY_COLLABORATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Collaborator : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+== Validation and Lookup ==
+
+Ctrl -> Ctrl : validate registration, country,\nstatus and passenger limit
+alt invalid data
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Collaborator : "Error: ..."
+    return
+end
+
+Ctrl -> AircraftRepo ++ : findByRegistrationNumber(registrationNumber)
+AircraftRepo -> DB ++ : SELECT Aircraft by registration
+DB --> AircraftRepo -- : result
+AircraftRepo --> Ctrl -- : Optional<Aircraft>
+alt duplicate registration
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Collaborator : "Error: ..."
+    return
+end
+
+Ctrl -> ModelRepo ++ : ofIdentity(aircraftModelId)
+ModelRepo -> DB ++ : SELECT AircraftModel
+DB --> ModelRepo -- : model
+ModelRepo --> Ctrl -- : Optional<AircraftModel>
+
+Ctrl -> EngineRepo ++ : ofIdentity(engineModelId)
+EngineRepo -> DB ++ : SELECT EngineModel
+DB --> EngineRepo -- : engine
+EngineRepo --> Ctrl -- : Optional<EngineModel>
+
+Ctrl -> Authz ++ : session()
+Authz --> Ctrl -- : authenticated user
+
+Ctrl -> CollabRepo ++ : findByUserId(userId)
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> Ctrl -- : Optional<CustomerCollaborator>
+
+Ctrl -> CompanyRepo ++ : ofIdentity(collaborator.airTransportCompanyId())
+CompanyRepo -> DB ++ : SELECT AirTransportCompany
+DB --> CompanyRepo -- : company
+CompanyRepo --> Ctrl -- : Optional<AirTransportCompany>
+
+== Persistence ==
+
+Ctrl -> Aircraft ++ : new Aircraft(...)
+alt engine not certified for model
+    Aircraft --> Ctrl -- : throws IllegalArgumentException
+    Ctrl --> UI -- : propagates exception
+    UI -> Collaborator : "Error: ..."
+    return
+end
+Aircraft --> Ctrl -- : Aircraft
+
+Ctrl -> AircraftRepo ++ : save(aircraft)
+AircraftRepo -> DB ++ : INSERT Aircraft
+DB --> AircraftRepo -- : saved
+AircraftRepo --> Ctrl -- : Aircraft
+
+Ctrl --> UI -- : Aircraft
+
+== Feedback ==
+
+UI -> Collaborator : "Aircraft registered successfully."
+deactivate UI
+deactivate Action
+deactivate MenuUI
+deactivate Collaborator
+
+@enduml

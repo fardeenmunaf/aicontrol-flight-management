@@ -1,0 +1,81 @@
+@startuml sequence-register-engine-model
+title US056 — Create an Aircraft Engine Model: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as Operator
+participant "EngineModelsMenuUI" as MenuUI #DDEEFF
+participant "RegisterEngineModelAction" as Action #DDEEFF
+participant "RegisterEngineModelUI" as UI #DDEEFF
+participant "RegisterEngineModelController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "EngineModel" as EngineModel #FFF3CD
+participant "EngineModelRepository" as Repo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+activate Operator
+Operator -> MenuUI ++ : selects "Create Engine Model"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Data Collection ==
+
+UI -> Operator : prompt engine data\nname, type, power, thrust, maker, fuel
+Operator -> UI : values
+
+== Authorization Check ==
+
+UI -> Ctrl ++ : registerEngineModel(...)
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Operator : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+== Validation and Uniqueness ==
+
+Ctrl -> Ctrl : validate required fields\nand positive numeric values
+alt invalid data
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    return
+end
+
+Ctrl -> Repo ++ : findByNameAndMakerName(name, makerName)
+Repo -> DB ++ : SELECT EngineModel\nWHERE name and maker
+DB --> Repo -- : result
+Repo --> Ctrl -- : Optional<EngineModel>
+alt duplicate exists
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    return
+end
+
+== Persistence ==
+
+Ctrl -> EngineModel ++ : new EngineModel(...)
+EngineModel --> Ctrl -- : EngineModel
+
+Ctrl -> Repo ++ : save(engineModel)
+Repo -> DB ++ : INSERT EngineModel
+DB --> Repo -- : saved
+Repo --> Ctrl -- : EngineModel
+
+Ctrl --> UI -- : EngineModel
+
+== Feedback ==
+
+UI -> Operator : "Engine model registered successfully."
+deactivate UI
+deactivate Action
+deactivate MenuUI
+deactivate Operator
+
+@enduml

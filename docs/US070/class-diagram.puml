@@ -1,0 +1,172 @@
+@startuml class-diagram
+title US070 — Add an Aircraft to an Air Transport Company: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "airtransport.presentation" #DDEEFF {
+
+    class FleetMenuUI {
+        +doShow() : boolean
+        +headline() : String
+    }
+
+    class RegisterAircraftAction {
+        +execute() : boolean
+    }
+
+    class RegisterAircraftUI {
+        -controller : RegisterAircraftController
+        +doShow() : boolean
+        +headline() : String
+        -readLine(prompt) : String
+        -readInt(prompt) : int
+        -chooseOperationStatus() : AircraftOperationStatus
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "aircraft.application" #DDFFD8 {
+
+    class RegisterAircraftController {
+        -authz : AuthorizationService
+        -aircraftRepository : AircraftRepository
+        -aircraftModelRepository : AircraftModelRepository
+        -collaboratorRepository : CustomerCollaboratorRepository
+        -companyRepository : AirTransportCompanyRepository
+        -engineModelRepository : EngineModelRepository
+        +registerAircraft(registrationNumber, registrationCountry,\noperationStatus, flightCrewCount, aircraftModelId,\nengineModelId, economySeats, businessSeats, firstSeats) : Aircraft
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "aircraft.domain" #FFF3CD {
+
+    class Aircraft <<Entity>> <<AggregateRoot>> {
+        -aircraftId : AircraftId
+        -registrationNumber : String
+        -registrationCountry : String
+        -operationStatus : AircraftOperationStatus
+        -flightCrewCount : int
+        -aircraftModel : AircraftModel
+        -engineModel : EngineModel
+        -cabinConfiguration : CabinConfiguration
+        -airTransportCompany : AirTransportCompany
+        +identity() : AircraftId
+        +registrationNumber() : String
+        +operationStatus() : AircraftOperationStatus
+        +aircraftModel() : AircraftModel
+        +airTransportCompany() : AirTransportCompany
+    }
+
+    class CabinConfiguration <<ValueObject>> <<Embeddable>> {
+        -economyClassSeats : int
+        -businessClassSeats : int
+        -firstClassSeats : int
+    }
+
+    enum AircraftOperationStatus {
+        ACTIVE
+        MAINTENANCE
+        DECOMISSIONED
+    }
+}
+
+package "aircraftmodel.domain" #FFF3CD {
+    class AircraftModel <<Entity>> <<AggregateRoot>> {
+        -aircraftModelId : AircraftModelId
+        -modelName : String
+        -emptyWeight : Double
+        -maximumZeroFuelWeight : Double
+        +supportedEngineModels() : Set<EngineModel>
+        +maximumZeroFuelWeight() : Double
+        +emptyWeight() : Double
+    }
+}
+
+package "enginemodel.domain" #FFF3CD {
+    class EngineModel <<Entity>> <<AggregateRoot>> {
+        -engineModelId : EngineModelId
+        -name : String
+        +identity() : EngineModelId
+        +name() : String
+    }
+}
+
+package "airtransportcompany.domain" #FFF3CD {
+    class AirTransportCompany <<Entity>> <<AggregateRoot>> {
+        -id : AirTransportCompanyId
+        -name : String
+        +identity() : AirTransportCompanyId
+        +name() : String
+    }
+}
+
+' ─── Repositories ────────────────────────────────────────────────────────────
+package "aircraft.repositories" #F0E6FF {
+    interface AircraftRepository <<DomainRepository>> {
+        +findByRegistrationNumber(reg) : Optional<Aircraft>
+        +save(aircraft) : Aircraft
+    }
+}
+
+package "aircraftmodel.repositories" #F0E6FF {
+    interface AircraftModelRepository <<DomainRepository>> {
+        +ofIdentity(id) : Optional<AircraftModel>
+        +findAll() : Iterable<AircraftModel>
+    }
+}
+
+package "enginemodel.repositories" #F0E6FF {
+    interface EngineModelRepository <<DomainRepository>> {
+        +ofIdentity(id) : Optional<EngineModel>
+    }
+}
+
+package "airtransportcompany.repositories" #F0E6FF {
+    interface AirTransportCompanyRepository <<DomainRepository>> {
+        +ofIdentity(id) : Optional<AirTransportCompany>
+    }
+}
+
+package "customercollaborator.repositories" #F0E6FF {
+    interface CustomerCollaboratorRepository <<DomainRepository>> {
+        +findByUserId(userId) : Optional<CustomerCollaborator>
+    }
+}
+
+' ─── Auth ────────────────────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} AIR_TRANSPORT_COMPANY_COLLABORATOR : Role
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+FleetMenuUI ..> RegisterAircraftAction : creates
+RegisterAircraftAction ..> RegisterAircraftUI : creates
+
+RegisterAircraftUI --> RegisterAircraftController : uses
+
+RegisterAircraftController --> AircraftRepository : uses
+RegisterAircraftController --> AircraftModelRepository : uses
+RegisterAircraftController --> EngineModelRepository : uses
+RegisterAircraftController --> AirTransportCompanyRepository : uses
+RegisterAircraftController --> CustomerCollaboratorRepository : uses
+RegisterAircraftController ..> AISafeRoles : uses
+RegisterAircraftController ..> CabinConfiguration : creates
+RegisterAircraftController ..> Aircraft : creates
+
+Aircraft *-- AircraftId : identity
+Aircraft *-- CabinConfiguration : cabinConfiguration
+Aircraft *-- AircraftOperationStatus : operationStatus
+Aircraft --> AircraftModel : aircraftModel
+Aircraft --> EngineModel : engineModel
+Aircraft --> AirTransportCompany : airTransportCompany
+
+@enduml
