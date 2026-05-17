@@ -361,40 +361,27 @@ make clean    # cleans build artifacts
 
 ---
 
-## Structure
-
-```
-src/
-├── main/c/
-│   ├── simulation_engine.c      ← main() orchestrator: shm, semaphores, pipes, fork, step-lock loop,
-│   │                               violation detection, signal dispatch, position history report
-│   ├── flight_simulation.c      ← per-flight child process: gate hold, climb/cruise/descend,
-│   │                               physics step, multi-leg transitions, SIGUSR1/SIGTERM handlers
-│   ├── flight_simulation.h
-│   ├── physics.c/h              ← ISA atmosphere, IAS→Mach→TAS, lift/drag/thrust, step integration
-│   ├── position_tracker.c/h     ← is_valid_position(), append_position(), PositionHistory
-│   ├── json_parser.c/h          ← loads simulation_settings.json and flightplan JSONs (multi-leg aware)
-│   ├── structs.h                ← all shared types: Flight, Leg, Waypoint, StepData, PositionHistory,
-│   │                               PipeMessage, SharedMemoryData, SimulationConfig, etc.
-│   ├── test_physics.c           ← C unit tests for ISA, thrust, aerodynamics, fuel burn, step distance
-│   ├── test_position_tracker.c  ← C unit tests for position validation and history (TC03, TC05, TC06)
-│   └── libs/
-│       ├── cJSON.c
-│       └── cJSON.h
-Makefile
-flightplansSim/                  ← flight plan JSON files loaded at runtime
-flightplans/                     ← additional reference flight plans
-simulation_settings.json         ← runtime simulation configuration
-simulation_output.txt            ← output from last `make run`
-docs/
-└── sequence-simulation.puml     ← PlantUML sequence diagram of the simulation flow
-```
-
----
-
 ## Requirements
 
 - POSIX-compliant OS (Linux)
 - GCC compiler
 - POSIX shared memory (`-lrt`)
 - POSIX math library (`-lm`)
+
+---
+
+## Documentation
+
+[Docs Folder](./docs)
+
+--
+
+## Team Members Evaluation
+
+| Member | ID | US Done | Evaluation |
+| --- | --- | --- | --- | 
+| Fardeen Munaf | 1231567 | US103 | 20 |
+| Eduardo Pacheco | 1231566 | US102 | 20 |
+| Tomás Barbosa | 1241340 | US109 | 20 |
+| Tiago Sousa | 1240719 | US101 | 20 |
+| Diogo Remelgado | 1221407 | US100 | 20 |
