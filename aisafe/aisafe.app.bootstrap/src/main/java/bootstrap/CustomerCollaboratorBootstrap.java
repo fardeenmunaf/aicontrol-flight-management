@@ -8,6 +8,7 @@ import customercollaborator.domain.CustomerCollaborator;
 import customercollaborator.domain.CustomerType;
 import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
+import eapli.framework.infrastructure.authz.domain.model.Username;
 import shared.domain.AirControlAreaId;
 import shared.domain.AirTransportCompanyId;
 import shared.domain.UserId;
@@ -50,7 +51,7 @@ public class CustomerCollaboratorBootstrap {
                                                            final String phoneNumber,
                                                            final String iataCode,
                                                            final String position) {
-        if (userRepository.findByEmail(email).isPresent()) {
+        if (AuthzRegistry.userService().userOfIdentity(Username.valueOf(email)).isPresent()) {
             return;
         }
 
@@ -80,7 +81,7 @@ public class CustomerCollaboratorBootstrap {
                                                              final String phoneNumber,
                                                              final String areaCode,
                                                              final String position) {
-        if (userRepository.findByEmail(email).isPresent()) {
+        if (AuthzRegistry.userService().userOfIdentity(Username.valueOf(email)).isPresent()) {
             return;
         }
 

@@ -12,42 +12,11 @@
 #include "json_parser.h"
 #include "flight_simulation.h"
 #include "position_tracker.h"
-#include <pthread.h>    // pthread_create, pthread_join, mutex, cond — SCOMP module 11
 #include <signal.h>     // kill, SIGUSR1, SIGTERM
 
 // Name of the POSIX shared memory object that all processes share.
 // The leading '/' is required by the POSIX spec for shm_open names.
 #define SHM_NAME "/aisafe_sim"
-
-// ── US102 — violation detection thread synchronization ────────────────────────
-//
-// The step-lock main thread signals these primitives once per simulation step
-// after all child positions are updated in shared memory.
-// The violation detection thread (US106 architecture) wakes, scans positions,
-// sends SIGUSR1 to offending processes, and signals back when done.
-//
-// Producer-consumer pattern with two condition variables (SCOMP module 11):
-//   step_ready_cond: main signals → thread wakes to run check_violations()
-//   check_done_cond: thread signals → main continues to print_step_table()
-// This guarantees the step banner always shows the up-to-date violation count.
-
-static pthread_mutex_t step_mutex      = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t  step_ready_cond = PTHREAD_COND_INITIALIZER;
-static pthread_cond_t  check_done_cond = PTHREAD_COND_INITIALIZER;
-static volatile bool   step_is_ready   = false;
-static volatile bool   check_is_done   = false;
-
-// Arguments passed to the violation detection thread.
-// was_active[] is snapshotted by the main thread before each step signal so
-// the thread always sees which flights were active for the step being checked.
-
-typedef struct {
-    SharedMemoryData *shm;
-    pid_t            *pids;                   // pointer into main()'s pids[] array
-    int               num_flights;
-    bool              was_active[MAX_FLIGHTS]; // copied per step under mutex
-    bool              simulation_done;         // main sets true when loop exits
-} ViolationThreadArgs;
 
 // ── SECTION 1 — Shared memory setup ───────────────────────────────────────────
 //
@@ -237,54 +206,6 @@ static void check_violations(SharedMemoryData *shm, bool *was_active,
         }
         shm->termination_requested = true;
     }
-}
-
-// ── US102/US106 — dedicated violation detection thread ────────────────────────
-//
-// Runs inside the parent process, concurrent with the step-lock loop.
-// Satisfies US106's requirement that safety violation detection runs in its own
-// thread, independently of the main simulation loop.
-//
-// Synchronization (producer-consumer, SCOMP module 11):
-//   Main thread (producer):
-//     1. Copies was_active[] snapshot and sets step_is_ready = true.
-//     2. Signals step_ready_cond and waits on check_done_cond.
-//   This thread (consumer):
-//     1. Waits on step_ready_cond until step_is_ready is true.
-//     2. Calls check_violations() — scans positions, sends SIGUSR1 / SIGTERM.
-//     3. Sets check_is_done = true and signals check_done_cond.
-//
-// Children are blocked on their per-flight step semaphore during this window —
-// no concurrent writes to shared memory — so position reads are safe without
-// an additional lock.
-
-static void *violation_detection_thread(void *arg) {
-    ViolationThreadArgs *args = (ViolationThreadArgs *)arg;
-
-    while (1) {
-        // Wait until the main thread posts a new step or signals shutdown.
-        pthread_mutex_lock(&step_mutex);
-        while (!step_is_ready && !args->simulation_done)
-            pthread_cond_wait(&step_ready_cond, &step_mutex);
-
-        if (args->simulation_done) {
-            pthread_mutex_unlock(&step_mutex);
-            break;
-        }
-        step_is_ready = false;
-        pthread_mutex_unlock(&step_mutex);
-
-        // Run violation detection using the was_active snapshot for this step.
-        check_violations(args->shm, args->was_active, args->pids, args->num_flights);
-
-        // Signal the main thread that detection for this step is complete.
-        pthread_mutex_lock(&step_mutex);
-        check_is_done = true;
-        pthread_cond_signal(&check_done_cond);
-        pthread_mutex_unlock(&step_mutex);
-    }
-
-    return NULL;
 }
 
 // ── SECTION 4 — Per-step output ───────────────────────────────────────────────
@@ -591,26 +512,6 @@ int main() {
         sem_wait(main_sem);
     }
 
-    // ── US102 — create the violation detection thread ─────────────────────────
-    // The thread runs for the entire simulation and is joined before cleanup.
-    // viol_args lives on main()'s stack — safe because pthread_join() is called
-    // before main() returns.  pids[] is fully populated at this point.
-
-    ViolationThreadArgs viol_args;
-    viol_args.shm             = shm;
-    viol_args.pids            = pids;
-    viol_args.num_flights     = shm->num_flights;
-    viol_args.simulation_done = false;
-    memset(viol_args.was_active, 0, sizeof(viol_args.was_active));
-
-    pthread_t viol_thread;
-    if (pthread_create(&viol_thread, NULL, violation_detection_thread, &viol_args) != 0) {
-        perror("pthread_create (violation detection)");
-        cleanup(shm, pids, shm->num_flights, parent_pid, step_sems, main_sem);
-        return EXIT_FAILURE;
-    }
-    printf("[SIM] Violation detection thread started (US102/US106).\n");
-
     // Initialize all flights as GATE so the first active step always prints
     // GATE → CLIMB, regardless of what current_phase the child set initially.
     FlightPhase prev_phase[MAX_FLIGHTS];
@@ -784,26 +685,13 @@ int main() {
         // ── ADVANCE the simulation clock ──────────────────────────────────────
         shm->current_time += shm->config.time_step;
 
-        // ── SIGNAL violation detection thread ─────────────────────────────────
-        // Copy the current step's was_active snapshot into viol_args so the
-        // thread knows which flights were active for this step, then wake it.
-        pthread_mutex_lock(&step_mutex);
-        memcpy(viol_args.was_active, was_active, shm->num_flights * sizeof(bool));
-        step_is_ready = true;
-        check_is_done = false;
-        pthread_cond_signal(&step_ready_cond);
-        pthread_mutex_unlock(&step_mutex);
-
-        // ── WAIT for violation detection to complete ───────────────────────────
-        // Violations must be counted before print_step_table() so the banner
-        // shows an accurate total.
-        pthread_mutex_lock(&step_mutex);
-        while (!check_is_done)
-            pthread_cond_wait(&check_done_cond, &step_mutex);
-        pthread_mutex_unlock(&step_mutex);
+        // ── CHECK VIOLATIONS ──────────────────────────────────────────────────
+        // Children are blocked on their step semaphores at this point, so
+        // shared memory is safe to read without extra synchronisation.
+        check_violations(shm, was_active, pids, shm->num_flights);
 
         // ── EARLY TERMINATION CHECK ────────────────────────────────────────────
-        // The violation thread sets termination_requested when max violations
+        // check_violations sets termination_requested when max violations
         // are exceeded and sends SIGTERM to all active flight processes.
         if (shm->termination_requested) {
             printf("[SIM] Simulation terminated early — max violations exceeded.\n");
@@ -895,15 +783,6 @@ int main() {
     // Close the parent's pipe read ends before freeing shared memory
     for (int i = 0; i < shm->num_flights; i++)
         close(pipe_fds[i][0]);
-
-    // ── Shut down the violation detection thread ───────────────────────────────
-    // Set simulation_done and signal the thread so it exits its wait loop,
-    // then join to ensure it has fully returned before we free shared memory.
-    pthread_mutex_lock(&step_mutex);
-    viol_args.simulation_done = true;
-    pthread_cond_signal(&step_ready_cond);
-    pthread_mutex_unlock(&step_mutex);
-    pthread_join(viol_thread, NULL);
 
     // Release all resources: wait for children, destroy semaphores, unmap/unlink memory
     cleanup(shm, pids, shm->num_flights, parent_pid, step_sems, main_sem);
