@@ -30,12 +30,12 @@ class NodeTest {
 
     @Test
     void ensureNullIdIsRejected() {
-        assertThrows(Exception.class, () -> new Node(null, "LIS-VOR", COORDS));
+        assertThrows(IllegalArgumentException.class, () -> new Node(null, "LIS-VOR", COORDS));
     }
 
     @Test
     void ensureNullDesignationIsRejected() {
-        assertThrows(Exception.class, () -> new Node(NODE_ID, null, COORDS));
+        assertThrows(IllegalArgumentException.class, () -> new Node(NODE_ID, null, COORDS));
     }
 
     @Test
@@ -52,7 +52,7 @@ class NodeTest {
 
     @Test
     void ensureNullCoordinatesIsRejected() {
-        assertThrows(Exception.class, () -> new Node(NODE_ID, "LIS-VOR", null));
+        assertThrows(IllegalArgumentException.class, () -> new Node(NODE_ID, "LIS-VOR", null));
     }
 
     // --- equals / hashCode ---

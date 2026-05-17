@@ -39,7 +39,7 @@ class EngineModelTest {
 
     @Test
     void ensureNullNameIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new EngineModel(null, EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06, MAKER, FUEL));
     }
 
@@ -51,7 +51,7 @@ class EngineModelTest {
 
     @Test
     void ensureNullTypeIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new EngineModel("CFM56", null, 100000.0, 0.35, 130000.0, 90000.0, 0.06, MAKER, FUEL));
     }
 
@@ -75,13 +75,13 @@ class EngineModelTest {
 
     @Test
     void ensureNullMakerIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new EngineModel("CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06, null, FUEL));
     }
 
     @Test
     void ensureNullFuelPropertiesIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new EngineModel("CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06, MAKER, null));
     }
 

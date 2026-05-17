@@ -49,27 +49,27 @@ class FlightPlanTest {
 
     @Test
     void ensureNullIdIsRejected() {
-        assertThrows(Exception.class, () -> new FlightPlan(null, "A320", DEP_TIME, 5000.0, 150, 1000.0));
+        assertThrows(IllegalArgumentException.class, () -> new FlightPlan(null, "A320", DEP_TIME, 5000.0, 150, 1000.0));
     }
 
     @Test
     void ensureNullDepartureDateTimeIsRejected() {
-        assertThrows(Exception.class, () -> new FlightPlan(PLAN_ID, "A320", null, 5000.0, 150, 1000.0));
+        assertThrows(IllegalArgumentException.class, () -> new FlightPlan(PLAN_ID, "A320", null, 5000.0, 150, 1000.0));
     }
 
     @Test
     void ensureZeroFuelQuantityIsRejected() {
-        assertThrows(Exception.class, () -> new FlightPlan(PLAN_ID, "A320", DEP_TIME, 0.0, 150, 1000.0));
+        assertThrows(IllegalArgumentException.class, () -> new FlightPlan(PLAN_ID, "A320", DEP_TIME, 0.0, 150, 1000.0));
     }
 
     @Test
     void ensureNegativeFuelQuantityIsRejected() {
-        assertThrows(Exception.class, () -> new FlightPlan(PLAN_ID, "A320", DEP_TIME, -1.0, 150, 1000.0));
+        assertThrows(IllegalArgumentException.class, () -> new FlightPlan(PLAN_ID, "A320", DEP_TIME, -1.0, 150, 1000.0));
     }
 
     @Test
     void ensureNegativePassengerLoadIsRejected() {
-        assertThrows(Exception.class, () -> new FlightPlan(PLAN_ID, "A320", DEP_TIME, 5000.0, -1, 1000.0));
+        assertThrows(IllegalArgumentException.class, () -> new FlightPlan(PLAN_ID, "A320", DEP_TIME, 5000.0, -1, 1000.0));
     }
 
     // --- addLeg ---
@@ -172,6 +172,6 @@ class FlightPlanTest {
 
     @Test
     void ensureNegativeCargoLoadIsRejected() {
-        assertThrows(Exception.class, () -> new FlightPlan(PLAN_ID, "A320", DEP_TIME, 5000.0, 150, -1.0));
+        assertThrows(IllegalArgumentException.class, () -> new FlightPlan(PLAN_ID, "A320", DEP_TIME, 5000.0, 150, -1.0));
     }
 }

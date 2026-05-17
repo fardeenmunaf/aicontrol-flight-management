@@ -1,6 +1,8 @@
 package node.domain;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,24 +28,16 @@ class CoordinatesTest {
 
     // --- Construction: invalid arguments ---
 
-    @Test
-    void ensureLatitudeLessThanMinusNinetyIsRejected() {
-        assertThrows(Exception.class, () -> new Coordinates(-90.001, 0.0));
+    @ParameterizedTest
+    @ValueSource(doubles = { -90.001, 90.001, 200.0 })
+    void ensureInvalidLatitudesAreRejected(final double lat) {
+        assertThrows(IllegalArgumentException.class, () -> new Coordinates(lat, 0.0));
     }
 
-    @Test
-    void ensureLatitudeGreaterThanNinetyIsRejected() {
-        assertThrows(Exception.class, () -> new Coordinates(90.001, 0.0));
-    }
-
-    @Test
-    void ensureLongitudeLessThanMinusOneHundredEightyIsRejected() {
-        assertThrows(Exception.class, () -> new Coordinates(0.0, -180.001));
-    }
-
-    @Test
-    void ensureLongitudeGreaterThanOneHundredEightyIsRejected() {
-        assertThrows(Exception.class, () -> new Coordinates(0.0, 180.001));
+    @ParameterizedTest
+    @ValueSource(doubles = { -180.001, 180.001, 360.0 })
+    void ensureInvalidLongitudesAreRejected(final double lon) {
+        assertThrows(IllegalArgumentException.class, () -> new Coordinates(0.0, lon));
     }
 
     // --- equals / hashCode ---

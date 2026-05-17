@@ -142,7 +142,7 @@ class RegisterEngineModelControllerTest {
     @Test
     void ensureUnauthorizedUserCannotRegisterEngine() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 controller().registerEngineModel(
                         "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
                         "CFM", "USA", FuelType.JET_A, 0.8, 43.2));

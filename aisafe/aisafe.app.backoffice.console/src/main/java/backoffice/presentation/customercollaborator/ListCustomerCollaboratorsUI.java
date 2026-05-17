@@ -6,29 +6,23 @@ import airtransportcompany.domain.AirTransportCompany;
 import airtransportcompany.repositories.AirTransportCompanyRepository;
 import customercollaborator.application.ListCustomerCollaboratorsController;
 import customercollaborator.domain.CustomerCollaborator;
-import customercollaborator.repositories.CustomerCollaboratorRepository;
 import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
 import infrastructure.persistence.PersistenceContext;
-import user.domain.User;
-import user.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ListCustomerCollaboratorsUI extends AbstractUI {
 
-    private final CustomerCollaboratorRepository collaboratorRepository =
-            PersistenceContext.repositories().customerCollaborators();
     private final AirTransportCompanyRepository airTransportCompanyRepository =
             PersistenceContext.repositories().airTransportCompanies();
     private final AirControlAreaRepository airControlAreaRepository =
             PersistenceContext.repositories().airControlAreas();
-    private final UserRepository userRepository =
-            PersistenceContext.repositories().users();
 
     private final ListCustomerCollaboratorsController controller =
-            new ListCustomerCollaboratorsController(collaboratorRepository);
+            new ListCustomerCollaboratorsController(
+                    PersistenceContext.repositories().customerCollaborators());
 
     @Override
     protected boolean doShow() {
@@ -74,7 +68,7 @@ public class ListCustomerCollaboratorsUI extends AbstractUI {
             final List<CustomerCollaborator> collaborators = toList(
                     controller.listActiveByAirTransportCompany(selected.identity().toString()));
             printCollaborators(collaborators);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
@@ -103,7 +97,7 @@ public class ListCustomerCollaboratorsUI extends AbstractUI {
             final List<CustomerCollaborator> collaborators = toList(
                     controller.listActiveByAirControlArea(selected.identity().toString()));
             printCollaborators(collaborators);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
@@ -115,12 +109,7 @@ public class ListCustomerCollaboratorsUI extends AbstractUI {
         }
 
         for (final CustomerCollaborator c : collaborators) {
-            final String userId = c.userId().toString();
-            final String name = userRepository.findByEmail(userId)
-                    .map(User::name)
-                    .orElse(userId);
-
-            System.out.printf("- %s | %s | %s%n", name, c.position(), userId);
+            System.out.printf("- %s | %s%n", c.userId(), c.position());
         }
     }
 

@@ -60,31 +60,31 @@ class AircraftTest {
 
     @Test
     void ensureNullRegistrationNumberIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Aircraft(null, "Portugal", AircraftOperationStatus.IN_SERVICE, 5, MODEL, ENGINE, CABIN, COMPANY));
     }
 
     @Test
     void ensureEmptyRegistrationNumberIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Aircraft("", "Portugal", AircraftOperationStatus.IN_SERVICE, 5, MODEL, ENGINE, CABIN, COMPANY));
     }
 
     @Test
     void ensureNullRegistrationCountryIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Aircraft("CS-TKA", null, AircraftOperationStatus.IN_SERVICE, 5, MODEL, ENGINE, CABIN, COMPANY));
     }
 
     @Test
     void ensureEmptyRegistrationCountryIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Aircraft("CS-TKA", "", AircraftOperationStatus.IN_SERVICE, 5, MODEL, ENGINE, CABIN, COMPANY));
     }
 
     @Test
     void ensureNullOperationStatusIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Aircraft("CS-TKA", "Portugal", null, 5, MODEL, ENGINE, CABIN, COMPANY));
     }
 
@@ -96,13 +96,13 @@ class AircraftTest {
 
     @Test
     void ensureNullAircraftModelIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Aircraft("CS-TKA", "Portugal", AircraftOperationStatus.IN_SERVICE, 5, null, ENGINE, CABIN, COMPANY));
     }
 
     @Test
     void ensureNullEngineModelIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Aircraft("CS-TKA", "Portugal", AircraftOperationStatus.IN_SERVICE, 5, MODEL, null, CABIN, COMPANY));
     }
 
@@ -118,13 +118,13 @@ class AircraftTest {
 
     @Test
     void ensureNullCabinConfigurationIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Aircraft("CS-TKA", "Portugal", AircraftOperationStatus.IN_SERVICE, 5, MODEL, ENGINE, null, COMPANY));
     }
 
     @Test
     void ensureNullCompanyIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new Aircraft("CS-TKA", "Portugal", AircraftOperationStatus.IN_SERVICE, 5, MODEL, ENGINE, CABIN, null));
     }
 

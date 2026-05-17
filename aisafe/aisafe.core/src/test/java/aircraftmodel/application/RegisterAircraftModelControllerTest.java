@@ -147,7 +147,7 @@ class RegisterAircraftModelControllerTest {
     @Test
     void ensureUnauthorizedUserCannotRegisterModel() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () -> controller().registerAircraftModel(validDto()));
+        assertThrows(RuntimeException.class, () -> controller().registerAircraftModel(validDto()));
     }
 
     private static void safeRegister(final String email, final String password,

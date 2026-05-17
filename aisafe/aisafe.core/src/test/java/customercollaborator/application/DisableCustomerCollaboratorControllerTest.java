@@ -22,7 +22,8 @@ import user.repository.UserRepository;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DisableCustomerCollaboratorControllerTest {
 
@@ -135,7 +136,7 @@ class DisableCustomerCollaboratorControllerTest {
     @Test
     void ensureUnauthorizedUserCannotDisableCollaborator() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 new DisableCustomerCollaboratorController(collabRepo, userRepo).disable(COLLAB_EMAIL));
     }
 

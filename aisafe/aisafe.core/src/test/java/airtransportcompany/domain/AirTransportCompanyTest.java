@@ -27,7 +27,7 @@ class AirTransportCompanyTest {
 
     @Test
     void ensureNullNameIsRejected() {
-        assertThrows(Exception.class, () -> new AirTransportCompany(null, "TA", "TAL"));
+        assertThrows(IllegalArgumentException.class, () -> new AirTransportCompany(null, "TA", "TAL"));
     }
 
     @Test
@@ -37,7 +37,7 @@ class AirTransportCompanyTest {
 
     @Test
     void ensureNullIataCodeIsRejected() {
-        assertThrows(Exception.class, () -> new AirTransportCompany("Test Airlines", null, "TAL"));
+        assertThrows(IllegalArgumentException.class, () -> new AirTransportCompany("Test Airlines", null, "TAL"));
     }
 
     @Test
@@ -47,7 +47,7 @@ class AirTransportCompanyTest {
 
     @Test
     void ensureNullIcaoCodeIsRejected() {
-        assertThrows(Exception.class, () -> new AirTransportCompany("Test Airlines", "TA", null));
+        assertThrows(IllegalArgumentException.class, () -> new AirTransportCompany("Test Airlines", "TA", null));
     }
 
     @Test

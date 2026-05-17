@@ -28,12 +28,12 @@ class RouteDesignationTest {
 
     @Test
     void ensureNullDesignationIsRejected() {
-        assertThrows(Exception.class, () -> new RouteDesignation(null));
+        assertThrows(IllegalArgumentException.class, () -> new RouteDesignation(null));
     }
 
     @Test
     void ensureEmptyDesignationIsRejected() {
-        assertThrows(Exception.class, () -> new RouteDesignation(""));
+        assertThrows(IllegalArgumentException.class, () -> new RouteDesignation(""));
     }
 
     @Test

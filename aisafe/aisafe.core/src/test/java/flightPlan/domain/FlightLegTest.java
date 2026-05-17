@@ -38,22 +38,22 @@ class FlightLegTest {
 
     @Test
     void ensureZeroSequenceNumberIsRejected() {
-        assertThrows(Exception.class, () -> new FlightLeg(0, DEP, ARR, 5000.0, LISBON, PORTO));
+        assertThrows(IllegalArgumentException.class, () -> new FlightLeg(0, DEP, ARR, 5000.0, LISBON, PORTO));
     }
 
     @Test
     void ensureNegativeSequenceNumberIsRejected() {
-        assertThrows(Exception.class, () -> new FlightLeg(-1, DEP, ARR, 5000.0, LISBON, PORTO));
+        assertThrows(IllegalArgumentException.class, () -> new FlightLeg(-1, DEP, ARR, 5000.0, LISBON, PORTO));
     }
 
     @Test
     void ensureNullDepartureTimeIsRejected() {
-        assertThrows(Exception.class, () -> new FlightLeg(1, null, ARR, 5000.0, LISBON, PORTO));
+        assertThrows(IllegalArgumentException.class, () -> new FlightLeg(1, null, ARR, 5000.0, LISBON, PORTO));
     }
 
     @Test
     void ensureNullArrivalTimeIsRejected() {
-        assertThrows(Exception.class, () -> new FlightLeg(1, DEP, null, 5000.0, LISBON, PORTO));
+        assertThrows(IllegalArgumentException.class, () -> new FlightLeg(1, DEP, null, 5000.0, LISBON, PORTO));
     }
 
     @Test
@@ -70,22 +70,22 @@ class FlightLegTest {
 
     @Test
     void ensureZeroFuelQuantityIsRejected() {
-        assertThrows(Exception.class, () -> new FlightLeg(1, DEP, ARR, 0.0, LISBON, PORTO));
+        assertThrows(IllegalArgumentException.class, () -> new FlightLeg(1, DEP, ARR, 0.0, LISBON, PORTO));
     }
 
     @Test
     void ensureNegativeFuelQuantityIsRejected() {
-        assertThrows(Exception.class, () -> new FlightLeg(1, DEP, ARR, -1.0, LISBON, PORTO));
+        assertThrows(IllegalArgumentException.class, () -> new FlightLeg(1, DEP, ARR, -1.0, LISBON, PORTO));
     }
 
     @Test
     void ensureNullDepartureAirportIsRejected() {
-        assertThrows(Exception.class, () -> new FlightLeg(1, DEP, ARR, 5000.0, null, PORTO));
+        assertThrows(IllegalArgumentException.class, () -> new FlightLeg(1, DEP, ARR, 5000.0, null, PORTO));
     }
 
     @Test
     void ensureNullArrivalAirportIsRejected() {
-        assertThrows(Exception.class, () -> new FlightLeg(1, DEP, ARR, 5000.0, LISBON, null));
+        assertThrows(IllegalArgumentException.class, () -> new FlightLeg(1, DEP, ARR, 5000.0, LISBON, null));
     }
 
     // --- addSegment ---
@@ -140,6 +140,6 @@ class FlightLegTest {
     @Test
     void ensureNullSegmentIsRejectedFromAddSegment() {
         final FlightLeg leg = validLeg();
-        assertThrows(Exception.class, () -> leg.addSegment(null));
+        assertThrows(IllegalArgumentException.class, () -> leg.addSegment(null));
     }
 }

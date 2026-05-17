@@ -19,7 +19,9 @@ import shared.domain.UserId;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ListCustomerCollaboratorsControllerTest {
 
@@ -126,7 +128,7 @@ class ListCustomerCollaboratorsControllerTest {
     @Test
     void ensureUnauthorizedUserCannotListCompanyCollaborators() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 new ListCustomerCollaboratorsController(repo)
                         .listActiveByAirTransportCompany(COMPANY_ID.toString()));
     }
@@ -134,7 +136,7 @@ class ListCustomerCollaboratorsControllerTest {
     @Test
     void ensureUnauthorizedUserCannotListAreaCollaborators() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 new ListCustomerCollaboratorsController(repo)
                         .listActiveByAirControlArea(AREA_ID.toString()));
     }

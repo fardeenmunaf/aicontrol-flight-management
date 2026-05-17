@@ -75,7 +75,7 @@ class ListAirTransportCompaniesControllerTest {
     @Test
     void ensureUnauthorizedUserCannotListCompanies() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () -> controller().allCompanies());
+        assertThrows(RuntimeException.class, () -> controller().allCompanies());
     }
 
     private static void safeRegister(final String email, final String password,

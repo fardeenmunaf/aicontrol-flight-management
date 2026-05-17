@@ -35,17 +35,17 @@ class FlightRouteTest {
 
     @Test
     void ensureNullIdIsRejected() {
-        assertThrows(Exception.class, () -> new FlightRoute(null, DESIGNATION, ACTIVE_FROM));
+        assertThrows(IllegalArgumentException.class, () -> new FlightRoute(null, DESIGNATION, ACTIVE_FROM));
     }
 
     @Test
     void ensureNullDesignationIsRejected() {
-        assertThrows(Exception.class, () -> new FlightRoute(ROUTE_ID, null, ACTIVE_FROM));
+        assertThrows(IllegalArgumentException.class, () -> new FlightRoute(ROUTE_ID, null, ACTIVE_FROM));
     }
 
     @Test
     void ensureNullActivFromIsRejected() {
-        assertThrows(Exception.class, () -> new FlightRoute(ROUTE_ID, DESIGNATION, null));
+        assertThrows(IllegalArgumentException.class, () -> new FlightRoute(ROUTE_ID, DESIGNATION, null));
     }
 
     // --- isActiveOn ---
@@ -90,13 +90,13 @@ class FlightRouteTest {
     @Test
     void ensureDeactivationBeforeActiveFromIsRejected() {
         final FlightRoute route = validRoute();
-        assertThrows(Exception.class, () -> route.deactivateFrom(ACTIVE_FROM.minusDays(1)));
+        assertThrows(IllegalArgumentException.class, () -> route.deactivateFrom(ACTIVE_FROM.minusDays(1)));
     }
 
     @Test
     void ensureNullDeactivationDateIsRejected() {
         final FlightRoute route = validRoute();
-        assertThrows(Exception.class, () -> route.deactivateFrom(null));
+        assertThrows(IllegalArgumentException.class, () -> route.deactivateFrom(null));
     }
 
     @Test

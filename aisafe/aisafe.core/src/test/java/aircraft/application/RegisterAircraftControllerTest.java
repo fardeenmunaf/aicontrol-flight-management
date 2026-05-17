@@ -212,7 +212,7 @@ class RegisterAircraftControllerTest {
     @Test
     void ensureUnauthorizedUserCannotRegisterAircraft() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 controller().registerAircraft("CS-X4", "Portugal",
                         AircraftOperationStatus.IN_SERVICE, 2,
                         MODEL.identity().toString(), ENGINE.identity().toString(), 100, 20, 10));

@@ -18,7 +18,9 @@ import shared.domain.AirportId;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class RegisterAirportControllerTest {
 
@@ -228,7 +230,7 @@ class RegisterAirportControllerTest {
     @Test
     void ensureUnauthorizedUserCannotRegisterAirport() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 ctrl().registerAirport("Test", "City", "Country",
                         "ABC", "ABCD", 0.0, 0.0, 0.0, TEST_AREA.identity().toString()));
     }

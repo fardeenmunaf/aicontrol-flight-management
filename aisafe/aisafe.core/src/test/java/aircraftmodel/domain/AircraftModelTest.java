@@ -49,7 +49,7 @@ class AircraftModelTest {
 
     @Test
     void ensureNullTypeIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new AircraftModel(null, 40000.0, 75000.0, 65000.0, 20000.0,
                         12000.0, 850.0, 125.0, 35.0, 0.025, 1.2, "B737", 2, MAKER));
     }
@@ -103,7 +103,7 @@ class AircraftModelTest {
     @Test
     void ensureNullEngineModelIsRejected() {
         final AircraftModel model = validModel();
-        assertThrows(Exception.class, () -> model.addSupportedEngineModel(null));
+        assertThrows(IllegalArgumentException.class, () -> model.addSupportedEngineModel(null));
     }
 
     @Test

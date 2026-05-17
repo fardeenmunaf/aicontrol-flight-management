@@ -92,7 +92,7 @@ class ViewAircraftModelControllerTest {
     @Test
     void ensureUnauthorizedUserCannotListModels() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () -> controller().listAircraftModels());
+        assertThrows(RuntimeException.class, () -> controller().listAircraftModels());
     }
 
     @Test

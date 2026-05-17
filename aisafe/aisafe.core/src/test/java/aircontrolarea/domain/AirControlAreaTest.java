@@ -35,7 +35,7 @@ class AirControlAreaTest {
 
     @Test
     void ensureNullAreaCodeIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new AirControlArea(null, 100.0, SQUARE_BOUNDARY));
     }
 
@@ -53,7 +53,7 @@ class AirControlAreaTest {
 
     @Test
     void ensureNullGeographicBoundariesIsRejected() {
-        assertThrows(Exception.class,
+        assertThrows(IllegalArgumentException.class,
                 () -> new AirControlArea("PT-EAST", 100.0, null));
     }
 

@@ -84,7 +84,7 @@ public class RegisterCustomerCollaboratorUI extends AbstractUI {
                     selected.identity().toString(),
                     email, password, name, phone, position);
             System.out.println("Customer collaborator registered.");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }
@@ -123,7 +123,7 @@ public class RegisterCustomerCollaboratorUI extends AbstractUI {
                     selected.identity().toString(),
                     email, password, name, phone, position);
             System.out.println("Customer collaborator registered.");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             System.out.println("Error: " + e.getMessage());
         }
     }

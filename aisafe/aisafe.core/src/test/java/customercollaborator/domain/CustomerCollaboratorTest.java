@@ -5,7 +5,13 @@ import shared.domain.AirControlAreaId;
 import shared.domain.AirTransportCompanyId;
 import shared.domain.UserId;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CustomerCollaboratorTest {
 
@@ -50,13 +56,13 @@ class CustomerCollaboratorTest {
 
     @Test
     void ensureNullUserIdIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new CustomerCollaborator(null, CustomerType.AIR_TRANSPORT_COMPANY, COMPANY, null, "Manager"));
     }
 
     @Test
     void ensureNullCustomerTypeIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new CustomerCollaborator(USER, null, COMPANY, null, "Manager"));
     }
 
@@ -76,7 +82,7 @@ class CustomerCollaboratorTest {
 
     @Test
     void ensureAirTransportCompanyWithNullCompanyIdIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new CustomerCollaborator(USER, CustomerType.AIR_TRANSPORT_COMPANY, null, null, "Manager"));
     }
 
@@ -88,7 +94,7 @@ class CustomerCollaboratorTest {
 
     @Test
     void ensureAirControlAreaWithNullAreaIdIsRejected() {
-        assertThrows(Exception.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
                 new CustomerCollaborator(USER, CustomerType.AIR_CONTROL_AREA, null, null, "Supervisor"));
     }
 

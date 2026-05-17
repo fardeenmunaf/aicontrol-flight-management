@@ -25,7 +25,9 @@ import user.repository.UserRepository;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RegisterCustomerCollaboratorControllerTest {
 
@@ -161,7 +163,7 @@ class RegisterCustomerCollaboratorControllerTest {
     @Test
     void ensureUnauthorizedUserCannotRegisterCollaborator() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(Exception.class, () ->
+        assertThrows(RuntimeException.class, () ->
                 newController().registerForAirTransportCompany(
                         TEST_COMPANY.identity().toString(),
                         "unauth@test.com", PASSWORD, "John Doe", "910000001", "Manager"));
