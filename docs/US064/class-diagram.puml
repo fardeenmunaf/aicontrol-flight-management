@@ -1,0 +1,144 @@
+@startuml class-diagram
+title US064 — Disable a Customer's Collaborator: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+package "backoffice.presentation.customercollaborator" #DDEEFF {
+    class CustomerCollaboratorsMenu {
+        +doShow() : boolean
+        +headline() : String
+        +mainLoop() : void
+    }
+
+    class DisableCustomerCollaboratorAction {
+        +execute() : boolean
+    }
+
+    class DisableCustomerCollaboratorUI {
+        -controller : DisableCustomerCollaboratorController
+        -listController : ListCustomerCollaboratorsController
+        -airTransportCompanyRepository : AirTransportCompanyRepository
+        -airControlAreaRepository : AirControlAreaRepository
+        +doShow() : boolean
+        +headline() : String
+        -disableFromAirTransportCompany() : void
+        -disableFromAirControlArea() : void
+        -disableSelectedCollaborator(collaborators) : void
+    }
+}
+
+package "customercollaborator.application" #DDFFD8 {
+    class DisableCustomerCollaboratorController {
+        -authz : AuthorizationService
+        -collaboratorRepository : CustomerCollaboratorRepository
+        -userRepository : UserRepository
+        +DisableCustomerCollaboratorController(CustomerCollaboratorRepository, UserRepository)
+        +disable(userId) : void
+    }
+
+    class ListCustomerCollaboratorsController {
+        +listActiveByAirTransportCompany(companyId) : Iterable<CustomerCollaborator>
+        +listActiveByAirControlArea(areaId) : Iterable<CustomerCollaborator>
+    }
+}
+
+package "customercollaborator.domain" #FFF3CD {
+    class CustomerCollaborator <<Entity>> <<AggregateRoot>> {
+        -id : CustomerCollaboratorId
+        -userId : UserId
+        -customerType : CustomerType
+        -position : String
+        -active : boolean
+        +identity() : CustomerCollaboratorId
+        +userId() : UserId
+        +position() : String
+        +isActive() : boolean
+        +disable() : void
+    }
+
+    enum CustomerType {
+        AIR_TRANSPORT_COMPANY
+        AIR_CONTROL_AREA
+    }
+}
+
+package "user.domain" #FFF3CD {
+    class User <<Entity>> <<AggregateRoot>> {
+        -userId : UserId
+        -email : String
+        -status : String
+        +identity() : UserId
+        +email() : String
+        +disable() : void
+    }
+}
+
+package "customercollaborator.repositories" #F0E6FF {
+    interface CustomerCollaboratorRepository <<DomainRepository>> {
+        +findByUserId(userId) : Optional<CustomerCollaborator>
+        +findActiveByAirTransportCompanyId(id) : Iterable<CustomerCollaborator>
+        +findActiveByAirControlAreaId(id) : Iterable<CustomerCollaborator>
+        +save(collaborator) : CustomerCollaborator
+    }
+}
+
+package "airtransportcompany.repositories" #F0E6FF {
+    interface AirTransportCompanyRepository <<DomainRepository>> {
+        +findAll() : Iterable<AirTransportCompany>
+    }
+}
+
+package "aircontrolarea.repositories" #F0E6FF {
+    interface AirControlAreaRepository <<DomainRepository>> {
+        +findAll() : Iterable<AirControlArea>
+    }
+}
+
+package "user.repository" #F0E6FF {
+    interface UserRepository <<DomainRepository>> {
+        +ofIdentity(userId) : Optional<User>
+        +save(user) : User
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class CustomerCollaboratorId <<ValueObject>> <<Embeddable>>
+    class UserId <<ValueObject>> <<Embeddable>>
+}
+
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} BACKOFFICE_OPERATOR : Role
+    }
+
+    class UserService {
+        +userOfIdentity(username) : Optional<SystemUser>
+        +deactivateUser(user) : void
+    }
+}
+
+CustomerCollaboratorsMenu ..> DisableCustomerCollaboratorAction : creates
+DisableCustomerCollaboratorAction ..> DisableCustomerCollaboratorUI : creates
+
+DisableCustomerCollaboratorUI --> DisableCustomerCollaboratorController : uses
+DisableCustomerCollaboratorUI --> ListCustomerCollaboratorsController : uses
+DisableCustomerCollaboratorUI --> AirTransportCompanyRepository : uses
+DisableCustomerCollaboratorUI --> AirControlAreaRepository : uses
+
+DisableCustomerCollaboratorController --> CustomerCollaboratorRepository : uses
+DisableCustomerCollaboratorController --> UserRepository : uses
+DisableCustomerCollaboratorController ..> AISafeRoles : uses
+DisableCustomerCollaboratorController --> UserService : uses
+
+ListCustomerCollaboratorsController --> CustomerCollaboratorRepository : uses
+
+CustomerCollaborator *-- CustomerCollaboratorId : identity
+CustomerCollaborator *-- CustomerType : type
+CustomerCollaborator --> UserId : user
+User *-- UserId : identity
+
+@enduml

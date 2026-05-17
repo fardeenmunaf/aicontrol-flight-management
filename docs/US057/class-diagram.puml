@@ -1,0 +1,138 @@
+@startuml class-diagram
+title US057 — Add Engine to Aircraft Model: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.aircraft" #DDEEFF {
+
+    class AircraftManagerMenuUI {
+        +doShow() : boolean
+        +headline() : String
+        -buildMenu() : Menu
+    }
+
+    class AddEngineToAircraftAction {
+        +execute() : boolean
+    }
+
+    class AddEngineToAircraftUI {
+        -controller : AddEngineModelToAircraftController
+        +doShow() : boolean
+        +headline() : String
+        -readInt(prompt) : int
+        +show() : void
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "aircraftmodel.application" #DDFFD8 {
+
+    class AddEngineModelToAircraftController {
+        -authz : AuthorizationService
+        -aircraftModelRepository : AircraftModelRepository
+        -engineModelRepository : EngineModelRepository
+        +AddEngineModelToAircraftController(...)
+        +listAircraftModelsWithRemainingSlots() : List<AircraftModel>
+        +listAssignableEngineModels(aircraftModel) : List<EngineModel>
+        +addEngineModelToAircraft(modelName, maker, engineName) : AircraftModel
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "aircraftmodel.domain" #FFF3CD {
+
+    class AircraftModel <<Entity>> <<AggregateRoot>> {
+        -aircraftModelId : AircraftModelId
+        -modelName : String
+        -maker : AircraftModelMaker
+        -numberOfEngines : int
+        -supportedEngines : Set<EngineModel>
+        +addSupportedEngineModel(engine) : void
+        +supportedEngineModels() : Set<EngineModel>
+        +hasRemainingEngineSlots() : boolean
+        +numberOfEngines() : int
+    }
+
+    class AircraftModelMaker {
+        -name : String
+        -country : String
+    }
+}
+
+package "enginemodel.domain" #FFF3CD {
+    class EngineModel <<Entity>> <<AggregateRoot>> {
+        -engineModelId : EngineModelId
+        -name : String
+        -type : EngineType
+        -manufacturer : String
+        +name() : String
+        +type() : EngineType
+        +identity() : EngineModelId
+    }
+
+    enum EngineType {
+        TURBOFAN
+        TURBOPROP
+        PISTON
+        JET
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class AircraftModelId <<ValueObject>> <<Embeddable>> {
+        -modelName : String
+        -manufacturer : String
+    }
+
+    class EngineModelId <<ValueObject>> <<Embeddable>> {
+        -value : String
+    }
+}
+
+' ─── Repository ─────────────────────────────────────────────────────────────
+package "aircraftmodel.repository" #F0E6FF {
+    interface AircraftModelRepository <<DomainRepository>> {
+        +findByModelNameAndMaker(name, maker) : List<AircraftModel>
+        +findAll() : Iterable<AircraftModel>
+        +save(model) : AircraftModel
+    }
+}
+
+package "enginemodel.repository" #F0E6FF {
+    interface EngineModelRepository <<DomainRepository>> {
+        +findByName(name) : Optional<EngineModel>
+        +findAll() : Iterable<EngineModel>
+    }
+}
+
+' ─── Auth Infrastructure ─────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} BACKOFFICE_OPERATOR : Role
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+AircraftManagerMenuUI ..> AddEngineToAircraftAction : creates
+AddEngineToAircraftAction ..> AddEngineToAircraftUI : creates
+
+AddEngineToAircraftUI --> AddEngineModelToAircraftController : uses
+
+AddEngineModelToAircraftController --> AircraftModelRepository : uses
+AddEngineModelToAircraftController --> EngineModelRepository : uses
+AddEngineModelToAircraftController ..> AISafeRoles : uses
+
+AircraftModel *-- AircraftModelId : identity
+AircraftModel *-- AircraftModelMaker : maker
+AircraftModel "1" o-- "*" EngineModel : supportedEngines
+
+EngineModel *-- EngineModelId : identity
+
+@enduml
+

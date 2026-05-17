@@ -1,0 +1,98 @@
+@startuml sequence-list-customer-collaborators
+title US062 — List Customer's Collaborators: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as Operator
+participant "CustomerCollaboratorsMenu" as MenuUI #DDEEFF
+participant "ListCustomerCollaboratorsAction" as Action #DDEEFF
+participant "ListCustomerCollaboratorsUI" as UI #DDEEFF
+participant "ListCustomerCollaboratorsController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AirTransportCompanyRepository /\nAirControlAreaRepository" as CustomerRepo #F0E6FF
+participant "CustomerCollaboratorRepository" as CollabRepo #F0E6FF
+participant "UserRepository" as UserRepo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Operator -> MenuUI ++ : selects "List customer collaborators"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Customer Selection ==
+
+UI -> Operator : prompt customer type
+Operator -> UI : Air Transport Company or Air Control Area
+
+UI -> CustomerRepo ++ : findAll()
+CustomerRepo -> DB ++ : SELECT customers
+DB --> CustomerRepo -- : customers
+CustomerRepo --> UI -- : Iterable<Customer>
+
+alt no customers
+    UI -> Operator : "No customers available."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+UI -> Operator : display customers
+Operator -> UI : selects customer
+
+== Retrieve Collaborators ==
+
+alt Air Transport Company selected
+    UI -> Ctrl ++ : listActiveByAirTransportCompany(customerId)
+else Air Control Area selected
+    UI -> Ctrl ++ : listActiveByAirControlArea(customerId)
+end
+
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+Authz --> Ctrl -- : ok
+
+alt Air Transport Company selected
+    Ctrl -> CollabRepo ++ : findActiveByAirTransportCompanyId(id)
+else Air Control Area selected
+    Ctrl -> CollabRepo ++ : findActiveByAirControlAreaId(id)
+end
+CollabRepo -> DB ++ : SELECT active collaborators
+DB --> CollabRepo -- : collaborators
+CollabRepo --> Ctrl -- : Iterable<CustomerCollaborator>
+Ctrl --> UI -- : Iterable<CustomerCollaborator>
+
+alt no active collaborators
+    UI -> Operator : "No active collaborators found."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+== Display ==
+
+loop for each CustomerCollaborator
+    UI -> UserRepo ++ : ofIdentity(collaborator.userId())
+    UserRepo -> DB ++ : SELECT User
+    DB --> UserRepo -- : user
+    UserRepo --> UI -- : Optional<User>
+    UI -> Operator : print "email | position"
+end
+
+UI --> Action -- : false
+Action --> MenuUI -- : false
+MenuUI --> Operator -- : return
+
+@enduml

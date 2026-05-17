@@ -1,0 +1,128 @@
+@startuml sequence-add-engine
+title US057 — Add Engine to Aircraft Model: Sequence Diagram (Manual via Console)
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as BackOffice
+participant "AircraftManagerMenuUI" as MenuUI #DDEEFF
+participant "AddEngineToAircraftAction" as Action #DDEEFF
+participant "AddEngineToAircraftUI" as UI #DDEEFF
+participant "AddEngineModelToAircraftController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AircraftModelRepository" as ModelRepo #F0E6FF
+participant "EngineModelRepository" as EngineRepo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+BackOffice -> MenuUI ++ : selects "Add Engine to Aircraft"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+deactivate Action
+deactivate MenuUI
+
+== Authorization Check ==
+
+UI -> Ctrl ++ : listAircraftModelsWithRemainingSlots()
+
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+Authz --> Ctrl -- : ok
+
+Ctrl -> ModelRepo ++ : findAll()
+ModelRepo --> Ctrl -- : List<AircraftModel>
+
+Ctrl -> Ctrl : filter models where size(supportedEngines) < numberOfEngines
+
+Ctrl --> UI -- : List<AircraftModel>
+
+alt No aircraft with available slots
+    UI --> BackOffice -- : "No aircraft models have free engine slots."
+    return
+end
+
+UI -> BackOffice : display models and prompt selection
+BackOffice -> UI ++ : choice
+
+UI -> UI : readInt("Select aircraft model number")
+UI -> Ctrl ++ : listAssignableEngineModels(selectedAircraft)
+
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+Authz --> Ctrl -- : ok
+
+Ctrl -> EngineRepo ++ : findAll()
+EngineRepo --> Ctrl -- : List<EngineModel>
+
+Ctrl -> Ctrl : filter out engines already in aircraft.supportedEngineModels()
+
+Ctrl --> UI -- : List<EngineModel>
+
+alt No assignable engines
+    UI --> BackOffice -- : "No engine models can be added to this aircraft model."
+    return
+end
+
+UI -> BackOffice : display available engines
+BackOffice -> UI ++ : choice
+
+UI -> UI : readInt("Select engine model number")
+
+UI -> Ctrl ++ : addEngineModelToAircraft(modelName, maker, engineName)
+
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+Authz --> Ctrl -- : ok
+
+== Validation ==
+
+Ctrl -> ModelRepo ++ : findByModelNameAndMaker(modelName, maker)
+ModelRepo --> Ctrl -- : List<AircraftModel>
+
+alt Aircraft not found
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI --> BackOffice -- : "Error: Aircraft model not found"
+    return
+end
+
+Ctrl -> Ctrl : check if slots still available
+
+alt All slots filled
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI --> BackOffice -- : "Error: All engine slots filled"
+    return
+end
+
+Ctrl -> EngineRepo ++ : findByName(engineName)
+alt Engine not found
+    EngineRepo --> Ctrl -- : Optional.empty()
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI --> BackOffice -- : "Error: Engine model not found"
+    return
+end
+EngineRepo --> Ctrl -- : EngineModel
+
+Ctrl -> Ctrl : check for duplicates
+
+alt Already associated
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI --> BackOffice -- : "Error: Engine model already associated"
+    return
+end
+
+== Engine Addition ==
+
+Ctrl -> Ctrl : aircraftModel.addSupportedEngineModel(engine)
+
+Ctrl -> ModelRepo ++ : save(aircraftModel)
+ModelRepo -> DB ++ : persist updated AircraftModel
+DB --> ModelRepo -- : saved
+ModelRepo --> Ctrl -- : AircraftModel
+
+Ctrl --> UI -- : aircraftModel
+
+== Feedback ==
+
+UI --> BackOffice -- : "Engine model added successfully to aircraft model."
+
+@enduml
+

@@ -1,0 +1,154 @@
+@startuml class-diagram
+title US061 — Add a Customer's Collaborator: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+package "backoffice.presentation.customercollaborator" #DDEEFF {
+    class CustomerCollaboratorsMenu {
+        +doShow() : boolean
+        +headline() : String
+        +mainLoop() : void
+    }
+
+    class RegisterCustomerCollaboratorAction {
+        +execute() : boolean
+    }
+
+    class RegisterCustomerCollaboratorUI {
+        -controller : RegisterCustomerCollaboratorController
+        -userRepository : UserRepository
+        -collaboratorRepository : CustomerCollaboratorRepository
+        -airTransportCompanyRepository : AirTransportCompanyRepository
+        -airControlAreaRepository : AirControlAreaRepository
+        +doShow() : boolean
+        +headline() : String
+        -registerAirTransportCollaborator() : void
+        -registerAirControlCollaborator() : void
+        -validateInputs(email, password, name, phone, position) : boolean
+    }
+}
+
+package "customercollaborator.application" #DDFFD8 {
+    class RegisterCustomerCollaboratorController {
+        -authz : AuthorizationService
+        -userRepository : UserRepository
+        -collaboratorRepository : CustomerCollaboratorRepository
+        -airTransportCompanyRepository : AirTransportCompanyRepository
+        -airControlAreaRepository : AirControlAreaRepository
+        +registerForAirTransportCompany(companyId, email, rawPassword, name, phoneNumber, position) : CustomerCollaborator
+        +registerForAirControlArea(areaId, email, rawPassword, name, phoneNumber, position) : CustomerCollaborator
+        -registerSystemUser(email, rawPassword, name, role) : void
+        -validateCommonFields(customerId, email, rawPassword, name, phoneNumber, position) : void
+    }
+}
+
+package "customercollaborator.domain" #FFF3CD {
+    class CustomerCollaborator <<Entity>> <<AggregateRoot>> {
+        -id : CustomerCollaboratorId
+        -userId : UserId
+        -customerType : CustomerType
+        -airTransportCompanyId : AirTransportCompanyId
+        -airControlAreaId : AirControlAreaId
+        -position : String
+        -active : boolean
+        +CustomerCollaborator(userId, customerType, airTransportCompanyId, airControlAreaId, position)
+        +identity() : CustomerCollaboratorId
+        +userId() : UserId
+        +customerType() : CustomerType
+        +position() : String
+        +isActive() : boolean
+    }
+
+    enum CustomerType {
+        AIR_TRANSPORT_COMPANY
+        AIR_CONTROL_AREA
+    }
+}
+
+package "user.domain" #FFF3CD {
+    class User <<Entity>> <<AggregateRoot>> {
+        -userId : UserId
+        -email : String
+        -name : String
+        -phoneNumber : String
+        -status : String
+        -roles : Set<Role>
+        +User(email, name, phoneNumber, activeSecurityClearanceExpiry, skillsAssessmentDueDate, status, roles, userId)
+        +identity() : UserId
+        +email() : String
+    }
+
+    enum Role {
+        AIR_TRANSPORT_COMPANY_COLLABORATOR
+        FLIGHT_CONTROL_OPERATOR
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class CustomerCollaboratorId <<ValueObject>> <<Embeddable>>
+    class UserId <<ValueObject>> <<Embeddable>>
+    class AirTransportCompanyId <<ValueObject>> <<Embeddable>>
+    class AirControlAreaId <<ValueObject>> <<Embeddable>>
+}
+
+package "customercollaborator.repositories" #F0E6FF {
+    interface CustomerCollaboratorRepository <<DomainRepository>> {
+        +save(collaborator) : CustomerCollaborator
+    }
+}
+
+package "user.repository" #F0E6FF {
+    interface UserRepository <<DomainRepository>> {
+        +findByEmail(email) : Optional<User>
+        +save(user) : User
+    }
+}
+
+package "airtransportcompany.repositories" #F0E6FF {
+    interface AirTransportCompanyRepository <<DomainRepository>> {
+        +findAll() : Iterable<AirTransportCompany>
+        +ofIdentity(id) : Optional<AirTransportCompany>
+    }
+}
+
+package "aircontrolarea.repositories" #F0E6FF {
+    interface AirControlAreaRepository <<DomainRepository>> {
+        +findAll() : Iterable<AirControlArea>
+        +ofIdentity(id) : Optional<AirControlArea>
+    }
+}
+
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} BACKOFFICE_OPERATOR : Role
+        {static} AIR_TRANSPORT_COMPANY_COLLABORATOR : Role
+        {static} FLIGHT_CONTROL_OPERATOR : Role
+    }
+}
+
+CustomerCollaboratorsMenu ..> RegisterCustomerCollaboratorAction : creates
+RegisterCustomerCollaboratorAction ..> RegisterCustomerCollaboratorUI : creates
+
+RegisterCustomerCollaboratorUI --> RegisterCustomerCollaboratorController : uses
+RegisterCustomerCollaboratorUI --> AirTransportCompanyRepository : uses
+RegisterCustomerCollaboratorUI --> AirControlAreaRepository : uses
+
+RegisterCustomerCollaboratorController --> UserRepository : uses
+RegisterCustomerCollaboratorController --> CustomerCollaboratorRepository : uses
+RegisterCustomerCollaboratorController --> AirTransportCompanyRepository : uses
+RegisterCustomerCollaboratorController --> AirControlAreaRepository : uses
+RegisterCustomerCollaboratorController ..> AISafeRoles : uses
+RegisterCustomerCollaboratorController ..> User : creates
+RegisterCustomerCollaboratorController ..> CustomerCollaborator : creates
+
+CustomerCollaborator *-- CustomerCollaboratorId : identity
+CustomerCollaborator *-- CustomerType : type
+CustomerCollaborator --> UserId : user
+User *-- UserId : identity
+User "1" *-- "1..*" Role : roles
+
+@enduml

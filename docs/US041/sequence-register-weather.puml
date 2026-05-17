@@ -1,0 +1,89 @@
+@startuml sequence-register-weather
+title US041 — Register Weather Data: Sequence Diagram (Manual via Console)
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Weather Person" as Weather
+participant "WeatherMenuUI" as MenuUI #DDEEFF
+participant "RegisterWeatherDataAction" as Action #DDEEFF
+participant "RegisterWeatherDataUI" as UI #DDEEFF
+participant "RegisterWeatherDataController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "WeatherDataRepository" as Repo #F0E6FF
+participant "AirControlAreaRepository" as AreaRepo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Weather -> MenuUI ++ : selects "Register Weather Data"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+deactivate Action
+deactivate MenuUI
+
+UI -> UI : selectAirControlArea()
+UI -> AreaRepo ++ : findAll()
+AreaRepo --> UI -- : Iterable<AirControlArea>
+UI -> Weather : display areas and prompt selection
+Weather -> UI ++ : choice
+
+UI -> UI : readDateTime()
+UI -> Weather : prompt date/time (YYYY-MM-DDTHH:MM)
+Weather -> UI ++ : "2026-05-17T10:30"
+
+UI -> UI : readDouble("Wind Direction (degrees)")
+UI -> Weather : prompt wind direction
+Weather -> UI ++ : "180"
+
+UI -> UI : readDouble("Wind Speed (m/s)")
+UI -> Weather : prompt wind speed
+Weather -> UI ++ : "10.5"
+
+UI -> UI : readDouble("Temperature (C)")
+UI -> Weather : prompt temperature
+Weather -> UI ++ : "22.5"
+
+UI -> UI : readDouble("Pressure (hPa)")
+UI -> Weather : prompt pressure
+Weather -> UI ++ : "1013.25"
+
+== Registration ==
+
+UI -> UI : new WeatherDataDTO(airControlArea, dateTime, ...)
+UI -> Ctrl ++ : registerWeatherData(dto)
+
+== Validation ==
+
+Ctrl -> Ctrl : basic validation (DTO values)
+note right of Ctrl
+  - airControlArea not empty
+  - windSpeed >= 0
+  - windDirection: 0-360
+  - pressure > 0
+  - temperature: -100 to +100
+end note
+
+alt Invalid values
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI --> Weather -- : "Error: <message>"
+    return
+end
+
+== Weather Data Persistence ==
+
+Ctrl -> Ctrl : new WeatherData(dto)
+
+Ctrl -> Repo ++ : save(weatherData)
+Repo -> DB ++ : persist WeatherData entity
+DB --> Repo -- : saved
+Repo --> Ctrl -- : WeatherData
+
+Ctrl --> UI -- : true
+
+== Feedback ==
+
+UI --> Weather -- : "Weather data registered successfully."
+
+@enduml

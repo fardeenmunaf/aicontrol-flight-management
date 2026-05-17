@@ -1,0 +1,131 @@
+@startuml class-diagram
+title US052 — Create an Airport: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+package "backoffice.presentation.airport" #DDEEFF {
+    class AirportsMenu {
+        +doShow() : boolean
+        +headline() : String
+        +mainLoop() : void
+    }
+
+    class RegisterAirportAction {
+        +execute() : boolean
+    }
+
+    class RegisterAirportUI {
+        -controller : RegisterAirportController
+        -airControlAreaRepository : AirControlAreaRepository
+        +doShow() : boolean
+        +headline() : String
+        -resolveAirControlArea(latitude, longitude) : String
+        -selectManually() : String
+        -readDouble(prompt) : Double
+    }
+}
+
+package "airport.application" #DDFFD8 {
+    class RegisterAirportController {
+        -authz : AuthorizationService
+        -airportRepository : AirportRepository
+        -airControlAreaRepository : AirControlAreaRepository
+        +RegisterAirportController(AirportRepository, AirControlAreaRepository)
+        +findAreaForCoordinates(latitude, longitude) : Optional<AirControlArea>
+        +registerAirport(name, town, country, iataCode, icaoCode, elevation, latitude, longitude, airControlAreaId) : Airport
+    }
+}
+
+package "airport.domain" #FFF3CD {
+    class Airport <<Entity>> <<AggregateRoot>> {
+        -airportId : AirportId
+        -name : String
+        -town : String
+        -country : String
+        -iataCode : String
+        -icaoCode : String
+        -elevation : Double
+        -coordinates : AirportCoordinates
+        -airControlArea : AirControlArea
+        +Airport(name, town, country, iataCode, icaoCode, elevation, coordinates, airControlArea)
+        +identity() : AirportId
+        +name() : String
+        +iataCode() : String
+        +icaoCode() : String
+        +coordinates() : AirportCoordinates
+    }
+
+    class AirportCoordinates <<ValueObject>> <<Embeddable>> {
+        -latitude : Double
+        -longitude : Double
+        +AirportCoordinates(latitude, longitude)
+        +latitude() : Double
+        +longitude() : Double
+    }
+}
+
+package "aircontrolarea.domain" #FFF3CD {
+    class AirControlArea <<Entity>> <<AggregateRoot>> {
+        +identity() : AirControlAreaId
+        +containsPoint(latitude, longitude) : boolean
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class AirportId <<ValueObject>> <<Embeddable>> {
+        -value : UUID
+        +newId() : AirportId
+        +toString() : String
+    }
+
+    class AirControlAreaId <<ValueObject>> <<Embeddable>> {
+        -value : UUID
+        +valueOf(value) : AirControlAreaId
+        +toString() : String
+    }
+}
+
+package "airport.repositories" #F0E6FF {
+    interface AirportRepository <<DomainRepository>> {
+        +findByIataCode(iataCode) : Optional<Airport>
+        +findByIcaoCode(icaoCode) : Optional<Airport>
+        +save(airport) : Airport
+    }
+}
+
+package "aircontrolarea.repositories" #F0E6FF {
+    interface AirControlAreaRepository <<DomainRepository>> {
+        +findAll() : Iterable<AirControlArea>
+        +findContaining(latitude, longitude) : Optional<AirControlArea>
+        +ofIdentity(id) : Optional<AirControlArea>
+    }
+}
+
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} BACKOFFICE_OPERATOR : Role
+    }
+}
+
+AirportsMenu ..> RegisterAirportAction : creates
+RegisterAirportAction ..> RegisterAirportUI : creates
+
+RegisterAirportUI --> RegisterAirportController : uses
+RegisterAirportUI --> AirControlAreaRepository : uses
+
+RegisterAirportController --> AirportRepository : uses
+RegisterAirportController --> AirControlAreaRepository : uses
+RegisterAirportController ..> AISafeRoles : uses
+RegisterAirportController ..> Airport : creates
+RegisterAirportController ..> AirportCoordinates : creates
+
+Airport *-- AirportId : identity
+Airport *-- AirportCoordinates : coordinates
+Airport --> AirControlArea : assigned area
+AirControlArea *-- AirControlAreaId : identity
+
+@enduml

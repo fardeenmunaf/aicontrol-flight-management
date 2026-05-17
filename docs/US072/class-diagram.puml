@@ -1,0 +1,171 @@
+@startuml class-diagram
+title US072 — List Aircraft Fleet: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "airtransport.presentation.fleet" #DDEEFF {
+
+    class FleetMenuUI {
+        +doShow() : boolean
+        +headline() : String
+        -buildFleetMenu() : Menu
+    }
+
+    class ListAircraftAction {
+        +execute() : boolean
+    }
+
+    class ListAircraftUI {
+        -controller : ListAircraftController
+        +doShow() : boolean
+        +headline() : String
+        +show() : void
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "aircraft.application" #DDFFD8 {
+
+    class ListAircraftController {
+        -aircraftRepository : AircraftRepository
+        +ListAircraftController(aircraftRepository)
+        +listAll() : Iterable<Aircraft>
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "aircraft.domain" #FFF3CD {
+
+    class Aircraft <<Entity>> <<AggregateRoot>> {
+        -aircraftId : AircraftId
+        -registrationNumber : String
+        -aircraftModel : AircraftModel
+        -airTransportCompanyId : AirTransportCompanyId
+        -operationStatus : OperationStatus
+        -cabinConfiguration : CabinConfiguration
+        -registrationCountry : String
+        +Aircraft(...)
+        +identity() : AircraftId
+        +registrationNumber() : String
+        +aircraftModel() : AircraftModel
+        +airTransportCompanyId() : AirTransportCompanyId
+        +operationStatus() : OperationStatus
+        +cabinConfiguration() : CabinConfiguration
+        +registrationCountry() : String
+    }
+
+    enum OperationStatus {
+        ACTIVE
+        MAINTENANCE
+        RETIRED
+        GROUNDED
+    }
+
+    class CabinConfiguration {
+        -economyClassSeats : int
+        -businessClassSeats : int
+        -firstClassSeats : int
+        +economyClassSeats() : int
+        +businessClassSeats() : int
+        +firstClassSeats() : int
+    }
+}
+
+package "aircraftmodel.domain" #FFF3CD {
+    class AircraftModel <<Entity>> <<AggregateRoot>> {
+        -modelName : String
+        -maker : AircraftModelMaker
+    }
+}
+
+package "airtransportcompany.domain" #FFF3CD {
+    class AirTransportCompany <<Entity>> <<AggregateRoot>> {
+        -companyId : AirTransportCompanyId
+        -name : String
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class AircraftId <<ValueObject>> <<Embeddable>> {
+        -value : UUID
+    }
+
+    class AirTransportCompanyId <<ValueObject>> <<Embeddable>> {
+        -value : String
+    }
+
+    class UserId <<ValueObject>> <<Embeddable>> {
+        -value : String
+    }
+}
+
+' ─── Repository ─────────────────────────────────────────────────────────────
+package "aircraft.repository" #F0E6FF {
+    interface AircraftRepository <<DomainRepository>> {
+        +findByAirTransportCompanyId(companyId) : Iterable<Aircraft>
+        +findByRegistrationNumber(regNum) : Optional<Aircraft>
+        +findAll() : Iterable<Aircraft>
+        +save(aircraft) : Aircraft
+    }
+}
+
+package "customercollaborator.repository" #F0E6FF {
+    interface CustomerCollaboratorRepository <<DomainRepository>> {
+        +findByUserId(userId) : Optional<CustomerCollaborator>
+        +findAll() : Iterable<CustomerCollaborator>
+    }
+}
+
+' ─── Auth Infrastructure ─────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} AIR_TRANSPORT_COMPANY_COLLABORATOR : Role
+        {static} BACKOFFICE_OPERATOR : Role
+    }
+}
+
+' ─── DTO Layer ───────────────────────────────────────────────────────────────
+package "aircraft.dto" #E8F5FF {
+    class AircraftDTO {
+        +registrationNumber : String
+        +modelName : String
+        +operationStatus : String
+        +cabinConfiguration : String
+        +registrationCountry : String
+    }
+}
+
+' ─── Customer Collaborator ───────────────────────────────────────────────────
+package "customercollaborator.domain" #FFF3CD {
+    class CustomerCollaborator <<Entity>> <<AggregateRoot>> {
+        -collaboratorId : CustomerId
+        -userId : UserId
+        -airTransportCompanyId : AirTransportCompanyId
+        +userId() : UserId
+        +airTransportCompanyId() : AirTransportCompanyId
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+FleetMenuUI ..> ListAircraftAction : creates
+ListFleetAction ..> ListAircraftUI : creates
+ListAircraftUI --> ListAircraftController : uses
+ListAircraftController --> AircraftRepository : uses
+
+Aircraft *-- AircraftId : identity
+Aircraft --> AircraftModel : references
+Aircraft --> AirTransportCompanyId : owns
+Aircraft --> OperationStatus : status
+Aircraft *-- CabinConfiguration : configuration
+
+CustomerCollaborator --> UserId : references
+CustomerCollaborator --> AirTransportCompanyId : references
+
+@enduml
+

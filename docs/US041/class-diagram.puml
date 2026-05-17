@@ -1,0 +1,120 @@
+@startuml class-diagram
+title US041 — Register Weather Data: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.weather" #DDEEFF {
+
+    class WeatherMenuUI {
+        +doShow() : boolean
+        +headline() : String
+        -buildWeatherMenu() : Menu
+    }
+
+    class RegisterWeatherDataAction {
+        +execute() : boolean
+    }
+
+    class RegisterWeatherDataUI {
+        -controller : RegisterWeatherDataController
+        -airControlAreaRepository : AirControlAreaRepository
+        +doShow() : boolean
+        +headline() : String
+        -selectAirControlArea() : String
+        -readDouble(prompt) : Double
+        -readDateTime() : LocalDateTime
+        -readInteger() : int
+        -toList(iterable) : List<T>
+        +show() : void
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "weatherData.application" #DDFFD8 {
+
+    class RegisterWeatherDataController {
+        -repo : WeatherDataRepository
+        +registerWeatherData(dto) : boolean
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "weatherData.domain" #FFF3CD {
+
+    class WeatherData <<Entity>> <<AggregateRoot>> {
+        -weatherDataId : WeatherDataId
+        -airControlArea : String
+        -dateTime : LocalDateTime
+        -windDirection : int
+        -windSpeed : double
+        -temperature : double
+        -pressure : double
+        +WeatherData(...)
+        +identity() : WeatherDataId
+        +airControlArea() : String
+        +dateTime() : LocalDateTime
+        +windDirection() : int
+        +windSpeed() : double
+        +temperature() : double
+        +pressure() : double
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class WeatherDataId <<ValueObject>> <<Embeddable>> {
+        -value : UUID
+        +valueOf(value) : WeatherDataId
+        +newId() : WeatherDataId
+        +toString() : String
+    }
+}
+
+' ─── Repository ─────────────────────────────────────────────────────────────
+package "weatherData.repository" #F0E6FF {
+    interface WeatherDataRepository <<DomainRepository>> {
+        +findByAirControlAreaAndDate(...) : Optional<WeatherData>
+        +findByAirControlArea(areaId) : Iterable<WeatherData>
+        +save(weatherData) : WeatherData
+    }
+}
+
+' ─── Auth Infrastructure ─────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} WEATHER_PERSON : Role
+    }
+}
+
+' ─── DTO Layer ───────────────────────────────────────────────────────────────
+package "weatherData.dto" #E8F5FF {
+    class WeatherDataDTO {
+        +airControlArea : String
+        +dateTime : LocalDateTime
+        +windDirection : Double
+        +windSpeed : Double
+        +temperature : Double
+        +pressure : Double
+        +WeatherDataDTO(...)
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+WeatherMenuUI ..> RegisterWeatherDataAction : creates
+RegisterWeatherDataAction ..> RegisterWeatherDataUI : creates
+
+RegisterWeatherDataUI --> RegisterWeatherDataController : uses
+RegisterWeatherDataUI --> WeatherDataDTO : creates
+
+RegisterWeatherDataController --> WeatherDataRepository : uses
+RegisterWeatherDataController ..> WeatherData : creates
+RegisterWeatherDataController ..> AISafeRoles : uses
+
+WeatherData *-- WeatherDataId : identity
+
+@enduml

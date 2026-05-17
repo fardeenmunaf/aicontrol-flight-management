@@ -1,0 +1,117 @@
+@startuml sequence-add-customer-collaborator
+title US061 — Add a Customer's Collaborator: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as Operator
+participant "CustomerCollaboratorsMenu" as MenuUI #DDEEFF
+participant "RegisterCustomerCollaboratorAction" as Action #DDEEFF
+participant "RegisterCustomerCollaboratorUI" as UI #DDEEFF
+participant "RegisterCustomerCollaboratorController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AirTransportCompanyRepository /\nAirControlAreaRepository" as CustomerRepo #F0E6FF
+participant "UserService\n(AuthzRegistry)" as UserSvc #FFE8E8
+participant "UserRepository" as UserRepo #F0E6FF
+participant "CustomerCollaboratorRepository" as CollabRepo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Operator -> MenuUI ++ : selects "Register customer collaborator"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Customer Selection and Data Collection ==
+
+UI -> Operator : prompt customer type
+Operator -> UI : Air Transport Company or Air Control Area
+
+UI -> CustomerRepo ++ : findAll()
+CustomerRepo -> DB ++ : SELECT customers
+DB --> CustomerRepo -- : customers
+CustomerRepo --> UI -- : Iterable<Customer>
+
+UI -> Operator : display customers
+Operator -> UI : selects customer
+UI -> Operator : prompt email, password,\nname, phone, position
+Operator -> UI : collaborator data
+
+UI -> UI ++ : validateInputs(...)
+UI --> UI -- : ok
+
+== Registration ==
+
+alt Air Transport Company selected
+    UI -> Ctrl ++ : registerForAirTransportCompany(customerId, data)
+else Air Control Area selected
+    UI -> Ctrl ++ : registerForAirControlArea(customerId, data)
+end
+
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+Authz --> Ctrl -- : ok
+
+Ctrl -> Ctrl ++ : validateCommonFields(...)
+Ctrl --> Ctrl -- : ok
+
+Ctrl -> CustomerRepo ++ : ofIdentity(customerId)
+CustomerRepo -> DB ++ : SELECT customer
+DB --> CustomerRepo -- : customer
+CustomerRepo --> Ctrl -- : Optional<Customer>
+alt customer missing
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+Ctrl -> UserRepo ++ : findByEmail(email)
+UserRepo -> DB ++ : SELECT User WHERE email = ?
+DB --> UserRepo -- : result
+UserRepo --> Ctrl -- : Optional<User>
+alt email already exists
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Operator : "Error: ..."
+    UI --> Action -- : false
+    Action --> MenuUI -- : false
+    MenuUI --> Operator -- : return
+    return
+end
+
+Ctrl -> UserSvc ++ : registerNewUser(email, password,\nfirstName, lastName, email, roles)
+UserSvc --> Ctrl -- : SystemUser
+
+Ctrl -> Ctrl ++ : new User(...)\nnew CustomerCollaborator(...)
+Ctrl --> Ctrl -- : domain objects
+
+Ctrl -> UserRepo ++ : save(user)
+UserRepo -> DB ++ : INSERT INTO User
+DB --> UserRepo -- : saved
+UserRepo --> Ctrl -- : User
+
+Ctrl -> CollabRepo ++ : save(collaborator)
+CollabRepo -> DB ++ : INSERT INTO CustomerCollaborator
+DB --> CollabRepo -- : saved
+CollabRepo --> Ctrl -- : CustomerCollaborator
+Ctrl --> UI -- : CustomerCollaborator
+
+== Feedback ==
+
+UI -> Operator : "Customer collaborator registered."
+UI --> Action -- : false
+Action --> MenuUI -- : false
+MenuUI --> Operator -- : return
+
+@enduml
