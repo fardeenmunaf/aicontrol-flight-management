@@ -41,7 +41,7 @@ This will compile and package all project modules (Backoffice, DSL, Simulation, 
 
 ### Prerequisites
 
-- Java 17+ installed
+- Java 21 installed
 - (Optional) PostgreSQL 18 installed, if using a relational database
 
 ---
@@ -107,18 +107,31 @@ export AISAFE_DB_PASSWORD=postgres
 
 ---
 
-### Launching the Application
+### Bootstrap (Initial Data Load)
 
-After choosing your database option (H2 or PostgreSQL) and setting the environment variables (if using PostgreSQL), launch the application modules in order:
-
-**Windows:**
-```bat
-run-backoffice.bat
-```
+Before launching the application for the first time, run the bootstrap to populate the database with initial data:
 
 **Linux / macOS:**
 ```sh
-./run-backoffice.sh
+./aisafe/run-bootstrap.sh
+```
+
+> **Note:** Only needs to be run once per fresh database. Re-running it on an existing database may result in duplicate data.
+
+---
+
+### Launching the Application
+
+After choosing your database option (H2 or PostgreSQL), setting the environment variables (if using PostgreSQL), and running bootstrap, launch the desired application module:
+
+**Backoffice — Linux / macOS:**
+```sh
+./aisafe/run-backoffice.sh
+```
+
+**Air Transport — Linux / macOS:**
+```sh
+./aisafe/run-airtransport.sh
 ```
 
 ## 6. How to Install/Deploy into Another Machine (or Virtual Machine)
