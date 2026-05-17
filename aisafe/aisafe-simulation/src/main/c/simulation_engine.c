@@ -627,6 +627,14 @@ int main() {
     static PositionHistory histories[MAX_FLIGHTS];
     for (int i = 0; i < MAX_FLIGHTS; i++) histories[i].count = 0;
 
+    // Seed step 0: departure airport position (ground level) from the first waypoint.
+    for (int i = 0; i < shm->num_flights; i++) {
+        Flight *f = &shm->flights[i];
+        Position dep = f->flight_plan.waypoints[0].pos;
+        dep.timestamp = 0.0;
+        append_position(&histories[i], &dep);
+    }
+
     // ── 6.5  Step-lock simulation loop (parent only) ───────────────────────────
     //
     // This loop advances the simulation one time step at a time.
@@ -866,17 +874,21 @@ int main() {
     printf("╔══════════════════════════════════════════════════════╗\n");
     printf("║           POSITION HISTORY (US101)                   ║\n");
     printf("╚══════════════════════════════════════════════════════╝\n");
-    printf("%-8s  %6s  %s\n", "FLIGHT", "STEPS", "LAST KNOWN POSITION");
-    printf("%-8s  %6s  %s\n", "--------", "------", "--------------------------------------------");
     for (int i = 0; i < shm->num_flights; i++) {
-        if (histories[i].count == 0) continue;
-        Position *last = &histories[i].entries[histories[i].count - 1];
-        printf("%-8s  %6d  lat=%8.4f  lon=%9.4f  alt=%7.0f m\n",
-               shm->flights[i].callsign,
-               histories[i].count,
-               last->latitude,
-               last->longitude,
-               last->altitude);
+        bool in_scope = (shm->flights[i].legs[0].departure_offset_s >= 0.0 &&
+                         shm->flights[i].legs[0].departure_offset_s < shm->config.end_time);
+        if (!in_scope || histories[i].count == 0) continue;
+        printf("\n  %s  (%d steps)\n", shm->flights[i].callsign, histories[i].count);
+        printf("  %6s  %8s  %9s  %9s\n", "STEP", "LAT", "LON", "ALT (m)");
+        printf("  %6s  %8s  %9s  %9s\n", "------", "--------", "---------", "---------");
+        for (int j = 0; j < histories[i].count; j++) {
+            Position *p = &histories[i].entries[j];
+            printf("  %6d  %8.4f  %9.4f  %9.0f\n",
+                   j,
+                   p->latitude,
+                   p->longitude,
+                   p->altitude);
+        }
     }
     printf("\n");
 

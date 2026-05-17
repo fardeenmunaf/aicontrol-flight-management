@@ -23,10 +23,21 @@
 static char                   g_callsign[CALLSIGN_LEN];
 static volatile sig_atomic_t  g_terminate = 0;
 
-static void sig_write(const char *s) {
-    const char *p = s;
-    while (*p) p++;
-    write(STDOUT_FILENO, s, (size_t)(p - s));
+// sig_write_msg: assembles "[CALLSIGN] SUFFIX" into a stack buffer and issues
+// a single write() so concurrent processes cannot interleave the pieces.
+// Only async-signal-safe operations used: no sprintf/strlen/malloc.
+static void sig_write_msg(const char *callsign, const char *suffix) {
+    char buf[256];
+    char *p = buf;
+    char *end = buf + sizeof(buf) - 1;
+
+    *p++ = '[';
+    for (const char *s = callsign; *s && p < end; ) *p++ = *s++;
+    *p++ = ']';
+    *p++ = ' ';
+    for (const char *s = suffix; *s && p < end; ) *p++ = *s++;
+
+    write(STDOUT_FILENO, buf, (size_t)(p - buf));
 }
 
 // SIGUSR1 handler — fired by the parent when a proximity violation is detected
@@ -43,9 +54,7 @@ static void sigusr1_handler(int sig) {
     sigaddset(&mask, SIGTERM);
     sigprocmask(SIG_BLOCK, &mask, NULL);   // block both signals during handler
 
-    sig_write("[");
-    sig_write(g_callsign);
-    sig_write("] SIGUSR1: safety violation detected — adjusting course!\n");
+    sig_write_msg(g_callsign, "SIGUSR1: safety violation detected.\n");
 
     sigprocmask(SIG_UNBLOCK, &mask, NULL); // restore before returning
 }
@@ -57,9 +66,7 @@ static void sigusr1_handler(int sig) {
 
 static void sigterm_handler(int sig) {
     (void)sig;
-    sig_write("[");
-    sig_write(g_callsign);
-    sig_write("] SIGTERM: simulation terminated (max violations exceeded). Cleaning up.\n");
+    sig_write_msg(g_callsign, "SIGTERM: simulation terminated (max violations exceeded). Cleaning up.\n");
     g_terminate = 1;
 }
 
