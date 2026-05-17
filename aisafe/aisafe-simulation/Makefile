@@ -1,13 +1,13 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -g -Isrc/main/c -Isrc/main/c/libs
+CFLAGS = -Wall -Wextra -g -Isrc/main/c -Isrc/main/c/libs -pthread
 
 # -lrt é necessário no Linux (shm_open, sem_open); no macOS essas funções
 # estão na libc padrão, por isso não existe a biblioteca separada.
 UNAME := $(shell uname)
 ifeq ($(UNAME), Darwin)
-    LDFLAGS = -lm
+    LDFLAGS = -lm -pthread
 else
-    LDFLAGS = -lm -lrt
+    LDFLAGS = -lm -lrt -pthread
 endif
 
 simulation_engine: simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o

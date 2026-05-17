@@ -1,8 +1,67 @@
 #include <stdio.h>
 #include <math.h>
-#include <unistd.h>         // write()
+#include <signal.h>         // sigaction, sigprocmask, SIGUSR1, SIGTERM
+#include <unistd.h>         // write(), STDOUT_FILENO
+#include <string.h>
 #include "flight_simulation.h"
 #include "physics.h"
+
+// ── US102 — signal handling in child (flight) processes ──────────────────────
+//
+// g_callsign holds this process's flight ID (e.g. "FR0001"), set once at the
+// start of run_flight_process() before any signal can fire.  The handlers
+// read it as a null-terminated string — safe because it never changes after
+// being set and there are no concurrent writers inside the child process.
+//
+// sig_write() uses only write() which is listed as async-signal-safe in
+// POSIX.1-2008.  A pointer walk replaces strlen() which is NOT listed.
+//
+// g_terminate follows the TP4 flag pattern: set to 1 inside the SIGTERM
+// handler (async-signal-safe), then checked in the step loop after
+// sem_wait() returns.  exit() must NOT be called from a signal handler.
+
+static char                   g_callsign[CALLSIGN_LEN];
+static volatile sig_atomic_t  g_terminate = 0;
+
+static void sig_write(const char *s) {
+    const char *p = s;
+    while (*p) p++;
+    write(STDOUT_FILENO, s, (size_t)(p - s));
+}
+
+// SIGUSR1 handler — fired by the parent when a proximity violation is detected
+// near this flight (US102).
+// Requirement: other signals must be blocked while the handler runs.
+// SA_RESTART (set in run_flight_process) ensures sem_wait() is transparently
+// restarted after the handler returns, so the step-lock loop is unaffected.
+
+static void sigusr1_handler(int sig) {
+    (void)sig;
+    sigset_t mask;
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGUSR1);
+    sigaddset(&mask, SIGTERM);
+    sigprocmask(SIG_BLOCK, &mask, NULL);   // block both signals during handler
+
+    sig_write("[");
+    sig_write(g_callsign);
+    sig_write("] SIGUSR1: safety violation detected — adjusting course!\n");
+
+    sigprocmask(SIG_UNBLOCK, &mask, NULL); // restore before returning
+}
+
+// SIGTERM handler — fired by the parent when total violations exceed the
+// configured max_violations_threshold (US102 early termination).
+// Sets the g_terminate flag only — exit() is NOT async-signal-safe (TP4).
+// The step loop checks the flag after sem_wait() returns and breaks cleanly.
+
+static void sigterm_handler(int sig) {
+    (void)sig;
+    sig_write("[");
+    sig_write(g_callsign);
+    sig_write("] SIGTERM: simulation terminated (max violations exceeded). Cleaning up.\n");
+    g_terminate = 1;
+}
 
 // Arrival threshold: once the aircraft is within this horizontal distance
 // of the destination waypoint, it is considered landed.
@@ -298,6 +357,28 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 void run_flight_process(SharedMemoryData *shm, int flight_index, int pipe_write_fd, sem_t *step_sem, sem_t *main_sem) {
     Flight *f = &shm->flights[flight_index];
 
+    // ── US102 — install signal handlers ──────────────────────────────────────
+    // Copy the callsign to the process-global before installing handlers so
+    // it is always valid when either handler runs.
+    strncpy(g_callsign, f->callsign, CALLSIGN_LEN - 1);
+    g_callsign[CALLSIGN_LEN - 1] = '\0';
+
+    // SIGUSR1: violation notification — SA_RESTART so sem_wait() is not aborted.
+    // sa_mask blocks SIGTERM during the handler (combined with sigprocmask inside).
+    struct sigaction sa_usr1;
+    sa_usr1.sa_handler = sigusr1_handler;
+    sigemptyset(&sa_usr1.sa_mask);
+    sigaddset(&sa_usr1.sa_mask, SIGTERM);
+    sa_usr1.sa_flags = SA_RESTART;
+    sigaction(SIGUSR1, &sa_usr1, NULL);
+
+    // SIGTERM: early termination — handler exits, SA_RESTART not needed.
+    struct sigaction sa_term;
+    sa_term.sa_handler = sigterm_handler;
+    sigemptyset(&sa_term.sa_mask);
+    sa_term.sa_flags = 0;
+    sigaction(SIGTERM, &sa_term, NULL);
+
     // Set the initial phase from the current target waypoint (set by the parser).
     f->current_phase = f->flight_plan.waypoints[f->flight_plan.current_waypoint_index].segment_phase;
 
@@ -324,10 +405,11 @@ void run_flight_process(SharedMemoryData *shm, int flight_index, int pipe_write_
         sem_wait(step_sem);
 
         // ── TERMINATION CHECK ─────────────────────────────────────────────────
-        // The parent may have set termination_requested (e.g. all other flights
-        // landed, or an error occurred) — check before doing any work.
+        // g_terminate is set by sigterm_handler (TP4 flag pattern — async-signal-safe).
+        // termination_requested is set by the parent in shared memory.
+        // Either condition means we should stop processing steps.
 
-        if (shm->termination_requested || !f->is_active)
+        if (g_terminate || shm->termination_requested || !f->is_active)
             break;
 
         // ── COMPUTE ───────────────────────────────────────────────────────────
