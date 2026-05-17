@@ -39,6 +39,14 @@ public class EngineModelBootstrap {
 		registerIfAbsent("GE90-110B", "General Electric", "USA", EngineType.TURBOFAN,
 				513.0, 0.40, 513000.0, 430000.0, 0.60,
 				FuelType.JET_A, 0.80, 43.0);
+
+		registerIfAbsent("GE 90B", "General Electric", "USA", EngineType.TURBOFAN,
+				513.0, 0.40, 513000.0, 430000.0, 0.60,
+				FuelType.JET_A, 0.80, 43.0);
+
+		registerIfAbsent("RR Trent 970", "Rolls-Royce", "UK", EngineType.TURBOFAN,
+				340.0, 0.39, 340000.0, 285000.0, 0.61,
+				FuelType.JET_A, 0.80, 43.0);
 	}
 
 	private void registerIfAbsent(final String name,

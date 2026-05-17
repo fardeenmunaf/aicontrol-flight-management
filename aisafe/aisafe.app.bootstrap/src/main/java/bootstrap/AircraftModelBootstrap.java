@@ -119,7 +119,14 @@ public class AircraftModelBootstrap {
             final double area, final double span, final double drag,
             final double lift, final int engines, final String engineName) {
 
-        if (!aircraftModelRepository.findByModelNameAndMaker(modelName, makerName).isEmpty()) {
+        final var existing = aircraftModelRepository.findByModelNameAndMaker(modelName, makerName);
+        if (!existing.isEmpty()) {
+            final AircraftModel existingModel = existing.get(0);
+            if (existingModel.supportedEngineModels().isEmpty()) {
+                engineModelRepository.findByName(engineName).ifPresent(existingModel::addSupportedEngineModel);
+                aircraftModelRepository.save(existingModel);
+                System.out.println("Engine association repaired for existing model: " + modelName);
+            }
             return;
         }
 

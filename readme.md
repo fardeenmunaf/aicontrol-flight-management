@@ -35,7 +35,64 @@ This will compile and package all project modules (Backoffice, DSL, Simulation, 
 
 ## 4. How to Execute Tests
 
-*To Do*
+### Prerequisites
+
+- Java 21 installed
+- Project built at least once (see **Section 3 — How to Build**)
+
+***
+
+### Run All Tests (from project root)
+
+**Linux / macOS:**
+```sh
+cd sem4pi2526-sem4pi2526_2dk5
+mvn test
+```
+
+**Windows:**
+```bat
+cd sem4pi2526-sem4pi2526_2dk5
+mvn test
+```
+
+***
+
+### Run Tests for a Specific Module
+
+To run tests only for the `aisafe.core` module:
+
+**Linux / macOS / Windows:**
+```sh
+cd sem4pi2526-sem4pi2526_2dk5
+mvn test -pl aisafe/aisafe.core
+```
+
+***
+
+### Run a Specific Test Class
+
+```sh
+mvn test -pl aisafe/aisafe.core -Dtest=YourTestClassName
+```
+
+### Run a Specific Test Method
+
+```sh
+mvn test -pl aisafe/aisafe.core -Dtest=YourTestClassName#yourMethodName
+```
+
+***
+
+### Clean and Run All Tests
+
+```sh
+cd sem4pi2526-sem4pi2526_2dk5
+mvn clean test
+```
+
+***
+
 
 ## 5. How to Run
 
@@ -134,14 +191,5 @@ After choosing your database option (H2 or PostgreSQL), setting the environment 
 ./aisafe/run-airtransport.sh
 ```
 
-## 6. How to Install/Deploy into Another Machine (or Virtual Machine)
-
-*To Do*
-
-## 7. How to Generate PlantUML Diagrams
-
-To generate plantuml diagrams for documentation execute the script (for the moment, only for linux/unix/macos):
-
-    ./generate-plantuml-diagrams.sh
 
 
