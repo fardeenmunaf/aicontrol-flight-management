@@ -1,0 +1,124 @@
+@startuml class-diagram
+title US032 — Disable/Enable Users: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.user" #DDEEFF {
+
+    class UsersMenuUI {
+        +doShow() : boolean
+        +headline() : String
+        -buildUsersMenu() : Menu
+    }
+
+    class DisableEnableUserAction {
+        +execute() : boolean
+    }
+
+    class DisableEnableUserUI {
+        -controller : DisableEnableUserController
+        +doShow() : boolean
+        +headline() : String
+    }
+
+    class UserPrinter <<Visitor>> {
+        +visit(user) : String
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "user.application" #DDFFD8 {
+
+    class DisableEnableUserController {
+        -authz : AuthorizationService
+        -userRepository : UserRepository
+        +DisableEnableUserController(UserRepository)
+        +allUsers() : List<User>
+        +disableUser(email) : void
+        +enableUser(email) : void
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "user.domain" #FFF3CD {
+
+    class User <<Entity>> <<AggregateRoot>> {
+        -email : String
+        -name : String
+        -phoneNumber : String
+        -status : String
+        -roles : Set<Role>
+        -userId : UserId
+        +identity() : UserId
+        +email() : String
+        +name() : String
+        +status() : String
+        +isActive() : boolean
+        +enable() : void
+        +disable() : void
+    }
+
+    enum Role {
+        ADMIN
+        BACKOFFICE_OPERATOR
+        AIR_TRANSPORT_COMPANY_COLLABORATOR
+        PILOT
+        FLIGHT_CONTROL_OPERATOR
+        WEATHER_PERSON
+        --
+        -designation : String
+        +designation() : String
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class UserId <<ValueObject>> <<Embeddable>> {
+        -value : String
+        +valueOf(value) : UserId
+        +toString() : String
+    }
+}
+
+' ─── Repository ─────────────────────────────────────────────────────────────
+package "user.repository" #F0E6FF {
+    interface UserRepository <<DomainRepository>> {
+        +findByEmail(email) : Optional<User>
+        +findAll() : Iterable<User>
+        +save(user) : User
+    }
+}
+
+' ─── Auth Infrastructure ─────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} ADMIN : Role
+    }
+
+    class AuthzUserService <<service>> {
+        +userOfIdentity(username) : Optional<SystemUser>
+        +deactivateUser(user) : void
+        +activateUser(user) : void
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+UsersMenuUI ..> DisableEnableUserAction : creates
+DisableEnableUserAction ..> DisableEnableUserUI : creates
+
+DisableEnableUserUI --> DisableEnableUserController : uses
+DisableEnableUserUI ..> UserPrinter : uses
+
+DisableEnableUserController --> UserRepository : uses
+DisableEnableUserController ..> AISafeRoles : uses
+DisableEnableUserController ..> AuthzUserService : uses
+
+User *-- UserId : identity
+User "1" *-- "1..*" Role : roles
+
+@enduml

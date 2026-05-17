@@ -1,0 +1,115 @@
+@startuml class-diagram
+title US060 — Register Air Transport Company: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.airtransportcompany" #DDEEFF {
+
+    class AirTransportCompaniesMenuUI {
+        +doShow() : boolean
+        +headline() : String
+        -buildMenu() : Menu
+    }
+
+    class RegisterAirTransportCompanyAction {
+        +execute() : boolean
+    }
+
+    class RegisterAirTransportCompanyUI {
+        -controller : RegisterAirTransportCompanyController
+        +doShow() : boolean
+        +headline() : String
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "airtransportcompany.application" #DDFFD8 {
+
+    class RegisterAirTransportCompanyController {
+        -authz : AuthorizationService
+        -repository : AirTransportCompanyRepository
+        +RegisterAirTransportCompanyController(AirTransportCompanyRepository)
+        +registerCompany(name, iataCode, icaoCode) : AirTransportCompany
+        -isValidIataCode(code) : boolean
+        -isValidIcaoCode(code) : boolean
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "airtransportcompany.domain" #FFF3CD {
+
+    class AirTransportCompany <<Entity>> <<AggregateRoot>> {
+        -airTransportCompanyId : AirTransportCompanyId
+        -name : String
+        -iataCode : String
+        -icaoCode : String
+        +AirTransportCompany(name, iataCode, icaoCode)
+        +identity() : AirTransportCompanyId
+        +name() : String
+        +iataCode() : String
+        +icaoCode() : String
+        +toString() : String
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class AirTransportCompanyId <<ValueObject>> <<Embeddable>> {
+        -value : UUID
+        +newId() : AirTransportCompanyId
+        +toString() : String
+    }
+}
+
+' ─── Repository ─────────────────────────────────────────────────────────────
+package "airtransportcompany.repositories" #F0E6FF {
+    interface AirTransportCompanyRepository <<DomainRepository>> {
+        +findByName(name) : List<AirTransportCompany>
+        +findByIataCode(iataCode) : List<AirTransportCompany>
+        +findByIcaoCode(icaoCode) : List<AirTransportCompany>
+        +save(company) : AirTransportCompany
+    }
+}
+
+' ─── Auth Infrastructure ─────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} BACKOFFICE_OPERATOR : Role
+    }
+}
+
+' ─── Bootstrap ──────────────────────────────────────────────────────────────
+package "bootstrap" #FFE8CC {
+    class AISafeBootstrap <<utility>> {
+        {static} +main(args) : void
+    }
+
+    class AirTransportCompanyBootstrap {
+        -repository : AirTransportCompanyRepository
+        +AirTransportCompanyBootstrap(AirTransportCompanyRepository)
+        +execute() : void
+        -registerIfAbsent(name, iataCode, icaoCode) : void
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+AirTransportCompaniesMenuUI ..> RegisterAirTransportCompanyAction : creates
+RegisterAirTransportCompanyAction ..> RegisterAirTransportCompanyUI : creates
+
+RegisterAirTransportCompanyUI --> RegisterAirTransportCompanyController : uses
+RegisterAirTransportCompanyController --> AirTransportCompanyRepository : uses
+RegisterAirTransportCompanyController ..> AirTransportCompany : creates
+RegisterAirTransportCompanyController ..> AISafeRoles : uses
+
+AirTransportCompany *-- AirTransportCompanyId : identity
+
+AirTransportCompanyBootstrap --> AirTransportCompanyRepository : uses
+AirTransportCompanyBootstrap ..> AirTransportCompany : creates
+AISafeBootstrap ..> AirTransportCompanyBootstrap : executes
+
+@enduml

@@ -1,0 +1,119 @@
+@startuml class-diagram
+title US033 — List Users: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.user" #DDEEFF {
+
+    class UsersMenuUI {
+        +doShow() : boolean
+        +headline() : String
+        -buildUsersMenu() : Menu
+    }
+
+    class ListUsersAction {
+        +execute() : boolean
+    }
+
+    class ListUsersUI {
+        -controller : ListUsersController
+        +elements() : Iterable<User>
+        +elementPrinter() : Visitor<User>
+        +elementName() : String
+        +listHeader() : String
+        +emptyMessage() : String
+        +headline() : String
+    }
+
+    class UserPrinter <<Visitor>> {
+        +visit(user) : void
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "user.application" #DDFFD8 {
+
+    class ListUsersController {
+        -authz : AuthorizationService
+        -userRepository : UserRepository
+        +ListUsersController(UserRepository)
+        +allUsers() : List<User>
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "user.domain" #FFF3CD {
+
+    class User <<Entity>> <<AggregateRoot>> {
+        -email : String
+        -name : String
+        -phoneNumber : String
+        -status : String
+        -roles : Set<Role>
+        -userId : UserId
+        +identity() : UserId
+        +email() : String
+        +name() : String
+        +phoneNumber() : String
+        +status() : String
+        +roles() : Set<Role>
+        +isActive() : boolean
+    }
+
+    enum Role {
+        ADMIN
+        BACKOFFICE_OPERATOR
+        AIR_TRANSPORT_COMPANY_COLLABORATOR
+        PILOT
+        FLIGHT_CONTROL_OPERATOR
+        WEATHER_PERSON
+        --
+        -designation : String
+        +designation() : String
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class UserId <<ValueObject>> <<Embeddable>> {
+        -value : String
+        +valueOf(value) : UserId
+        +toString() : String
+    }
+}
+
+' ─── Repository ─────────────────────────────────────────────────────────────
+package "user.repository" #F0E6FF {
+    interface UserRepository <<DomainRepository>> {
+        +findAll() : Iterable<User>
+        +findByEmail(email) : Optional<User>
+        +save(user) : User
+    }
+}
+
+' ─── Auth Infrastructure ─────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} ADMIN : Role
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+UsersMenuUI ..> ListUsersAction : creates
+ListUsersAction ..> ListUsersUI : creates
+
+ListUsersUI --> ListUsersController : uses
+ListUsersUI ..> UserPrinter : uses
+
+ListUsersController --> UserRepository : uses
+ListUsersController ..> AISafeRoles : uses
+
+User *-- UserId : identity
+User "1" *-- "1..*" Role : roles
+
+@enduml

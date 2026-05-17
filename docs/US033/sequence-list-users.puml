@@ -1,0 +1,62 @@
+@startuml sequence-list-users
+title US033 — List Users: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Administrator" as Admin
+participant "UsersMenuUI" as MenuUI #DDEEFF
+participant "ListUsersAction" as Action #DDEEFF
+participant "ListUsersUI" as UI #DDEEFF
+participant "ListUsersController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "UserRepository" as Repo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Admin -> MenuUI ++ : selects "List Users"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Authorization Check ==
+
+UI -> Ctrl ++ : allUsers()
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(ADMIN)
+alt not ADMIN
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Admin : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+== Data Retrieval ==
+
+Ctrl -> Repo ++ : findAll()
+Repo -> DB ++ : SELECT * FROM AppUser
+DB --> Repo -- : rows
+Repo --> Ctrl -- : Iterable<User>
+Ctrl --> UI -- : List<User>
+
+== Display ==
+
+UI -> Admin : print header\n"EMAIL | NAME | PHONE | STATUS"
+
+loop for each User
+    UI -> Admin : print row\n"email | name | phone | status"
+end
+
+note right of UI
+  Columns are fixed-width:
+  EMAIL (30) | NAME (20)
+  PHONE (20) | STATUS (20)
+  Empty list → "No Users found."
+end note
+
+deactivate UI
+deactivate Action
+deactivate MenuUI
+
+@enduml

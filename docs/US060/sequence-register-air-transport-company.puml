@@ -1,0 +1,102 @@
+@startuml sequence-register-air-transport-company
+title US060 — Register Air Transport Company: Sequence Diagram (Manual via Console)
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as Operator
+participant "AirTransportCompaniesMenuUI" as MenuUI #DDEEFF
+participant "RegisterAirTransportCompanyAction" as Action #DDEEFF
+participant "RegisterAirTransportCompanyUI" as UI #DDEEFF
+participant "RegisterAirTransportCompanyController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AirTransportCompanyRepository" as Repo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Operator -> MenuUI ++ : selects "Register Air Transport Company"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Data Collection ==
+
+UI -> Operator : prompt company name
+Operator -> UI : "TAP Air Portugal"
+
+UI -> Operator : prompt IATA code (2 letters)
+Operator -> UI : "TP"
+
+UI -> Operator : prompt ICAO code (2-3 letters)
+Operator -> UI : "TAP"
+
+== Authorization Check ==
+
+UI -> Ctrl ++ : registerCompany(name, iataCode, icaoCode)
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Operator : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+== Validation ==
+
+Ctrl -> Ctrl : isValidIataCode("TP")\n→ must be exactly 2 letters [A-Z]
+alt invalid IATA
+    Ctrl --> UI -- : throws IllegalArgumentException\n"IATA code must be exactly 2 letters"
+    UI -> Operator : "Error: ..."
+    return
+end
+
+Ctrl -> Ctrl : isValidIcaoCode("TAP")\n→ must be 2-3 letters [A-Z]
+alt invalid ICAO
+    Ctrl --> UI -- : throws IllegalArgumentException\n"ICAO code must be 2-3 letters"
+    UI -> Operator : "Error: ..."
+    return
+end
+
+== Uniqueness Check ==
+
+Ctrl -> Repo ++ : findByIataCode("TP")
+Repo -> DB ++ : SELECT WHERE iata_code = 'TP'
+DB --> Repo -- : result
+Repo --> Ctrl -- : List<AirTransportCompany>
+alt IATA already exists
+    Ctrl --> UI -- : throws IllegalArgumentException\n"A company with IATA code 'TP' already exists"
+    UI -> Operator : "Error: ..."
+    return
+end
+
+Ctrl -> Repo ++ : findByIcaoCode("TAP")
+Repo -> DB ++ : SELECT WHERE icao_code = 'TAP'
+DB --> Repo -- : result
+Repo --> Ctrl -- : List<AirTransportCompany>
+alt ICAO already exists
+    Ctrl --> UI -- : throws IllegalArgumentException\n"A company with ICAO code 'TAP' already exists"
+    UI -> Operator : "Error: ..."
+    return
+end
+
+== Persistence ==
+
+Ctrl -> Ctrl : new AirTransportCompany("TAP Air Portugal", "TP", "TAP")\n→ assigns AirTransportCompanyId.newId()
+
+Ctrl -> Repo ++ : save(company)
+Repo -> DB ++ : INSERT INTO AirTransportCompany
+DB --> Repo -- : saved
+Repo --> Ctrl -- : AirTransportCompany
+
+Ctrl --> UI -- : AirTransportCompany registered
+
+== Feedback ==
+
+UI -> Operator : "Air Transport Company registered successfully."
+deactivate UI
+deactivate Action
+deactivate MenuUI
+
+@enduml

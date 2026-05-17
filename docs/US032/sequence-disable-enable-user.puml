@@ -1,0 +1,123 @@
+@startuml sequence-disable-enable-user
+title US032 — Disable/Enable User: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Administrator" as Admin
+participant "UsersMenuUI" as MenuUI #DDEEFF
+participant "DisableEnableUserAction" as Action #DDEEFF
+participant "DisableEnableUserUI" as UI #DDEEFF
+participant "DisableEnableUserController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AuthzUserService\n(AuthzRegistry)" as AuthzSvc #FFE8E8
+participant "UserRepository" as Repo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Admin -> MenuUI ++ : selects "Disable/Enable User"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Load User List ==
+
+UI -> Ctrl ++ : allUsers()
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(ADMIN)
+alt not ADMIN
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Admin : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+Ctrl -> Repo ++ : findAll()
+Repo -> DB ++ : SELECT * FROM AppUser
+DB --> Repo -- : rows
+Repo --> Ctrl -- : Iterable<User>
+Ctrl --> UI -- : List<User>
+
+UI -> Admin : display user list\n(name, email, status)
+
+== User Selection ==
+
+Admin -> UI : selects a user from list
+
+== Confirmation ==
+
+UI -> Admin : "Are you sure you want to\ndisable/enable <user>? (Y/N)"
+Admin -> UI : "Y"
+
+== Disable Flow (if user is ACTIVE) ==
+
+alt selected user is ACTIVE
+
+    UI -> Ctrl ++ : disableUser(email)
+    Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(ADMIN)
+    Authz --> Ctrl -- : ok
+
+    Ctrl -> AuthzSvc ++ : userOfIdentity(Username.valueOf(email))
+    AuthzSvc -> DB ++ : query SystemUser
+    DB --> AuthzSvc -- : SystemUser
+    AuthzSvc --> Ctrl -- : Optional<SystemUser>
+
+    Ctrl -> AuthzSvc ++ : deactivateUser(systemUser)
+    AuthzSvc -> DB ++ : update SystemUser status
+    DB --> AuthzSvc -- : ok
+    AuthzSvc --> Ctrl -- : ok
+
+    Ctrl -> Repo ++ : findByEmail(email)
+    Repo -> DB ++ : SELECT FROM AppUser WHERE email = ?
+    DB --> Repo -- : User
+    Repo --> Ctrl -- : Optional<User>
+
+    Ctrl -> Ctrl : user.disable()
+    Ctrl -> Repo ++ : save(user)
+    Repo -> DB ++ : UPDATE AppUser SET status = 'DISABLED'
+    DB --> Repo -- : ok
+    Repo --> Ctrl -- : User
+    Ctrl --> UI -- : void
+
+    UI -> Admin : "User disabled successfully."
+
+== Enable Flow (if user is DISABLED) ==
+
+else selected user is DISABLED
+
+    UI -> Ctrl ++ : enableUser(email)
+    Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(ADMIN)
+    Authz --> Ctrl -- : ok
+
+    Ctrl -> AuthzSvc ++ : userOfIdentity(Username.valueOf(email))
+    AuthzSvc -> DB ++ : query SystemUser
+    DB --> AuthzSvc -- : SystemUser
+    AuthzSvc --> Ctrl -- : Optional<SystemUser>
+
+    Ctrl -> AuthzSvc ++ : activateUser(systemUser)
+    AuthzSvc -> DB ++ : update SystemUser status
+    DB --> AuthzSvc -- : ok
+    AuthzSvc --> Ctrl -- : ok
+
+    Ctrl -> Repo ++ : findByEmail(email)
+    Repo -> DB ++ : SELECT FROM AppUser WHERE email = ?
+    DB --> Repo -- : User
+    Repo --> Ctrl -- : Optional<User>
+
+    Ctrl -> Ctrl : user.enable()
+    Ctrl -> Repo ++ : save(user)
+    Repo -> DB ++ : UPDATE AppUser SET status = 'ACTIVE'
+    DB --> Repo -- : ok
+    Repo --> Ctrl -- : User
+    Ctrl --> UI -- : void
+
+    UI -> Admin : "User enabled successfully."
+
+end
+
+deactivate UI
+deactivate Action
+deactivate MenuUI
+
+@enduml
