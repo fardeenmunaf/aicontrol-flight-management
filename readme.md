@@ -119,6 +119,18 @@ start-h2-server.bat
 
 Then proceed to launch the application modules as described below (without setting any environment variables).
 
+To connect to the H2 database via the shell (for debugging or inspection):
+
+**Windows (PowerShell):**
+```powershell
+$jar = (Get-ChildItem "$env:USERPROFILE\.m2\repository\com\h2database\h2" -Recurse -Filter "h2-*.jar")[0].FullName; java -cp $jar org.h2.tools.Shell -url "jdbc:h2:tcp://localhost/~/aisafe-dev" -user sa
+```
+
+**Linux / macOS:**
+```bash
+java -cp $(find ~/.m2/repository/com/h2database/h2 -name "h2-*.jar" | head -1) org.h2.tools.Shell -url "jdbc:h2:tcp://localhost/~/aisafe-dev" -user sa
+```
+
 ---
 
 ### Option B — PostgreSQL Database
