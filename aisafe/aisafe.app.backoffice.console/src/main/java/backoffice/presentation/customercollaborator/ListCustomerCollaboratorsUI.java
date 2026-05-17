@@ -9,6 +9,7 @@ import customercollaborator.domain.CustomerCollaborator;
 import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
 import infrastructure.persistence.PersistenceContext;
+import user.repository.UserRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,9 @@ public class ListCustomerCollaboratorsUI extends AbstractUI {
             PersistenceContext.repositories().airTransportCompanies();
     private final AirControlAreaRepository airControlAreaRepository =
             PersistenceContext.repositories().airControlAreas();
+
+    private final UserRepository userRepository =
+            PersistenceContext.repositories().users();
 
     private final ListCustomerCollaboratorsController controller =
             new ListCustomerCollaboratorsController(
@@ -109,7 +113,10 @@ public class ListCustomerCollaboratorsUI extends AbstractUI {
         }
 
         for (final CustomerCollaborator c : collaborators) {
-            System.out.printf("- %s | %s%n", c.userId(), c.position());
+            final String email = userRepository.ofIdentity(c.userId())
+                    .map(user -> user.email())
+                    .orElse(c.userId().toString());
+            System.out.printf("- %s | %s%n", email, c.position());
         }
     }
 

@@ -108,7 +108,10 @@ public class UpdateCustomerCollaboratorUI extends AbstractUI {
 
         for (int i = 0; i < collaborators.size(); i++) {
             final CustomerCollaborator c = collaborators.get(i);
-            System.out.printf("%d - %s | %s%n", i + 1, c.userId(), c.position());
+            final String email = userRepository.ofIdentity(c.userId())
+                    .map(user -> user.email())
+                    .orElse(c.userId().toString());
+            System.out.printf("%d - %s | %s%n", i + 1, email, c.position());
         }
 
         final int choice = Console.readInteger("Choose collaborator to update: ");
