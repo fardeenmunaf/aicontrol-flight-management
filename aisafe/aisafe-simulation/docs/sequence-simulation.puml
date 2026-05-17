@@ -1,0 +1,105 @@
+@startuml sequence-simulation
+title US100 — Run Air Control Simulation
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Operator" as Op
+participant "Simulation Engine\n(parent process)" as Engine #DDFFD8
+participant "Flight Process [i]\n(child process)" as Child #DDEEFF
+participant "Shared Memory" as SHM #F0E6FF
+participant "Semaphores" as Sems #FFE8E8
+participant "Pipe [i]" as Pipe #EEEEEE
+
+== Setup ==
+
+Op -> Engine ++: run
+
+Engine -> SHM ++: set up shared memory block
+SHM --> Engine --: ready
+
+Engine -> SHM ++: load settings and flight plans
+SHM --> Engine --: loaded
+
+Engine -> Sems ++: create semaphores\n(one per flight + one shared)
+Sems --> Engine --: ready
+
+Engine -> Pipe ++: create one pipe per flight
+Pipe --> Engine --: ready
+
+== Process Launch ==
+
+loop for each in-scope flight
+
+    Engine -> Child ++: fork()
+    Child -> Child: register signal handlers\n(SIGUSR1 = warn, SIGTERM = stop)
+    Child -> Sems ++: signal "I'm ready"
+    Sems --> Child --
+
+end
+
+Engine -> Sems ++: wait until all children check in
+Sems --> Engine --: all ready
+
+== Step-Lock Loop ==
+
+loop for each time step
+
+    Engine -> Sems ++: wake up active flights
+    Sems --> Engine --
+
+    note over Child: unblocked — starts step
+
+    Child -> Child: run physics step\n(position, altitude, speed, fuel burn)
+
+    Child -> SHM ++: write updated position
+    SHM --> Child --
+
+    Child -> Pipe ++: send step results
+    Pipe --> Child --
+
+    Child -> Sems ++: signal "step done"
+    Sems --> Child --
+
+    Engine -> Sems ++: wait for all flights to finish
+    Sems --> Engine --: all done
+
+    Engine -> Pipe ++: collect step results
+    Pipe --> Engine --: received
+
+    Engine -> Engine: advance clock
+
+    Engine -> Engine: check violations\n(compare all pairs for proximity,\ncheck fuel levels)
+
+    alt proximity violation detected
+        Engine -> Child: SIGUSR1 — proximity alert
+        Child -> Child: print "safety violation"
+    end
+
+    alt total violations exceed configured limit
+        Engine -> Child: SIGTERM — stop flying
+        Child -> Child --: exit cleanly
+    end
+
+    Engine -> Engine: print step table
+
+    alt early termination requested
+        Engine -> Engine: break out of loop
+    end
+
+end
+
+== Shutdown ==
+
+Engine -> Engine: print final summary\n(per-flight status, full position history)
+
+Engine -> Child: unblock and wait for exit
+Child --> Engine --: all exited
+
+Engine -> Sems: remove semaphores
+Engine -> SHM: release shared memory
+
+Engine --> Op --: done
+
+@enduml
