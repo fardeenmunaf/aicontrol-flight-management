@@ -1,0 +1,128 @@
+@startuml sequence-violation-detection
+title US102 — Detect Aircraft Safety Violations in Real Time
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+participant "Simulation Engine\n(parent process)" as Engine #DDFFD8
+participant "Flight Process [i]\n(child process)" as ChildI #DDEEFF
+participant "Flight Process [j]\n(child process)" as ChildJ #DDEEFF
+participant "Shared Memory" as SHM #F0E6FF
+participant "Semaphores" as Sems #FFE8E8
+participant "Pipe [i/j]" as Pipe #EEEEEE
+
+== Per-Step Execution (repeated each time step) ==
+
+Engine -> Sems ++: post step_sem[i], step_sem[j]\n(wake active flights)
+Sems --> Engine --
+
+note over ChildI, ChildJ: unblocked — run physics step in parallel
+
+ChildI -> SHM ++: write updated position [i]
+SHM --> ChildI --
+ChildI -> Pipe ++: send PipeMessage (position + physics data)
+Pipe --> ChildI --
+ChildI -> Sems ++: post main_sem ("step done")
+Sems --> ChildI --
+
+ChildJ -> SHM ++: write updated position [j]
+SHM --> ChildJ --
+ChildJ -> Pipe ++: send PipeMessage (position + physics data)
+Pipe --> ChildJ --
+ChildJ -> Sems ++: post main_sem ("step done")
+Sems --> ChildJ --
+
+Engine -> Sems ++: wait for all flights to post main_sem
+Sems --> Engine --: all done
+
+Engine -> Pipe ++: drain pipes — collect step results
+Pipe --> Engine --: PipeMessage[i], PipeMessage[j]
+
+Engine -> Engine: advance simulation clock
+
+== Violation Check (AC01) ==
+
+note over Engine, SHM
+  Children are blocked on step semaphores here —
+  shared memory is safe to read without extra locking.
+end note
+
+Engine -> SHM ++: read positions of all active flights
+SHM --> Engine --: Position[i], Position[j], ...
+
+Engine -> Engine: compare every pair (i, j):\n  dx = Δlon × cos(avg_lat) × R\n  dy = Δlat × R\n  dz = Δalt\n  dist = √(dx²+dy²+dz²)
+
+alt proximity violation detected — dist < safety_distance_threshold (AC01)
+
+    Engine -> SHM ++: total_violations_detected++\n  flights[i].violation_detected = true\n  flights[j].violation_detected = true
+    SHM --> Engine --
+
+    Engine -> Engine: print "*** VIOLATION: [i] <-> [j]  dist=X m ***"
+
+    Engine -> ChildI: SIGUSR1 — proximity alert (AC02)
+    Engine -> ChildJ: SIGUSR1 — proximity alert (AC02)
+
+    note over ChildI
+      sigusr1_handler fires (AC03, AC04):
+      1. sigprocmask — block SIGUSR1 + SIGTERM
+      2. write() "[callsign] SIGUSR1: safety violation detected."
+      3. sigprocmask — unblock signals
+      SA_RESTART: sem_wait() transparently resumed
+    end note
+
+    note over ChildJ
+      sigusr1_handler fires (AC03, AC04):
+      same steps as flight [i]
+    end note
+
+end
+
+Engine -> Engine: check fuel exhaustion for each active flight\n  (fuel_rem ≤ 0 → violation_detected = true)
+
+== Early Termination Check (AC05) ==
+
+alt total_violations_detected > max_violations_threshold
+
+    Engine -> Engine: print "[SIM] Violations exceeded threshold —\n  sending SIGTERM to all active flights."
+
+    Engine -> ChildI: SIGTERM — stop flying (AC05)
+    Engine -> ChildJ: SIGTERM — stop flying (AC05)
+
+    note over ChildI
+      sigterm_handler fires (AC06):
+      1. write() "[callsign] SIGTERM: simulation terminated. Cleaning up."
+      2. g_terminate = 1  (async-signal-safe flag — no exit() in handler)
+    end note
+
+    note over ChildJ
+      sigterm_handler fires (AC06):
+      same steps as flight [i]
+    end note
+
+    Engine -> SHM ++: termination_requested = true
+    SHM --> Engine --
+
+    Engine -> Engine: break out of step loop\nprint "[SIM] Simulation terminated early."
+
+    == Cleanup after Early Termination ==
+
+    Engine -> Sems ++: post all step semaphores\n(unblock any waiting children)
+    Sems --> Engine --
+
+    note over ChildI, ChildJ
+      sem_wait(step_sem) returns (AC06):
+      check g_terminate || termination_requested → true
+      break loop → return → exit(EXIT_SUCCESS)
+    end note
+
+    ChildI --> Engine: exited cleanly
+    ChildJ --> Engine: exited cleanly
+
+else violations within threshold — simulation continues
+
+    Engine -> Engine: print per-step table
+
+end
+
+@enduml

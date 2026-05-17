@@ -1,0 +1,103 @@
+@startuml sequence-register-air-control-area
+title US050 — Register an Air Control Area: Sequence Diagram (Manual via Console)
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as Operator
+participant "AirControlAreasMenuUI" as MenuUI #DDEEFF
+participant "RegisterAirControlAreaAction" as Action #DDEEFF
+participant "RegisterAirControlAreaUI" as UI #DDEEFF
+participant "RegisterAirControlAreaController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AirControlAreaRepository" as Repo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Operator -> MenuUI ++ : selects "Register New Air Control Area"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Data Collection ==
+
+UI -> Operator : prompt area code
+Operator -> UI : "LPPC"
+
+UI -> Operator : prompt minimum required arrival fuel
+Operator -> UI : "200.0"
+note right of UI
+  Input parsed as double.
+  NumberFormatException caught and
+  reported if non-numeric.
+end note
+
+UI -> Operator : prompt geographic boundaries
+Operator -> UI : "37.0,-9.5;37.0,-6.0;42.0,-6.0;42.0,-9.5"
+note right of UI
+  Format: "lat,lon;lat,lon;..."
+  Validation is performed by
+  the controller (AC03, AC05).
+end note
+
+== Authorization Check ==
+
+UI -> Ctrl ++ : registerAirControlArea("LPPC", 200.0, "37.0,-9.5;...")
+
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+alt not BACKOFFICE_OPERATOR
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Operator : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+== Uniqueness Check ==
+
+Ctrl -> Repo ++ : findByAreaCode("LPPC")
+Repo -> DB ++ : query by area code
+DB --> Repo -- : result list
+Repo --> Ctrl -- : List<AirControlArea>
+
+alt area code already exists
+    Ctrl --> UI -- : throws IllegalArgumentException\n"An air control area with code 'LPPC' already exists"
+    UI -> Operator : "Error: ..."
+    return
+end
+
+== Boundary Validation ==
+
+Ctrl -> Ctrl : isValidGeographicBoundaries("37.0,-9.5;...")
+note right of Ctrl
+  Parses each lat,lon pair.
+  Validates lat ∈ [-90, 90]
+  and lon ∈ [-180, 180] (AC03, AC05).
+end note
+
+alt invalid boundaries
+    Ctrl --> UI -- : throws IllegalArgumentException\n"Geographic boundaries are invalid..."
+    UI -> Operator : "Error: ..."
+    return
+end
+
+== Persistence ==
+
+Ctrl -> Ctrl : new AirControlArea("LPPC", 200.0, "37.0,-9.5;...")\n→ AirControlAreaId.newId() assigned
+
+Ctrl -> Repo ++ : save(airControlArea)
+Repo -> DB ++ : persist AirControlArea entity
+DB --> Repo -- : saved
+Repo --> Ctrl -- : AirControlArea
+
+Ctrl --> UI -- : AirControlArea registered
+
+== Feedback ==
+
+UI -> Operator : "Air Control Area registered successfully."
+deactivate UI
+deactivate Action
+deactivate MenuUI
+
+@enduml

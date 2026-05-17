@@ -1,0 +1,111 @@
+@startuml sequence-remove-engine-model
+title US058 — Remove an Engine Model from an Aircraft Model: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Backoffice Operator" as Operator
+participant "AircraftModelsMenuUI" as MenuUI #DDEEFF
+participant "RemoveEngineModelFromAircraftAction" as Action #DDEEFF
+participant "RemoveEngineModelFromAircraftUI" as UI #DDEEFF
+participant "RemoveEngineModelFromAircraftController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "AircraftModel" as Domain #FFF3CD
+participant "AircraftModelRepository" as ModelRepo #F0E6FF
+participant "EngineModelRepository" as EngineRepo #F0E6FF
+participant "AircraftRepository" as AircraftRepo #F0E6FF
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+Operator -> MenuUI ++ : selects "Remove Engine Model from Aircraft Model"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Load Eligible Aircraft Models ==
+
+UI -> Ctrl ++ : listAircraftModelsWithMultipleEngines()
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+Authz --> Ctrl -- : ok
+
+Ctrl -> ModelRepo ++ : findAllAircraftModels()
+ModelRepo -> DB ++ : query all aircraft models
+DB --> ModelRepo -- : List<AircraftModel>
+ModelRepo --> Ctrl -- : List<AircraftModel>
+Ctrl -> Ctrl : filter(size > 1)
+Ctrl --> UI -- : List<AircraftModel> (only models with ≥ 2 engines)
+
+alt no eligible models
+    UI -> Operator : "No aircraft models available for engine removal\n(all have only one certified engine)."
+    return
+end
+
+== Model and Engine Selection ==
+
+UI -> Operator : display aircraft models with engine counts
+Operator -> UI : selects aircraft model (e.g. "B737 MAX")
+
+UI -> Ctrl ++ : listRemovableEngineModels(selectedModel)
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+Authz --> Ctrl -- : ok
+Ctrl --> UI -- : List<EngineModel>
+
+UI -> Operator : display certified engine models
+Operator -> UI : selects engine model to remove (e.g. "LEAP-1B")
+
+== Remove Engine Model ==
+
+UI -> Ctrl ++ : removeEngineModel(selectedModel, engineModelId)
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(BACKOFFICE_OPERATOR)
+Authz --> Ctrl -- : ok
+
+Ctrl -> AircraftRepo ++ : existsByAircraftModel(aircraftModel.identity())
+AircraftRepo -> DB ++ : query aircraft by model id
+DB --> AircraftRepo -- : boolean
+AircraftRepo --> Ctrl -- : true / false
+
+alt aircraft exist for this model (AC02)
+    Ctrl --> UI -- : throws IllegalStateException\n"Cannot remove engine model: there are aircraft using this aircraft model"
+    UI -> Operator : "ERROR: Cannot remove engine model: there are aircraft using this aircraft model"
+    return
+end
+
+Ctrl -> EngineRepo ++ : ofIdentity(engineModelId)
+EngineRepo -> DB ++ : query engine model
+DB --> EngineRepo -- : Optional<EngineModel>
+EngineRepo --> Ctrl -- : EngineModel
+
+Ctrl -> Domain ++ : removeEngineModel(engineModel)
+note right of Domain
+  Domain guard (AC03):
+  if supportedEngineModels.size() ≤ 1
+    → throws IllegalStateException
+  if engine not in set
+    → throws IllegalArgumentException
+end note
+
+alt only one engine left (AC03 — domain safety net)
+    Domain --> Ctrl -- : throws IllegalStateException\n"Cannot remove the last certified engine model"
+    Ctrl --> UI : propagates exception
+    UI -> Operator : "ERROR: Cannot remove the last certified engine model from an aircraft model"
+    return
+end
+
+Domain --> Ctrl -- : ok (engine removed from set)
+
+Ctrl -> ModelRepo ++ : save(aircraftModel)
+ModelRepo -> DB ++ : persist updated AircraftModel
+DB --> ModelRepo -- : saved
+ModelRepo --> Ctrl -- : AircraftModel
+
+Ctrl --> UI -- : AircraftModel (updated)
+
+== Feedback ==
+
+UI -> Operator : "Engine model 'LEAP-1B' successfully removed from aircraft model 'B737 MAX'."
+deactivate UI
+deactivate Action
+deactivate MenuUI
+
+@enduml

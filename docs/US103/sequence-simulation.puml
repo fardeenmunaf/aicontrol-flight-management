@@ -1,0 +1,78 @@
+@startuml sequence-simulation
+title US103 — Synchronize Flight Execution with a Time Step
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+participant "Simulation Engine\n(parent process)" as Engine #DDFFD8
+participant "Flight Process [i]\n(child process)" as Child #DDEEFF
+participant "Semaphores" as Sems #FFE8E8
+participant "Pipe [i]" as Pipe #EEEEEE
+
+== Initialization ==
+
+Engine -> Sems ++: create per-flight semaphores\n(step_start[i] = 0, step_done[i] = 0)
+Sems --> Engine --: ready
+
+loop for each flight [i]
+    Engine -> Child ++: fork()
+    Child -> Sems ++: signal step_start[i] — "I am ready"
+    Sems --> Child --
+end
+
+Engine -> Sems ++: wait until all step_start[i] received\n(all children checked in)
+Sems --> Engine --: all children ready
+
+== Step-Lock Loop ==
+
+loop for each time step T
+
+    note over Engine: advance simulation clock to T
+
+    Engine -> Sems ++: post step_start[i] for each active flight\n(unblock all child processes)
+    Sems --> Engine --
+
+    loop each Flight Process [i] (concurrent)
+
+        Child -> Sems ++: wait on step_start[i]
+        Sems --> Child --: unblocked for step T
+
+        Child -> Child: compute physics step\n(update position, altitude, speed, fuel)
+
+        Child -> Pipe ++: write position update for step T
+        Pipe --> Child --
+
+        Child -> Sems ++: post step_done[i] — "my step T is complete"
+        Sems --> Child --
+
+    end
+
+    Engine -> Sems ++: wait on step_done[i] for ALL active flights\n(barrier — no advance until all done)
+    Sems --> Engine --: all flights reported step T
+
+    loop for each flight [i]
+        Engine -> Pipe ++: read position update for step T
+        Pipe --> Engine --: position data received
+    end
+
+    Engine -> Engine: validate all positions for step T\n(proximity checks, fuel checks)
+
+    alt violation detected for flight [i]
+        Engine -> Child: SIGUSR1 — alert flight [i]
+    end
+
+    alt step limit reached or termination requested
+        Engine -> Engine: exit loop
+    end
+
+end
+
+== Shutdown ==
+
+Engine -> Child: SIGTERM — stop all flights
+Child --> Engine --: all children exited
+
+Engine -> Sems: release all semaphores
+
+@enduml

@@ -1,0 +1,107 @@
+@startuml sequence-login
+title US030 — Authentication and Authorization: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "User" as User
+participant "LoginUI" as LoginUI #DDEEFF
+participant "AuthzRegistry" as Registry #FFE8E8
+participant "AuthenticationService\n(eapli)" as AuthSvc #FFE8E8
+participant "AuthorizationService\n(eapli)" as AuthzSvc #FFE8E8
+participant "MainMenu" as Menu #DDEEFF
+participant "SomeController" as Ctrl #DDFFD8
+database "Database\n(JPA UserRepository)" as DB #EEEEEE
+
+== Startup ==
+
+[-> Registry : configure(jpaUserRepo, AISafePasswordPolicy, PlainTextEncoder)
+note right of Registry
+  AuthzConfigurator.configure() wires
+  the eapli framework with the JPA
+  user store and password policy.
+end note
+
+== Login ==
+
+User -> LoginUI ++ : start application
+LoginUI -> User : prompt email
+User -> LoginUI : "admin@aisafe.com"
+LoginUI -> User : prompt password
+User -> LoginUI : "Secret1234!"
+
+LoginUI -> Registry ++ : authenticationService()
+Registry --> LoginUI -- : AuthenticationService
+
+LoginUI -> AuthSvc ++ : authenticate("admin@aisafe.com", "Secret1234!")
+AuthSvc -> DB ++ : load SystemUser by email
+DB --> AuthSvc -- : SystemUser (active / inactive)
+
+alt user is disabled or not found
+    AuthSvc --> LoginUI -- : Optional.empty()
+    LoginUI -> User : "Invalid credentials. Please try again."
+    note right of LoginUI
+      Loop repeats — no access
+      is granted (AC01, AC06).
+    end note
+else credentials valid and user active
+    AuthSvc --> LoginUI -- : Optional<UserSession>
+    note right of AuthSvc
+      Session stored in
+      AuthzRegistry thread-local.
+    end note
+end
+
+== Role-Gated Navigation ==
+
+LoginUI -> Menu ++ : show()
+
+Menu -> Registry ++ : authorizationService()
+Registry --> Menu -- : AuthorizationService
+
+Menu -> AuthzSvc ++ : isAuthenticatedUserAuthorizedTo(ADMIN)
+AuthzSvc --> Menu -- : true / false
+note right of Menu
+  Menu items are only added
+  if the role check passes (AC04).
+end note
+
+Menu -> AuthzSvc ++ : isAuthenticatedUserAuthorizedTo(BACKOFFICE_OPERATOR)
+AuthzSvc --> Menu -- : true / false
+
+Menu -> User : render visible menu items
+
+== Controller-Level Authorization Check ==
+
+User -> Menu : selects an option
+Menu -> Ctrl ++ : execute()
+
+Ctrl -> AuthzSvc ++ : ensureAuthenticatedUserHasAnyOf(REQUIRED_ROLE)
+alt insufficient role
+    AuthzSvc --> Ctrl -- : throws AuthorizationException
+    Ctrl --> Menu -- : propagates exception
+    Menu -> User : "Access Denied"
+else authorized
+    AuthzSvc --> Ctrl -- : ok
+    Ctrl -> DB ++ : perform operation
+    DB --> Ctrl -- : result
+    Ctrl --> Menu -- : result
+    Menu -> User : display result
+end
+
+== Logout ==
+
+User -> Menu : selects "Exit"
+Menu -> Registry ++ : authorizationService()
+Registry --> Menu -- : AuthorizationService
+Menu -> AuthzSvc ++ : clearSession()
+AuthzSvc --> Menu -- : session cleared
+note right of AuthzSvc
+  Thread-local session is removed.
+  No further calls can succeed (AC07).
+end note
+Menu --> LoginUI --
+deactivate LoginUI
+
+@enduml
