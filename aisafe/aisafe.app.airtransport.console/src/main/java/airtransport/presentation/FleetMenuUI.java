@@ -11,6 +11,7 @@ public class FleetMenuUI extends AbstractUI {
     private static final int REGISTER_AIRCRAFT = 1;
     private static final int LIST_FLEET = 2;
     private static final int DECOMMISSION_AIRCRAFT = 3;
+    private static final int LIST_FLEET_BY_FILTER = 4;
     private static final int RETURN = 0;
 
     @Override
@@ -19,6 +20,7 @@ public class FleetMenuUI extends AbstractUI {
         menu.addItem(REGISTER_AIRCRAFT, "Register Aircraft", new RegisterAircraftAction());
         menu.addItem(LIST_FLEET, "List Fleet", new ListFleetATCMenuAction());
         menu.addItem(DECOMMISSION_AIRCRAFT, "Decommission Aircraft", new DecommissionAircraftAction());
+        menu.addItem(LIST_FLEET_BY_FILTER, "List Fleet By Filter", new ListFleetByFilterMenuAction());
         menu.addItem(RETURN, "Return", () -> false);
         final MenuRenderer renderer = new VerticalMenuRenderer(menu, MenuItemRenderer.DEFAULT);
         return renderer.render();
