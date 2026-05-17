@@ -1,0 +1,102 @@
+@startuml class-diagram
+title US058 — Remove an Engine Model from an Aircraft Model: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.aircraftmodel" #DDEEFF {
+    class RemoveEngineModelFromAircraftUI {
+        -controller : RemoveEngineModelFromAircraftController
+        +doShow() : boolean
+        +headline() : String
+    }
+
+    class RemoveEngineModelFromAircraftAction {
+        +execute() : boolean
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "aircraftmodel.application" #DDFFD8 {
+    class RemoveEngineModelFromAircraftController {
+        -authz : AuthorizationService
+        -aircraftModelRepository : AircraftModelRepository
+        -engineModelRepository : EngineModelRepository
+        -aircraftRepository : AircraftRepository
+        +listAircraftModelsWithMultipleEngines() : List<AircraftModel>
+        +listRemovableEngineModels(aircraftModel) : List<EngineModel>
+        +removeEngineModel(aircraftModel, engineModelId) : AircraftModel
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "aircraftmodel.domain" #FFF3CD {
+    class AircraftModel <<AggregateRoot>> {
+        -aircraftModelId : AircraftModelId
+        -modelName : String
+        -supportedEngineModels : Set<EngineModel>
+        +supportedEngineModels() : Set<EngineModel>
+        +removeEngineModel(engineModel) : void
+        +addSupportedEngineModel(engineModel) : void
+        +identity() : AircraftModelId
+    }
+}
+
+package "enginemodel.domain" #FFF3CD {
+    class EngineModel <<AggregateRoot>> {
+        -engineModelId : EngineModelId
+        -name : String
+        +name() : String
+        +identity() : EngineModelId
+    }
+}
+
+' ─── Repository Layer ───────────────────────────────────────────────────────
+package "aircraftmodel.repositories" #F0E6FF {
+    interface AircraftModelRepository {
+        +findAllAircraftModels() : List<AircraftModel>
+        +save(model) : AircraftModel
+    }
+}
+
+package "enginemodel.repositories" #F0E6FF {
+    interface EngineModelRepository {
+        +ofIdentity(id) : Optional<EngineModel>
+    }
+}
+
+package "aircraft.repositories" #F0E6FF {
+    interface AircraftRepository {
+        +existsByAircraftModel(aircraftModelId) : boolean
+    }
+}
+
+' ─── eapli Framework (external) ─────────────────────────────────────────────
+package "eapli.framework.infrastructure.authz" #FFE8E8 {
+    interface AuthorizationService {
+        +ensureAuthenticatedUserHasAnyOf(roles) : void
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+RemoveEngineModelFromAircraftAction ..> RemoveEngineModelFromAircraftUI : shows
+
+RemoveEngineModelFromAircraftUI ..> RemoveEngineModelFromAircraftController : delegates
+
+RemoveEngineModelFromAircraftController ..> AuthorizationService : ensureAuthenticatedUserHasAnyOf
+RemoveEngineModelFromAircraftController --> AircraftModelRepository : queries / saves
+RemoveEngineModelFromAircraftController --> EngineModelRepository : resolves engine
+RemoveEngineModelFromAircraftController --> AircraftRepository : checks existence
+RemoveEngineModelFromAircraftController ..> AircraftModel : calls removeEngineModel()
+
+AircraftModel "1" o-- "1..*" EngineModel : supportedEngineModels
+
+AircraftModelRepository ..> AircraftModel : manages
+EngineModelRepository ..> EngineModel : manages
+
+@enduml

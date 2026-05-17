@@ -1,0 +1,109 @@
+@startuml class-diagram
+title US030 — Authentication and Authorization: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.authz" #DDEEFF {
+    class LoginUI {
+        +doShow() : boolean
+        +headline() : String
+    }
+}
+
+package "backoffice.presentation" #DDEEFF {
+    class MainMenu {
+        -authz : AuthorizationService
+        +mainLoop() : void
+        +doShow() : boolean
+        +headline() : String
+        -buildMainMenu() : Menu
+    }
+}
+
+package "weather.presentation.authz" #DDEEFF {
+    class WeatherLoginUI {
+        +doShow() : boolean
+        +headline() : String
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "user.application" #DDFFD8 {
+    class LoginController {
+        +authenticate(email, rawPassword) : boolean
+        +logout() : void
+    }
+}
+
+' ─── Auth Infrastructure ─────────────────────────────────────────────────────
+package "auth.infrastructure" #FFE8E8 {
+    class AuthzConfigurator <<utility>> {
+        {static} +configure(userRepo) : void
+    }
+
+    class AISafePasswordPolicy {
+        +isSatisfiedBy(rawPassword) : boolean
+    }
+}
+
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} ADMIN : Role
+        {static} BACKOFFICE_OPERATOR : Role
+        {static} AIR_TRANSPORT_COMPANY_COLLABORATOR : Role
+        {static} PILOT : Role
+        {static} FLIGHT_CONTROL_OPERATOR : Role
+        {static} WEATHER_PERSON : Role
+    }
+}
+
+' ─── eapli Framework (external) ─────────────────────────────────────────────
+package "eapli.framework.infrastructure.authz" #EEEEEE {
+    class AuthzRegistry <<utility>> {
+        {static} +authenticationService() : AuthenticationService
+        {static} +authorizationService() : AuthorizationService
+        {static} +userService() : UserManagementService
+        {static} +configure(userRepo, policy, encoder) : void
+    }
+
+    interface AuthenticationService {
+        +authenticate(email, password) : Optional<UserSession>
+    }
+
+    interface AuthorizationService {
+        +ensureAuthenticatedUserHasAnyOf(roles) : void
+        +isAuthenticatedUserAuthorizedTo(role) : boolean
+        +session() : Optional<UserSession>
+        +clearSession() : void
+    }
+
+    class UserSession {
+        +authenticatedUser() : SystemUser
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+LoginUI ..> AuthzRegistry : authenticate
+WeatherLoginUI ..> AuthzRegistry : authenticate
+
+LoginController ..> AuthzRegistry : authenticate / clearSession
+
+MainMenu --> AuthzRegistry : isAuthenticatedUserAuthorizedTo
+MainMenu ..> AISafeRoles : role constants
+
+AuthzConfigurator ..> AuthzRegistry : configure
+AuthzConfigurator ..> AISafePasswordPolicy : registers
+
+AuthzRegistry --> AuthenticationService : provides
+AuthzRegistry --> AuthorizationService : provides
+
+AuthenticationService ..> UserSession : returns
+AuthorizationService ..> UserSession : reads
+
+@enduml

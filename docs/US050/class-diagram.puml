@@ -1,0 +1,112 @@
+@startuml class-diagram
+title US050 — Register an Air Control Area: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "backoffice.presentation.aircontrolarea" #DDEEFF {
+    class RegisterAirControlAreaUI {
+        -controller : RegisterAirControlAreaController
+        +doShow() : boolean
+        +headline() : String
+    }
+
+    class RegisterAirControlAreaAction {
+        +execute() : boolean
+    }
+
+    class AirControlAreasMenuUI {
+        +doShow() : boolean
+        +headline() : String
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "aircontrolarea.application" #DDFFD8 {
+    class RegisterAirControlAreaController {
+        -authz : AuthorizationService
+        -repository : AirControlAreaRepository
+        +registerAirControlArea(areaCode, minimumRequiredArrivalFuel, geographicBoundaries) : AirControlArea
+        -isValidGeographicBoundaries(boundaries) : boolean
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "aircontrolarea.domain" #FFF3CD {
+    class AirControlArea <<AggregateRoot>> {
+        -airControlAreaId : AirControlAreaId
+        -areaCode : String
+        -minimumRequiredArrivalFuel : double
+        -geographicBoundaries : String
+        +areaCode() : String
+        +minimumRequiredArrivalFuel() : double
+        +geographicBoundaries() : String
+        +containsPoint(latitude, longitude) : boolean
+        +identity() : AirControlAreaId
+    }
+}
+
+package "shared.domain" #FFF3CD {
+    class AirControlAreaId <<ValueObject>> {
+        -value : String
+        +{static} newId() : AirControlAreaId
+        +{static} valueOf(value) : AirControlAreaId
+    }
+}
+
+' ─── Repository Layer ───────────────────────────────────────────────────────
+package "aircontrolarea.repositories" #F0E6FF {
+    interface AirControlAreaRepository {
+        +findByAreaCode(areaCode) : List<AirControlArea>
+        +findByMinimumRequiredArrivalFuelGreaterThanEqual(minFuel) : List<AirControlArea>
+        +findByGeographicBoundaries(boundaries) : List<AirControlArea>
+        +findContaining(latitude, longitude) : Optional<AirControlArea>
+        +save(area) : AirControlArea
+        +findAll() : Iterable<AirControlArea>
+    }
+}
+
+' ─── Bootstrap ──────────────────────────────────────────────────────────────
+package "bootstrap" #EEEEEE {
+    class AirControlAreaBootstrap {
+        -repository : AirControlAreaRepository
+        +execute() : void
+        -registerIfAbsent(areaCode, minimumRequiredArrivalFuel, geographicBoundaries) : void
+    }
+
+    class AISafeBootstrap <<utility>> {
+        +{static} main(args) : void
+    }
+}
+
+' ─── eapli Framework (external) ─────────────────────────────────────────────
+package "eapli.framework.infrastructure.authz" #FFE8E8 {
+    interface AuthorizationService {
+        +ensureAuthenticatedUserHasAnyOf(roles) : void
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+RegisterAirControlAreaAction ..> RegisterAirControlAreaUI : shows
+AirControlAreasMenuUI ..> RegisterAirControlAreaAction : includes
+
+RegisterAirControlAreaUI ..> RegisterAirControlAreaController : delegates
+
+RegisterAirControlAreaController ..> AuthorizationService : ensureAuthenticatedUserHasAnyOf
+RegisterAirControlAreaController --> AirControlAreaRepository : queries / saves
+RegisterAirControlAreaController ..> AirControlArea : creates
+
+AirControlArea --> AirControlAreaId : identity
+
+AirControlAreaRepository ..> AirControlArea : manages
+
+AirControlAreaBootstrap --> AirControlAreaRepository : queries / saves
+AirControlAreaBootstrap ..> AirControlArea : creates
+AISafeBootstrap ..> AirControlAreaBootstrap : executes
+
+@enduml
