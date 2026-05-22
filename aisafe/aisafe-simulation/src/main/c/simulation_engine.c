@@ -90,8 +90,7 @@ static SharedMemoryData *setup_shared_memory(void) {
 // POSIX guarantees that named semaphore descriptors survive fork(),
 // so children can call sem_wait/sem_post on the inherited pointers directly.
 
-static void init_semaphores(pid_t pid, int n,
-                             sem_t **step_sems, sem_t **main_sem_out) {
+static void init_semaphores(pid_t pid, int n, sem_t **step_sems, sem_t **main_sem_out) {
     for (int i = 0; i < n; i++) {
         char name[48];
         // Build a unique name per flight, e.g. "/aisafe_step_12345_0"
@@ -138,8 +137,7 @@ static void init_semaphores(pid_t pid, int n,
 //   • Sends SIGTERM to ALL active aircraft when total violations exceed the
 //     configured max_violations_threshold, and sets termination_requested.
 
-static void check_violations(SharedMemoryData *shm, bool *was_active,
-                              pid_t *pids, int num_flights) {
+static void check_violations(SharedMemoryData *shm, bool *was_active, pid_t *pids, int num_flights) {
     const double R = 6371000.0;
 
     // ── proximity check ───────────────────────────────────────────────────────
@@ -209,8 +207,7 @@ static void check_violations(SharedMemoryData *shm, bool *was_active,
     // US102: early termination if total violations exceed the configured threshold.
     // Sends SIGTERM to every still-active flight process and sets
     // termination_requested so the main loop breaks on its next check.
-    if (shm->config.max_violations_threshold > 0 &&
-        shm->total_violations_detected > shm->config.max_violations_threshold) {
+    if (shm->config.max_violations_threshold > 0 && shm->total_violations_detected > shm->config.max_violations_threshold) {
         printf("  [SIM] Violations (%d) exceeded threshold (%d) — "
                "sending SIGTERM to all active flights.\n",
                shm->total_violations_detected,
