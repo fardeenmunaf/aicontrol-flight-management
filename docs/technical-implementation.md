@@ -463,3 +463,113 @@ Validation is applied at three levels, each with a distinct responsibility:
 | Value Object | Domain | All `*Id` types and embedded value objects |
 | Aggregate | Domain | All `AggregateRoot` implementations |
 | State Machine | Domain | `FlightPlan`, `Aircraft` |
+
+---
+
+## 12. GRASP Patterns
+
+GRASP (General Responsibility Assignment Software Patterns) provides nine principles for deciding which class should hold which responsibility. The following documents where each applicable principle is realised in this codebase.
+
+### 12.1 Information Expert
+
+**Principle:** Assign responsibility to the class that has the information needed to fulfil it.
+
+**Where it appears:**
+
+- Value objects validate themselves at construction time: `Coordinates` enforces geographic bounds, `RouteDesignation` enforces the naming pattern (see section 6.9 for the full list). Each is the expert on its own validity.
+- `AircraftModel` decides whether an engine model can be removed (`removeEngineModel()`) because it owns the set of certified engines and knows the rule that the last one may not be removed.
+- `FlightPlan` checks leg connectivity on `addLeg()` — it holds all current legs and is the only class that can verify the arrival-departure continuity invariant.
+- `AirControlArea` performs point-in-polygon containment checks — it holds the boundary polygon and is the natural expert on whether a coordinate falls within it.
+
+### 12.2 Creator
+
+**Principle:** Assign class B the responsibility to create instances of class A if B contains, aggregates, records, or closely uses A.
+
+**Where it appears:**
+
+- `FlightPlan` creates `FlightLeg` instances via `addLeg()` — it aggregates and owns legs (cascade all, orphan removal).
+- `FlightLeg` creates `Segment` and `AltitudeSlot` instances — it owns these sub-objects within the aggregate boundary.
+- `RepositoryFactory` creates all repository instances — it aggregates all repository types and is the designated creator for both JPA and in-memory variants.
+- `FlightDslProcessor` creates `FlightDslDocument` and `FlightDslProcessingResult` — it orchestrates the entire pipeline that produces these objects.
+- `FlightAstBuilderVisitor` creates all AST node types (`FlightPlanAst`, `LegAst`, `SegmentAst`, etc.) — the visitor traverses and directly constructs these representations.
+
+### 12.3 Controller
+
+**Principle:** Assign responsibility for handling system operations to a class that represents the overall system, a use-case scenario, or a root object in a façade.
+
+**Where it appears:**
+
+Every application-layer controller in `aisafe.core` is a GRASP Controller: it receives a system-level operation (e.g., "register aircraft", "import flight plan", "decommission aircraft"), coordinates the repositories and domain objects needed to carry it out, and returns a result to the UI layer. The controllers do not contain domain logic — they delegate to aggregates — and do not contain UI logic — the UI layer delegates to them.
+
+Examples: `RegisterAircraftController`, `ImportFlightPlanController`, `DecommissionAircraftController`.
+
+### 12.4 Low Coupling
+
+**Principle:** Assign responsibilities so that coupling remains low. Prefer designs where a change in one class forces fewer changes in others.
+
+**Where it appears:**
+
+- The repository interface layer and constructor injection (section 5.5 DIP) are the primary mechanism: controllers depend on interfaces, so a backend swap requires no controller changes.
+- Aggregates reference each other by identity value objects only (e.g., `FlightPlan` stores `aircraftId` as a string, not an `Aircraft` reference). This prevents inter-aggregate coupling at the object level and keeps each aggregate independently loadable.
+- The DSL module (`aisafe.flight.dsl`) has no dependency on `aisafe.core` domain classes during parsing — it produces an intermediate `FlightDslDocument`, and only `ImportFlightPlanController` maps that to domain objects. This isolates the DSL pipeline from domain model evolution.
+
+### 12.5 High Cohesion
+
+**Principle:** Assign responsibilities so that cohesion remains high. A class should have a focused, related set of responsibilities.
+
+**Where it appears:** The examples in section 5.1 (SRP) describe the same principle from a SOLID angle — `Aircraft` vs. `AircraftModel`, per-aggregate repository interfaces, and single-purpose DSL pipeline stages are all direct applications of High Cohesion. GRASP names the goal (cohesion); SRP names the heuristic (one reason to change); both point to the same design decisions in this codebase.
+
+### 12.6 Polymorphism
+
+**Principle:** When behaviour varies by type, assign responsibility for the variation to the types that exhibit it, using polymorphic operations rather than explicit type checks.
+
+**Where it appears:**
+
+- `JpaAircraftRepository` and `InMemoryAircraftRepository` both implement `AircraftRepository`. Controllers never branch on which implementation is present — they call the same interface methods and let the type handle the variation. The same pattern applies to all twelve repository pairs.
+- `JpaRepositoryFactory` and `InMemoryRepositoryFactory` both implement `RepositoryFactory`. The application entry point selects one; everything downstream is polymorphic.
+- The ANTLR-generated visitor and listener interfaces (`FlightDSLVisitor`, `FlightDSLListener`) define polymorphic traversal — concrete implementations (`FlightAstBuilderVisitor`, `FlightStructureListener`) handle specific node types through method override rather than `instanceof` chains.
+
+### 12.7 Pure Fabrication
+
+**Principle:** Assign a cohesive set of responsibilities to an artificial class (one that does not represent a domain concept) when doing so achieves low coupling and high cohesion that would otherwise be violated.
+
+**Where it appears:**
+
+- `BaseJpaRepositoryBase<T, K, I>` (section 6.3) is a textbook Pure Fabrication: it represents no air traffic concept and exists solely to absorb JPA boilerplate so concrete repositories stay lean.
+- `InMemoryRepositoryFactory` is a fabrication — there is no real-world "in-memory factory" concept — created to allow the system to run without a database during development and testing.
+- `AuthzConfigurator` and `AISafePasswordPolicy` are fabrications that exist to integrate the eapli.framework authentication infrastructure with the project's specific rules, with no domain meaning of their own.
+
+### 12.8 Indirection
+
+**Principle:** Assign responsibility to an intermediate object to mediate between components to avoid direct coupling.
+
+**Where it appears:**
+
+- `RepositoryFactory` is the indirection point between controllers and concrete persistence classes. Controllers never reference `JpaAircraftRepository` directly; they go through the factory.
+- `FlightDslProcessor` introduces indirection between `ImportFlightPlanController` and the raw ANTLR lexer/parser. The controller is decoupled from ANTLR's API entirely.
+- `AuthzRegistry` (eapli.framework) acts as indirection between controllers and the authentication/authorisation infrastructure — controllers call `authz.ensureAuthenticatedUserHasAnyOf(...)` without knowing the underlying session or token mechanism.
+
+### 12.9 Protected Variations
+
+**Principle:** Identify points of predicted variation or instability and assign responsibilities to create a stable interface around them.
+
+**Where it appears:**
+
+- The repository interface layer is the primary Protected Variations point in the architecture. Persistence technology (JPA, in-memory, and any future backend) is an identified variation point, and the repository interfaces create a stable boundary that shields the domain and application layers from it.
+- The `RepositoryFactory` interface protects against variation in which persistence stack is active. Switching from H2 to PostgreSQL, or from JPA to any other ORM, requires changes only within `aisafe.persistence.impl`.
+- The DSL `FlightDslDocument` / `FlightDslProcessingResult` intermediate representation protects `ImportFlightPlanController` from variation in the ANTLR grammar. If the grammar is extended, only the DSL module changes; the controller's `import(...)` method signature is stable.
+- The `AISafeRoles` constants protect all controllers from variation in role string values — no controller embeds a raw role string literal.
+
+### 12.10 GRASP Summary
+
+| GRASP Pattern | Primary Location |
+|---|---|
+| Information Expert | Value objects (`Coordinates`, `RouteDesignation`), aggregate invariant methods |
+| Creator | `FlightPlan` → `FlightLeg`, `RepositoryFactory`, `FlightDslProcessor` |
+| Controller | All application-layer controllers in `aisafe.core` |
+| Low Coupling | Repository interfaces, ID-only cross-aggregate references, DSL intermediate representation |
+| High Cohesion | Single-responsibility aggregates, per-aggregate repository interfaces, DSL pipeline stages |
+| Polymorphism | Repository interface pairs, `RepositoryFactory` implementations, ANTLR visitor/listener |
+| Pure Fabrication | `BaseJpaRepositoryBase`, `InMemoryRepositoryFactory`, `AuthzConfigurator` |
+| Indirection | `RepositoryFactory`, `FlightDslProcessor`, `AuthzRegistry` |
+| Protected Variations | Repository interfaces, `RepositoryFactory`, DSL intermediate representation, `AISafeRoles` |
