@@ -1,10 +1,29 @@
 #!/usr/bin/env bash
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
 #REM set the class path,
 #REM assumes the build was executed with maven copy-dependencies
-export BASE_CP="$SCRIPT_DIR/aisafe.app.weather.client/target/aisafe.app.weather.client-1.0.0-SNAPSHOT.jar:$SCRIPT_DIR/aisafe.app.weather.client/target/dependency/*"
+export BASE_CP=aisafe.app.weather.client/target/aisafe.app.weather.client-1.0.0-SNAPSHOT.jar:aisafe.app.weather.client/target/dependency/*;
+
+# Optional database configuration via environment variables.
+JAVA_OPTS=()
+if [ -n "$AISAFE_PERSISTENCE_UNIT" ]; then
+  JAVA_OPTS+=("-Daisafe.persistence.unit=$AISAFE_PERSISTENCE_UNIT")
+fi
+if [ -n "$AISAFE_DB_DIALECT" ]; then
+  JAVA_OPTS+=("-Daisafe.db.dialect=$AISAFE_DB_DIALECT")
+fi
+if [ -n "$AISAFE_DB_DRIVER" ]; then
+  JAVA_OPTS+=("-Daisafe.db.driver=$AISAFE_DB_DRIVER")
+fi
+if [ -n "$AISAFE_DB_URL" ]; then
+  JAVA_OPTS+=("-Daisafe.db.url=$AISAFE_DB_URL")
+fi
+if [ -n "$AISAFE_DB_USERNAME" ]; then
+  JAVA_OPTS+=("-Daisafe.db.username=$AISAFE_DB_USERNAME")
+fi
+if [ -n "$AISAFE_DB_PASSWORD" ]; then
+  JAVA_OPTS+=("-Daisafe.db.password=$AISAFE_DB_PASSWORD")
+fi
 
 #REM call the java VM, e.g,
-java -cp "$BASE_CP" weather.WeatherClientApp
+java -cp $BASE_CP "${JAVA_OPTS[@]}" weather.WeatherClientApp
