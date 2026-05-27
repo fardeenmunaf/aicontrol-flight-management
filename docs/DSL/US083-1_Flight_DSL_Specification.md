@@ -1014,7 +1014,8 @@ Within each segment, `altslot` (with `width`) and `wind` are mandatory because t
 |---|---|
 | Keywords (e.g. `flight`, `leg`) | Lexer rules with character-class alternation for case-insensitivity |
 | Flight designator (`TP1234`) | `FLIGHT_DESIGNATOR` lexer rule: `[A-Z][A-Z][0-9][0-9]?[0-9]?[0-9]?[A-Z]?` |
-| Identifiers (aircraft, route name) | `ID` lexer rule; `anyId` parser rule accepts `ID \| FLIGHT_DESIGNATOR` |
+| Aircraft registration | `aircraftId` parser rule: accepts only `ID` (e.g. `A320`, `B747`); rejects flight designator patterns |
+| Route reference name | `routeRef` parser rule: accepts `ID \| FLIGHT_DESIGNATOR` (e.g. `myRoute` or `AA123`) |
 | Airport codes | `IATA_CODE` / `ICAO_CODE` lexer rules |
 | Numeric literals | `INT` / `FLOAT` lexer rules |
 | Date / Time literals | `DATE_LITERAL` / `TIME_LITERAL` lexer rules |
