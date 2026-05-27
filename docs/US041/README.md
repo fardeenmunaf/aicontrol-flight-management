@@ -41,80 +41,75 @@
 
 ---
 
-## Princípios Teóricos de EAPLI — Aplicação Prática
+## EAPLI Theoretical Principles — Practical Application
 
 ### Domain-Driven Design (DDD)
 
-O design de **US041** segue os princípios fundamentais do DDD:
+The design of US041 follows core DDD principles:
 
-- **Ubiquitous Language**: Utiliza termos do domínio de forma consistente (`WeatherData`, `AirControlArea`, `WindDirection`, `Temperature`, `Pressure`)
-- **Bounded Context**: A funcionalidade situa-se no contexto de Weather Management, separado de outros sub-domínios (Air Control, etc.)
-- **Aggregate Root**: `WeatherData` é o agregado raiz que encapsula toda a informação meteorológica coerente
-- **Value Objects**: Atributos como `Temperature`, `Pressure`, `WindSpeed` e `WeatherDataId` são representados como Value Objects imutáveis, garantindo consistência e semântica clara
-- **Repository Pattern**: `WeatherDataRepository` oferece uma abstração sobre a persistência, ocultando detalhes de implementação
-- **Domain Events**: Podem ser disparados quando dados meteorológicos são registados (e.g., `WeatherDataRegisteredEvent`)
+- **Ubiquitous Language**: Domain terms are used consistently (`WeatherData`, `AirControlArea`, `WindDirection`, `Temperature`, `Pressure`).
+- **Bounded Context**: This feature is part of the Weather Management bounded context and is kept separate from other subdomains (Air Control, etc.).
+- **Aggregate Root**: `WeatherData` acts as the aggregate root that encapsulates coherent meteorological information.
+- **Value Objects**: Attributes such as `Temperature`, `Pressure`, `WindSpeed` and `WeatherDataId` are modeled as immutable value objects to ensure consistency and clear semantics.
+- **Repository Pattern**: `WeatherDataRepository` provides an abstraction over persistence, hiding implementation details.
+- **Domain Events**: Events may be emitted when new weather data is registered (e.g., `WeatherDataRegisteredEvent`).
 
-### Padrões Gang of Four (GoF)
+### Gang of Four (GoF) Patterns
 
-Vários padrões clássicos de design foram aplicados:
+Several classic design patterns are applied:
 
-| Padrão | Local | Propósito |
+| Pattern | Location | Purpose |
 |--------|-------|----------|
-| **Factory** | `WeatherDataFactory` (ou no Controller) | Construção de agregados `WeatherData` com validações encapsuladas |
-| **Repository** | `WeatherDataRepository` | Abstracção da persistência; facilita testes unitários e mudarças de BD |
-| **Strategy** | `AuthorizationService` | Diferentes estratégias de autorização por role (WEATHER_PERSON, etc.) |
-| **Data Transfer Object (DTO)** | `RegisterWeatherDataRequest` | Transporte de dados entre UI e Application Layer, desacoplando apresentação da lógica |
-| **Adapter** | Console UI → Controller | Adapta entrada de utilizador em comando para a aplicação |
+| **Factory** | `WeatherDataFactory` (or in the Controller) | Builds `WeatherData` aggregates with encapsulated validation |
+| **Repository** | `WeatherDataRepository` | Persistence abstraction; eases unit testing and DB changes |
+| **Strategy** | `AuthorizationService` | Different authorization strategies per role (WEATHER_PERSON, etc.) |
+| **Data Transfer Object (DTO)** | `RegisterWeatherDataRequest` | Carries data between UI and Application Layer, decoupling presentation from logic |
+| **Adapter** | Console UI → Controller | Adapts user input into application commands |
 
-### Princípios SOLID
+### SOLID Principles
 
-A arquitectura de **US041** respeita os cinco princípios SOLID:
+The architecture in US041 respects the five SOLID principles:
 
 1. **Single Responsibility Principle (SRP)**
-   - `RegisterWeatherDataUI`: Apenas apresentação
-   - `RegisterWeatherDataController`: Apenas lógica de aplicação e coordenação
-   - `WeatherData`: Apenas regras de negócio meteorológico
-   - Cada classe tem uma razão única para mudar
+   - `RegisterWeatherDataUI`: presentation only
+   - `RegisterWeatherDataController`: application logic and coordination
+   - `WeatherData`: domain rules for meteorological data
+   - Each class has a single reason to change
 
 2. **Open/Closed Principle (OCP)**
-   - `AuthorizationService` é aberta para extensão (novos roles podem ser adicionados)
-   - Fechada para modificação (novas formas de autorização não requerem alterar código existente)
+   - `AuthorizationService` can be extended with new roles without modifying its existing client code
 
 3. **Liskov Substitution Principle (LSP)**
-   - `WeatherDataRepository` implementa uma interface coerente
-   - Qualquer implementação (JPA, em memória, etc.) pode ser substituída sem quebrar código cliente
+   - `WeatherDataRepository` implements a consistent interface; any implementation (JPA, in-memory, etc.) can be substituted without breaking client code
 
 4. **Interface Segregation Principle (ISP)**
-   - A interface `WeatherDataRepository` expõe apenas operações necessárias
-   - Interfaces minimais específicas para cada role (e.g., `WeatherPersonAuthorization`)
+   - `WeatherDataRepository` exposes only required operations; minimal interfaces exist for specific roles (e.g., `WeatherPersonAuthorization`)
 
 5. **Dependency Inversion Principle (DIP)**
-   - Controller depende de abstrações (`AuthorizationService`, `WeatherDataRepository`)
-   - Não depende de implementações concretas
-   - Facilita testes com mocks/stubs
+   - Controllers depend on abstractions (`AuthorizationService`, `WeatherDataRepository`) rather than concrete implementations, easing testing with mocks/stubs
 
 ### Data Transfer Objects (DTOs)
 
-DTOs isolam a camada de apresentação da lógica de domínio:
+DTOs isolate the presentation layer from domain logic:
 
-- **`RegisterWeatherDataRequest`** (DTO de entrada)
-  - Contém dados brutos do utilizador (strings, números primitivos)
-  - Não contém validações de negócio (apenas validação estrutural)
-  - Transfere dados da UI para o Controller
+- **`RegisterWeatherDataRequest`** (input DTO)
+  - Contains raw user input (strings, primitive numbers)
+  - Does not include business validation (only structural validation)
+  - Transfers data from the UI to the Controller
 
-- **`WeatherDataDTO`** (DTO de saída, opcional)
-  - Representa `WeatherData` de forma legível para o cliente
-  - Omite campos técnicos internos (IDs de agregados, etc.)
-  - Facilita futura migração para APIs REST/GraphQL
+- **`WeatherDataDTO`** (output DTO, optional)
+  - Represents `WeatherData` in a client-friendly form
+  - Omits internal technical fields (aggregate IDs, etc.)
+  - Facilitates future migration to REST/GraphQL APIs
 
-**Benefício**: A camada de apresentação nunca manipula entidades de domínio directamente, reduzindo acoplamento e facilitando testes.
+**Benefit**: The presentation layer never manipulates domain entities directly, reducing coupling and making testing easier.
 
 ### Factory Pattern
 
-O padrão Factory encapsula a criação complexa de agregados:
+The Factory pattern encapsulates complex aggregate creation:
 
 ```java
-// Factory implícito dentro da lógica de controller ou método de factory explícito
+// Factory implicit in controller logic or an explicit factory method
 WeatherData weatherData = WeatherDataFactory.create(
     airControlAreaId,
     timestamp,
@@ -125,13 +120,11 @@ WeatherData weatherData = WeatherDataFactory.create(
 );
 ```
 
-**Responsabilidades do Factory**:
-- Validar que todos os parâmetros são coerentes
-- Garantir que o agregado é criado num estado válido
-- Encapsular lógica complexa de inicialização
-- Facilitar a adição de novos parâmetros sem alterar o código cliente
-
----
+Factory responsibilities:
+- Validate that all parameters are coherent
+- Ensure the aggregate is created in a valid state
+- Encapsulate complex initialization logic
+- Make it easier to add new parameters without changing client code
 
 ## User Interaction Flow
 

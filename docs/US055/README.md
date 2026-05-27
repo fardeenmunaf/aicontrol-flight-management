@@ -21,6 +21,18 @@
 
 ---
 
+## Class Diagram
+
+![Class Diagram](class-diagram.svg)
+
+---
+
+## Sequence Diagram — Register Aircraft Model (Console)
+
+![Sequence Diagram](sequence-register-aircraft-model.svg)
+
+---
+
 ## Implementation Overview
 
 | Module | Role |
@@ -29,6 +41,87 @@
 | `aisafe.core` | Application controller (`RegisterAircraftModelController`) and domain model (`AircraftModel`, `EngineModel`, `AircraftType`) |
 | `aisafe.infrastructure.application` | Repository implementation (`AircraftModelRepository`, `EngineModelRepository`) |
 | `aisafe.app.bootstrap` | Seed data (`AircraftModelsBootstrap`, `EngineModelsBootstrap`) |
+
+---
+
+## EAPLI Theoretical Principles — Practical Application
+
+### Domain-Driven Design (DDD)
+
+The design of US055 follows central DDD principles:
+
+- **Ubiquitous Language**: Code terms reflect the aircraft domain (`AircraftModel`, `EngineModel`, `AircraftType`, `certified engines`, `manufacturer`).
+- **Bounded Context**: This feature belongs to the aircraft model management bounded context, separate from other subdomains such as weather or operations.
+- **Aggregate Root**: `AircraftModel` is the aggregate root that holds model data, flight characteristics and the list of certified engines.
+- **Value Objects**: `AircraftModelId` and supporting types represent identity and domain rules consistently.
+- **Entities**: `EngineModel` and `AircraftModel` are domain entities with their own lifecycle managed by repositories.
+- **Repository Pattern**: `AircraftModelRepository` and `EngineModelRepository` isolate persistence from application logic.
+
+### Gang of Four (GoF) Patterns
+
+| Pattern | Location | Purpose |
+|--------|-------|----------|
+| **Factory** | `RegisterAircraftModelController` / `AircraftModelsBootstrap` | Centralizes creation of the `AircraftModel` aggregate after input validation |
+| **Repository** | `AircraftModelRepository`, `EngineModelRepository` | Abstracts data access and avoids tight coupling to persistence technology |
+| **Strategy** | Authorization rules via `AuthorizationService` | Allows varying access policy by role without changing core logic |
+| **DTO** | Request/command between UI and controller | Carries form data without exposing domain entities |
+
+### SOLID Principles
+
+The US055 architecture follows the five SOLID principles:
+
+1. **Single Responsibility Principle (SRP)**
+   - `RegisterAircraftModelUI`: collects and displays input only
+   - `RegisterAircraftModelController`: coordinates validation and creation
+   - `AircraftModel`: contains domain rules for aircraft models
+
+2. **Open/Closed Principle (OCP)**
+   - New aircraft types, validation rules or data sources can be added without rewriting the main flow.
+
+3. **Liskov Substitution Principle (LSP)**
+   - Alternative repository implementations can substitute the current ones without breaking the controller behavior.
+
+4. **Interface Segregation Principle (ISP)**
+   - Repository contracts expose only the operations necessary to register and query models and engines.
+
+5. **Dependency Inversion Principle (DIP)**
+   - The controller depends on abstractions (`AircraftModelRepository`, `EngineModelRepository`, `AuthorizationService`) rather than concrete implementations.
+
+### Data Transfer Objects (DTOs)
+
+DTOs are used to isolate the presentation layer from the domain:
+
+- **Input DTO**: carries form fields (`model name`, `manufacturer`, `type`, `performance data`, `selected engines`).
+- **Benefit**: the UI does not manipulate the `AircraftModel` aggregate directly, reducing coupling and easing validation.
+- **Result**: the controller converts received data into a valid aggregate before persisting.
+
+### Factory Pattern
+
+The Factory pattern appears when the aggregate is created after validation:
+
+```java
+// Conceptual example of aggregate creation after validation
+AircraftModel aircraftModel = AircraftModel.create(
+    modelName,
+    manufacturer,
+    aircraftType,
+    maxRange,
+    emptyWeight,
+    mtow,
+    mzfw,
+    cruiseSpeed,
+    wingArea,
+    dragCoefficient,
+    liftCoefficient,
+    serviceCeiling,
+    selectedEngines
+);
+```
+
+Factory responsibilities:
+- Ensure the aggregate is created in a valid state
+- Encapsulate initial validation and composition logic
+- Keep the controller focused on coordinating the use case
 
 ---
 

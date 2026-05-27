@@ -42,6 +42,73 @@
 
 ---
 
+## EAPLI Theoretical Principles — Practical Application
+
+### Domain-Driven Design (DDD)
+
+The design of US057 follows core DDD principles:
+
+- **Ubiquitous Language**: Code uses domain terms consistently (`AircraftModel`, `EngineModel`, `certified engines`, `compatibility`, `motorization`).
+- **Bounded Context**: This feature is part of the aircraft model management bounded context, specifically focused on certification and compatibility of engines.
+- **Aggregate Root**: `AircraftModel` is the aggregate root that manages the certified engines list and enforces consistency rules.
+- **Entities**: `AircraftModel` and `EngineModel` are domain entities with identity and lifecycle managed through repositories.
+- **Repository Pattern**: Repositories abstract data access and support query and persistence operations.
+
+### Gang of Four (GoF) Patterns
+
+| Pattern | Location | Purpose |
+|--------|-------|----------|
+| **Factory** | `AddEngineToAircraftController` | Encapsulates aggregate update after validating compatibility and duplication |
+| **Repository** | `AircraftModelRepository`, `EngineModelRepository` | Abstracts persistence and lookup of aircraft and engine models |
+| **Strategy** | Engine compatibility rules | Allows varying compatibility logic without changing the main workflow |
+| **DTO** | Data selected in UI for the controller | Simple transfer of identifiers without exposing full entities |
+
+### SOLID Principles
+
+The US057 architecture respects the five SOLID principles:
+
+1. **Single Responsibility Principle (SRP)**
+   - `AddEngineToAircraftUI`: collects user selections only
+   - `AddEngineToAircraftController`: coordinates validation and engine association
+   - `AircraftModel`: enforces aggregate invariants
+
+2. **Open/Closed Principle (OCP)**
+   - New compatibility rules can be added without rewriting the base workflow.
+
+3. **Liskov Substitution Principle (LSP)**
+   - Alternative repository implementations can replace the current one without changing controller behavior.
+
+4. **Interface Segregation Principle (ISP)**
+   - Data access contracts expose only necessary operations to query and update models.
+
+5. **Dependency Inversion Principle (DIP)**
+   - The controller depends on abstractions rather than persistence or UI details.
+
+### Data Transfer Objects (DTOs)
+
+DTOs are used to carry only what is necessary between the UI and the application:
+
+- **Input DTO**: contains the aircraft model identifier and the engine model identifier selected by the user.
+- **Benefit**: prevents the presentation layer from manipulating rich domain entities.
+- **Result**: the controller receives simple data and translates it into well-scoped domain operations.
+
+### Factory Pattern
+
+The Factory pattern appears when updating the aggregate after validations:
+
+```java
+// Conceptual example of aggregate load and update
+AircraftModel aircraftModel = aircraftModelRepository.ofId(aircraftModelId);
+aircraftModel.addCertifiedEngine(engineModel);
+```
+
+Factory / controlled-creation responsibilities:
+- Ensure the aggregate is loaded and updated consistently
+- Encapsulate the association logic for the new engine
+- Keep the controller focused on use-case coordination
+
+---
+
 ## User Interaction Flow
 
 1. Backoffice Operator logs in and navigates to **Add Engine to Aircraft Model** from the Aircraft Management menu.
