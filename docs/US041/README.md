@@ -41,6 +41,98 @@
 
 ---
 
+## Princípios Teóricos de EAPLI — Aplicação Prática
+
+### Domain-Driven Design (DDD)
+
+O design de **US041** segue os princípios fundamentais do DDD:
+
+- **Ubiquitous Language**: Utiliza termos do domínio de forma consistente (`WeatherData`, `AirControlArea`, `WindDirection`, `Temperature`, `Pressure`)
+- **Bounded Context**: A funcionalidade situa-se no contexto de Weather Management, separado de outros sub-domínios (Air Control, etc.)
+- **Aggregate Root**: `WeatherData` é o agregado raiz que encapsula toda a informação meteorológica coerente
+- **Value Objects**: Atributos como `Temperature`, `Pressure`, `WindSpeed` e `WeatherDataId` são representados como Value Objects imutáveis, garantindo consistência e semântica clara
+- **Repository Pattern**: `WeatherDataRepository` oferece uma abstração sobre a persistência, ocultando detalhes de implementação
+- **Domain Events**: Podem ser disparados quando dados meteorológicos são registados (e.g., `WeatherDataRegisteredEvent`)
+
+### Padrões Gang of Four (GoF)
+
+Vários padrões clássicos de design foram aplicados:
+
+| Padrão | Local | Propósito |
+|--------|-------|----------|
+| **Factory** | `WeatherDataFactory` (ou no Controller) | Construção de agregados `WeatherData` com validações encapsuladas |
+| **Repository** | `WeatherDataRepository` | Abstracção da persistência; facilita testes unitários e mudarças de BD |
+| **Strategy** | `AuthorizationService` | Diferentes estratégias de autorização por role (WEATHER_PERSON, etc.) |
+| **Data Transfer Object (DTO)** | `RegisterWeatherDataRequest` | Transporte de dados entre UI e Application Layer, desacoplando apresentação da lógica |
+| **Adapter** | Console UI → Controller | Adapta entrada de utilizador em comando para a aplicação |
+
+### Princípios SOLID
+
+A arquitectura de **US041** respeita os cinco princípios SOLID:
+
+1. **Single Responsibility Principle (SRP)**
+   - `RegisterWeatherDataUI`: Apenas apresentação
+   - `RegisterWeatherDataController`: Apenas lógica de aplicação e coordenação
+   - `WeatherData`: Apenas regras de negócio meteorológico
+   - Cada classe tem uma razão única para mudar
+
+2. **Open/Closed Principle (OCP)**
+   - `AuthorizationService` é aberta para extensão (novos roles podem ser adicionados)
+   - Fechada para modificação (novas formas de autorização não requerem alterar código existente)
+
+3. **Liskov Substitution Principle (LSP)**
+   - `WeatherDataRepository` implementa uma interface coerente
+   - Qualquer implementação (JPA, em memória, etc.) pode ser substituída sem quebrar código cliente
+
+4. **Interface Segregation Principle (ISP)**
+   - A interface `WeatherDataRepository` expõe apenas operações necessárias
+   - Interfaces minimais específicas para cada role (e.g., `WeatherPersonAuthorization`)
+
+5. **Dependency Inversion Principle (DIP)**
+   - Controller depende de abstrações (`AuthorizationService`, `WeatherDataRepository`)
+   - Não depende de implementações concretas
+   - Facilita testes com mocks/stubs
+
+### Data Transfer Objects (DTOs)
+
+DTOs isolam a camada de apresentação da lógica de domínio:
+
+- **`RegisterWeatherDataRequest`** (DTO de entrada)
+  - Contém dados brutos do utilizador (strings, números primitivos)
+  - Não contém validações de negócio (apenas validação estrutural)
+  - Transfere dados da UI para o Controller
+
+- **`WeatherDataDTO`** (DTO de saída, opcional)
+  - Representa `WeatherData` de forma legível para o cliente
+  - Omite campos técnicos internos (IDs de agregados, etc.)
+  - Facilita futura migração para APIs REST/GraphQL
+
+**Benefício**: A camada de apresentação nunca manipula entidades de domínio directamente, reduzindo acoplamento e facilitando testes.
+
+### Factory Pattern
+
+O padrão Factory encapsula a criação complexa de agregados:
+
+```java
+// Factory implícito dentro da lógica de controller ou método de factory explícito
+WeatherData weatherData = WeatherDataFactory.create(
+    airControlAreaId,
+    timestamp,
+    windDirection,
+    windSpeed,
+    temperature,
+    pressure
+);
+```
+
+**Responsabilidades do Factory**:
+- Validar que todos os parâmetros são coerentes
+- Garantir que o agregado é criado num estado válido
+- Encapsular lógica complexa de inicialização
+- Facilitar a adição de novos parâmetros sem alterar o código cliente
+
+---
+
 ## User Interaction Flow
 
 1. Weather Person logs in and navigates to **Register Weather Data** from the Weather menu.
