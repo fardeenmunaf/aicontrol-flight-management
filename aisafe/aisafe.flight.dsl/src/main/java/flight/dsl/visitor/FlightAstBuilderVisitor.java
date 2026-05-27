@@ -2,11 +2,12 @@ package flight.dsl.visitor;
 
 import flight.dsl.FlightDSLBaseVisitor;
 import flight.dsl.FlightDSLParser;
+import flight.dsl.ast.AltitudeSlotAst;
 import flight.dsl.ast.ArrivalAst;
 import flight.dsl.ast.ClimbEntryAst;
 import flight.dsl.ast.CoordinateAst;
-import flight.dsl.ast.DescendEntryAst;
 import flight.dsl.ast.DepartureAst;
+import flight.dsl.ast.DescendEntryAst;
 import flight.dsl.ast.FlightPlanAst;
 import flight.dsl.ast.FlightTypeAst;
 import flight.dsl.ast.FuelAst;
@@ -15,6 +16,7 @@ import flight.dsl.ast.ProfileAst;
 import flight.dsl.ast.ProfileEntryAst;
 import flight.dsl.ast.SegmentAst;
 import flight.dsl.ast.SegmentModeAst;
+import flight.dsl.ast.WindAst;
 import flight.dsl.model.AstLocationRegistry;
 import flight.dsl.model.FlightDslDocument;
 
@@ -36,9 +38,9 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
 
     @Override
     public Object visitFlightPlan(final FlightDSLParser.FlightPlanContext ctx) {
-        final String flightDesignator = ctx.ID(0).getText();
-        final String aircraftId = ctx.ID(1).getText();
-        final String routeReference = ctx.ID(2).getText();
+        final String flightDesignator = ctx.FLIGHT_DESIGNATOR().getText();
+        final String aircraftId = ctx.aircraftId().getText();
+        final String routeReference = ctx.routeRef().getText();
         final String routeOrigin = ctx.airportCode(0).getText();
         final String routeDestination = ctx.airportCode(1).getText();
         final FlightTypeAst type = (FlightTypeAst) visitFlightType(ctx.flightType());
@@ -101,7 +103,7 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
     @Override
     public Object visitFuel(final FlightDSLParser.FuelContext ctx) {
         final FuelAst fuelAst = new FuelAst(
-                Double.valueOf(ctx.positiveNumber().getText()),
+                Double.parseDouble(ctx.positiveNumber().getText()),
                 ctx.unit().getText()
         );
         register(fuelAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
@@ -137,9 +139,9 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
     @Override
     public Object visitClimbEntry(final FlightDSLParser.ClimbEntryContext ctx) {
         final ClimbEntryAst climbEntryAst = new ClimbEntryAst(
-                Double.valueOf(ctx.positiveNumber(0).getText()),
+                Double.parseDouble(ctx.positiveNumber(0).getText()),
                 ctx.unit(0).getText(),
-                Double.valueOf(ctx.positiveNumber(1).getText()),
+                Double.parseDouble(ctx.positiveNumber(1).getText()),
                 ctx.unit(1).getText()
         );
         register(climbEntryAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
@@ -149,11 +151,11 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
     @Override
     public Object visitDescendEntry(final FlightDSLParser.DescendEntryContext ctx) {
         final DescendEntryAst descendEntryAst = new DescendEntryAst(
-                Double.valueOf(ctx.positiveNumber(0).getText()),
+                Double.parseDouble(ctx.positiveNumber(0).getText()),
                 ctx.unit(0).getText(),
-                Double.valueOf(ctx.positiveNumber(1).getText()),
+                Double.parseDouble(ctx.positiveNumber(1).getText()),
                 ctx.unit(1).getText(),
-                Double.valueOf(ctx.signedNumber().getText())
+                Double.parseDouble(ctx.signedNumber().getText())
         );
         register(descendEntryAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
         return descendEntryAst;
@@ -161,43 +163,68 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
 
     @Override
     public Object visitClimbSegment(final FlightDSLParser.ClimbSegmentContext ctx) {
-        final SegmentAst segmentAst = new SegmentAst(
-                SegmentModeAst.CLIMB,
-                (CoordinateAst) visitCoord(ctx.coord(0)),
-                (CoordinateAst) visitCoord(ctx.coord(1))
-        );
-        register(segmentAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
-        return segmentAst;
+        return buildSegmentAst(ctx.coord(0), ctx.coord(1), ctx.altitudeSlot(), ctx.wind(), SegmentModeAst.CLIMB, ctx.getStart());
     }
 
     @Override
     public Object visitCruiseSegment(final FlightDSLParser.CruiseSegmentContext ctx) {
-        final SegmentAst segmentAst = new SegmentAst(
-                SegmentModeAst.CRUISE,
-                (CoordinateAst) visitCoord(ctx.coord(0)),
-                (CoordinateAst) visitCoord(ctx.coord(1))
-        );
-        register(segmentAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
-        return segmentAst;
+        return buildSegmentAst(ctx.coord(0), ctx.coord(1), ctx.altitudeSlot(), ctx.wind(), SegmentModeAst.CRUISE, ctx.getStart());
     }
 
     @Override
     public Object visitDescendSegment(final FlightDSLParser.DescendSegmentContext ctx) {
-        final SegmentAst segmentAst = new SegmentAst(
-                SegmentModeAst.DESCEND,
-                (CoordinateAst) visitCoord(ctx.coord(0)),
-                (CoordinateAst) visitCoord(ctx.coord(1))
-        );
-        register(segmentAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
+        return buildSegmentAst(ctx.coord(0), ctx.coord(1), ctx.altitudeSlot(), ctx.wind(), SegmentModeAst.DESCEND, ctx.getStart());
+    }
+
+    private SegmentAst buildSegmentAst(
+            final FlightDSLParser.CoordContext fromCtx,
+            final FlightDSLParser.CoordContext toCtx,
+            final java.util.List<FlightDSLParser.AltitudeSlotContext> slotCtxList,
+            final FlightDSLParser.WindContext windCtx,
+            final SegmentModeAst mode,
+            final org.antlr.v4.runtime.Token startToken) {
+        final CoordinateAst from = (CoordinateAst) visitCoord(fromCtx);
+        final CoordinateAst to = (CoordinateAst) visitCoord(toCtx);
+        final List<AltitudeSlotAst> slots = new ArrayList<>();
+        for (final FlightDSLParser.AltitudeSlotContext slotCtx : slotCtxList) {
+            slots.add((AltitudeSlotAst) visitAltitudeSlot(slotCtx));
+        }
+        final WindAst wind = (WindAst) visitWind(windCtx);
+        final SegmentAst segmentAst = new SegmentAst(from, to, slots, wind, mode);
+        register(segmentAst, startToken.getLine(), startToken.getCharPositionInLine());
         return segmentAst;
+    }
+
+    @Override
+    public Object visitAltitudeSlot(final FlightDSLParser.AltitudeSlotContext ctx) {
+        final AltitudeSlotAst slotAst = new AltitudeSlotAst(
+                Double.parseDouble(ctx.positiveNumber(0).getText()),
+                ctx.unit(0).getText(),
+                Double.parseDouble(ctx.positiveNumber(1).getText()),
+                ctx.unit(1).getText(),
+                Double.parseDouble(ctx.positiveNumber(2).getText()),
+                ctx.unit(2).getText()
+        );
+        register(slotAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
+        return slotAst;
+    }
+
+    @Override
+    public Object visitWind(final FlightDSLParser.WindContext ctx) {
+        final WindAst windAst = new WindAst(
+                Double.parseDouble(ctx.positiveNumber(0).getText()),
+                Double.parseDouble(ctx.positiveNumber(1).getText())
+        );
+        register(windAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
+        return windAst;
     }
 
     @Override
     public Object visitCoord(final FlightDSLParser.CoordContext ctx) {
         final CoordinateAst coordinateAst = new CoordinateAst(
-                Double.valueOf(ctx.signedNumber(0).getText()),
-                Double.valueOf(ctx.signedNumber(1).getText()),
-                Double.valueOf(ctx.positiveNumber().getText()),
+                Double.parseDouble(ctx.signedNumber(0).getText()),
+                Double.parseDouble(ctx.signedNumber(1).getText()),
+                Double.parseDouble(ctx.positiveNumber().getText()),
                 ctx.unit().getText()
         );
         register(coordinateAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
@@ -212,4 +239,3 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
         locationRegistry.register(node, line, column);
     }
 }
-

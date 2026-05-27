@@ -1,7 +1,7 @@
 # Flight DSL – Informal Specification
 
 **User Story:** US083-1  
-**Version:** 1.1  
+**Version:** 1.2  
 **Sprint:** 2  
 **Status:** Draft
 
@@ -32,7 +32,7 @@ DSL File → Lexical Analysis → Syntactic Analysis → Semantic Validation →
 
 Each stage is a gate: a file that fails lexical analysis is rejected before syntactic analysis begins, and so on. Only a fully valid file produces an internal flight plan object in the system.
 
-The DSL is **hierarchical and block-based**. The top-level construct is a `flight` block, which contains one or more `leg` blocks. Each leg contains `departure`, `arrival`, `fuel`, `segment`, and an optional `profile` block.
+The DSL is **hierarchical and block-based**. The top-level construct is a `flight` block, which contains one or more `leg` blocks. Each leg contains `departure`, `arrival`, `fuel`, one or more `segment` blocks, and an optional `profile` block.
 
 A DSL file may contain **one or more `flight` blocks**. All flight identifiers within the same file must be unique.
 
@@ -44,7 +44,7 @@ A DSL file may contain **one or more `flight` blocks**. All flight identifiers w
 
 ```
 Flight
-├── ID              (unique flight identifier within the file)
+├── ID              (flight designator: 2 uppercase letters + 1–4 digits + optional suffix letter)
 ├── Type            (regular | charter)
 ├── Aircraft        (aircraft registration identifier)
 ├── Route
@@ -72,38 +72,44 @@ Flight
     │       ├── Speed
     │       └── RateDescent
     ├── Segment: climb    (exactly 1, must appear first)
-    │   ├── Start
-    │   │   ├── Latitude
-    │   │   ├── Longitude
-    │   │   └── Altitude  (quantity + unit)
-    │   └── End
-    │       ├── Latitude
-    │       ├── Longitude
-    │       └── Altitude  (quantity + unit)
+    │   ├── Start / End   (3D coordinates)
+    │   ├── AltitudeSlot [1..*]
+    │   │   ├── Min       (quantity + unit, >= 0)
+    │   │   ├── Max       (quantity + unit, > min)
+    │   │   └── Width     (quantity + unit, > 0)
+    │   └── Wind
+    │       ├── Direction (degrees, 0–359)
+    │       └── Speed     (quantity m/s, > 0)
     ├── Segment: cruise   (exactly 1, must appear second)
-    │   ├── Start / End   (same structure)
+    │   ├── Start / End, AltitudeSlot [1..*], Wind  (same structure)
     └── Segment: descend  (exactly 1, must appear third)
-        └── Start / End   (same structure)
+        └── Start / End, AltitudeSlot [1..*], Wind  (same structure)
 ```
 
 ### 2.2 Entity Descriptions
 
 | Entity | Description |
 |---|---|
-| **Flight** | The top-level construct. Represents a complete flight operation with a unique identifier, a type, an aircraft assignment, a route reference, and one or more legs. |
+| **Flight** | The top-level construct. Represents a complete flight operation with a unique designator, a type, an aircraft assignment, a route reference, and one or more legs. |
 | **Aircraft** | The registration identifier of the aircraft assigned to the flight. This is used for simulation and physics calculations. |
 | **Leg** | A single non-stop journey between two airports. A flight with intermediate stops has multiple legs. Each leg is self-contained with its own departure, arrival, fuel, profile, and segments. |
 | **Departure** | The origin point of a leg: airport code, date, and scheduled time of departure. |
 | **Arrival** | The destination point of a leg: airport code, date, and scheduled time of arrival. |
 | **Fuel** | The fuel load assigned to a leg, expressed as a strictly positive quantity with a unit (kg or l). |
 | **FlightProfile** | Optional climb and descent profiles, describing altitude/speed tables used for simulation. Descent entries also include a rate of descent. |
-| **Segment** | A linear path within a leg. Every leg must contain exactly three segments in order: `climb`, `cruise`, `descend`. Each is characterised by its fixed mode and start/end 3D coordinates covering the full spatial path of the leg. |
+| **Segment** | A linear path within a leg. Every leg must contain exactly three segments in fixed order: `climb`, `cruise`, `descend`. Each segment has a start/end 3D coordinate pair, one or more altitude slots, and a wind block. The mode is determined by position and enforced syntactically. |
+| **AltitudeSlot** | Defines the usable vertical band for a segment: minimum altitude, maximum altitude, and slot width. Used by the simulation to assign altitude clearances. |
+| **Wind** | Wind conditions at the segment: direction in degrees (0–359) and speed in m/s (strictly positive). |
 
 ### 2.3 Key Constraints (Conceptual Level)
 
 - A DSL file must contain at least one `flight` block; all flight identifiers must be unique within the file.
+- A flight identifier must follow the format: two uppercase letters (airline designator), followed by 1–4 digits, and an optional single uppercase letter suffix (e.g. `TP1234`, `BA100A`). This is enforced at the lexer level.
 - A `flight` must have at least one `leg`.
-- Each `leg` must have exactly one `departure`, one `arrival`, one `fuel` block, and exactly three `segment` blocks in the fixed order: `climb`, `cruise`, `descend`.
+- Each `leg` must have exactly one `departure`, one `arrival`, one `fuel` block, and exactly three `segment` blocks in fixed order: `climb`, `cruise`, `descend`.
+- Each `segment` must have at least one `altslot` and exactly one `wind` block. The mode (`climb`, `cruise`, `descend`) is fixed per position and enforced syntactically.
+- For each `altslot`: `min >= 0`, `max >= 0`, `min < max`, and `width > 0`.
+- For each `wind`: `direction` in [0, 359] and `speed > 0`.
 - The `FlightProfile` is optional but, if present, must contain at least one `climb` or one `descend` entry.
 - The arrival airport of leg *n* must equal the departure airport of leg *n+1* (leg sequence coherence).
 - The arrival time of leg *n* must be strictly before the departure time of leg *n+1*.
@@ -122,7 +128,8 @@ Flight
 | Category | Case Sensitivity |
 |---|---|
 | Keywords | **Case-insensitive** (`FLIGHT`, `flight`, `Flight` are all valid) |
-| Identifiers | **Case-sensitive** (`TP123` ≠ `tp123`) |
+| Flight designators | **Case-sensitive** (must be uppercase: `TP1234`) |
+| Identifiers | **Case-sensitive** (`AA123` ≠ `aa123`) |
 | Airport codes | **Case-sensitive** (IATA codes are uppercase by convention: `OPO`, `MAD`) |
 | String literals | **Case-sensitive** |
 | Numeric literals | Not applicable |
@@ -141,6 +148,8 @@ Reserved words that define the structure of the language. They may not be used a
 | `arrival` | Opens an arrival block |
 | `route` | Introduces the route declaration |
 | `segment` | Opens a segment block |
+| `altslot` | Opens an altitude slot entry |
+| `wind` | Opens a wind block |
 | `fuel` | Opens a fuel block |
 | `profile` | Opens a flight profile block |
 | `climb` | Opens a climb entry or marks a segment mode |
@@ -157,20 +166,33 @@ Reserved words that define the structure of the language. They may not be used a
 | `speed` | Introduces a speed field |
 | `rate` | Introduces a rate of descent field |
 | `mode` | Introduces a segment mode field |
+| `direction` | Introduces a wind direction field |
+| `min` | Introduces the minimum altitude of an altitude slot |
+| `max` | Introduces the maximum altitude of an altitude slot |
+| `width` | Introduces the slot width of an altitude slot |
 | `quantity` | Introduces a fuel quantity field |
 | `date` | Introduces a date field |
 | `time` | Introduces a time field |
 
+#### Flight Designator
+
+The flight identifier has a dedicated lexer rule that enforces the standard airline designator format at the token level — malformed designators are rejected before parsing begins.
+
+```
+Pattern: [A-Z][A-Z][0-9][0-9]?[0-9]?[0-9]?[A-Z]?
+Examples: TP1234, BA100A, AF007, QR1
+```
+
+Two uppercase letters (airline designator code), followed by 1–4 digits (flight number), and an optional single uppercase letter suffix (operational variant).
+
 #### Identifiers
 
-Used for the flight ID and the route name reference. Must begin with a letter and may contain letters and digits.
+Used for aircraft registration and route name references. Must begin with a letter and may contain letters and digits.
 
 ```
 Pattern: [A-Za-z][A-Za-z0-9]*
-Examples: TP1234, AA123, myFlight
+Examples: AA123, A320, myRoute
 ```
-
-> **Note:** The flight designator format (e.g. `TP1234A`) is a specific type of identifier: two letters (airline designator), followed by 1–4 digits, and an optional one-letter operational suffix. Semantic validation will enforce this constraint.
 
 #### Airport Codes
 
@@ -190,7 +212,7 @@ Integer:  [0-9]+                 Examples: 0, 100, 35000
 Float:    [0-9]+ '.' [0-9]+      Examples: 41.262891, 9249.0, 0.804
 ```
 
-> **Note:** Fuel quantity and altitude use the grammar rule `positiveNumber` (INT | FLOAT, no minus sign). A value of `0` passes parsing but fuel quantity `0` is rejected at the semantic level. Coordinates and descent rates use `signedNumber` and may be negative.
+> **Note:** Fuel quantity, altitude, altitude slot values, and wind speed use the grammar rule `positiveNumber` (INT | FLOAT, no minus sign). A value of `0` passes parsing but fuel quantity `0` is rejected at the semantic level. Coordinates and descent rates use `signedNumber` and may be negative.
 
 #### Date Literals
 
@@ -216,10 +238,10 @@ Qualify numeric values. Must follow the number they modify.
 |---|---|---|
 | `kg` | kilograms | Fuel quantity |
 | `l` | litres | Fuel quantity |
-| `m` | metres | Altitude |
+| `m` | metres | Altitude, altitude slot values |
 | `ft` | feet | Altitude (alternative) |
 | `m/s` | metres per second | Wind speed |
-| `kts` | knots | Speed |
+| `kts` | knots | Speed (profile entries) |
 
 #### Separators and Symbols
 
@@ -227,10 +249,10 @@ Qualify numeric values. Must follow the number they modify.
 |---|---|
 | `{` `}` | Open/close a block |
 | `(` `)` | Coordinate groupings |
-| `[` `]` | Profile entry groupings |
+| `[` `]` | Altitude slot and profile entry groupings |
 | `:` | Separates a field name from its value |
 | `;` | Terminates a field or entry |
-| `,` | Separates values within a coordinate or profile entry |
+| `,` | Separates values within a coordinate or altitude slot entry |
 
 #### Whitespace and Comments
 
@@ -248,10 +270,10 @@ Single-line comments using `//` are supported and ignored by the lexer:
 
 ### 4.1 Top-Level Structure
 
-A valid DSL file contains **one or more `flight` blocks**. All flight identifiers must be unique within the file.
+A valid DSL file contains **one or more `flight` blocks**. The flight identifier must match the designator format (`xxn(n)(n)(n)(a)`). All flight identifiers must be unique within the file.
 
 ```
-flight <ID> {
+flight <FLIGHT-DESIGNATOR> {
     type:      <flight-type>;
     aircraft:  <ID>;
     route:     <route-name> from <airport-code> to <airport-code>;
@@ -277,9 +299,9 @@ leg {
     fuel      { ... }
     profile   { ... }   // optional
 
-    segment { mode: climb;   from: ...; to: ...; }   // mandatory, must be first
-    segment { mode: cruise;  from: ...; to: ...; }   // mandatory, must be second
-    segment { mode: descend; from: ...; to: ...; }   // mandatory, must be third
+    segment { ... altslot ...; wind ...; mode: climb;   }   // mandatory, must be first
+    segment { ... altslot ...; wind ...; mode: cruise;  }   // mandatory, must be second
+    segment { ... altslot ...; wind ...; mode: descend; }   // mandatory, must be third
 }
 ```
 
@@ -320,30 +342,38 @@ profile {
 
 ### 4.6 Segment Blocks
 
-Every leg must contain exactly three segment blocks in this exact order. The `mode` value is fixed for each position and is enforced by the grammar — any deviation is a syntactic error.
+Every leg must contain exactly three `segment` blocks in fixed order. Each segment carries start and end 3D coordinates, one or more altitude slots, a wind block, and a mandatory mode that determines its position. The grammar enforces the order: any deviation is a syntactic error.
 
 ```
 // First segment — climb from departure elevation to cruise altitude
 segment {
-    mode: climb;
     from: (<latitude>, <longitude>, altitude: <number> <unit>);
     to:   (<latitude>, <longitude>, altitude: <number> <unit>);
+    altslot [ min: <number> <unit>, max: <number> <unit>, width: <number> <unit> ];
+    wind { direction: <degrees>; speed: <number> m/s; }
+    mode: climb;
 }
 
 // Second segment — cruise at constant altitude
 segment {
-    mode: cruise;
     from: (<latitude>, <longitude>, altitude: <number> <unit>);
     to:   (<latitude>, <longitude>, altitude: <number> <unit>);
+    altslot [ min: <number> <unit>, max: <number> <unit>, width: <number> <unit> ];
+    wind { direction: <degrees>; speed: <number> m/s; }
+    mode: cruise;
 }
 
 // Third segment — descend from cruise altitude to destination elevation
 segment {
-    mode: descend;
     from: (<latitude>, <longitude>, altitude: <number> <unit>);
     to:   (<latitude>, <longitude>, altitude: <number> <unit>);
+    altslot [ min: <number> <unit>, max: <number> <unit>, width: <number> <unit> ];
+    wind { direction: <degrees>; speed: <number> m/s; }
+    mode: descend;
 }
 ```
+
+The `from` and `to` coordinates must differ. Altitude slot fields: `min >= 0`, `max > min`, `width > 0`. Wind direction in [0, 359], speed strictly positive.
 
 ### 4.7 Full Structure Diagram
 
@@ -367,17 +397,17 @@ flight
     │   ├── climb [0..*]   → altitude, speed
     │   └── descend [0..*] → altitude, speed, rate
     ├── segment (climb)   [exactly 1, first]
-    │   ├── mode  = climb
     │   ├── from  → (lat, lon, altitude)
-    │   └── to    → (lat, lon, altitude)
+    │   ├── to    → (lat, lon, altitude)
+    │   ├── altslot [1..*] → min, max, width (all with units)
+    │   ├── wind  → direction, speed
+    │   └── mode  = climb
     ├── segment (cruise)  [exactly 1, second]
-    │   ├── mode  = cruise
-    │   ├── from  → (lat, lon, altitude)
-    │   └── to    → (lat, lon, altitude)
+    │   ├── from / to, altslot [1..*], wind
+    │   └── mode  = cruise
     └── segment (descend) [exactly 1, third]
-        ├── mode  = descend
-        ├── from  → (lat, lon, altitude)
-        └── to    → (lat, lon, altitude)
+        ├── from / to, altslot [1..*], wind
+        └── mode  = descend
 ```
 
 ---
@@ -403,9 +433,9 @@ A condensed reference of every block and its mandatory vs. optional fields.
 | `arrival` | block | Yes | Arrival information |
 | `fuel` | block | Yes | Fuel load for this leg |
 | `profile` | block | No | Altitude/speed climb and descent tables |
-| `segment` (climb)   | block | Yes | First segment: aircraft climbs from departure elevation to cruise altitude |
-| `segment` (cruise)  | block | Yes | Second segment: aircraft flies level at cruise altitude |
-| `segment` (descend) | block | Yes | Third segment: aircraft descends to destination elevation |
+| `segment` (climb)   | block | Yes | First segment: climb — aircraft gains altitude from departure |
+| `segment` (cruise)  | block | Yes | Second segment: cruise — aircraft flies level at cruise altitude |
+| `segment` (descend) | block | Yes | Third segment: descend — aircraft loses altitude to destination |
 
 ### `departure` / `arrival` blocks
 
@@ -431,29 +461,38 @@ A condensed reference of every block and its mandatory vs. optional fields.
 Each `climb` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0).  
 Each `descend` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0), `rate` (must be negative).
 
-### `segment` blocks
+### `segment` block (all three types)
 
-Each leg contains exactly three segment blocks in the order below. The `mode` value is fixed per position and enforced syntactically — it is not a free choice.
-
-| Block | `mode` value | Mandatory | Description |
-|---|---|---|---|
-| First segment  | `climb`   | Yes | Climb from departure elevation to cruise altitude |
-| Second segment | `cruise`  | Yes | Level flight at cruise altitude |
-| Third segment  | `descend` | Yes | Descent from cruise altitude to destination elevation |
-
-All three segment blocks share the same field structure:
+All three segment types share the same field structure. The `mode` value is fixed per position and enforced syntactically — it is not a free choice.
 
 | Field | Type | Mandatory | Description |
 |---|---|---|---|
-| `mode` | fixed keyword | Yes | Determined by block position (`climb`, `cruise`, or `descend`) |
-| `from` | coordinate tuple | Yes | Start point (lat, lon, altitude) |
+| `from` | coordinate tuple | Yes | Start point (lat, lon, altitude); must differ from `to` |
 | `to` | coordinate tuple | Yes | End point (lat, lon, altitude); must differ from `from` |
+| `altslot` | entry (1 or more) | Yes | Altitude slot: `min`, `max`, `width` (all with units) |
+| `wind` | block | Yes | Wind conditions: `direction` (0–359°) and `speed` (m/s, > 0) |
+| `mode` | fixed keyword | Yes | Determined by position: `climb` (1st), `cruise` (2nd), `descend` (3rd) |
+
+### `altslot` entry
+
+| Field | Type | Mandatory | Constraint |
+|---|---|---|---|
+| `min` | positive number + unit | Yes | `>= 0`; must be less than `max` |
+| `max` | positive number + unit | Yes | `>= 0`; must be greater than `min` |
+| `width` | positive number + unit | Yes | `> 0` |
+
+### `wind` block
+
+| Field | Type | Mandatory | Constraint |
+|---|---|---|---|
+| `direction` | positive number (degrees) | Yes | In range [0, 359] |
+| `speed` | positive number + `m/s` | Yes | `> 0` |
 
 ---
 
 ## 6. Valid Example
 
-This example is derived from the JSON reference (`Flight_Plan_v0a.json`) and represents a single-leg regular flight from Porto (OPO) to Madrid (MAD).
+This example is derived from the JSON reference (`Flight_Plan_v0a.json`) and represents a single-leg regular flight from Porto (OPO) to Madrid (MAD), with three annotated segments.
 
 ```
 // Flight plan: OPO → MAD
@@ -499,23 +538,29 @@ flight TP1234 {
 
         // Segment 1: climb from OPO elevation to cruising altitude
         segment {
-            mode: climb;
             from: (41.262891, -8.68522,  altitude: 69 m);
             to:   (42.0,      -8.01,     altitude: 9249 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
+            mode: climb;
         }
 
         // Segment 2: cruise at constant altitude
         segment {
-            mode: cruise;
             from: (42.0,    -8.01, altitude: 9249 m);
             to:   (41.0,    -4.3,  altitude: 9249 m);
+            altslot [ min: 9000 m, max: 9500 m, width: 50 m ];
+            wind { direction: 270; speed: 20 m/s; }
+            mode: cruise;
         }
 
         // Segment 3: descend toward MAD
         segment {
-            mode: descend;
             from: (41.0,    -4.3,    altitude: 9249 m);
             to:   (40.4895, -3.5643, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 260; speed: 10 m/s; }
+            mode: descend;
         }
 
     }
@@ -529,9 +574,9 @@ flight TP1234 {
 Each example below corresponds to a specific validation rule and serves as a negative test case for the ANTLR grammar and semantic validator.
 
 > **Note on error types:**
-> - **Lexical error** — unrecognised character or malformed token (e.g. wrong date format).
+> - **Lexical error** — unrecognised character or malformed token (e.g. wrong date format, malformed flight designator).
 > - **Syntactic error** — token stream violates grammar rules (e.g. missing mandatory block, unrecognised keyword). The grammar itself catches these before semantic validation.
-> - **Semantic error** — syntactically valid but domain-invalid (e.g. duplicate airport, fuel = 0).
+> - **Semantic error** — syntactically valid but domain-invalid (e.g. duplicate airport, fuel = 0, invalid altitude slot).
 
 ---
 
@@ -548,9 +593,10 @@ flight TP1234 {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         segment {
-            mode: cruise;
-            from: (42.0, -8.01, altitude: 9249 m);
-            to:   (41.0, -4.3,  altitude: 9249 m);
+            from: (41.26, -8.68, altitude: 69 m);
+            to:   (40.49, -3.56, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
         }
     }
 }
@@ -594,9 +640,10 @@ flight TP5678 {
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
         segment {
-            mode: cruise;
             from: (41.26, -8.68, altitude: 69 m);
             to:   (40.49, -3.56, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
         }
     }
 
@@ -605,9 +652,10 @@ flight TP5678 {
         arrival   { airport: BCN; date: 2026-05-05; time: 13:00; }
         fuel { quantity: 38000 kg; }
         segment {
-            mode: cruise;
             from: (38.77, -9.13, altitude: 114 m);
             to:   (41.29,  2.07, altitude: 4 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
         }
     }
 }
@@ -632,9 +680,10 @@ flight TP1234 {
             quantity: -500 kg;    // invalid: positiveNumber = INT | FLOAT (no minus)
         }
         segment {
-            mode: cruise;
             from: (41.26, -8.68, altitude: 69 m);
             to:   (40.49, -3.56, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
         }
     }
 }
@@ -657,9 +706,10 @@ flight TP1234 {
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
         segment {
-            mode: cruise;
             from: (41.26, -8.68, altitude: 69 m);
             to:   (40.49, -3.56, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
         }
     }
 }
@@ -682,9 +732,10 @@ flight TP1234 {
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
         segment {
-            mode: cruise;
             from: (41.26, -8.68, altitude: 9249 m);
             to:   (41.26, -8.68, altitude: 9249 m);    // identical to from
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
         }
     }
 }
@@ -707,9 +758,10 @@ flight TP9999 {
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
         segment {
-            mode: cruise;
             from: (41.26, -8.68, altitude: 69 m);
             to:   (40.49, -3.56, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
         }
     }
 
@@ -718,9 +770,10 @@ flight TP9999 {
         arrival   { airport: OPO; date: 2026-05-05; time: 12:30; }  // OPO visited twice
         fuel { quantity: 38000 kg; }
         segment {
-            mode: cruise;
             from: (40.49, -3.56, altitude: 610 m);
             to:   (41.26, -8.68, altitude: 69 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 90; speed: 15 m/s; }
         }
     }
 }
@@ -765,7 +818,12 @@ flight TP1234 {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
-        segment { mode: cruise; from: (41.26, -8.68, altitude: 69 m); to: (40.49, -3.56, altitude: 610 m); }
+        segment {
+            from: (41.26, -8.68, altitude: 69 m);
+            to:   (40.49, -3.56, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
+        }
     }
 }
 
@@ -777,7 +835,12 @@ flight TP1234 {    // duplicate identifier
         departure { airport: LIS; date: 2026-05-06; time: 10:00; }
         arrival   { airport: BCN; date: 2026-05-06; time: 12:00; }
         fuel { quantity: 35000 kg; }
-        segment { mode: cruise; from: (38.77, -9.13, altitude: 114 m); to: (41.29, 2.07, altitude: 4 m); }
+        segment {
+            from: (38.77, -9.13, altitude: 114 m);
+            to:   (41.29,  2.07, altitude: 4 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
+        }
     }
 }
 ```
@@ -799,7 +862,12 @@ flight TP7777 {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }  // OPO ≠ LIS
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }  // MAD ≠ BCN
         fuel { quantity: 40200 kg; }
-        segment { mode: cruise; from: (41.26, -8.68, altitude: 69 m); to: (40.49, -3.56, altitude: 610 m); }
+        segment {
+            from: (41.26, -8.68, altitude: 69 m);
+            to:   (40.49, -3.56, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
+        }
     }
 }
 ```
@@ -820,7 +888,12 @@ flight TP1234 {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 0 kg; }
-        segment { mode: cruise; from: (41.26, -8.68, altitude: 69 m); to: (40.49, -3.56, altitude: 610 m); }
+        segment {
+            from: (41.26, -8.68, altitude: 69 m);
+            to:   (40.49, -3.56, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
+        }
     }
 }
 ```
@@ -828,13 +901,14 @@ flight TP1234 {
 
 ---
 
-### 7.12 Missing Cruise Segment — Syntactic Error
+### 7.12 Missing `wind` Block in Segment — Syntactic Error
 
 ```
-// ERROR: leg has climb and descend but no cruise segment
+// ERROR: segment is missing the mandatory wind block
 
 flight TP1234 {
     type:  regular;
+    aircraft:  A320;
     route: AA123 from OPO to MAD;
 
     leg {
@@ -842,29 +916,27 @@ flight TP1234 {
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
         segment {
-            mode: climb;
             from: (41.262891, -8.68522, altitude: 69 m);
-            to:   (42.0, -8.01, altitude: 9249 m);
-        }
-        segment {
-            mode: descend;
-            from: (41.0, -4.3, altitude: 9249 m);
             to:   (40.4895, -3.5643, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            mode: climb;
+            // wind block is absent — this is a syntactic error
         }
     }
 }
 ```
-**Expected error:** Syntactic — the parser expects a `segment { mode: cruise; ... }` as the second segment; finding `mode: descend` where `mode: cruise` is required is an unexpected token.
+**Expected error:** Syntactic — each `segment` must contain a `wind` block; the parser rejects its absence.
 
 ---
 
-### 7.13 Wrong Segment Order — Syntactic Error
+### 7.13 Missing `altslot` Entry in Segment — Syntactic Error
 
 ```
-// ERROR: segments are in the wrong order (cruise before climb)
+// ERROR: segment is missing the mandatory altslot entry
 
 flight TP1234 {
     type:  regular;
+    aircraft:  A320;
     route: AA123 from OPO to MAD;
 
     leg {
@@ -872,24 +944,16 @@ flight TP1234 {
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
         segment {
-            mode: cruise;    // wrong order — climb must come first
-            from: (42.0, -8.01, altitude: 9249 m);
-            to:   (41.0, -4.3,  altitude: 9249 m);
-        }
-        segment {
-            mode: climb;
             from: (41.262891, -8.68522, altitude: 69 m);
-            to:   (42.0, -8.01, altitude: 9249 m);
-        }
-        segment {
-            mode: descend;
-            from: (41.0, -4.3, altitude: 9249 m);
             to:   (40.4895, -3.5643, altitude: 610 m);
+            wind { direction: 270; speed: 15 m/s; }
+            mode: climb;
+            // altslot entry is absent — this is a syntactic error
         }
     }
 }
 ```
-**Expected error:** Syntactic — the parser expects the first segment to have `mode: climb`; encountering `mode: cruise` first is an unexpected token.
+**Expected error:** Syntactic — each `segment` must contain at least one `altslot` entry; the parser rejects its absence.
 
 ---
 
@@ -925,39 +989,53 @@ Zero fuel (`0 kg`) is different: `0` is a valid `INT` and a valid `positiveNumbe
 
 A single DSL file may describe a batch of flight plans (e.g. a day's schedule). The grammar allows `flightPlan+` (one or more). The uniqueness constraint on flight identifiers (AC08) ensures each flight is unambiguously identifiable within the file.
 
-### 8.7 Relationship to the ANTLR grammar
+### 8.7 Why is the flight designator a dedicated lexer rule and not a general identifier?
+
+The flight designator (`xxn(n)(n)(n)(a)`) follows a precise industry-standard format used worldwide for airline operations. Encoding it as a dedicated `FLIGHT_DESIGNATOR` lexer rule — rather than accepting any identifier and checking format semantically — means:
+
+1. **Immediate rejection** — a file with a malformed flight designator (e.g. `tp1234`, `FLIGHT-01`) is rejected at the lexer before the parser even runs.
+2. **Unambiguous tokenisation** — the lexer can distinguish a flight designator (`TP1234`) from a plain identifier or airport code without lookahead; no ambiguity arises.
+3. **Self-documenting grammar** — the grammar rule expresses the format constraint precisely, making the intent clear to anyone reading the `.g4` file.
+
+### 8.8 Why are segments required in fixed order (climb → cruise → descend)?
+
+Every real-world fixed-wing flight follows the same invariant sequence: the aircraft climbs from the departure airport, cruises at altitude, and then descends to the arrival airport. There is no valid combination that omits or reorders these phases.
+
+Encoding this as a syntactic constraint (three separate parser rules — `climbSegment`, `cruiseSegment`, `descendSegment` — in fixed order inside `leg`) rather than a semantic one has two advantages:
+
+1. **Earlier rejection** — a file with a missing or reordered segment is rejected at the parser stage, before semantic validation, producing a clearer error pointing directly at the offending token.
+2. **Simpler validator** — the semantic validator can assume the three segments are always present and in order; it does not need to search for them or handle partial sets.
+
+Within each segment, `altslot` (with `width`) and `wind` are mandatory because the enunciado defines them as core properties of the spatial path — without them the segment cannot be used for simulation.
+
+### 8.9 Relationship to the ANTLR grammar
 
 | DSL concept | ANTLR artefact |
 |---|---|
 | Keywords (e.g. `flight`, `leg`) | Lexer rules with character-class alternation for case-insensitivity |
-| Identifiers | `ID` lexer rule |
+| Flight designator (`TP1234`) | `FLIGHT_DESIGNATOR` lexer rule: `[A-Z][A-Z][0-9][0-9]?[0-9]?[0-9]?[A-Z]?` |
+| Identifiers (aircraft, route name) | `ID` lexer rule; `anyId` parser rule accepts `ID \| FLIGHT_DESIGNATOR` |
 | Airport codes | `IATA_CODE` / `ICAO_CODE` lexer rules |
 | Numeric literals | `INT` / `FLOAT` lexer rules |
 | Date / Time literals | `DATE_LITERAL` / `TIME_LITERAL` lexer rules |
 | Block structure | Parser rules (`flightPlan`, `leg`, `departure`, etc.) |
 | Route origin/destination | Inline `airportCode` references in the `flightPlan` parser rule |
-| Segment order/presence | Three separate parser rules (`climbSegment`, `cruiseSegment`, `descendSegment`) in fixed order inside `leg` |
+| Segment order/structure | Three separate parser rules (`climbSegment`, `cruiseSegment`, `descendSegment`) in fixed order; each contains `from`, `to`, `altitudeSlot+`, `wind`, fixed `mode` |
+| Altitude slot | `altitudeSlot` parser rule: `altslot [ min: … , max: … , width: … ]` |
+| Wind block | `wind` parser rule: `wind { direction: …; speed: … m/s; }` |
+| Segment mode (optional) | `segmentMode` parser rule: `climb \| cruise \| descend` |
 | Semantic constraints | `FlightSemanticValidator` traversing the AST built by `FlightAstBuilderVisitor` |
 
-### 8.8 Why are segments required in fixed order (climb → cruise → descend)?
-
-Every real-world fixed-wing flight follows the same invariant sequence: the aircraft climbs from the departure airport, cruises at altitude, and then descends to the arrival airport. There is no valid combination that omits or reorders these phases — a flight cannot cruise without having climbed first, nor land without descending.
-
-Encoding this as a syntactic constraint (three distinct parser rules, `climbSegment cruiseSegment descendSegment`, in fixed order inside `leg`) rather than a semantic one has two advantages:
-
-1. **Earlier rejection** — a file with a missing or reordered segment is rejected at the parser stage, before semantic validation begins, producing a clearer error pointing directly at the offending token.
-2. **Simpler validator** — the semantic validator can assume the three segments are always present and always in order; it does not need to search for them or handle partial sets.
-
-### 8.9 Error reporting
+### 8.10 Error reporting
 
 All three validation stages must produce clear, actionable errors:
 
 - **Lexical errors** — unrecognised character or malformed token. Must report line and column.
 - **Syntactic errors** — missing or unexpected token. Must report line, column, and what was expected.
-- **Semantic errors** — structurally valid but domain-invalid content (e.g. fuel = 0, duplicate ID, route mismatch). Must report which rule was violated and where.
+- **Semantic errors** — structurally valid but domain-invalid content (e.g. fuel = 0, duplicate ID, route mismatch, invalid altitude slot). Must report which rule was violated and where.
 
 All semantic errors must be **collected and reported together** in a single execution pass — the validator must not abort on the first error.
 
 ---
 
-*This document will be updated if the DSL is extended beyond the Core specification during Sprint 2.*
+*This document reflects the core grammar as of Sprint 2. If the DSL is extended beyond the Core specification, this document must be updated accordingly.*

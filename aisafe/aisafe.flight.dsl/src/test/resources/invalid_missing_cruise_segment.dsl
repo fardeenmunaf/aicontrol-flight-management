@@ -1,4 +1,4 @@
-// ERROR: leg has climb and descend segments but is missing the mandatory cruise segment
+// ERROR: segment missing mandatory wind block
 
 flight TP1234 {
     type:  regular;
@@ -10,14 +10,10 @@ flight TP1234 {
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
         segment {
-            mode: climb;
             from: (41.262891, -8.68522, altitude: 69 m);
-            to:   (42.0, -8.01, altitude: 9249 m);
-        }
-        segment {
-            mode: descend;
-            from: (41.0, -4.3, altitude: 9249 m);
             to:   (40.4895, -3.5643, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            mode: climb;
         }
     }
 }

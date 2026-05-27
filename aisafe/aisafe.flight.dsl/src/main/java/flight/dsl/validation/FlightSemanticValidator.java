@@ -1,5 +1,6 @@
 package flight.dsl.validation;
 
+import flight.dsl.ast.AltitudeSlotAst;
 import flight.dsl.ast.ClimbEntryAst;
 import flight.dsl.ast.DescendEntryAst;
 import flight.dsl.ast.FlightPlanAst;
@@ -16,8 +17,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class FlightSemanticValidator {
+
+    private static final Pattern FLIGHT_DESIGNATOR_PATTERN =
+            Pattern.compile("[A-Z]{2}[0-9]{1,4}[A-Z]?");
 
     public List<SemanticError> validate(final FlightDslDocument document) {
         final List<SemanticError> errors = new ArrayList<>();
@@ -27,6 +32,11 @@ public class FlightSemanticValidator {
             if (!seenIds.add(flight.flightDesignator())) {
                 errors.add(error(document, flight, SemanticErrorType.SEMANTIC,
                         "Duplicate flight identifier: " + flight.flightDesignator()));
+            }
+            if (!FLIGHT_DESIGNATOR_PATTERN.matcher(flight.flightDesignator()).matches()) {
+                errors.add(error(document, flight, SemanticErrorType.SEMANTIC,
+                        "Invalid flight designator format: " + flight.flightDesignator()
+                                + " (expected: 2 uppercase letters + 1-4 digits + optional letter)"));
             }
             validateFlight(flight, document, errors);
         }
@@ -150,6 +160,26 @@ public class FlightSemanticValidator {
                 || segment.to().longitude() < -180 || segment.to().longitude() > 180) {
             errors.add(error(document, segment, SemanticErrorType.SEMANTIC,
                     "Longitude must be between -180 and 180 in leg " + legNumber));
+        }
+
+        for (final AltitudeSlotAst slot : segment.altitudeSlots()) {
+            if (slot.min() < 0 || slot.max() < 0 || slot.width() <= 0) {
+                errors.add(error(document, segment, SemanticErrorType.SEMANTIC,
+                        "Altitude slot values must be positive and width must be > 0 in leg " + legNumber));
+            }
+            if (slot.min() >= slot.max()) {
+                errors.add(error(document, segment, SemanticErrorType.SEMANTIC,
+                        "Altitude slot min must be less than max in leg " + legNumber));
+            }
+        }
+
+        if (segment.wind().direction() < 0 || segment.wind().direction() >= 360) {
+            errors.add(error(document, segment, SemanticErrorType.SEMANTIC,
+                    "Wind direction must be between 0 and 359 degrees in leg " + legNumber));
+        }
+        if (segment.wind().speed() <= 0) {
+            errors.add(error(document, segment, SemanticErrorType.SEMANTIC,
+                    "Wind speed must be positive in leg " + legNumber));
         }
     }
 
