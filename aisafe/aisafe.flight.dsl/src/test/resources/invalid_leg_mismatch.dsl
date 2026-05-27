@@ -6,40 +6,56 @@ flight TP5678 {
     route: TP001 from OPO to BCN;
 
     leg {
-        departure {
-            airport: OPO;
-            date:    2026-05-05;
-            time:    08:00;
+        departure { airport: OPO; date: 2026-05-05; time: 08:00; }
+        arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
+        fuel { quantity: 40200 kg; }
+        segment {
+            from: (41.262891, -8.68522, altitude: 69 m);
+            to:   (42.0, -8.01, altitude: 9249 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
+            mode: climb;
         }
-        arrival {
-            airport: MAD;
-            date:    2026-05-05;
-            time:    09:30;
+        segment {
+            from: (42.0, -8.01, altitude: 9249 m);
+            to:   (41.0, -4.3, altitude: 9249 m);
+            altslot [ min: 9000 m, max: 9500 m, width: 50 m ];
+            wind { direction: 270; speed: 20 m/s; }
+            mode: cruise;
         }
-        fuel {
-            quantity: 40200 kg;
+        segment {
+            from: (41.0, -4.3, altitude: 9249 m);
+            to:   (40.4895, -3.5643, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 10 m/s; }
+            mode: descend;
         }
-        segment { mode: climb;   from: (41.262891, -8.68522, altitude: 69 m);  to: (42.0, -8.01, altitude: 9249 m); }
-        segment { mode: cruise;  from: (42.0, -8.01, altitude: 9249 m); to: (41.0, -4.3, altitude: 9249 m); }
-        segment { mode: descend; from: (41.0, -4.3,  altitude: 9249 m); to: (40.4895, -3.5643, altitude: 610 m); }
-}
+    }
 
     leg {
-        departure {
-            airport: LIS;
-            date:    2026-05-05;
-            time:    11:00;
+        departure { airport: LIS; date: 2026-05-05; time: 11:00; }
+        arrival   { airport: BCN; date: 2026-05-05; time: 13:00; }
+        fuel { quantity: 38000 kg; }
+        segment {
+            from: (38.7747, -9.1302, altitude: 114 m);
+            to:   (39.5, -7.0, altitude: 9249 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 90; speed: 12 m/s; }
+            mode: climb;
         }
-        arrival {
-            airport: BCN;
-            date:    2026-05-05;
-            time:    13:00;
+        segment {
+            from: (39.5, -7.0, altitude: 9249 m);
+            to:   (40.5, 0.0, altitude: 9249 m);
+            altslot [ min: 9000 m, max: 9500 m, width: 50 m ];
+            wind { direction: 90; speed: 15 m/s; }
+            mode: cruise;
         }
-        fuel {
-            quantity: 38000 kg;
+        segment {
+            from: (40.5, 0.0, altitude: 9249 m);
+            to:   (41.2974, 2.0833, altitude: 4 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 90; speed: 10 m/s; }
+            mode: descend;
         }
-        segment { mode: climb;   from: (38.7747, -9.1302, altitude: 114 m); to: (39.5, -7.0, altitude: 9249 m); }
-        segment { mode: cruise;  from: (39.5, -7.0, altitude: 9249 m); to: (41.0, 2.0, altitude: 9249 m); }
-        segment { mode: descend; from: (41.0, 2.0,  altitude: 9249 m); to: (41.2974, 2.0833, altitude: 4 m); }
-}
+    }
 }

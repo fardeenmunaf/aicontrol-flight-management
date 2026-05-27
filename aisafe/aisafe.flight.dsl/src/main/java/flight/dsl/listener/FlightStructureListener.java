@@ -15,7 +15,7 @@ public class FlightStructureListener extends FlightDSLBaseListener {
     @Override
     public void enterFlightPlan(final FlightDSLParser.FlightPlanContext ctx) {
         summary.incrementFlightPlanCount();
-        summary.addFlightDesignator(ctx.ID(0).getText());
+        summary.addFlightDesignator(ctx.FLIGHT_DESIGNATOR().getText());
     }
 
     @Override
@@ -43,4 +43,3 @@ public class FlightStructureListener extends FlightDSLBaseListener {
         summary.incrementProfileCount();
     }
 }
-

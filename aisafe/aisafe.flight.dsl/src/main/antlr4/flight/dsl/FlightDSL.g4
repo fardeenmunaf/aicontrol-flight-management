@@ -7,12 +7,21 @@ start
     ;
 
 flightPlan
-    : FLIGHT ID LBRACE
+    : FLIGHT FLIGHT_DESIGNATOR LBRACE
         TYPE COLON flightType SEMI
-        AIRCRAFT COLON ID SEMI
-        ROUTE COLON ID FROM airportCode TO airportCode SEMI
+        AIRCRAFT COLON aircraftId SEMI
+        ROUTE COLON routeRef FROM airportCode TO airportCode SEMI
         leg+
       RBRACE
+    ;
+
+aircraftId
+    : ID
+    ;
+
+routeRef
+    : ID
+    | FLIGHT_DESIGNATOR
     ;
 
 flightType
@@ -82,25 +91,46 @@ descendEntry
 
 climbSegment
     : SEGMENT LBRACE
-        MODE COLON CLIMB SEMI
         FROM COLON coord SEMI
         TO COLON coord SEMI
+        altitudeSlot+
+        wind
+        MODE COLON CLIMB SEMI
       RBRACE
     ;
 
 cruiseSegment
     : SEGMENT LBRACE
-        MODE COLON CRUISE SEMI
         FROM COLON coord SEMI
         TO COLON coord SEMI
+        altitudeSlot+
+        wind
+        MODE COLON CRUISE SEMI
       RBRACE
     ;
 
 descendSegment
     : SEGMENT LBRACE
-        MODE COLON DESCEND SEMI
         FROM COLON coord SEMI
         TO COLON coord SEMI
+        altitudeSlot+
+        wind
+        MODE COLON DESCEND SEMI
+      RBRACE
+    ;
+
+altitudeSlot
+    : ALTSLOT LBRACKET
+        MIN COLON positiveNumber unit COMMA
+        MAX COLON positiveNumber unit COMMA
+        WIDTH COLON positiveNumber unit
+      RBRACKET SEMI
+    ;
+
+wind
+    : WIND LBRACE
+        DIRECTION COLON positiveNumber SEMI
+        SPEED COLON positiveNumber MS SEMI
       RBRACE
     ;
 
@@ -159,6 +189,12 @@ TO        : [Tt][Oo] ;
 REGULAR   : [Rr][Ee][Gg][Uu][Ll][Aa][Rr] ;
 CHARTER   : [Cc][Hh][Aa][Rr][Tt][Ee][Rr] ;
 AIRCRAFT  : [Aa][Ii][Rr][Cc][Rr][Aa][Ff][Tt] ;
+ALTSLOT   : [Aa][Ll][Tt][Ss][Ll][Oo][Tt] ;
+WIND      : [Ww][Ii][Nn][Dd] ;
+DIRECTION : [Dd][Ii][Rr][Ee][Cc][Tt][Ii][Oo][Nn] ;
+MIN       : [Mm][Ii][Nn] ;
+MAX       : [Mm][Aa][Xx] ;
+WIDTH     : [Ww][Ii][Dd][Tt][Hh] ;
 
 // Units
 
@@ -169,8 +205,11 @@ FT  : 'ft' ;
 MS  : 'm/s' ;
 KTS : 'kts' ;
 
-// Airport codes and identifiers
+// Flight designator: 2 uppercase letters + 1-4 digits + optional 1 uppercase letter suffix
+// e.g. TP1234, BA100A, FR23
+FLIGHT_DESIGNATOR : [A-Z][A-Z][0-9][0-9]?[0-9]?[0-9]?[A-Z]? ;
 
+// Airport codes and identifiers
 ICAO_CODE : [A-Z][A-Z][A-Z][A-Z] ;
 IATA_CODE : [A-Z][A-Z][A-Z] ;
 ID        : [A-Za-z][A-Za-z0-9]* ;

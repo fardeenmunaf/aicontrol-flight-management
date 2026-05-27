@@ -111,7 +111,7 @@ public class CreateFlightPlanUI extends AbstractUI {
         return sb.toString();
     }
 
-    /** leg: departure arrival fuel profile? segment+ */
+    /** leg: departure arrival fuel profile? climbSegment cruiseSegment descendSegment */
     private void buildLeg(final StringBuilder sb) {
         buildDeparture(sb);
         buildArrival(sb);
@@ -121,18 +121,15 @@ public class CreateFlightPlanUI extends AbstractUI {
         }
 
         System.out.println();
-        System.out.println("  -- Segment 1: CLIMB --");
-        System.out.println("  (Enter the coordinates for the climb phase)");
+        System.out.println("  -- Segment 1: Climb --");
         buildSegment(sb, "climb");
 
         System.out.println();
-        System.out.println("  -- Segment 2: CRUISE --");
-        System.out.println("  (Enter the coordinates for the cruise phase)");
+        System.out.println("  -- Segment 2: Cruise --");
         buildSegment(sb, "cruise");
 
         System.out.println();
-        System.out.println("  -- Segment 3: DESCEND --");
-        System.out.println("  (Enter the coordinates for the descend phase)");
+        System.out.println("  -- Segment 3: Descend --");
         buildSegment(sb, "descend");
     }
 
@@ -209,30 +206,53 @@ public class CreateFlightPlanUI extends AbstractUI {
     }
 
     /**
-     * segment: SEGMENT LBRACE mode from-coord to-coord RBRACE
-     * coord: LPAREN signedNumber COMMA signedNumber COMMA ALTITUDE COLON
-     * positiveNumber unit RPAREN
+     * segment: SEGMENT LBRACE from to altslot+ wind mode RBRACE
      */
     private void buildSegment(final StringBuilder sb, final String mode) {
         System.out.println("    From coordinate:");
-        final String fromLat = prompt("      Latitude", "41.262891", "Signed decimal, e.g. 41.262891  or  -8.68522");
+        final String fromLat = prompt("      Latitude", "41.262891", "Signed decimal, e.g. 41.262891");
         final String fromLon = prompt("      Longitude", "-8.68522", "Signed decimal");
         final String fromAlt = prompt("      Altitude value (>= 0)", "69", "Positive number, e.g. 69");
         final String fromAltUnit = promptChoice("      Altitude unit", new String[] { "m", "ft" }, "m");
 
         System.out.println("    To coordinate (must differ from From):");
-        final String toLat = prompt("      Latitude", "42.0", "Signed decimal");
-        final String toLon = prompt("      Longitude", "-8.01", "Signed decimal");
-        final String toAlt = prompt("      Altitude value (>= 0)", "9249", "Positive number");
+        final String toLat = prompt("      Latitude", "40.4895", "Signed decimal");
+        final String toLon = prompt("      Longitude", "-3.5643", "Signed decimal");
+        final String toAlt = prompt("      Altitude value (>= 0)", "610", "Positive number");
         final String toAltUnit = promptChoice("      Altitude unit", new String[] { "m", "ft" }, "m");
 
         sb.append("        segment {\n")
-                .append("            mode: ").append(mode).append(";\n")
                 .append("            from: (").append(fromLat).append(", ").append(fromLon)
                 .append(", altitude: ").append(fromAlt).append(" ").append(fromAltUnit).append(");\n")
                 .append("            to:   (").append(toLat).append(", ").append(toLon)
-                .append(", altitude: ").append(toAlt).append(" ").append(toAltUnit).append(");\n")
-                .append("        }\n");
+                .append(", altitude: ").append(toAlt).append(" ").append(toAltUnit).append(");\n");
+
+        // Altitude slots (at least one required)
+        int slotNum = 1;
+        do {
+            System.out.println("    Altitude slot " + slotNum + ":");
+            final String minAlt = prompt("      Min altitude (>= 0)", "0", "e.g. 0");
+            final String minUnit = promptChoice("      Min unit", new String[] { "m", "ft" }, "m");
+            final String maxAlt = prompt("      Max altitude (> min)", "9249", "e.g. 9249");
+            final String maxUnit = promptChoice("      Max unit", new String[] { "m", "ft" }, "m");
+            final String width = prompt("      Width (> 0)", "50", "Corridor width, e.g. 50");
+            final String widthUnit = promptChoice("      Width unit", new String[] { "m", "ft" }, "m");
+            sb.append("            altslot [ min: ").append(minAlt).append(" ").append(minUnit)
+                    .append(", max: ").append(maxAlt).append(" ").append(maxUnit)
+                    .append(", width: ").append(width).append(" ").append(widthUnit).append(" ];\n");
+            slotNum++;
+        } while (confirm("    Add another altitude slot?", false));
+
+        // Wind (mandatory)
+        System.out.println("    Wind:");
+        final String windDir = prompt("      Direction (0-359 degrees)", "270", "Angle relative to North, e.g. 270 = West");
+        final String windSpd = prompt("      Speed (m/s, > 0)", "15", "e.g. 15");
+        sb.append("            wind { direction: ").append(windDir)
+                .append("; speed: ").append(windSpd).append(" m/s; }\n");
+
+        sb.append("            mode: ").append(mode).append(";\n");
+
+        sb.append("        }\n");
     }
 
     // -------------------------------------------------------------------------
