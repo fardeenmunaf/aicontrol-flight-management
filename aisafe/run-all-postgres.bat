@@ -16,8 +16,8 @@ set "MISSING="
 for %%V in (AISAFE_PERSISTENCE_UNIT AISAFE_DB_DIALECT AISAFE_DB_DRIVER AISAFE_DB_URL AISAFE_DB_USERNAME AISAFE_DB_PASSWORD) do (
   if "!%%V!"=="" set "MISSING=!MISSING! %%V"
 )
-if not "%MISSING%"=="" (
-  echo Missing required environment variables:%MISSING%
+if not "!MISSING!"=="" (
+  echo Missing required environment variables:!MISSING!
   echo Create a .env file in %SCRIPT_DIR% or export the variables before running.
   exit /b 1
 )
@@ -32,10 +32,6 @@ if /i "%AISAFE_DRY_RUN%"=="1" (
   echo AISAFE_DB_PASSWORD=***
   exit /b 0
 )
-
-echo Running Bootstrap...
-call "%~dp0run-bootstrap.bat"
-pause
 
 :menu
 cls

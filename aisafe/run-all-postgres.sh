@@ -71,8 +71,4 @@ show_menu() {
   done
 }
 
-echo "Running Bootstrap..."
-bash "$SCRIPT_DIR/run-bootstrap.sh"
-read -r -p "Press Enter to continue..." _
-
 show_menu
