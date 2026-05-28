@@ -63,8 +63,8 @@ public class JpaAircraftRepository
         if (registrationNumber == null || registrationNumber.isBlank()) {
             return Optional.empty();
         }
-        final var result = match("e.aircraftId = :regNum",
-                Map.of("regNum", AircraftId.valueOf(registrationNumber)));
+        final var result = match("e.registrationNumber = :regNum",
+                Map.of("regNum", registrationNumber));
         return result.stream().findFirst();
     }
 

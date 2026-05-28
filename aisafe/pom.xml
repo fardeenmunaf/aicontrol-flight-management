@@ -36,6 +36,7 @@
         <module>aisafe.app.backoffice.console</module>
         <module>aisafe.app.bootstrap</module>
         <module>aisafe.app.weather.client</module>
+        <module>aisafe.app.javafx</module>
         <module>aisafe.core</module>
         <module>aisafe.infrastructure.application</module>
         <module>aisafe.persistence.impl</module>

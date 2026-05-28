@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  html { height: 100%; }
+  body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #111; }
+  #map { width: 100%; height: 100%; }
+  .airport-label { background: transparent; border: none; color: #fff; font-size: 11px;
+                   font-family: sans-serif; font-weight: bold;
+                   text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+  .flight-label  { background: transparent; border: none; color: #64b5f6; font-size: 10px;
+                   font-family: monospace; font-weight: bold;
+                   text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+  .legend { background: rgba(10,10,20,0.82); border-radius: 6px; padding: 8px 12px;
+            font-family: sans-serif; font-size: 11px; color: #e0e0e0;
+            line-height: 2; pointer-events: none; }
+  .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+                border: 2px solid rgba(255,255,255,0.6); margin-right: 6px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+// JavaFX WebView's WebKit misrenders CSS 3D transforms used by Leaflet for tile positioning.
+// Disabling any3d forces Leaflet to use left/top pixel offsets instead of translate3d.
+L.Browser.any3d = false;
+
+var map = L.map('map', { zoomControl: true, attributionControl: false })
+          .setView([48.0, 10.0], 4);
+
+window.addEventListener('resize', function() { map.invalidateSize(); });
+
+// Esri World Imagery — satellite/aerial tiles, no API key required
+L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { maxZoom: 18 }
+).addTo(map);
+
+var Legend = L.Control.extend({
+  options: { position: 'bottomleft' },
+  onAdd: function() {
+    var div = L.DomUtil.create('div', 'legend');
+    div.innerHTML =
+      '<b style="display:block;margin-bottom:2px;">Flight phases</b>' +
+      '<span class="legend-dot" style="background:#66bb6a;"></span>Climb<br/>' +
+      '<span class="legend-dot" style="background:#42a5f5;"></span>Cruise<br/>' +
+      '<span class="legend-dot" style="background:#ffa726;"></span>Descend<br/>' +
+      '<span class="legend-dot" style="background:#e94560;box-shadow:0 0 6px #e94560;"></span>Violation';
+    return div;
+  }
+});
+new Legend().addTo(map);
+
+var airportPins    = {};
+var flightMarkers  = {};
+var flightPaths    = {};
+var violatedFlights = {};
+var prevPositions  = {};
+
+var airportIcon = L.divIcon({
+  html: '<div style="width:10px;height:10px;border-radius:50%;background:#1565c0;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,0.6);"></div>',
+  className: '', iconAnchor: [5,5]
+});
+
+function phaseColor(phase) {
+  if (phase === 'CLIMB')   return '#66bb6a';
+  if (phase === 'CRUISE')  return '#42a5f5';
+  if (phase === 'DESCEND') return '#ffa726';
+  return '#9e9e9e';
+}
+
+function bearing(lat1, lon1, lat2, lon2) {
+  var toRad = Math.PI / 180;
+  var dLon  = (lon2 - lon1) * toRad;
+  var y = Math.sin(dLon) * Math.cos(lat2 * toRad);
+  var x = Math.cos(lat1 * toRad) * Math.sin(lat2 * toRad)
+        - Math.sin(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.cos(dLon);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+function planeSvg(color, deg) {
+  // SVG airplane pointing up (north = 0°), rotated by deg
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"' +
+         ' style="transform:rotate(' + deg + 'deg);filter:drop-shadow(0 1px 3px rgba(0,0,0,0.7));">' +
+         '<path fill="' + color + '" d="M21,16l-9-4.94V4a2,2,0,0,0-4,0v7.06L-1,16l1,2,8-2.5V19l-2,1.5V22l3-1,3,1V20.5L10,19V15.5l8,2.5Z"/>' +
+         '</svg>';
+}
+
+function flightIcon(callsign, phase, violated, deg) {
+  var color = violated ? '#e94560' : phaseColor(phase);
+  var shadow = violated ? 'filter:drop-shadow(0 0 6px #e94560);' : '';
+  return L.divIcon({
+    html: '<div style="' + shadow + '">' + planeSvg(color, deg) + '</div>',
+    className: '', iconAnchor: [11, 11]
+  });
+}
+
+function addPin(iata, name, lat, lon) {
+  var marker = L.marker([lat, lon], { icon: airportIcon }).addTo(map);
+  marker.bindPopup('<b>' + iata + '</b><br/>' + name);
+  marker.on('click', function() {
+    if (window.bridge) bridge.onPinClicked(iata);
+  });
+  var label = L.divIcon({
+    html: '<span class="airport-label">' + iata + '</span>',
+    className: '', iconAnchor: [-4, 8]
+  });
+  L.marker([lat, lon], { icon: label, interactive: false }).addTo(map);
+  airportPins[iata] = marker;
+}
+
+function addFlight(callsign, lat, lon, phase) {
+  if (flightMarkers[callsign]) return;
+  var marker = L.marker([lat, lon], { icon: flightIcon(callsign, phase, false, 0) }).addTo(map);
+  var label  = L.divIcon({
+    html: '<span class="flight-label">' + callsign + '</span>',
+    className: '', iconAnchor: [-6, 6]
+  });
+  var lblMarker = L.marker([lat, lon], { icon: label, interactive: false }).addTo(map);
+  flightMarkers[callsign] = { dot: marker, lbl: lblMarker };
+  flightPaths[callsign]   = [[lat, lon]];
+  prevPositions[callsign] = [lat, lon];
+}
+
+function moveFlight(callsign, lat, lon, phase) {
+  if (!flightMarkers[callsign]) { addFlight(callsign, lat, lon, phase); return; }
+  var violated = !!violatedFlights[callsign];
+  var prev = prevPositions[callsign] || [lat, lon];
+  var deg  = bearing(prev[0], prev[1], lat, lon);
+  var fm = flightMarkers[callsign];
+  fm.dot.setLatLng([lat, lon]);
+  fm.dot.setIcon(flightIcon(callsign, phase, violated, deg));
+  fm.lbl.setLatLng([lat, lon]);
+  prevPositions[callsign] = [lat, lon];
+  flightPaths[callsign].push([lat, lon]);
+  if (flightPaths[callsign].polyline) map.removeLayer(flightPaths[callsign].polyline);
+  var line = L.polyline(flightPaths[callsign], {
+    color: phaseColor(phase), weight: 1.5, opacity: 0.65
+  }).addTo(map);
+  flightPaths[callsign].polyline = line;
+}
+
+function flagViolation(callsign) {
+  violatedFlights[callsign] = true;
+  if (flightMarkers[callsign]) {
+    flightMarkers[callsign].dot.setIcon(flightIcon(callsign, 'CRUISE', true, 0));
+  }
+}
+
+function clearFlights() {
+  Object.keys(flightMarkers).forEach(function(cs) {
+    map.removeLayer(flightMarkers[cs].dot);
+    map.removeLayer(flightMarkers[cs].lbl);
+  });
+  Object.keys(flightPaths).forEach(function(cs) {
+    if (flightPaths[cs].polyline) map.removeLayer(flightPaths[cs].polyline);
+  });
+  flightMarkers   = {};
+  flightPaths     = {};
+  violatedFlights = {};
+  prevPositions   = {};
+}
+
+function fitAirports() {
+  map.invalidateSize(true);
+  var keys = Object.keys(airportPins);
+  if (keys.length === 0) return;
+  var latlngs = keys.map(function(k) { return airportPins[k].getLatLng(); });
+  map.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40] });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.enginemodel.EngineModelsUI"
+      styleClass="root" spacing="0">
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
+        <Label text="Engine Models" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Register Engine Model" styleClass="btn-primary" onAction="#onRegister"/>
+    </HBox>
+    <Label fx:id="statusLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
+    <TableView fx:id="table" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
+        <columns>
+            <TableColumn fx:id="colName"   text="Name"    prefWidth="180"/>
+            <TableColumn fx:id="colType"   text="Type"    prefWidth="120"/>
+            <TableColumn fx:id="colMaker"  text="Maker"   prefWidth="220"/>
+            <TableColumn fx:id="colPower"  text="Power"   prefWidth="100"/>
+            <TableColumn fx:id="colAction" text="Action"  prefWidth="90"/>
+        </columns>
+    </TableView>
+    <VBox fx:id="registerForm" managed="false" visible="false"
+          styleClass="form-panel">
+        <Label text="Register Engine Model" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Name"/>
+                <TextField fx:id="fName" promptText="e.g. CFM56-5B"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Engine Type"/>
+                <ComboBox fx:id="fType" maxWidth="Infinity"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Power (kW)"/>
+                <TextField fx:id="fPower" promptText="e.g. 22000"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Efficiency (TSFC)"/>
+                <TextField fx:id="fEfficiency" promptText="e.g. 0.03"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="TSFC"/>
+                <TextField fx:id="fTSFC" promptText="e.g. 0.028"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Thrust SL Stopped (N)"/>
+                <TextField fx:id="fThrustSLS" promptText="e.g. 120000"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Thrust SL Cruise (N)"/>
+                <TextField fx:id="fThrustSLC" promptText="e.g. 95000"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Maker Name"/>
+                <TextField fx:id="fMakerName" promptText="e.g. CFM International"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Maker Country"/>
+                <TextField fx:id="fMakerCountry" promptText="e.g. USA"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Fuel Type"/>
+                <ComboBox fx:id="fFuelType" maxWidth="Infinity"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Fuel Density (kg/L)"/>
+                <TextField fx:id="fFuelDensity" promptText="e.g. 0.8"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Fuel Specific Energy (MJ/kg)"/>
+                <TextField fx:id="fFuelSpecificEnergy" promptText="e.g. 43.2"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <Button text="Save" styleClass="btn-primary" onAction="#onSaveRegister"/>
+            <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelRegister"/>
+        </HBox>
+        <Label fx:id="formError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+</VBox>
