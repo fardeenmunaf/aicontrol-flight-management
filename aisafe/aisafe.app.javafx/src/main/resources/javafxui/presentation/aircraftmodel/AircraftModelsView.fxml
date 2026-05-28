@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.aircraftmodel.AircraftModelsUI"
+      styleClass="root" spacing="0">
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="12">
+        <Label text="Aircraft Models" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Register" styleClass="btn-primary" onAction="#onRegister"/>
+        <Button text="Add Engine" styleClass="btn-primary" onAction="#onAddEngine"/>
+        <Button text="Remove Engine" styleClass="btn-danger" onAction="#onRemoveEngine"/>
+    </HBox>
+    <Label fx:id="statusLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
+    <TableView fx:id="table" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
+        <columns>
+            <TableColumn fx:id="colModel"   text="Model"        prefWidth="160"/>
+            <TableColumn fx:id="colMaker"   text="Maker"        prefWidth="180"/>
+            <TableColumn fx:id="colType"    text="Type"         prefWidth="100"/>
+            <TableColumn fx:id="colEngines" text="Engines"      prefWidth="240"/>
+            <TableColumn fx:id="colCruise"  text="Cruise Speed" prefWidth="110"/>
+            <TableColumn fx:id="colAction"  text="Action"       prefWidth="90"/>
+        </columns>
+    </TableView>
+
+    <!-- Register Form -->
+    <VBox fx:id="registerForm" managed="false" visible="false"
+          styleClass="form-panel">
+        <Label text="Register Aircraft Model" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Model Name"/>
+                <TextField fx:id="fModelName" promptText="e.g. A320-200"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Maker Name"/>
+                <TextField fx:id="fMakerName" promptText="e.g. Airbus"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Maker Country"/>
+                <TextField fx:id="fMakerCountry" promptText="e.g. France"/></VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Aircraft Type"/>
+                <ComboBox fx:id="fAircraftType" maxWidth="Infinity"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Number of Engines"/>
+                <TextField fx:id="fNumEngines" promptText="e.g. 2"/></VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Empty Weight (kg)"/>
+                <TextField fx:id="fEmptyWeight" promptText="e.g. 42000"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Max Take-Off Weight (kg)"/>
+                <TextField fx:id="fMaxTakeOff" promptText="e.g. 78000"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Max Zero Fuel Weight (kg)"/>
+                <TextField fx:id="fMaxZeroFuel" promptText="e.g. 62500"/></VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Max Fuel Capacity (kg)"/>
+                <TextField fx:id="fMaxFuel" promptText="e.g. 18000"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Service Ceiling (ft)"/>
+                <TextField fx:id="fServiceCeiling" promptText="e.g. 39800"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Cruise Speed (m/s)"/>
+                <TextField fx:id="fCruiseSpeed" promptText="e.g. 233"/></VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Wing Area (m²)"/>
+                <TextField fx:id="fWingArea" promptText="e.g. 122.6"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Wing Span (m)"/>
+                <TextField fx:id="fWingSpan" promptText="e.g. 34.1"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Drag Coefficient"/>
+                <TextField fx:id="fDragCoef" promptText="e.g. 0.024"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Lift Coefficient"/>
+                <TextField fx:id="fLiftCoef" promptText="e.g. 1.35"/></VBox>
+        </HBox>
+        <VBox spacing="4"><Label text="Engine Models (comma-separated names)"/>
+            <TextField fx:id="fEngineNames" promptText="e.g. CFM56-5B, CFM56-5B4"/></VBox>
+        <HBox spacing="12">
+            <Button text="Save" styleClass="btn-primary" onAction="#onSaveRegister"/>
+            <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelRegister"/>
+        </HBox>
+        <Label fx:id="registerError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+
+    <!-- Add Engine Form -->
+    <VBox fx:id="addEngineForm" managed="false" visible="false"
+          styleClass="form-panel">
+        <Label text="Add Engine Model to Aircraft" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Aircraft Model (with free slots)"/>
+                <ComboBox fx:id="addAircraftBox" maxWidth="Infinity"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Engine Model"/>
+                <ComboBox fx:id="addEngineBox" maxWidth="Infinity"/></VBox>
+        </HBox>
+        <HBox spacing="12">
+            <Button text="Add" styleClass="btn-primary" onAction="#onSaveAddEngine"/>
+            <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelAddEngine"/>
+        </HBox>
+        <Label fx:id="addEngineError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+
+    <!-- Remove Engine Form -->
+    <VBox fx:id="removeEngineForm" managed="false" visible="false"
+          styleClass="form-panel">
+        <Label text="Remove Engine Model from Aircraft" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Aircraft Model"/>
+                <ComboBox fx:id="removeAircraftBox" maxWidth="Infinity"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Engine Model to Remove"/>
+                <ComboBox fx:id="removeEngineBox" maxWidth="Infinity"/></VBox>
+        </HBox>
+        <HBox spacing="12">
+            <Button text="Remove" styleClass="btn-danger" onAction="#onSaveRemoveEngine"/>
+            <Button text="Cancel" styleClass="btn-primary" onAction="#onCancelRemoveEngine"/>
+        </HBox>
+        <Label fx:id="removeEngineError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+</VBox>

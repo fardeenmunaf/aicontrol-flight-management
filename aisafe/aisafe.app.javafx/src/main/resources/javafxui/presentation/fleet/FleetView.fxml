@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.fleet.FleetUI"
+      styleClass="root" spacing="0">
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
+        <Label text="Fleet" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Register Aircraft" styleClass="btn-primary" onAction="#onRegister"/>
+    </HBox>
+    <Label fx:id="messageLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
+    <TableView fx:id="fleetTable" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
+        <columns>
+            <TableColumn fx:id="colReg"     text="Registration"    prefWidth="130"/>
+            <TableColumn fx:id="colModel"   text="Model"           prefWidth="160"/>
+            <TableColumn fx:id="colStatus"  text="Status"          prefWidth="120"/>
+            <TableColumn fx:id="colCabin"   text="Cabin Config"    prefWidth="160"/>
+            <TableColumn fx:id="colCountry" text="Country"         prefWidth="120"/>
+            <TableColumn fx:id="colAction"  text="Action"          prefWidth="200"/>
+        </columns>
+    </TableView>
+    <VBox fx:id="registerForm" managed="false" visible="false"
+          styleClass="form-panel">
+        <Label text="Register New Aircraft" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Registration Number"/>
+                <TextField fx:id="fReg" promptText="e.g. CS-TKQ"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Country"/>
+                <TextField fx:id="fCountry" promptText="e.g. Portugal"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Crew Count"/>
+                <TextField fx:id="fCrew" promptText="e.g. 2"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Economy / Business / First Seats"/>
+                <HBox spacing="8">
+                    <TextField fx:id="fEcon" promptText="150" HBox.hgrow="ALWAYS"/>
+                    <TextField fx:id="fBiz"  promptText="20"  HBox.hgrow="ALWAYS"/>
+                    <TextField fx:id="fFirst" promptText="8"  HBox.hgrow="ALWAYS"/>
+                </HBox>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Aircraft Model (name)"/>
+                <TextField fx:id="fModel" promptText="e.g. A320-200"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Engine Model (name)"/>
+                <TextField fx:id="fEngine" promptText="e.g. CFM56-5B"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <Button text="Save" styleClass="btn-primary" onAction="#onSaveRegister"/>
+            <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelRegister"/>
+        </HBox>
+        <Label fx:id="formError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+</VBox>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.customercollaborator.CustomerCollaboratorsUI"
+      styleClass="root" spacing="0">
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
+        <Label text="Customer Collaborators" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Register Collaborator" styleClass="btn-primary" onAction="#onRegister"/>
+    </HBox>
+    <Label fx:id="statusLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
+    <TableView fx:id="table" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
+        <columns>
+            <TableColumn fx:id="colUser"     text="User"     prefWidth="160"/>
+            <TableColumn fx:id="colType"     text="Type"     prefWidth="140"/>
+            <TableColumn fx:id="colPosition" text="Position" prefWidth="120"/>
+            <TableColumn fx:id="colCompany"  text="Company"  prefWidth="120"/>
+            <TableColumn fx:id="colArea"     text="Area"     prefWidth="100"/>
+            <TableColumn fx:id="colActive"   text="Status"   prefWidth="80"/>
+            <TableColumn fx:id="colActions"  text="Actions"  prefWidth="150"/>
+        </columns>
+    </TableView>
+
+    <!-- Register Form -->
+    <VBox fx:id="registerForm" managed="false" visible="false"
+          styleClass="form-panel">
+        <Label text="Register Customer Collaborator" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Collaborator Type"/>
+                <ComboBox fx:id="fCollabType" maxWidth="Infinity"/></VBox>
+        </HBox>
+        <Label fx:id="companyLabel" text="Air Transport Company" managed="false" visible="false"/>
+        <ComboBox fx:id="fCompany" maxWidth="Infinity" managed="false" visible="false"/>
+        <Label fx:id="areaLabel" text="Air Control Area" managed="false" visible="false"/>
+        <ComboBox fx:id="fArea" maxWidth="Infinity" managed="false" visible="false"/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Email"/>
+                <TextField fx:id="fEmail" promptText="e.g. john@example.com"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Password (min. 8 chars)"/>
+                <TextField fx:id="fPassword" promptText="min 8 characters"/></VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Full Name"/>
+                <TextField fx:id="fName" promptText="e.g. John Smith"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Phone Number"/>
+                <TextField fx:id="fPhone" promptText="e.g. +351912345678"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="Position"/>
+                <TextField fx:id="fPosition" promptText="e.g. Operations Manager"/></VBox>
+        </HBox>
+        <HBox spacing="12">
+            <Button text="Save" styleClass="btn-primary" onAction="#onSaveRegister"/>
+            <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelRegister"/>
+        </HBox>
+        <Label fx:id="registerError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+
+    <!-- Update Form -->
+    <VBox fx:id="updateForm" managed="false" visible="false"
+          styleClass="form-panel">
+        <Label text="Update Collaborator Contact Info" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <Label fx:id="updateUserIdLabel" styleClass="status-label" text=""/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="New Email (leave blank to keep)"/>
+                <TextField fx:id="fNewEmail" promptText="new@example.com"/></VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS"><Label text="New Phone (leave blank to keep)"/>
+                <TextField fx:id="fNewPhone" promptText="+351912345678"/></VBox>
+        </HBox>
+        <HBox spacing="12">
+            <Button text="Save" styleClass="btn-primary" onAction="#onSaveUpdate"/>
+            <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelUpdate"/>
+        </HBox>
+        <Label fx:id="updateError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+</VBox>

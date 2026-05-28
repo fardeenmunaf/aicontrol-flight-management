@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.web.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.simulation.SimulationUI"
+      styleClass="root">
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="24">
+        <Label text="Simulation" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Label fx:id="stepLabel"       styleClass="status-label" text="Step: —"/>
+        <Label fx:id="activeLabel"     styleClass="status-label" text="Active: —"/>
+        <Label fx:id="violationLabel"  styleClass="status-label" text="Violations: —"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="runButton" text="Run Simulation" styleClass="btn-primary"
+                onAction="#onRunSimulation"/>
+    </HBox>
+    <HBox fx:id="violationBanner" styleClass="violation-banner" managed="false" visible="false" spacing="8">
+        <Label fx:id="violationText" styleClass="error-label" text=""/>
+    </HBox>
+    <WebView fx:id="mapView" VBox.vgrow="ALWAYS"/>
+</VBox>

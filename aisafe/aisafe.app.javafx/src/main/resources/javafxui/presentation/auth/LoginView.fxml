@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="javafxui.presentation.auth.LoginUI">
+
+    <!-- Background photo layer -->
+    <Region styleClass="login-bg"/>
+
+    <!-- Dark overlay -->
+    <Region styleClass="login-overlay"/>
+
+    <!-- Card layer -->
+    <VBox alignment="CENTER" spacing="0">
+        <VBox styleClass="login-card">
+            <!-- Logo circle -->
+            <Label text="✈" styleClass="logo-icon" style="-fx-padding:0;"/>
+            <!-- Title -->
+            <Label text="AISAFE" styleClass="app-title"/>
+            <!-- Subtitle -->
+            <Label text="Air Traffic Safety System" styleClass="home-subtitle"/>
+            <!-- Fields -->
+            <VBox spacing="8" style="-fx-padding: 12 0 0 0;">
+                <Label text="Email"/>
+                <TextField fx:id="emailField" promptText="user@example.com"/>
+                <Label text="Password"/>
+                <PasswordField fx:id="passwordField" promptText="Password"/>
+            </VBox>
+            <Label fx:id="errorLabel" styleClass="error-label" text="" wrapText="true"/>
+            <Button fx:id="loginButton" text="Sign In" styleClass="btn-primary"
+                    onAction="#onLogin" maxWidth="Infinity"/>
+            <Button text="Continue without login" styleClass="skip-link"
+                    onAction="#onSkip"/>
+        </VBox>
+    </VBox>
+</StackPane>
