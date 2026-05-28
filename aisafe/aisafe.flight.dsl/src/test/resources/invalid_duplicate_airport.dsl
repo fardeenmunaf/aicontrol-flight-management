@@ -6,40 +6,56 @@ flight TP9999 {
     route: XX001 from OPO to OPO;
 
     leg {
-        departure {
-            airport: OPO;
-            date:    2026-05-05;
-            time:    08:00;
+        departure { airport: OPO; date: 2026-05-05; time: 08:00; }
+        arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
+        fuel { quantity: 40200 kg; }
+        segment {
+            from: (41.262891, -8.68522, altitude: 69 m);
+            to:   (42.0, -8.01, altitude: 9249 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
+            mode: climb;
         }
-        arrival {
-            airport: MAD;
-            date:    2026-05-05;
-            time:    09:30;
+        segment {
+            from: (42.0, -8.01, altitude: 9249 m);
+            to:   (41.0, -4.3, altitude: 9249 m);
+            altslot [ min: 9000 m, max: 9500 m, width: 50 m ];
+            wind { direction: 270; speed: 20 m/s; }
+            mode: cruise;
         }
-        fuel {
-            quantity: 40200 kg;
+        segment {
+            from: (41.0, -4.3, altitude: 9249 m);
+            to:   (40.4895, -3.5643, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 10 m/s; }
+            mode: descend;
         }
-        segment { mode: climb;   from: (41.262891, -8.68522, altitude: 69 m);  to: (42.0, -8.01, altitude: 9249 m); }
-        segment { mode: cruise;  from: (42.0, -8.01, altitude: 9249 m); to: (41.0, -4.3, altitude: 9249 m); }
-        segment { mode: descend; from: (41.0, -4.3,  altitude: 9249 m); to: (40.4895, -3.5643, altitude: 610 m); }
-}
+    }
 
     leg {
-        departure {
-            airport: MAD;
-            date:    2026-05-05;
-            time:    11:00;
+        departure { airport: MAD; date: 2026-05-05; time: 11:00; }
+        arrival   { airport: OPO; date: 2026-05-05; time: 12:30; }
+        fuel { quantity: 38000 kg; }
+        segment {
+            from: (40.4895, -3.5643, altitude: 610 m);
+            to:   (41.0, -4.3, altitude: 9249 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 90; speed: 12 m/s; }
+            mode: climb;
         }
-        arrival {
-            airport: OPO;
-            date:    2026-05-05;
-            time:    12:30;
+        segment {
+            from: (41.0, -4.3, altitude: 9249 m);
+            to:   (42.0, -8.01, altitude: 9249 m);
+            altslot [ min: 9000 m, max: 9500 m, width: 50 m ];
+            wind { direction: 90; speed: 15 m/s; }
+            mode: cruise;
         }
-        fuel {
-            quantity: 38000 kg;
+        segment {
+            from: (42.0, -8.01, altitude: 9249 m);
+            to:   (41.262891, -8.68522, altitude: 69 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 90; speed: 10 m/s; }
+            mode: descend;
         }
-        segment { mode: climb;   from: (40.4895, -3.5643, altitude: 610 m); to: (41.5, -6.0, altitude: 9249 m); }
-        segment { mode: cruise;  from: (41.5, -6.0, altitude: 9249 m); to: (41.8, -8.0, altitude: 9249 m); }
-        segment { mode: descend; from: (41.8, -8.0, altitude: 9249 m); to: (41.262891, -8.68522, altitude: 69 m); }
-}
+    }
 }

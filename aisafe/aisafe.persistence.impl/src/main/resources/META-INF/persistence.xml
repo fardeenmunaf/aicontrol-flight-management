@@ -82,10 +82,11 @@
         <class>eapli.framework.infrastructure.authz.domain.model.RoleAssignment</class>
 
         <properties>
+            <!-- Runtime overrides via env/system properties (see PersistenceSettings). -->
             <property name="jakarta.persistence.jdbc.driver"   value="org.postgresql.Driver"/>
             <property name="jakarta.persistence.jdbc.url"      value="jdbc:postgresql://localhost:5432/aisafe"/>
-            <property name="jakarta.persistence.jdbc.user"     value="postgres"/>
-            <property name="jakarta.persistence.jdbc.password" value="postgres"/>
+            <property name="jakarta.persistence.jdbc.user"     value=""/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
 
             <property name="hibernate.dialect"                 value="org.hibernate.dialect.PostgreSQLDialect"/>
             <property name="hibernate.hbm2ddl.auto"            value="update"/>

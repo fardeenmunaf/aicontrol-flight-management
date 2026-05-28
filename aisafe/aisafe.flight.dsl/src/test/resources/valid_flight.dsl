@@ -29,21 +29,27 @@ flight TP1234 {
         }
 
         segment {
-            mode: climb;
             from: (41.262891, -8.68522, altitude: 69 m);
             to:   (42.0, -8.01, altitude: 9249 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 270; speed: 15 m/s; }
+            mode: climb;
         }
 
         segment {
-            mode: cruise;
             from: (42.0, -8.01, altitude: 9249 m);
             to:   (41.0, -4.3, altitude: 9249 m);
+            altslot [ min: 9000 m, max: 9500 m, width: 80 m ];
+            wind { direction: 260; speed: 20 m/s; }
+            mode: cruise;
         }
 
         segment {
-            mode: descend;
             from: (41.0, -4.3, altitude: 9249 m);
             to:   (40.4895, -3.5643, altitude: 610 m);
+            altslot [ min: 0 m, max: 9249 m, width: 50 m ];
+            wind { direction: 250; speed: 10 m/s; }
+            mode: descend;
         }
     }
 }
