@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.web.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.airports.AirportsMapUI"
+      styleClass="root">
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
+        <Label text="Airports" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Label fx:id="statusLabel" styleClass="status-label" text="Loading airports..."/>
+    </HBox>
+    <WebView fx:id="mapView" VBox.vgrow="ALWAYS"/>
+</VBox>

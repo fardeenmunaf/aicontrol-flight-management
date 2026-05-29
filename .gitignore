@@ -5,6 +5,9 @@
 # VSCODE
 .vscode/
 
+# OTHER SETTINGS
+.*
+
 # MAVEN (NFR05) - CRÍTICO
 target/
 /pom.xml.tag

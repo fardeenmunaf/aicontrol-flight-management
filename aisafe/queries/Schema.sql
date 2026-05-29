@@ -1,13 +1,14 @@
 -- ============================================================
--- AISafe Database Schema â€” JPA-aligned names
+-- AISafe Database Schema
 -- PostgreSQL
 -- ============================================================
 
+DROP TABLE IF EXISTS CustomerCollaborator CASCADE;
 DROP TABLE IF EXISTS SafetyViolation_recordedVectors CASCADE;
-DROP TABLE IF EXISTS SafetyViolation_involvedAircraft CASCADE;
-DROP TABLE IF EXISTS Simulation_capturedWeatherData CASCADE;
-DROP TABLE IF EXISTS Simulation_trackedFlights CASCADE;
-DROP TABLE IF EXISTS Pilot_certifiedAircraftModels CASCADE;
+DROP TABLE IF EXISTS SafetyViolation_Aircraft CASCADE;
+DROP TABLE IF EXISTS Simulation_WeatherData CASCADE;
+DROP TABLE IF EXISTS Simulation_Flight CASCADE;
+DROP TABLE IF EXISTS Pilot_AircraftModel CASCADE;
 DROP TABLE IF EXISTS aircraftmodel_enginemodel CASCADE;
 DROP TABLE IF EXISTS AltitudeSlot CASCADE;
 DROP TABLE IF EXISTS Segment CASCADE;
@@ -35,12 +36,20 @@ DROP TABLE IF EXISTS T_SYSTEMUSER CASCADE;
 DROP TABLE IF EXISTS user_roles CASCADE;
 DROP TABLE IF EXISTS AppUser CASCADE;
 
+DROP SEQUENCE IF EXISTS T_ROLESET_SEQ CASCADE;
+DROP SEQUENCE IF EXISTS T_ROLEASSIGNMENT_SEQ CASCADE;
+DROP SEQUENCE IF EXISTS AircraftPosition_SEQ CASCADE;
+DROP SEQUENCE IF EXISTS SafetyViolation_SEQ CASCADE;
+DROP SEQUENCE IF EXISTS FlightLeg_SEQ CASCADE;
+DROP SEQUENCE IF EXISTS Segment_SEQ CASCADE;
+DROP SEQUENCE IF EXISTS AltitudeSlot_SEQ CASCADE;
+
 -- ============================================================
 -- IDENTITY & ACCESS
 -- ============================================================
 
 CREATE TABLE AppUser (
-                         value                         VARCHAR(255) PRIMARY KEY,
+                         user_id                       VARCHAR(255) PRIMARY KEY,
                          email                         VARCHAR(255),
                          name                          VARCHAR(255),
                          phoneNumber                   VARCHAR(255),
@@ -50,7 +59,7 @@ CREATE TABLE AppUser (
 );
 
 CREATE TABLE user_roles (
-                            user_id VARCHAR(255) NOT NULL REFERENCES AppUser(value),
+                            user_id VARCHAR(255) NOT NULL REFERENCES AppUser(user_id),
                             roles   VARCHAR(255) NOT NULL,
                             PRIMARY KEY (user_id, roles)
 );
@@ -60,10 +69,10 @@ CREATE TABLE T_ROLESET (
 );
 
 CREATE TABLE T_ROLEASSIGNMENT (
-                                  pk          BIGINT PRIMARY KEY,
-                                  assignedOn  DATE,
-                                  expired     BOOLEAN NOT NULL,
-                                  roleName    VARCHAR(255),
+                                  pk           BIGINT PRIMARY KEY,
+                                  assignedOn   DATE,
+                                  expired      BOOLEAN NOT NULL,
+                                  roleName     VARCHAR(255),
                                   unassignedOn DATE
 );
 
@@ -89,38 +98,43 @@ CREATE TABLE T_SYSTEMUSER (
 
 CREATE SEQUENCE T_ROLESET_SEQ START WITH 1 INCREMENT BY 50;
 CREATE SEQUENCE T_ROLEASSIGNMENT_SEQ START WITH 1 INCREMENT BY 50;
+CREATE SEQUENCE AircraftPosition_SEQ START WITH 1 INCREMENT BY 50;
+CREATE SEQUENCE SafetyViolation_SEQ START WITH 1 INCREMENT BY 50;
+CREATE SEQUENCE FlightLeg_SEQ START WITH 1 INCREMENT BY 50;
+CREATE SEQUENCE Segment_SEQ START WITH 1 INCREMENT BY 50;
+CREATE SEQUENCE AltitudeSlot_SEQ START WITH 1 INCREMENT BY 50;
 
 -- ============================================================
 -- TOPOGRAPHY
 -- ============================================================
 
 CREATE TABLE AirControlArea (
-    value                      VARCHAR(255) PRIMARY KEY,
-    areaCode                   VARCHAR(255) NOT NULL,
-    minimumRequiredArrivalFuel DOUBLE PRECISION NOT NULL,
-    geographicBoundaries       TEXT NOT NULL,
-    version                    BIGINT
+                                air_control_area_id        VARCHAR(255) PRIMARY KEY,
+                                areaCode                   VARCHAR(255) NOT NULL,
+                                minimumRequiredArrivalFuel DOUBLE PRECISION NOT NULL,
+                                geographicBoundaries       TEXT NOT NULL,
+                                version                    BIGINT
 );
 
 CREATE TABLE Airport (
-    airport_id                          VARCHAR(255) PRIMARY KEY,
-    name                                VARCHAR(255) NOT NULL,
-    town                                VARCHAR(255) NOT NULL,
-    country                             VARCHAR(255) NOT NULL,
-    iataCode                            VARCHAR(255) NOT NULL,
-    icaoCode                            VARCHAR(255) NOT NULL,
-    elevation                           DOUBLE PRECISION NOT NULL,
-    coordinates_latitude                DOUBLE PRECISION NOT NULL,
-    coordinates_longitude               DOUBLE PRECISION NOT NULL,
-    airControlArea_value                VARCHAR(255) NOT NULL REFERENCES AirControlArea(value),
-    version                             BIGINT
+                         airport_id                         VARCHAR(255) PRIMARY KEY,
+                         name                               VARCHAR(255) NOT NULL,
+                         town                               VARCHAR(255) NOT NULL,
+                         country                            VARCHAR(255) NOT NULL,
+                         iataCode                           VARCHAR(255) NOT NULL,
+                         icaoCode                           VARCHAR(255) NOT NULL,
+                         elevation                          DOUBLE PRECISION NOT NULL,
+                         latitude                           DOUBLE PRECISION NOT NULL,
+                         longitude                          DOUBLE PRECISION NOT NULL,
+                         airControlArea_air_control_area_id VARCHAR(255) NOT NULL REFERENCES AirControlArea(air_control_area_id),
+                         version                            BIGINT
 );
 
 CREATE TABLE Node (
-                      nodeId_value          VARCHAR(255) PRIMARY KEY,
+                      node_id               VARCHAR(255) PRIMARY KEY,
                       designation           VARCHAR(255) NOT NULL,
-                      coordinates_latitude  DOUBLE PRECISION NOT NULL,
-                      coordinates_longitude DOUBLE PRECISION NOT NULL,
+                      latitude              DOUBLE PRECISION NOT NULL,
+                      longitude             DOUBLE PRECISION NOT NULL,
                       version               BIGINT
 );
 
@@ -129,20 +143,20 @@ CREATE TABLE Node (
 -- ============================================================
 
 CREATE TABLE EngineModel (
-                             engine_model_id                     VARCHAR(255) PRIMARY KEY,
-                             name                                VARCHAR(255) NOT NULL,
-                             type                                VARCHAR(255),
-                             power                               DOUBLE PRECISION,
-                             efficiency                          DOUBLE PRECISION,
-                             thrustSeaLevelStopped               DOUBLE PRECISION,
-                             thrustSeaLevelCruise                DOUBLE PRECISION,
-                             thrustSpecificFuelConsumption       DOUBLE PRECISION,
-                             maker_name                          VARCHAR(255) NOT NULL,
-                             maker_country                       VARCHAR(255) NOT NULL,
-                             fuel_type                           VARCHAR(255),
-                             fuelProperties_density              DOUBLE PRECISION,
-                             fuelProperties_specificEnergy       DOUBLE PRECISION,
-                             version                             BIGINT,
+                             engine_model_id               VARCHAR(255) PRIMARY KEY,
+                             name                          VARCHAR(255) NOT NULL,
+                             type                          VARCHAR(255),
+                             power                         DOUBLE PRECISION,
+                             efficiency                    DOUBLE PRECISION,
+                             thrustSeaLevelStopped         DOUBLE PRECISION,
+                             thrustSeaLevelCruise          DOUBLE PRECISION,
+                             thrustSpecificFuelConsumption DOUBLE PRECISION,
+                             maker_name                    VARCHAR(255) NOT NULL,
+                             maker_country                 VARCHAR(255) NOT NULL,
+                             fuel_type                     VARCHAR(255),
+                             density                       DOUBLE PRECISION,
+                             specificEnergy                DOUBLE PRECISION,
+                             version                       BIGINT,
                              UNIQUE (name, maker_name)
 );
 
@@ -151,27 +165,27 @@ CREATE TABLE EngineModel (
 -- ============================================================
 
 CREATE TABLE AircraftModel (
-                               aircraftModelId_value       VARCHAR(255) PRIMARY KEY,
-                               type                        VARCHAR(255),
-                               emptyWeight                 DOUBLE PRECISION,
-                               maximumTakeOffWeight        DOUBLE PRECISION,
-                               maximumZeroFuelWeight       DOUBLE PRECISION,
-                               maximumFuelCapacity         DOUBLE PRECISION,
-                               serviceCeiling              DOUBLE PRECISION,
-                               cruiseSpeed                 DOUBLE PRECISION,
-                               wingArea                    DOUBLE PRECISION,
-                               wingSpan                    DOUBLE PRECISION,
-                               dragCoefficient             DOUBLE PRECISION,
-                               liftCoefficient             DOUBLE PRECISION,
-                               numberOfEngines             INT,
-                               modelName                   VARCHAR(255),
-                               maker_name                  VARCHAR(255),
-                               maker_country               VARCHAR(255),
-                               version                     BIGINT
+                               aircraft_model_id     VARCHAR(255) PRIMARY KEY,
+                               type                  VARCHAR(255),
+                               emptyWeight           DOUBLE PRECISION,
+                               maximumTakeOffWeight  DOUBLE PRECISION,
+                               maximumZeroFuelWeight DOUBLE PRECISION,
+                               maximumFuelCapacity   DOUBLE PRECISION,
+                               serviceCeiling        DOUBLE PRECISION,
+                               cruiseSpeed           DOUBLE PRECISION,
+                               wingArea              DOUBLE PRECISION,
+                               wingSpan              DOUBLE PRECISION,
+                               dragCoefficient       DOUBLE PRECISION,
+                               liftCoefficient       DOUBLE PRECISION,
+                               numberOfEngines       INT,
+                               modelName             VARCHAR(255),
+                               name                  VARCHAR(255),
+                               country               VARCHAR(255),
+                               version               BIGINT
 );
 
 CREATE TABLE aircraftmodel_enginemodel (
-                                           aircraft_model_id VARCHAR(255) NOT NULL REFERENCES AircraftModel(aircraftModelId_value),
+                                           aircraft_model_id VARCHAR(255) NOT NULL REFERENCES AircraftModel(aircraft_model_id),
                                            engine_model_id   VARCHAR(255) NOT NULL REFERENCES EngineModel(engine_model_id),
                                            PRIMARY KEY (aircraft_model_id, engine_model_id)
 );
@@ -181,24 +195,26 @@ CREATE TABLE aircraftmodel_enginemodel (
 -- ============================================================
 
 CREATE TABLE AirTransportCompany (
-                                     value   VARCHAR(255) PRIMARY KEY,
-                                     name    VARCHAR(255),
-                                     iataCode VARCHAR(255),
-                                     icaoCode VARCHAR(255),
-                                     version BIGINT
+                                     air_transport_company_id VARCHAR(255) PRIMARY KEY,
+                                     name                     VARCHAR(255),
+                                     iataCode                 VARCHAR(255),
+                                     icaoCode                 VARCHAR(255),
+                                     version                  BIGINT
 );
 
 CREATE TABLE Aircraft (
-                          aircraftId_value                        VARCHAR(255) PRIMARY KEY,
-                          cabinConfiguration_economyClassSeats    INT,
-                          cabinConfiguration_businessClassSeats   INT,
-                          cabinConfiguration_firstClassSeats      INT,
-                          aircraftModel_aircraftModelId_value     VARCHAR(255) REFERENCES AircraftModel(aircraftModelId_value),
-                          registrationNumber                      VARCHAR(255),
-                          registrationCountry                     VARCHAR(255),
-                          operationStatus                         VARCHAR(255),
+                          aircraft_id                              VARCHAR(255) PRIMARY KEY,
+                          economyClassSeats                        INT,
+                          businessClassSeats                       INT,
+                          firstClassSeats                          INT,
+                          aircraftModel_aircraft_model_id          VARCHAR(255) REFERENCES AircraftModel(aircraft_model_id),
+                          airTransportCompany_air_transport_company_id VARCHAR(255) REFERENCES AirTransportCompany(air_transport_company_id),
+                          engineModel_engine_model_id              VARCHAR(255) REFERENCES EngineModel(engine_model_id),
+                          registrationNumber                       VARCHAR(255),
+                          registrationCountry                      VARCHAR(255),
+                          operationStatus                          VARCHAR(255),
                           flightCrewCount                          INT,
-                          version                                 BIGINT
+                          version                                  BIGINT
 );
 
 CREATE TABLE Pilot (
@@ -208,10 +224,21 @@ CREATE TABLE Pilot (
                        version  BIGINT
 );
 
-CREATE TABLE Pilot_certifiedAircraftModels (
-                                               Pilot_pilot_id                            VARCHAR(255) NOT NULL REFERENCES Pilot(pilot_id),
-                                               certifiedAircraftModels_aircraftModelId_value VARCHAR(255) NOT NULL REFERENCES AircraftModel(aircraftModelId_value),
-                                               PRIMARY KEY (Pilot_pilot_id, certifiedAircraftModels_aircraftModelId_value)
+CREATE TABLE Pilot_AircraftModel (
+                                     Pilot_pilot_id                            VARCHAR(255) NOT NULL REFERENCES Pilot(pilot_id),
+                                     certifiedAircraftModels_aircraft_model_id VARCHAR(255) NOT NULL REFERENCES AircraftModel(aircraft_model_id),
+                                     PRIMARY KEY (Pilot_pilot_id, certifiedAircraftModels_aircraft_model_id)
+);
+
+CREATE TABLE CustomerCollaborator (
+                                      customer_collaborator_id VARCHAR(255) PRIMARY KEY,
+                                      user_id                  VARCHAR(255),
+                                      customerType             VARCHAR(255),
+                                      air_transport_company_id VARCHAR(255) REFERENCES AirTransportCompany(air_transport_company_id),
+                                      air_control_area_id      VARCHAR(255) REFERENCES AirControlArea(air_control_area_id),
+                                      position                 VARCHAR(255),
+                                      active                   BOOLEAN,
+                                      version                  BIGINT
 );
 
 -- ============================================================
@@ -219,58 +246,60 @@ CREATE TABLE Pilot_certifiedAircraftModels (
 -- ============================================================
 
 CREATE TABLE FlightRoute (
-                             flightRouteId_value   VARCHAR(255) PRIMARY KEY,
-                             designation_designation VARCHAR(255),
-                             activeFrom            DATE,
-                             activeUntil           DATE,
-                             version               BIGINT
+                             flight_route_id VARCHAR(255) PRIMARY KEY,
+                             designation     VARCHAR(255),
+                             activeFrom      DATE,
+                             activeUntil     DATE,
+                             version         BIGINT
 );
 
 CREATE TABLE Flight (
-                        flightId_value          VARCHAR(255) PRIMARY KEY,
-                        flightDesignator        VARCHAR(255),
-                        type                    VARCHAR(255),
-                        scheduledDepartureTime  TIMESTAMP,
-                        scheduledArrivalTime    TIMESTAMP,
-                        version                 BIGINT
+                        flight_id              VARCHAR(255) PRIMARY KEY,
+                        flightDesignator       VARCHAR(255),
+                        type                   VARCHAR(255),
+                        scheduledDepartureTime TIMESTAMP,
+                        scheduledArrivalTime   TIMESTAMP,
+                        aircraft_aircraft_id   VARCHAR(255) REFERENCES Aircraft(aircraft_id),
+                        version                BIGINT
 );
 
 CREATE TABLE FlightPlan (
-                            flightPlanId_value   VARCHAR(255) PRIMARY KEY,
-                            departureDateTime    TIMESTAMP,
-                            fuelQuantity         DOUBLE PRECISION,
-                            passengerLoad        INT,
-                            cargoLoad            DOUBLE PRECISION,
-                            status               VARCHAR(255),
-                            version              BIGINT
+                            flight_plan_id    VARCHAR(255) PRIMARY KEY,
+                            departureDateTime TIMESTAMP,
+                            fuelQuantity      DOUBLE PRECISION,
+                            passengerLoad     INT,
+                            cargoLoad         DOUBLE PRECISION,
+                            status            VARCHAR(255),
+                            aircraftId        VARCHAR(255),
+                            version           BIGINT
 );
 
 CREATE TABLE FlightLeg (
-                           id                   BIGSERIAL PRIMARY KEY,
+                           id BIGINT PRIMARY KEY,
                            sequenceNumber       INT,
                            departureTime        TIMESTAMP,
                            arrivalTime          TIMESTAMP,
                            fuelQuantity         DOUBLE PRECISION,
                            departure_airport_id VARCHAR(255),
                            arrival_airport_id   VARCHAR(255),
-                           flight_plan_ref      VARCHAR(255) REFERENCES FlightPlan(flightPlanId_value)
+                           flight_plan_ref      VARCHAR(255) REFERENCES FlightPlan(flight_plan_id)
 );
 
 CREATE TABLE Segment (
-                         id             BIGSERIAL PRIMARY KEY,
-                         windDirection  DOUBLE PRECISION,
-                         windSpeed      DOUBLE PRECISION,
-                         start_node_id  VARCHAR(255),
-                         end_node_id    VARCHAR(255),
-                         flight_leg_id  BIGINT REFERENCES FlightLeg(id)
+                         id BIGINT PRIMARY KEY,
+                         windDirection DOUBLE PRECISION,
+                         windSpeed     DOUBLE PRECISION,
+                         start_node_id VARCHAR(255),
+                         end_node_id   VARCHAR(255),
+                         flight_leg_id BIGINT REFERENCES FlightLeg(id)
 );
 
 CREATE TABLE AltitudeSlot (
-                              id               BIGSERIAL PRIMARY KEY,
-                              minimumAltitude  DOUBLE PRECISION,
-                              maximumAltitude  DOUBLE PRECISION,
-                              width            DOUBLE PRECISION,
-                              segment_id       BIGINT REFERENCES Segment(id)
+                              id BIGINT PRIMARY KEY,
+                              minimumAltitude DOUBLE PRECISION,
+                              maximumAltitude DOUBLE PRECISION,
+                              width           DOUBLE PRECISION,
+                              segment_id      BIGINT REFERENCES Segment(id)
 );
 
 -- ============================================================
@@ -278,14 +307,14 @@ CREATE TABLE AltitudeSlot (
 -- ============================================================
 
 CREATE TABLE WeatherData (
-                             weatherDataId_value VARCHAR(255) PRIMARY KEY,
-                             airControlArea      VARCHAR(255),
-                             dateTime            TIMESTAMP,
-                             windSpeed           DOUBLE PRECISION,
-                             windDirection       DOUBLE PRECISION,
-                             temperature         DOUBLE PRECISION,
-                             pressure            DOUBLE PRECISION,
-                             version             BIGINT
+                             weather_data_id VARCHAR(255) PRIMARY KEY,
+                             airControlArea  VARCHAR(255),
+                             dateTime        TIMESTAMP,
+                             windSpeed       DOUBLE PRECISION,
+                             windDirection   DOUBLE PRECISION,
+                             temperature     DOUBLE PRECISION,
+                             pressure        DOUBLE PRECISION,
+                             version         BIGINT
 );
 
 -- ============================================================
@@ -293,56 +322,56 @@ CREATE TABLE WeatherData (
 -- ============================================================
 
 CREATE TABLE Simulation (
-    simulationId_value              VARCHAR(255) PRIMARY KEY,
-    startDateTime                   TIMESTAMP,
-    endDateTime                     TIMESTAMP,
-    geographicArea                  TEXT,
-    safetyThresholds                TEXT,
-    performanceSettings             TEXT,
-    status                          VARCHAR(255),
-    airControlArea_value            VARCHAR(255) REFERENCES AirControlArea(value),
-    version                         BIGINT
+                            simulation_id        VARCHAR(255) PRIMARY KEY,
+                            startDateTime        TIMESTAMP,
+                            endDateTime          TIMESTAMP,
+                            geographicArea       TEXT,
+                            safetyThresholds     TEXT,
+                            performanceSettings  TEXT,
+                            status               VARCHAR(255),
+                            airControlArea_id VARCHAR(255) REFERENCES AirControlArea(air_control_area_id),
+                            version              BIGINT
 );
 
-CREATE TABLE Simulation_trackedFlights (
-                                           Simulation_simulationId_value VARCHAR(255) NOT NULL REFERENCES Simulation(simulationId_value),
-                                           trackedFlights_flightId_value VARCHAR(255) NOT NULL REFERENCES Flight(flightId_value),
-                                           PRIMARY KEY (Simulation_simulationId_value, trackedFlights_flightId_value)
+CREATE TABLE Simulation_Flight (
+                                   Simulation_simulation_id VARCHAR(255) NOT NULL REFERENCES Simulation(simulation_id),
+                                   trackedFlights_flight_id VARCHAR(255) NOT NULL REFERENCES Flight(flight_id),
+                                   PRIMARY KEY (Simulation_simulation_id, trackedFlights_flight_id)
 );
 
-CREATE TABLE Simulation_capturedWeatherData (
-                                                Simulation_simulationId_value        VARCHAR(255) NOT NULL REFERENCES Simulation(simulationId_value),
-                                                capturedWeatherData_weatherDataId_value VARCHAR(255) NOT NULL REFERENCES WeatherData(weatherDataId_value),
-                                                PRIMARY KEY (Simulation_simulationId_value, capturedWeatherData_weatherDataId_value)
+CREATE TABLE Simulation_WeatherData (
+                                        Simulation_simulation_id            VARCHAR(255) NOT NULL REFERENCES Simulation(simulation_id),
+                                        capturedWeatherData_weather_data_id VARCHAR(255) NOT NULL REFERENCES WeatherData(weather_data_id),
+                                        PRIMARY KEY (Simulation_simulation_id, capturedWeatherData_weather_data_id)
 );
 
 CREATE TABLE AircraftPosition (
-                                  id                      BIGSERIAL PRIMARY KEY,
-                                  simulation_simulationId_value VARCHAR(255) REFERENCES Simulation(simulationId_value),
-                                  timestamp               TIMESTAMP,
-                                  altitude                DOUBLE PRECISION,
-                                  velocityVector_speed    DOUBLE PRECISION,
-                                  velocityVector_direction DOUBLE PRECISION
+                                  id BIGINT PRIMARY KEY,
+                                  simulation_simulation_id VARCHAR(255) REFERENCES Simulation(simulation_id),
+                                  timestamp                TIMESTAMP,
+                                  altitude                 DOUBLE PRECISION,
+                                  speed                    DOUBLE PRECISION,
+                                  direction                DOUBLE PRECISION
 );
 
 CREATE TABLE SafetyViolation (
-                                 id                      BIGSERIAL PRIMARY KEY,
-                                 simulation_simulationId_value VARCHAR(255) REFERENCES Simulation(simulationId_value),
-                                 timestamp               TIMESTAMP,
-                                 severity                VARCHAR(255)
+                                 id BIGINT PRIMARY KEY,
+                                 simulation_simulation_id VARCHAR(255) REFERENCES Simulation(simulation_id),
+                                 timestamp                TIMESTAMP,
+                                 severity                 VARCHAR(255)
 );
 
 CREATE TABLE SafetyViolation_recordedVectors (
-                                                 SafetyViolation_id       BIGINT NOT NULL REFERENCES SafetyViolation(id),
-                                                 recordedVectors_speed    DOUBLE PRECISION NOT NULL,
-                                                 recordedVectors_direction DOUBLE PRECISION NOT NULL,
-                                                 PRIMARY KEY (SafetyViolation_id, recordedVectors_speed, recordedVectors_direction)
+                                                 SafetyViolation_id BIGINT NOT NULL REFERENCES SafetyViolation(id),
+                                                 speed              DOUBLE PRECISION NOT NULL,
+                                                 direction          DOUBLE PRECISION NOT NULL,
+                                                 PRIMARY KEY (SafetyViolation_id, speed, direction)
 );
 
-CREATE TABLE SafetyViolation_involvedAircraft (
-                                                  SafetyViolation_id            BIGINT NOT NULL REFERENCES SafetyViolation(id),
-                                                  involvedAircraft_aircraftId_value VARCHAR(255) NOT NULL REFERENCES Aircraft(aircraftId_value),
-                                                  PRIMARY KEY (SafetyViolation_id, involvedAircraft_aircraftId_value)
+CREATE TABLE SafetyViolation_Aircraft (
+                                          SafetyViolation_id BIGINT NOT NULL REFERENCES SafetyViolation(id),
+                                          involvedAircraft_aircraft_id VARCHAR(255) NOT NULL REFERENCES Aircraft(aircraft_id),
+                                          PRIMARY KEY (SafetyViolation_id, involvedAircraft_aircraft_id)
 );
 
 CREATE TABLE SimulationReport (

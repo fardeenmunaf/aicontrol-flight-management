@@ -4,14 +4,7 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Version;
+import jakarta.persistence.*;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
@@ -42,6 +35,8 @@ public class Simulation implements AggregateRoot<SimulationId> {
     @Enumerated(EnumType.STRING)
     private SimulationStatus status;
 
+    @ManyToOne
+    @JoinColumn(name = "airControlArea_id")
     private AirControlArea airControlArea;
 
     @ManyToMany

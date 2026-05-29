@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.flightplan.FlightPlanUI"
+      styleClass="root" spacing="0">
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
+        <Label text="Flight Plans" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="+ New Flight Plan" styleClass="btn-primary" onAction="#onShowNewForm"/>
+    </HBox>
+    <SplitPane VBox.vgrow="ALWAYS" dividerPositions="0.42" orientation="HORIZONTAL">
+
+        <!-- Left: existing plans -->
+        <VBox spacing="0">
+            <Label styleClass="status-label" fx:id="tableStatus"
+                   style="-fx-padding: 8 16 4 16;" text=""/>
+            <TableView fx:id="planTable" VBox.vgrow="ALWAYS" style="-fx-padding: 0 16 16 16;">
+                <columns>
+                    <TableColumn fx:id="colId"        text="Designator" prefWidth="110"/>
+                    <TableColumn fx:id="colAircraft"  text="Aircraft"   prefWidth="90"/>
+                    <TableColumn fx:id="colStatus"    text="Status"     prefWidth="90"/>
+                    <TableColumn fx:id="colDeparture" text="Departure"  prefWidth="140"/>
+                </columns>
+            </TableView>
+        </VBox>
+
+        <!-- Right: detail view OR new flight plan form -->
+        <VBox fx:id="rightPanel" spacing="0" VBox.vgrow="ALWAYS">
+
+            <!-- Detail panel (shown on double-click) -->
+            <VBox fx:id="detailPanel" VBox.vgrow="ALWAYS" visible="false" managed="false" spacing="0">
+                <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding:12 16 8 16;">
+                    <Label fx:id="detailTitle" styleClass="page-title" style="-fx-padding:0;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Close" styleClass="btn-danger" onAction="#onCloseDetail"/>
+                </HBox>
+                <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true"
+                            style="-fx-border-color:transparent;">
+                    <VBox fx:id="detailContent" spacing="8" style="-fx-padding:0 16 16 16;"/>
+                </ScrollPane>
+            </VBox>
+
+            <!-- Form panel (shown by default / on New button) -->
+            <VBox fx:id="formPanel" VBox.vgrow="ALWAYS" spacing="0">
+                <Label text="New Flight Plan" styleClass="page-title"
+                       style="-fx-padding:12 16 8 16;"/>
+                <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true"
+                            style="-fx-border-color:transparent;">
+                    <VBox spacing="10" style="-fx-padding:0 16 16 16;">
+
+                        <!-- Flight header -->
+                        <Label text="Flight Information"
+                               style="-fx-text-fill:#1565c0;-fx-font-weight:bold;-fx-padding:4 0 0 0;"/>
+                        <HBox spacing="12">
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label text="Flight Designator"/>
+                                <TextField fx:id="fDesignator" promptText="e.g. TP1234"/>
+                            </VBox>
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label text="Flight Type"/>
+                                <ComboBox fx:id="fType" maxWidth="Infinity"/>
+                            </VBox>
+                        </HBox>
+                        <HBox spacing="12">
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label text="Aircraft Registration"/>
+                                <TextField fx:id="fAircraft" promptText="e.g. CS-TUA"/>
+                            </VBox>
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label text="Route Reference"/>
+                                <TextField fx:id="fRouteRef" promptText="e.g. AA123"/>
+                            </VBox>
+                        </HBox>
+                        <HBox spacing="12">
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label text="Origin Airport (IATA/ICAO)"/>
+                                <TextField fx:id="fOrigin" promptText="e.g. OPO"/>
+                            </VBox>
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label text="Destination Airport (IATA/ICAO)"/>
+                                <TextField fx:id="fDestination" promptText="e.g. MAD"/>
+                            </VBox>
+                        </HBox>
+
+                        <!-- Legs (dynamically populated) -->
+                        <VBox fx:id="legsContainer" spacing="10"/>
+
+                        <!-- Actions -->
+                        <HBox spacing="10" style="-fx-padding:6 0 0 0;">
+                            <Button text="+ Add Leg"         styleClass="btn-primary" onAction="#onAddLeg"/>
+                            <Button text="Generate &amp; Import" styleClass="btn-primary" onAction="#onGenerateImport"/>
+                            <Button text="Clear"             styleClass="btn-danger"  onAction="#onClearForm"/>
+                        </HBox>
+                        <Label fx:id="formResult" styleClass="status-label" text="" wrapText="true"/>
+                    </VBox>
+                </ScrollPane>
+            </VBox>
+
+        </VBox>
+    </SplitPane>
+</VBox>

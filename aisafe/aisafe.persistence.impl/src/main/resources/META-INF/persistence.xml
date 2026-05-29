@@ -8,7 +8,6 @@
     <persistence-unit name="aisafe-pu" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <!-- Apenas @Entity — @Embeddable são descobertos automaticamente -->
         <class>enginemodel.domain.EngineModel</class>
         <class>flight.domain.Flight</class>
         <class>flightPlan.domain.FlightPlan</class>
@@ -34,6 +33,7 @@
         <class>eapli.framework.infrastructure.authz.domain.model.RoleSet</class>
         <class>eapli.framework.infrastructure.authz.domain.model.RoleAssignment</class>
         <class>customercollaborator.domain.CustomerCollaborator</class>
+
         <properties>
             <property name="jakarta.persistence.jdbc.driver"   value="org.h2.Driver"/>
             <property name="jakarta.persistence.jdbc.url"      value="jdbc:h2:tcp://localhost:9092/mem:aisafe;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;NON_KEYWORDS=USER,VALUE"/>
@@ -54,7 +54,6 @@
     <persistence-unit name="aisafe-pu-postgres" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 
-        <!-- Apenas @Entity — @Embeddable são descobertos automaticamente -->
         <class>enginemodel.domain.EngineModel</class>
         <class>flight.domain.Flight</class>
         <class>flightPlan.domain.FlightPlan</class>
@@ -84,11 +83,11 @@
         <properties>
             <property name="jakarta.persistence.jdbc.driver"   value="org.postgresql.Driver"/>
             <property name="jakarta.persistence.jdbc.url"      value="jdbc:postgresql://localhost:5432/aisafe"/>
-            <property name="jakarta.persistence.jdbc.user"     value="postgres"/>
-            <property name="jakarta.persistence.jdbc.password" value="postgres"/>
+            <property name="jakarta.persistence.jdbc.user"     value=""/>
+            <property name="jakarta.persistence.jdbc.password" value=""/>
 
             <property name="hibernate.dialect"                 value="org.hibernate.dialect.PostgreSQLDialect"/>
-            <property name="hibernate.hbm2ddl.auto"            value="update"/>
+            <property name="hibernate.hbm2ddl.auto"            value="validate"/>
             <property name="hibernate.format_sql"              value="true"/>
             <property name="hibernate.use_sql_comments"        value="true"/>
             <property name="hibernate.show_sql"                value="true"/>

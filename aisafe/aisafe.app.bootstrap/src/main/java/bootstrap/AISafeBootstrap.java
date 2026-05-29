@@ -26,6 +26,12 @@ public final class AISafeBootstrap {
         new UsersBootstrap(repositories.users()).execute();
         new EngineModelBootstrap(repositories.engineModels()).execute();
         new AircraftModelBootstrap(repositories.aircraftModels(), repositories.engineModels()).execute();
+        new AircraftBootstrap(
+                repositories.aircraft(),
+                repositories.aircraftModels(),
+                repositories.engineModels(),
+                repositories.airTransportCompanies()
+        ).execute();
         new AirControlAreaBootstrap(repositories.airControlAreas()).execute();
         new AirportBootstrap(repositories.airports(), repositories.airControlAreas()).execute();
         new CustomerCollaboratorBootstrap(

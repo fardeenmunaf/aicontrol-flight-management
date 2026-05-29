@@ -41,6 +41,91 @@
 
 ---
 
+## EAPLI Theoretical Principles — Practical Application
+
+### Domain-Driven Design (DDD)
+
+The design of US041 follows core DDD principles:
+
+- **Ubiquitous Language**: Domain terms are used consistently (`WeatherData`, `AirControlArea`, `WindDirection`, `Temperature`, `Pressure`).
+- **Bounded Context**: This feature is part of the Weather Management bounded context and is kept separate from other subdomains (Air Control, etc.).
+- **Aggregate Root**: `WeatherData` acts as the aggregate root that encapsulates coherent meteorological information.
+- **Value Objects**: Attributes such as `Temperature`, `Pressure`, `WindSpeed` and `WeatherDataId` are modeled as immutable value objects to ensure consistency and clear semantics.
+- **Repository Pattern**: `WeatherDataRepository` provides an abstraction over persistence, hiding implementation details.
+- **Domain Events**: Events may be emitted when new weather data is registered (e.g., `WeatherDataRegisteredEvent`).
+
+### Gang of Four (GoF) Patterns
+
+Several classic design patterns are applied:
+
+| Pattern | Location | Purpose |
+|--------|-------|----------|
+| **Factory** | `WeatherDataFactory` (or in the Controller) | Builds `WeatherData` aggregates with encapsulated validation |
+| **Repository** | `WeatherDataRepository` | Persistence abstraction; eases unit testing and DB changes |
+| **Strategy** | `AuthorizationService` | Different authorization strategies per role (WEATHER_PERSON, etc.) |
+| **Data Transfer Object (DTO)** | `RegisterWeatherDataRequest` | Carries data between UI and Application Layer, decoupling presentation from logic |
+| **Adapter** | Console UI → Controller | Adapts user input into application commands |
+
+### SOLID Principles
+
+The architecture in US041 respects the five SOLID principles:
+
+1. **Single Responsibility Principle (SRP)**
+   - `RegisterWeatherDataUI`: presentation only
+   - `RegisterWeatherDataController`: application logic and coordination
+   - `WeatherData`: domain rules for meteorological data
+   - Each class has a single reason to change
+
+2. **Open/Closed Principle (OCP)**
+   - `AuthorizationService` can be extended with new roles without modifying its existing client code
+
+3. **Liskov Substitution Principle (LSP)**
+   - `WeatherDataRepository` implements a consistent interface; any implementation (JPA, in-memory, etc.) can be substituted without breaking client code
+
+4. **Interface Segregation Principle (ISP)**
+   - `WeatherDataRepository` exposes only required operations; minimal interfaces exist for specific roles (e.g., `WeatherPersonAuthorization`)
+
+5. **Dependency Inversion Principle (DIP)**
+   - Controllers depend on abstractions (`AuthorizationService`, `WeatherDataRepository`) rather than concrete implementations, easing testing with mocks/stubs
+
+### Data Transfer Objects (DTOs)
+
+DTOs isolate the presentation layer from domain logic:
+
+- **`RegisterWeatherDataRequest`** (input DTO)
+  - Contains raw user input (strings, primitive numbers)
+  - Does not include business validation (only structural validation)
+  - Transfers data from the UI to the Controller
+
+- **`WeatherDataDTO`** (output DTO, optional)
+  - Represents `WeatherData` in a client-friendly form
+  - Omits internal technical fields (aggregate IDs, etc.)
+  - Facilitates future migration to REST/GraphQL APIs
+
+**Benefit**: The presentation layer never manipulates domain entities directly, reducing coupling and making testing easier.
+
+### Factory Pattern
+
+The Factory pattern encapsulates complex aggregate creation:
+
+```java
+// Factory implicit in controller logic or an explicit factory method
+WeatherData weatherData = WeatherDataFactory.create(
+    airControlAreaId,
+    timestamp,
+    windDirection,
+    windSpeed,
+    temperature,
+    pressure
+);
+```
+
+Factory responsibilities:
+- Validate that all parameters are coherent
+- Ensure the aggregate is created in a valid state
+- Encapsulate complex initialization logic
+- Make it easier to add new parameters without changing client code
+
 ## User Interaction Flow
 
 1. Weather Person logs in and navigates to **Register Weather Data** from the Weather menu.

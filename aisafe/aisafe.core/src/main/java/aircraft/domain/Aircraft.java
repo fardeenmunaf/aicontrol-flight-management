@@ -105,7 +105,7 @@ public class Aircraft implements AggregateRoot<AircraftId> {
     }
 
     public String registrationNumber() {
-        return aircraftId.toString();
+        return registrationNumber;
     }
 
     public String registrationCountry() {
@@ -146,5 +146,12 @@ public class Aircraft implements AggregateRoot<AircraftId> {
             throw new IllegalStateException("Aircraft is already decommissioned");
         }
         this.operationStatus = AircraftOperationStatus.DECOMISSIONED;
+    }
+
+    public void reactivate() {
+        if (this.operationStatus != AircraftOperationStatus.DECOMISSIONED) {
+            throw new IllegalStateException("Only decommissioned aircraft can be reactivated");
+        }
+        this.operationStatus = AircraftOperationStatus.IN_SERVICE;
     }
 }
