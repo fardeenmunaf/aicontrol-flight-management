@@ -1,5 +1,6 @@
 package javafxui.presentation.user;
 
+import aircraftmodel.domain.AircraftModel;
 import infrastructure.persistence.PersistenceContext;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -9,6 +10,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import pilot.domain.Pilot;
+import pilot.domain.PilotStatus;
+import shared.domain.UserId;
 import user.application.DisableEnableUserController;
 import user.application.ListUsersController;
 import user.application.RegisterUserController;
@@ -16,6 +20,7 @@ import user.domain.Role;
 import user.domain.User;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -37,20 +42,24 @@ public class UsersManagementUI {
     @FXML private TextField fPhone;
     @FXML private PasswordField fPassword;
     @FXML private FlowPane fRolesPane;
+    @FXML private VBox pilotRegisterRow;
+    @FXML private FlowPane fPilotModelsPane;
     @FXML private Label registerError;
 
     @FXML private VBox editForm;
     @FXML private Label editEmailLabel;
     @FXML private TextField fEditPhone;
     @FXML private FlowPane fEditRolesPane;
+    @FXML private VBox pilotEditRow;
+    @FXML private FlowPane fEditModelsPane;
     @FXML private Label editError;
 
     private String editingEmail;
-    private final List<CheckBox> registerRoleBoxes = new ArrayList<>();
-    private final List<CheckBox> editRoleBoxes = new ArrayList<>();
+    private final List<CheckBox> registerRoleBoxes  = new ArrayList<>();
+    private final List<CheckBox> editRoleBoxes      = new ArrayList<>();
+    private final List<CheckBox> registerModelBoxes = new ArrayList<>();
+    private final List<CheckBox> editModelBoxes     = new ArrayList<>();
 
-    // Controllers are created fresh per operation so each call gets a new EntityManager,
-    // preventing stale reads caused by the JPA L1 cache after out-of-band DB changes.
     private RegisterUserController registerCtrl() {
         return new RegisterUserController(PersistenceContext.repositories().users());
     }
@@ -113,6 +122,9 @@ public class UsersManagementUI {
         buildRoleCheckboxes(fRolesPane, registerRoleBoxes);
         buildRoleCheckboxes(fEditRolesPane, editRoleBoxes);
 
+        setupPilotListener(registerRoleBoxes, pilotRegisterRow, fPilotModelsPane, registerModelBoxes);
+        setupPilotListener(editRoleBoxes, pilotEditRow, fEditModelsPane, editModelBoxes);
+
         refresh();
     }
 
@@ -126,6 +138,36 @@ public class UsersManagementUI {
             boxes.add(cb);
             pane.getChildren().add(cb);
         }
+    }
+
+    private void setupPilotListener(final List<CheckBox> roleBoxes, final VBox pilotRow,
+                                    final FlowPane modelsPane, final List<CheckBox> modelBoxes) {
+        roleBoxes.stream()
+                .filter(cb -> cb.getUserData() == Role.PILOT)
+                .findFirst()
+                .ifPresent(pilotBox -> pilotBox.selectedProperty().addListener((obs, was, isNow) -> {
+                    if (isNow) {
+                        loadAircraftModelCheckboxes(modelsPane, modelBoxes);
+                        pilotRow.setVisible(true);
+                        pilotRow.setManaged(true);
+                    } else {
+                        pilotRow.setVisible(false);
+                        pilotRow.setManaged(false);
+                        modelBoxes.forEach(cb -> cb.setSelected(false));
+                    }
+                }));
+    }
+
+    private void loadAircraftModelCheckboxes(final FlowPane pane, final List<CheckBox> boxes) {
+        pane.getChildren().clear();
+        boxes.clear();
+        PersistenceContext.repositories().aircraftModels().findAll().forEach(model -> {
+            final CheckBox cb = new CheckBox(model.modelName());
+            cb.setUserData(model);
+            cb.setStyle("-fx-padding: 2 12 2 0;");
+            boxes.add(cb);
+            pane.getChildren().add(cb);
+        });
     }
 
     @FXML
@@ -152,7 +194,10 @@ public class UsersManagementUI {
         fEmail.clear();
         fPhone.clear();
         fPassword.clear();
+        pilotRegisterRow.setVisible(false);
+        pilotRegisterRow.setManaged(false);
         registerRoleBoxes.forEach(cb -> cb.setSelected(false));
+        registerModelBoxes.forEach(cb -> cb.setSelected(false));
     }
 
     @FXML
@@ -169,12 +214,14 @@ public class UsersManagementUI {
                 registerError.setText("Select at least one role.");
                 return;
             }
-            registerCtrl().registerUser(
-                    fEmail.getText().trim(),
-                    fPassword.getText().trim(),
-                    fName.getText().trim(),
-                    fPhone.getText().trim(),
-                    roles);
+            final String email = fEmail.getText().trim();
+            registerCtrl().registerUser(email, fPassword.getText().trim(),
+                    fName.getText().trim(), fPhone.getText().trim(), roles);
+
+            if (roles.contains(Role.PILOT)) {
+                savePilotRecord(email, selectedModels(registerModelBoxes));
+            }
+
             registerForm.setVisible(false);
             registerForm.setManaged(false);
             refresh();
@@ -189,8 +236,19 @@ public class UsersManagementUI {
         editingEmail = user.email();
         editEmailLabel.setText("Editing: " + editingEmail);
         fEditPhone.setText(user.phoneNumber());
-        editRoleBoxes.forEach(cb -> cb.setSelected(user.roles().contains(cb.getUserData())));
         editError.setText("");
+        pilotEditRow.setVisible(false);
+        pilotEditRow.setManaged(false);
+
+        editRoleBoxes.forEach(cb -> cb.setSelected(user.roles().contains(cb.getUserData())));
+
+        if (user.roles().contains(Role.PILOT)) {
+            loadAircraftModelCheckboxes(fEditModelsPane, editModelBoxes);
+            preselectPilotModels(editingEmail, editModelBoxes);
+            pilotEditRow.setVisible(true);
+            pilotEditRow.setManaged(true);
+        }
+
         registerForm.setVisible(false);
         registerForm.setManaged(false);
         editForm.setVisible(true);
@@ -206,6 +264,11 @@ public class UsersManagementUI {
                 return;
             }
             registerCtrl().editUser(editingEmail, fEditPhone.getText().trim(), roles);
+
+            if (roles.contains(Role.PILOT)) {
+                savePilotRecord(editingEmail, selectedModels(editModelBoxes));
+            }
+
             editForm.setVisible(false);
             editForm.setManaged(false);
             refresh();
@@ -248,6 +311,30 @@ public class UsersManagementUI {
         });
     }
 
+    // ── Pilot helpers ─────────────────────────────────────────────────────
+
+    private void savePilotRecord(final String email, final Set<AircraftModel> models) {
+        final var repo = PersistenceContext.repositories().pilots();
+        final List<Pilot> all = new ArrayList<>();
+        repo.findAll().forEach(all::add);
+        // Replace existing record so certified models stay current
+        all.stream()
+                .filter(p -> p.userId().toString().equals(email))
+                .forEach(repo::delete);
+        repo.save(new Pilot(UserId.valueOf(email), PilotStatus.ACTIVE, models));
+    }
+
+    private void preselectPilotModels(final String email, final List<CheckBox> boxes) {
+        final List<Pilot> all = new ArrayList<>();
+        PersistenceContext.repositories().pilots().findAll().forEach(all::add);
+        final Set<String> certifiedNames = all.stream()
+                .filter(p -> p.userId().toString().equals(email))
+                .flatMap(p -> p.certifiedAircraftModels().stream())
+                .map(AircraftModel::modelName)
+                .collect(Collectors.toSet());
+        boxes.forEach(cb -> cb.setSelected(certifiedNames.contains(cb.getText())));
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
@@ -255,6 +342,14 @@ public class UsersManagementUI {
         return boxes.stream()
                 .filter(CheckBox::isSelected)
                 .map(cb -> (Role) cb.getUserData())
+                .collect(Collectors.toSet());
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<AircraftModel> selectedModels(final List<CheckBox> boxes) {
+        return boxes.stream()
+                .filter(CheckBox::isSelected)
+                .map(cb -> (AircraftModel) cb.getUserData())
                 .collect(Collectors.toSet());
     }
 }

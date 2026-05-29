@@ -50,6 +50,11 @@
         </HBox>
         <Label text="Roles"/>
         <FlowPane fx:id="fRolesPane" hgap="8" vgap="6"/>
+        <!-- Shown only when Pilot role is checked -->
+        <VBox fx:id="pilotRegisterRow" managed="false" visible="false" spacing="4">
+            <Label text="Certified Aircraft Models"/>
+            <FlowPane fx:id="fPilotModelsPane" hgap="8" vgap="6"/>
+        </VBox>
         <HBox spacing="12" style="-fx-padding: 4 0 0 0;">
             <Button text="Save" styleClass="btn-primary" onAction="#onSaveRegister"/>
             <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelRegister"/>
@@ -69,6 +74,11 @@
         </HBox>
         <Label text="Roles"/>
         <FlowPane fx:id="fEditRolesPane" hgap="8" vgap="6"/>
+        <!-- Shown only when Pilot role is checked -->
+        <VBox fx:id="pilotEditRow" managed="false" visible="false" spacing="4">
+            <Label text="Certified Aircraft Models"/>
+            <FlowPane fx:id="fEditModelsPane" hgap="8" vgap="6"/>
+        </VBox>
         <HBox spacing="12" style="-fx-padding: 4 0 0 0;">
             <Button text="Save" styleClass="btn-primary" onAction="#onSaveEdit"/>
             <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelEdit"/>
