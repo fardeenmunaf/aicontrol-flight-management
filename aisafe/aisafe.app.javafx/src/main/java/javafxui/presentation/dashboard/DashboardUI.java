@@ -65,6 +65,7 @@ public class DashboardUI {
         if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.AIR_TRANSPORT_COMPANY_COLLABORATOR)) {
             addNavButton("Fleet",             "/javafxui/presentation/fleet/FleetView.fxml");
             addNavButton("Available Pilots",  "/javafxui/presentation/pilot/AvailablePilotsView.fxml");
+            addNavButton("Company Pilots",    "/javafxui/presentation/pilot/CompanyPilotsView.fxml");
         }
 
         if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.PILOT)) {

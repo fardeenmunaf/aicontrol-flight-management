@@ -55,6 +55,17 @@
             <Label text="Certified Aircraft Models"/>
             <FlowPane fx:id="fPilotModelsPane" hgap="8" vgap="6"/>
         </VBox>
+        <!-- Shown only when ATCC role is checked -->
+        <HBox fx:id="atccRegisterRow" spacing="12" managed="false" visible="false">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Air Transport Company"/>
+                <ComboBox fx:id="fAtccCompany" maxWidth="Infinity"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Position"/>
+                <TextField fx:id="fAtccPosition" promptText="e.g. Operations Manager"/>
+            </VBox>
+        </HBox>
         <HBox spacing="12" style="-fx-padding: 4 0 0 0;">
             <Button text="Save" styleClass="btn-primary" onAction="#onSaveRegister"/>
             <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelRegister"/>
@@ -79,6 +90,18 @@
             <Label text="Certified Aircraft Models"/>
             <FlowPane fx:id="fEditModelsPane" hgap="8" vgap="6"/>
         </VBox>
+        <!-- Shown only when ATCC role is checked -->
+        <HBox fx:id="atccEditRow" spacing="12" managed="false" visible="false">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Air Transport Company"/>
+                <ComboBox fx:id="fEditAtccCompany" maxWidth="Infinity"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Position"/>
+                <TextField fx:id="fEditAtccPosition" promptText="e.g. Operations Manager"/>
+            </VBox>
+        </HBox>
+        <Label fx:id="editAtccInfo" styleClass="status-label" managed="false" visible="false" text="" wrapText="true"/>
         <HBox spacing="12" style="-fx-padding: 4 0 0 0;">
             <Button text="Save" styleClass="btn-primary" onAction="#onSaveEdit"/>
             <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelEdit"/>

@@ -1,7 +1,12 @@
 package javafxui.presentation.user;
 
 import aircraftmodel.domain.AircraftModel;
+import airtransportcompany.domain.AirTransportCompany;
+import customercollaborator.domain.CustomerCollaborator;
+import customercollaborator.domain.CustomerType;
 import infrastructure.persistence.PersistenceContext;
+import javafx.util.StringConverter;
+import shared.domain.AirTransportCompanyId;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -44,6 +49,9 @@ public class UsersManagementUI {
     @FXML private FlowPane fRolesPane;
     @FXML private VBox pilotRegisterRow;
     @FXML private FlowPane fPilotModelsPane;
+    @FXML private HBox atccRegisterRow;
+    @FXML private ComboBox<AirTransportCompany> fAtccCompany;
+    @FXML private TextField fAtccPosition;
     @FXML private Label registerError;
 
     @FXML private VBox editForm;
@@ -52,6 +60,10 @@ public class UsersManagementUI {
     @FXML private FlowPane fEditRolesPane;
     @FXML private VBox pilotEditRow;
     @FXML private FlowPane fEditModelsPane;
+    @FXML private HBox atccEditRow;
+    @FXML private ComboBox<AirTransportCompany> fEditAtccCompany;
+    @FXML private TextField fEditAtccPosition;
+    @FXML private Label editAtccInfo;
     @FXML private Label editError;
 
     private String editingEmail;
@@ -119,11 +131,22 @@ public class UsersManagementUI {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setItems(data);
 
+        final StringConverter<AirTransportCompany> companyConverter = new StringConverter<>() {
+            @Override public String toString(final AirTransportCompany c) {
+                return c == null ? "" : c.name() + " (" + c.iataCode() + ")";
+            }
+            @Override public AirTransportCompany fromString(final String s) { return null; }
+        };
+        fAtccCompany.setConverter(companyConverter);
+        fEditAtccCompany.setConverter(companyConverter);
+
         buildRoleCheckboxes(fRolesPane, registerRoleBoxes);
         buildRoleCheckboxes(fEditRolesPane, editRoleBoxes);
 
         setupPilotListener(registerRoleBoxes, pilotRegisterRow, fPilotModelsPane, registerModelBoxes);
         setupPilotListener(editRoleBoxes, pilotEditRow, fEditModelsPane, editModelBoxes);
+        setupAtccListener(registerRoleBoxes, atccRegisterRow, fAtccCompany, fAtccPosition);
+        setupAtccListener(editRoleBoxes, atccEditRow, fEditAtccCompany, fEditAtccPosition);
 
         refresh();
     }
@@ -156,6 +179,32 @@ public class UsersManagementUI {
                         modelBoxes.forEach(cb -> cb.setSelected(false));
                     }
                 }));
+    }
+
+    private void setupAtccListener(final List<CheckBox> roleBoxes, final HBox atccRow,
+                                    final ComboBox<AirTransportCompany> companyCb,
+                                    final TextField positionField) {
+        roleBoxes.stream()
+                .filter(cb -> cb.getUserData() == Role.AIR_TRANSPORT_COMPANY_COLLABORATOR)
+                .findFirst()
+                .ifPresent(atccBox -> atccBox.selectedProperty().addListener((obs, was, isNow) -> {
+                    if (isNow) {
+                        loadCompanies(companyCb);
+                        atccRow.setVisible(true);
+                        atccRow.setManaged(true);
+                    } else {
+                        atccRow.setVisible(false);
+                        atccRow.setManaged(false);
+                        companyCb.setValue(null);
+                        positionField.clear();
+                    }
+                }));
+    }
+
+    private void loadCompanies(final ComboBox<AirTransportCompany> target) {
+        final List<AirTransportCompany> companies = new ArrayList<>();
+        PersistenceContext.repositories().airTransportCompanies().findAll().forEach(companies::add);
+        target.setItems(FXCollections.observableArrayList(companies));
     }
 
     private void loadAircraftModelCheckboxes(final FlowPane pane, final List<CheckBox> boxes) {
@@ -196,6 +245,10 @@ public class UsersManagementUI {
         fPassword.clear();
         pilotRegisterRow.setVisible(false);
         pilotRegisterRow.setManaged(false);
+        atccRegisterRow.setVisible(false);
+        atccRegisterRow.setManaged(false);
+        fAtccCompany.setValue(null);
+        fAtccPosition.clear();
         registerRoleBoxes.forEach(cb -> cb.setSelected(false));
         registerModelBoxes.forEach(cb -> cb.setSelected(false));
     }
@@ -222,6 +275,24 @@ public class UsersManagementUI {
                 savePilotRecord(email, selectedModels(registerModelBoxes));
             }
 
+            if (roles.contains(Role.AIR_TRANSPORT_COMPANY_COLLABORATOR)) {
+                final AirTransportCompany company = fAtccCompany.getValue();
+                if (company == null) {
+                    registerError.setText("Select an Air Transport Company for the ATCC role.");
+                    return;
+                }
+                final String position = fAtccPosition.getText().trim();
+                if (position.isEmpty()) {
+                    registerError.setText("Position is required for the ATCC role.");
+                    return;
+                }
+                PersistenceContext.repositories().customerCollaborators().save(
+                        new CustomerCollaborator(UserId.valueOf(email),
+                                CustomerType.AIR_TRANSPORT_COMPANY,
+                                AirTransportCompanyId.valueOf(company.identity().toString()),
+                                null, position));
+            }
+
             registerForm.setVisible(false);
             registerForm.setManaged(false);
             refresh();
@@ -239,8 +310,35 @@ public class UsersManagementUI {
         editError.setText("");
         pilotEditRow.setVisible(false);
         pilotEditRow.setManaged(false);
+        atccEditRow.setVisible(false);
+        atccEditRow.setManaged(false);
+        editAtccInfo.setVisible(false);
+        editAtccInfo.setManaged(false);
+        fEditAtccCompany.setValue(null);
+        fEditAtccPosition.clear();
 
         editRoleBoxes.forEach(cb -> cb.setSelected(user.roles().contains(cb.getUserData())));
+
+        if (user.roles().contains(Role.AIR_TRANSPORT_COMPANY_COLLABORATOR)) {
+            loadCompanies(fEditAtccCompany);
+            PersistenceContext.repositories().customerCollaborators()
+                    .findByUserId(UserId.valueOf(editingEmail))
+                    .ifPresent(collab -> {
+                        if (collab.airTransportCompanyId() != null) {
+                            final String cid = collab.airTransportCompanyId().toString();
+                            fEditAtccCompany.getItems().stream()
+                                    .filter(c -> c.identity().toString().equals(cid))
+                                    .findFirst()
+                                    .ifPresent(fEditAtccCompany::setValue);
+                            fEditAtccPosition.setText(collab.position());
+                            editAtccInfo.setText("Already linked — saving will not change the existing association.");
+                            editAtccInfo.setVisible(true);
+                            editAtccInfo.setManaged(true);
+                        }
+                    });
+            atccEditRow.setVisible(true);
+            atccEditRow.setManaged(true);
+        }
 
         if (user.roles().contains(Role.PILOT)) {
             loadAircraftModelCheckboxes(fEditModelsPane, editModelBoxes);
@@ -267,6 +365,28 @@ public class UsersManagementUI {
 
             if (roles.contains(Role.PILOT)) {
                 savePilotRecord(editingEmail, selectedModels(editModelBoxes));
+            }
+
+            if (roles.contains(Role.AIR_TRANSPORT_COMPANY_COLLABORATOR)) {
+                final boolean alreadyLinked = PersistenceContext.repositories().customerCollaborators()
+                        .findByUserId(UserId.valueOf(editingEmail)).isPresent();
+                if (!alreadyLinked) {
+                    final AirTransportCompany company = fEditAtccCompany.getValue();
+                    if (company == null) {
+                        editError.setText("Select an Air Transport Company for the ATCC role.");
+                        return;
+                    }
+                    final String position = fEditAtccPosition.getText().trim();
+                    if (position.isEmpty()) {
+                        editError.setText("Position is required for the ATCC role.");
+                        return;
+                    }
+                    PersistenceContext.repositories().customerCollaborators().save(
+                            new CustomerCollaborator(UserId.valueOf(editingEmail),
+                                    CustomerType.AIR_TRANSPORT_COMPANY,
+                                    AirTransportCompanyId.valueOf(company.identity().toString()),
+                                    null, position));
+                }
             }
 
             editForm.setVisible(false);
