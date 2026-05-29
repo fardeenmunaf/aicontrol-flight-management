@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>     /* pipe(), read(), write(), fork() */
-#include <sys/wait.h>   /* waitpid() */
+#include <unistd.h>
+#include <sys/wait.h>
 #include "position_tracker.h"
 
 #define PASS "\033[32mPASS\033[0m"

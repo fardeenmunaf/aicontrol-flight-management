@@ -5,8 +5,12 @@
 # VSCODE
 .vscode/
 
-# OTHER SETTINGS
+# OTHERS
 .*
+
+#postgres
+.env
+
 
 # MAVEN (NFR05) - CRÍTICO
 target/

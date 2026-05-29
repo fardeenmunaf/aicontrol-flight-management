@@ -1,71 +1,127 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
-// ---------- ISA atmosphere ----------
-
-// T = T0 + lambda*h  (h <= 11000 m),  T = 216.65 K above tropopause
+/** @brief Returns the ISA temperature (K) at altitude_m metres above MSL. */
 double isa_temperature(double altitude_m);
 
-// p = P0*(1 - 0.0065*h/T0)^5.2561  below tropopause
-// p = 22632 * exp(-g*(h-11000)/(R*T_trop))  above
+/** @brief Returns the ISA static pressure (Pa) at altitude_m metres above MSL. */
 double isa_pressure(double altitude_m);
 
-// rho = p / (R * T)
+/** @brief Returns the ISA air density (kg/m³) at altitude_m metres above MSL. */
 double isa_air_density(double altitude_m);
 
-// a = sqrt(gamma * R * T)
+/** @brief Returns the ISA speed of sound (m/s) at altitude_m metres above MSL. */
 double isa_speed_of_sound(double altitude_m);
 
-// ---------- Speed ----------
-
-// Mach from IAS (knots) and current air density.
-// Formula (from sim spec, H16):
-//   M = sqrt(5 * ((rho0/rho * ((1 + 0.2*(IAS/661.5)^2)^3.5 - 1) + 1)^0.2857 - 1))
+/**
+ * @brief Converts Indicated Air Speed to Mach number (formula H16).
+ *
+ * @param ias_knots   Indicated air speed in knots.
+ * @param air_density Local air density in kg/m³.
+ * @return Mach number. Returns 0.0 for invalid inputs.
+ */
 double calculate_mach(double ias_knots, double air_density);
 
-// TAS (m/s) = Mach * speed_of_sound_at_altitude
+/**
+ * @brief Converts Mach number to True Air Speed (m/s).
+ *
+ * @param mach       Mach number.
+ * @param altitude_m Altitude in metres (used to look up local speed of sound).
+ * @return True air speed in m/s.
+ */
 double calculate_tas(double mach, double altitude_m);
 
-// ---------- Aerodynamics ----------
-
-// Cl = 2*W / (rho * S * V^2)
+/**
+ * @brief Computes the lift coefficient: Cl = 2*W / (rho * S * V^2).
+ *
+ * @param mass        Aircraft mass in kg.
+ * @param area        Wing area in m².
+ * @param air_density Local air density in kg/m³.
+ * @param velocity    True air speed in m/s.
+ * @return Lift coefficient (dimensionless). Returns 0.0 for invalid inputs.
+ */
 double calculate_lift_coefficient(double mass, double area,
                                   double air_density, double velocity);
 
-// Cd = Cd0 + Cl^2 / (pi * AR * e)
+/**
+ * @brief Computes the total drag coefficient: Cd = Cd0 + Cl^2 / (pi * AR * e).
+ *
+ * @param cd0          Zero-lift drag coefficient.
+ * @param cl           Lift coefficient.
+ * @param aspect_ratio Wing aspect ratio.
+ * @param e            Oswald efficiency factor (0–1).
+ * @return Drag coefficient (dimensionless).
+ */
 double calculate_drag_coefficient(double cd0, double cl,
                                   double aspect_ratio, double e);
 
-// L = 0.5 * rho * V^2 * S * Cl
+/**
+ * @brief Computes the lift force (N): L = 0.5 * rho * V^2 * S * Cl.
+ *
+ * @param cl          Lift coefficient.
+ * @param area        Wing area in m².
+ * @param air_density Local air density in kg/m³.
+ * @param velocity    True air speed in m/s.
+ * @return Lift force in Newtons. Returns 0.0 for invalid inputs.
+ */
 double calculate_lift_force(double cl, double area,
                             double air_density, double velocity);
 
-// D = 0.5 * rho * V^2 * S * Cd
+/**
+ * @brief Computes the drag force (N): D = 0.5 * rho * V^2 * S * Cd.
+ *
+ * @param cd          Drag coefficient.
+ * @param area        Wing area in m².
+ * @param air_density Local air density in kg/m³.
+ * @param velocity    True air speed in m/s.
+ * @return Drag force in Newtons. Returns 0.0 for invalid inputs.
+ */
 double calculate_drag_force(double cd, double area,
                             double air_density, double velocity);
 
-// ---------- Thrust ----------
-
-// Thrust for ONE engine (N).
-// T = (thrust_stopped - lambda * mach) * (rho/rho0)^lapse_rate
-// lambda is derived from the two sea-level reference points:
-//   lambda = (thrust_stopped - thrust_cruise) / 0.9
+/**
+ * @brief Computes per-engine thrust (N) at the given flight conditions (formula O16).
+ *
+ * @param thrust_stopped Sea-level static thrust (Mach 0) in Newtons.
+ * @param thrust_cruise  Sea-level cruise thrust (Mach 0.9) in Newtons.
+ * @param lapse_rate     Altitude correction exponent.
+ * @param mach           Current Mach number.
+ * @param air_density    Local air density in kg/m³.
+ * @return Thrust per engine in Newtons.
+ */
 double calculate_thrust(double thrust_stopped, double thrust_cruise,
                         double lapse_rate, double mach, double air_density);
 
-// ---------- Step computations ----------
-
-// dh/dt (m/s) = (total_thrust - drag) * tas / (mass * g)
+/**
+ * @brief Computes the vertical climb rate (m/s) for one time step (formula Q16).
+ *
+ * @param total_thrust Total thrust from all engines in Newtons.
+ * @param drag         Total drag force in Newtons.
+ * @param tas          True air speed in m/s.
+ * @param mass         Current aircraft mass in kg.
+ * @return Climb rate in m/s (positive = climbing, negative = descending).
+ */
 double calculate_climb_rate(double total_thrust, double drag,
                             double tas, double mass);
 
-// Fuel burned in one time step (kg).
-// dW = total_thrust * tsfc * dt / g
-// TSFC unit: N/N/s (weight-specific fuel consumption)
+/**
+ * @brief Computes fuel mass burned during one time step (kg) (formula S16).
+ *
+ * @param total_thrust Total thrust from all engines in Newtons.
+ * @param tsfc         Thrust Specific Fuel Consumption in N/N/s.
+ * @param dt           Time step duration in seconds.
+ * @return Fuel burned in kg. Returns 0.0 for invalid inputs.
+ */
 double calculate_fuel_burn(double total_thrust, double tsfc, double dt);
 
-// Horizontal distance covered in one time step (m).
-// dist = tas * cos(asin(climb_rate / tas)) * dt
+/**
+ * @brief Computes horizontal ground distance covered in one time step (m) (formula T16).
+ *
+ * @param tas        True air speed in m/s.
+ * @param climb_rate Vertical speed in m/s.
+ * @param dt         Time step duration in seconds.
+ * @return Horizontal distance in metres. Returns 0.0 for invalid inputs.
+ */
 double calculate_step_distance(double tas, double climb_rate, double dt);
 
 #endif /* PHYSICS_H */

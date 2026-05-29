@@ -10,6 +10,10 @@
     <!-- Dark overlay -->
     <Region styleClass="login-overlay"/>
 
+    <!-- DB badge top-right -->
+    <Label fx:id="dbBadge" StackPane.alignment="TOP_RIGHT"
+           style="-fx-padding: 8 12; -fx-font-size: 11; -fx-opacity: 0.75; -fx-text-fill: white;"/>
+
     <!-- Card layer -->
     <VBox alignment="CENTER" spacing="0">
         <VBox styleClass="login-card">
