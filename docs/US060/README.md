@@ -90,3 +90,71 @@ Uniqueness is checked by IATA and ICAO before each insert — re-running bootstr
 | `AirTransportCompanyRepository` | `airtransportcompany.repositories` | Domain repository — `findByIataCode`, `findByIcaoCode`, `save` |
 | `AirTransportCompanyBootstrap` | `bootstrap` | Seeds 10 default companies on first run; idempotent |
 | `AISafeBootstrap` | `bootstrap` | Application bootstrap entry point — orchestrates all seed data loaders |
+
+---
+
+## EAPLI Theoretical Principles — Practical Application
+
+### Domain-Driven Design (DDD)
+
+- **Ubiquitous Language**: "Air Transport Company," "IATA Code," "ICAO Code" form the shared language of airline management.
+- **Bounded Context**: Company Registration is a separate bounded context from aircraft and flight management.
+- **Aggregate Root**: `AirTransportCompany` is the aggregate root — manages company identity (name, IATA, ICAO codes).
+- **Value Objects**: `IataCode` (exactly 2 letters, immutable), `IcaoCode` (2–3 letters, immutable), `CompanyName` (non-empty string, immutable) encapsulate validation.
+- **Repository Pattern**: `AirTransportCompanyRepository` abstracts persistence and supports uniqueness queries by IATA and ICAO.
+
+### Gang of Four Design Patterns
+
+| Pattern | Application | Benefit |
+|---------|------------|---------|
+| **Factory** | `AirTransportCompanyFactory` validates and creates company with correct code format | Prevents invalid codes from being persisted |
+| **Repository** | `AirTransportCompanyRepository` provides queries by IATA and ICAO codes | Decouples domain from SQL queries |
+| **Value Object** | `IataCode`, `IcaoCode` encapsulate validation rules | Ensures only valid codes can be created |
+| **DTO** | `AirTransportCompanyDTO` carries company data across layers | Safe field exposure |
+
+### SOLID Principles
+
+- **Single Responsibility Principle (SRP)**: `AirTransportCompany` manages company state; `AirTransportCompanyRepository` handles persistence; `RegisterAirTransportCompanyController` orchestrates registration.
+- **Open/Closed Principle (OCP)**: Adding new code formats (e.g., 3-letter IATA) extends `IataCode` without changing existing code.
+- **Liskov Substitution Principle (LSP)**: Any `AirTransportCompanyRepository` implementation (JPA, in-memory) can replace another without breaking queries.
+- **Interface Segregation Principle (ISP)**: `AirTransportCompanyRepository` exposes only needed methods (`findByIataCode()`, `findByIcaoCode()`, `save()`).
+- **Dependency Inversion Principle (DIP)**: Controller depends on `AirTransportCompanyRepository` abstraction, not concrete implementations.
+
+### Immutable Value Objects for Codes
+
+```java
+// IataCode validates during construction — invalid codes cannot exist
+IataCode iata = IataCode.of("TP");        // 2 letters: valid ✓
+IataCode iata = IataCode.of("INVALID");   // >2 letters: throws DomainException ✗
+
+// Once created, codes are immutable — no risk of modification
+public final class IataCode {
+    private final String code;
+    
+    private IataCode(String code) {
+        validate(code);  // Throws if invalid
+        this.code = code;
+    }
+}
+```
+
+This ensures the domain model can never contain invalid codes, eliminating validation at persistence layer.
+
+### Data Transfer Objects (DTOs)
+
+- **AirTransportCompanyDTO**: Name, IATA code, ICAO code for display — never exposes internal state.
+- **Benefit**: Changing internal representation (e.g., storing codes as enums) doesn't affect presentation layer.
+
+### Bootstrap Idempotency Pattern
+
+The bootstrap process uses unique code checks to ensure idempotency:
+
+```java
+for (AirTransportCompany company : seedCompanies) {
+    if (! repository.existsByIataCode(company.iataCode())) {
+        repository.save(company);
+    }
+}
+```
+
+This allows re-running the bootstrap multiple times without creating duplicates.

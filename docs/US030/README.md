@@ -121,3 +121,62 @@ Remote access applications (Weather Client — US044, Air Transport App — US07
 | `AuthzConfigurator` | `auth.infrastructure` | Wires `AuthzRegistry` with `JpaAutoTxUserRepository` and `AISafePasswordPolicy` at startup |
 | `AISafeRoles` | `auth.domain` | Declares all system role constants used by every controller for authorization checks |
 | `AISafePasswordPolicy` | `auth.infrastructure` | Enforces minimum 8-character password rule |
+
+---
+
+## EAPLI Theoretical Principles — Practical Application
+
+### Domain-Driven Design (DDD)
+
+- **Ubiquitous Language**: "User," "Role," "Session" form the core vocabulary of the authentication/authorization subdomain.
+- **Bounded Context**: Authentication & Authorization is a separate bounded context with entities (`User`), value objects (`Password`, `Email`), and repositories (`UserRepository`).
+- **Aggregate Root**: `User` is the aggregate root — holds `Role` collection and other data as part of its internal structure.
+- **Value Objects**: `Email`, `Password`, `Role` are immutable and encapsulate validation rules (email domain, password policy).
+- **Repository Pattern**: `UserRepository` abstracts persistence, decoupling domain logic from infrastructure.
+
+### Gang of Four Design Patterns
+
+| Pattern | Application | Benefit |
+|---------|------------|---------|
+| **Strategy** | `PasswordPolicy` interface; `AISafePasswordPolicy` enforces 8-character minimum | Allows plugging in different password policies without changing core framework |
+| **Repository** | `UserRepository` provides collection-like abstraction over persistence | Decouples domain logic from JPA/SQL implementation |
+| **Adapter** | `AuthzConfigurator` adapts the eapli `AuthzRegistry` to AISafe domain model | Integration without polluting domain code |
+| **DTO** | `UserDTO`, `RoleDTO` carry data across layer boundaries | Safe field exposure; enables filtering |
+
+### SOLID Principles
+
+- **Single Responsibility Principle (SRP)**: `User` manages identity; `AuthzRegistry` manages sessions; `UserRepository` handles persistence.
+- **Open/Closed Principle (OCP)**: The authentication framework is open for extension (new `PasswordPolicy` implementations) and closed for modification (core controllers unchanged).
+- **Liskov Substitution Principle (LSP)**: Any `PasswordPolicy` subclass can replace `AISafePasswordPolicy` without breaking expectations.
+- **Interface Segregation Principle (ISP)**: `UserRepository` exposes only needed methods (`save()`, `findByEmail()`, `findAll()`).
+- **Dependency Inversion Principle (DIP)**: Controllers depend on abstractions (`UserRepository`, `AuthzRegistry`) rather than concrete implementations.
+
+### Data Transfer Objects (DTOs)
+
+- **UserDTO**: Email, name, phone, roles, status — prevents exposure of mutable domain state.
+- **RoleDTO**: Role token and display name — presentation layer never directly manipulates domain roles.
+
+### Factory Pattern
+
+`UserFactory` constructs new `User` instances with validated parameters, ensuring email follows `@aisafe.com` constraint and at least one role is assigned.
+
+````
+This is the description of what the code block changes:
+<changeDescription>
+Expand SOLID principle names in US030 README to full forms with acronyms
+</changeDescription>
+
+This is the code block that represents the suggested code change:
+```markdown
+### SOLID Principles
+
+- **Single Responsibility Principle (SRP)**: `User` manages identity; `AuthzRegistry` manages sessions; `UserRepository` handles persistence.
+- **Open/Closed Principle (OCP)**: The authentication framework is open for extension (new `PasswordPolicy` implementations) and closed for modification (core controllers unchanged).
+- **Liskov Substitution Principle (LSP)**: Any `PasswordPolicy` subclass can replace `AISafePasswordPolicy` without breaking expectations.
+- **Interface Segregation Principle (ISP)**: `UserRepository` exposes only needed methods (`save()`, `findByEmail()`, `findAll()`).
+- **Dependency Inversion Principle (DIP)**: Controllers depend on abstractions (`UserRepository`, `AuthzRegistry`) rather than concrete implementations.
+```
+<userPrompt>
+Provide the fully rewritten file, incorporating the suggested code change. You must produce the complete file.
+</userPrompt>
+
