@@ -50,6 +50,10 @@ public class DashboardUI {
 
         final var authz = AuthzRegistry.authorizationService();
 
+        if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.ADMIN)) {
+            addNavButton("User Management", "/javafxui/presentation/user/UsersManagementView.fxml");
+        }
+
         if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.BACKOFFICE_OPERATOR)) {
             addNavButton("Engine Models",           "/javafxui/presentation/enginemodel/EngineModelsView.fxml");
             addNavButton("Aircraft Models",         "/javafxui/presentation/aircraftmodel/AircraftModelsView.fxml");

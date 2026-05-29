@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.user.UsersManagementUI"
+      styleClass="root" spacing="0">
+
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
+        <Label text="User Management" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="↻  Refresh" styleClass="btn-success" onAction="#onRefresh"/>
+        <Button text="Register User" styleClass="btn-primary" onAction="#onRegister"/>
+    </HBox>
+
+    <Label fx:id="statusLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
+
+    <TableView fx:id="table" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
+        <columns>
+            <TableColumn fx:id="colEmail"   text="Email"   prefWidth="200"/>
+            <TableColumn fx:id="colName"    text="Name"    prefWidth="150"/>
+            <TableColumn fx:id="colPhone"   text="Phone"   prefWidth="130"/>
+            <TableColumn fx:id="colRoles"   text="Roles"   prefWidth="180"/>
+            <TableColumn fx:id="colStatus"  text="Status"  prefWidth="80"/>
+            <TableColumn fx:id="colActions" text="Actions" prefWidth="190"/>
+        </columns>
+    </TableView>
+
+    <!-- Register Form -->
+    <VBox fx:id="registerForm" managed="false" visible="false" styleClass="form-panel">
+        <Label text="Register New User" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Full Name"/>
+                <TextField fx:id="fName" promptText="e.g. John Doe"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Email (@aisafe.com)"/>
+                <TextField fx:id="fEmail" promptText="e.g. john@aisafe.com"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Phone Number"/>
+                <TextField fx:id="fPhone" promptText="e.g. +351912345678"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Password"/>
+                <PasswordField fx:id="fPassword" promptText="password"/>
+            </VBox>
+        </HBox>
+        <Label text="Roles"/>
+        <FlowPane fx:id="fRolesPane" hgap="8" vgap="6"/>
+        <HBox spacing="12" style="-fx-padding: 4 0 0 0;">
+            <Button text="Save" styleClass="btn-primary" onAction="#onSaveRegister"/>
+            <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelRegister"/>
+        </HBox>
+        <Label fx:id="registerError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+
+    <!-- Edit Form -->
+    <VBox fx:id="editForm" managed="false" visible="false" styleClass="form-panel">
+        <Label text="Edit User" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <Label fx:id="editEmailLabel" styleClass="status-label" text=""/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Phone Number"/>
+                <TextField fx:id="fEditPhone" promptText="e.g. +351912345678"/>
+            </VBox>
+        </HBox>
+        <Label text="Roles"/>
+        <FlowPane fx:id="fEditRolesPane" hgap="8" vgap="6"/>
+        <HBox spacing="12" style="-fx-padding: 4 0 0 0;">
+            <Button text="Save" styleClass="btn-primary" onAction="#onSaveEdit"/>
+            <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelEdit"/>
+        </HBox>
+        <Label fx:id="editError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+
+</VBox>
