@@ -127,3 +127,70 @@ Each `lat,lon` pair defines a vertex of the bounding polygon. The `AirControlAre
 | `AirControlAreaRepository` | `aircontrolarea.repositories` | Domain repository — `findByAreaCode`, `findContaining`, `save` |
 | `AirControlAreaBootstrap` | `bootstrap` | Seeds 28 real-world FIR/TMA areas on first run; idempotent |
 | `AISafeBootstrap` | `bootstrap` | Application bootstrap entry point — orchestrates all seed data loaders |
+
+---
+
+## EAPLI Theoretical Principles — Practical Application
+
+### Domain-Driven Design (DDD)
+
+- **Ubiquitous Language**: "Air Control Area," "Area Code," "Geographic Boundaries" form the shared language of airspace management.
+- **Bounded Context**: Airspace/Air Control Area management is separate from aircraft and flight management.
+- **Aggregate Root**: `AirControlArea` is the aggregate root — manages area code (unique identity), fuel requirements, and boundary polygon.
+- **Value Objects**: `AreaCode` (unique, immutable), `Coordinates` (lat/lon pairs, immutable), `GeographicBoundaries` (polygon representation) encapsulate domain rules.
+- **Repository Pattern**: `AirControlAreaRepository` abstracts persistence and supports queries like `findContaining(lat, lon)` for point-in-polygon operations.
+
+### Gang of Four Design Patterns
+
+| Pattern | Application | Benefit |
+|---------|------------|---------|
+| **Factory** | `AirControlAreaFactory` creates `AirControlArea` with validated code and boundaries | Prevents invalid polygons from being persisted |
+| **Repository** | `AirControlAreaRepository` provides queries (`findByAreaCode()`, `findContaining()`) | Decouples domain queries from SQL/JPA details |
+| **Strategy** | `PolygonContainmentStrategy` implements point-in-polygon algorithm | Allows swapping containment algorithms (ray-casting, triangulation, etc.) |
+| **DTO** | `AirControlAreaDTO` carries area data across presentation layer | Safe field exposure |
+
+### SOLID Principles
+
+- **Single Responsibility Principle (SRP)**: `AirControlArea` manages area state; `AirControlAreaRepository` handles persistence; `RegisterAirControlAreaController` orchestrates registration.
+- **Open/Closed Principle (OCP)**: Adding new query methods to repository doesn't modify existing code; new containment algorithms extend strategy without changing existing ones.
+- **Liskov Substitution Principle (LSP)**: Any `AirControlAreaRepository` implementation (JPA, in-memory) can replace another without breaking queries.
+- **Interface Segregation Principle (ISP)**: `AirControlAreaRepository` exposes only essential query methods; no unnecessary methods forced onto implementations.
+- **Dependency Inversion Principle (DIP)**: Controller depends on `AirControlAreaRepository` abstraction, not concrete implementations like `JpaAirControlAreaRepository`.
+
+### Data Transfer Objects (DTOs)
+
+- **AirControlAreaDTO**: Carries area code, minimum fuel, boundary coordinates for display — never exposes internal mutable state.
+- **Benefit**: Internal polygon representation changes (e.g., from latitude/longitude to 3D coordinates) do not affect presentation layer.
+
+### Complex Value Object: GeographicBoundaries
+
+The `GeographicBoundaries` value object encapsulates polygon logic:
+
+```java
+// Factory validates format and creates boundaries
+GeographicBoundaries boundaries = GeographicBoundaries.of("37.0,-9.5;37.0,-6.0;42.0,-6.0;42.0,-9.5");
+
+// Containment query returns boolean — algorithm hidden
+boolean isInside = boundaries.containsPoint(39.0, -7.5);  // true
+```
+
+This ensures geographic constraints are enforced within the domain, not in the database layer.
+
+````
+This is the description of what the code block changes:
+<changeDescription>
+Expand SOLID principle names in US050 README to full forms with acronyms
+</changeDescription>
+
+This is the code block that represents the suggested code change:
+```markdown
+// ...existing code...
+### SOLID Principles
+
+- **Single Responsibility Principle (SRP)**: `AirControlArea` manages area state; `AirControlAreaRepository` handles persistence; `RegisterAirControlAreaController` orchestrates registration.
+- **Open/Closed Principle (OCP)**: Adding new query methods to repository doesn't modify existing code; new containment algorithms extend strategy without changing existing ones.
+- **Liskov Substitution Principle (LSP)**: Any `AirControlAreaRepository` implementation (JPA, in-memory) can replace another without breaking queries.
+- **Interface Segregation Principle (ISP)**: `AirControlAreaRepository` exposes only essential query methods; no unnecessary methods forced onto implementations.
+- **Dependency Inversion Principle (DIP)**: Controller depends on `AirControlAreaRepository` abstraction, not concrete implementations like `JpaAirControlAreaRepository`.
+// ...existing code...
+```

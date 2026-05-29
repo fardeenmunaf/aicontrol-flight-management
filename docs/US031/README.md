@@ -86,3 +86,44 @@ Each seed user is registered in the auth framework and persisted as a domain `Us
 | `UserRepository` | `user.repository` | Domain repository interface for persisting and querying users |
 | `UsersBootstrap` | `bootstrap` | Seeds default users on first run; idempotent |
 | `AISafeBootstrap` | `bootstrap` | Application bootstrap entry point — orchestrates all seed data loaders |
+
+---
+
+## EAPLI Theoretical Principles — Practical Application
+
+### Domain-Driven Design (DDD)
+
+- **Ubiquitous Language**: "User," "Email," "Role" form the core vocabulary of the user management subdomain.
+- **Bounded Context**: User Management is separate from other domains, with entities (`User`), value objects (`Email`), and repositories (`UserRepository`).
+- **Aggregate Root**: `User` is the aggregate root — controls access to roles and status properties.
+- **Value Objects**: `Email` (must end with `@aisafe.com`), `Password`, `Role` are immutable and validated.
+- **Repository Pattern**: `UserRepository` abstracts persistence, decoupling domain logic from database details.
+
+### Gang of Four Design Patterns
+
+| Pattern | Application | Benefit |
+|---------|------------|---------|
+| **Factory** | `UserFactory` constructs `User` with validated email and at least one role | Prevents invalid objects from being created |
+| **Repository** | `UserRepository` provides collection-like abstraction over persistence | Decouples domain from JPA/SQL |
+| **DTO** | `UserDTO`, `RoleDTO` carry data across layer boundaries | Safe field exposure |
+| **Builder** | `RegisterUserUI` builds user input step-by-step before controller execution | Encapsulates multi-step form logic |
+
+### SOLID Principles
+
+- **Single Responsibility Principle (SRP)**: `User` manages user state; `UserRepository` handles persistence; `RegisterUserController` orchestrates registration.
+- **Open/Closed Principle (OCP)**: New role types can be added without modifying `User` class.
+- **Liskov Substitution Principle (LSP)**: `UserRepository` implementations (JPA, in-memory) are interchangeable.
+- **Interface Segregation Principle (ISP)**: `UserRepository` exposes only needed methods (`save()`, `findByEmail()`, `findAll()`).
+- **Dependency Inversion Principle (DIP)**: `RegisterUserController` depends on `UserRepository` abstraction, not concrete implementations.
+
+### Data Transfer Objects (DTOs)
+
+- **UserDTO**: Exposes email, name, phone, roles (as strings), status without exposing mutable internal state.
+- **Benefit**: Adding new internal fields to `User` does not affect the presentation layer as long as DTO interface remains stable.
+
+### Factory Pattern
+
+`UserFactory.createUser(email, name, phone, roles)` validates:
+- Email ends with `@aisafe.com`
+- At least one role assigned
+- Returns a fully initialized, valid `User` aggregate

@@ -77,3 +77,75 @@ The UI additionally pre-filters the model list to only show aircraft models with
 | `AircraftModelRepository` | `aircraftmodel.repositories` | Provides `findAllAircraftModels()` and `save()` |
 | `AircraftRepository` | `aircraft.repositories` | Provides `existsByAircraftModel(AircraftModelId)` — used to guard AC02 |
 | `EngineModelRepository` | `enginemodel.repositories` | Resolves `EngineModelId` to a domain `EngineModel` object |
+
+---
+
+## EAPLI Theoretical Principles — Practical Application
+
+### Domain-Driven Design (DDD)
+
+- **Ubiquitous Language**: "Remove Engine," "Certified Engines," "Guard Layers" form the core vocabulary of aircraft model management.
+- **Bounded Context**: Aircraft Model lifecycle (creation, engine association, engine removal) is isolated from the broader system.
+- **Aggregate Root**: `AircraftModel` is the aggregate root — owns the collection of certified engines and enforces removal invariants.
+- **Value Objects**: `EngineModel` reference, engine collection immutability once aggregate changes.
+- **Repository Pattern**: `AircraftRepository` and `AircraftModelRepository` abstract persistence and support guard queries.
+
+### Gang of Four Design Patterns
+
+| Pattern | Application | Benefit |
+|---------|------------|---------|
+| **Guard Pattern** | Two-layer validation: controller checks aircraft existence; domain checks minimum engine count | Prevents invalid state from multiple angles |
+| **Repository** | `AircraftRepository.existsByAircraftModel()` abstracts database query logic | Decouples domain from SQL queries |
+| **DTO** | `AircraftModelDTO` carries model data across presentation layer | Safe field exposure |
+| **Visitor** | UI filter logic that pre-screens eligible models | Separates filtering logic from entity structure |
+
+### SOLID Principles
+
+- **Single Responsibility Principle (SRP)**: `AircraftModel` enforces engine removal invariants; `AircraftRepository` checks for existing aircraft; `RemoveEngineModelFromAircraftController` orchestrates.
+- **Open/Closed Principle (OCP)**: Adding new guard rules doesn't modify existing validation layers.
+- **Liskov Substitution Principle (LSP)**: Any `AircraftRepository` implementation can replace another without breaking guard queries.
+- **Interface Segregation Principle (ISP)**: `AircraftRepository` exposes only essential methods (`existsByAircraftModel()`, `save()`).
+- **Dependency Inversion Principle (DIP)**: Controller depends on `AircraftRepository` abstraction, not concrete implementations.
+
+### Domain Invariants — Multi-Layer Protection
+
+```java
+// Layer 1: Service guard (before calling domain)
+if (aircraftRepository.existsByAircraftModel(modelId)) {
+    throw new BusinessException("Cannot remove engine: aircraft already use this model");
+}
+
+// Layer 2: Domain invariant (redundant safety check)
+aircraftModel.removeEngineModel(engine);  // Throws if only 1 engine left
+
+// Layer 3: UI pre-filtering (prevents user error)
+List<AircraftModel> eligible = models.stream()
+    .filter(m -> m.engineCount() > 1)
+    .collect(toList());
+```
+
+This defense-in-depth ensures that even if one guard is bypassed, the others catch the error.
+
+### Data Transfer Objects (DTOs)
+
+- **AircraftModelDTO**: Carries model name, manufacturer, engine list for display — never exposes mutable domain state.
+- **Benefit**: If internal engine collection structure changes, DTO remains stable.
+
+````
+This is the description of what the code block changes:
+<changeDescription>
+Expand SOLID principle names in US058 README and keep acronym notation
+</changeDescription>
+
+This is the code block that represents the suggested code change:
+```markdown
+// ...existing code...
+### SOLID Principles
+
+- **Single Responsibility Principle (SRP)**: `AircraftModel` enforces engine removal invariants; `AircraftRepository` checks for existing aircraft; `RemoveEngineModelFromAircraftController` orchestrates.
+- **Open/Closed Principle (OCP)**: Adding new guard rules doesn't modify existing validation layers.
+- **Liskov Substitution Principle (LSP)**: Any `AircraftRepository` implementation can replace another without breaking guard queries.
+- **Interface Segregation Principle (ISP)**: `AircraftRepository` exposes only essential methods (`existsByAircraftModel()`, `save()`).
+- **Dependency Inversion Principle (DIP)**: Controller depends on `AircraftRepository` abstraction, not concrete implementations.
+// ...existing code...
+```

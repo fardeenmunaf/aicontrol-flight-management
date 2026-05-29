@@ -210,4 +210,3 @@ Engine compatibility is determined by:
 - Test coverage of controller and domain packages ≥ 90%
 - Code compiles and all tests pass
 - Technical documentation updated in the repository (analysis, design, tests) in Markdown format
-

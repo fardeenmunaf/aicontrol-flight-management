@@ -29,6 +29,57 @@ This US is implemented across two modules:
 
 ---
 
+## EAPLI Theoretical Principles — Practical Application
+
+### Domain-Driven Design (DDD)
+
+- **Ubiquitous Language**: Terms such as `flight`, `leg`, `route`, `segment`, `departure`, and `arrival` are used consistently throughout the DSL, parser, and UI.
+- **Bounded Context**: Flight plan creation is a dedicated bounded context focused on a pilot’s planning workflow, separate from other concerns like weather or fleet management.
+- **Aggregate Root**: The parsed flight plan document acts as the aggregate root for the imported plan and its legs/segments.
+- **Value Objects**: Flight designator, airport codes, coordinates, dates, times, and unit-bearing quantities are modeled as value-like concepts with explicit validation rules.
+- **Repository Pattern**: The import step uses application services and repositories to persist only valid flight plans, decoupling parsing from storage.
+
+### Gang of Four (GoF) Patterns
+
+| Pattern | Application | Benefit |
+|---------|------------|---------|
+| **Visitor** | `FlightAstBuilderVisitor` | Traverses the parse tree and builds the typed AST |
+| **Listener** | `FlightStructureListener` | Collects structural metrics while the tree is processed |
+| **Strategy** | `FlightSemanticValidator` | Encapsulates semantic rules so the validation logic can evolve independently |
+| **Factory** | `CreateFlightPlanUI` / DSL builder step | Centralizes creation of the DSL text and its import-ready representation |
+| **Data Transfer Object (DTO)** | `FlightDslProcessingResult` | Carries parsed document, summary, and errors without exposing parser internals |
+
+### SOLID Principles
+
+- **Single Responsibility Principle (SRP)**: `FlightAstBuilderVisitor` builds the AST; `FlightSemanticValidator` checks business rules; `CreateFlightPlanUI` handles user interaction.
+- **Open/Closed Principle (OCP)**: New semantic rules can be added to the validator without rewriting the parser pipeline.
+- **Liskov Substitution Principle (LSP)**: Alternative validators or repositories can replace current implementations without breaking the workflow.
+- **Interface Segregation Principle (ISP)**: Each component exposes only the methods it needs (`validate`, `visit`, `process`, etc.), avoiding bloated interfaces.
+- **Dependency Inversion Principle (DIP)**: The UI and application services depend on abstractions such as validators and repositories rather than concrete parsing/storage details.
+
+### Data Transfer Objects (DTOs)
+
+- **`FlightDslProcessingResult`**: Transfers the parsed document, structural summary, and error list from the DSL module to the UI/application layer.
+- **Benefit**: The presentation layer never needs to interact directly with ANTLR internals, which keeps the code easier to test and evolve.
+
+### Factory Pattern
+
+The DSL builder acts as a controlled factory for flight plan text:
+
+```java
+FlightDslProcessingResult result = flightDslProcessor.process(dslText);
+if (result.isValid()) {
+    importFlightPlanController.importPlan(result.document());
+}
+```
+
+Factory responsibilities:
+- Construct a valid processing result from raw DSL text
+- Encapsulate parser/validator initialization
+- Keep the UI focused on gathering user input rather than building domain objects directly
+
+---
+
 ## Core Flight DSL
 
 The grammar is defined with **ANTLR 4** in:
