@@ -37,22 +37,10 @@ static void sig_write_msg(const char *callsign, const char *suffix) {
 
 /**
  * @brief SIGUSR1 handler — notifies the flight of a proximity violation.
- *
- * Fired by the parent when this aircraft is involved in a safety violation.
- * SA_RESTART (set in run_flight_process) ensures sem_wait() is transparently
- * restarted after this handler returns.
- *
- * @param sig Signal number (unused).
  */
 static void sigusr1_handler(int sig) {
     (void)sig;
-    sigset_t mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGUSR1);
-    sigaddset(&mask, SIGTERM);
-    sigprocmask(SIG_BLOCK, &mask, NULL);
     sig_write_msg(g_callsign, "SIGUSR1: safety violation detected.\n");
-    sigprocmask(SIG_UNBLOCK, &mask, NULL);
 }
 
 /**
@@ -334,6 +322,7 @@ void run_flight_process(SharedMemoryData *shm, int flight_index,
     sa_usr1.sa_handler = sigusr1_handler;
     sigemptyset(&sa_usr1.sa_mask);
     sigaddset(&sa_usr1.sa_mask, SIGTERM);
+    sigaddset(&sa_usr1.sa_mask, SIGUSR1);
     sa_usr1.sa_flags = SA_RESTART;
     sigaction(SIGUSR1, &sa_usr1, NULL);
 
