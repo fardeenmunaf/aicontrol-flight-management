@@ -1,24 +1,3 @@
-/*
- * report_generator.c — US109 Simulation Report Generator
- *
- * Reads the simulation report from shared memory and generates a comprehensive
- * JSON report file after the simulation completes.
- *
- * Usage:  ./report_generator
- *
- * This program:
- *   1. Opens the shared memory object created by simulation_engine
- *   2. Waits until report_ready flag is set (sim complete)
- *   3. Reads all flight statuses and violation events
- *   4. Generates a JSON report with:
- *      - Total flights and violations
- *      - Per-flight execution status (completed/violations)
- *      - Detailed violation events (timestamps, positions, velocities)
- *      - Pass/fail result
- *   5. Writes report to simulation_report_<timestamp>.json
- *   6. Exits successfully
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,10 +11,18 @@
 #define SHM_NAME "/aisafe_sim"
 #define MAX_FILENAME 256
 
-// File permission: read+write for owner, group, and others
 #define SHM_PERMISSIONS (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
 
-// Helper to escape JSON strings (basic implementation)
+/**
+ * @brief Escapes a string for safe embedding inside a JSON value.
+ *
+ * Replaces ", \, newline, carriage return, and tab with their JSON escape sequences.
+ * Output is always null-terminated and will not exceed dst_len bytes.
+ *
+ * @param src     Input string to escape.
+ * @param dst     Output buffer to write the escaped string into.
+ * @param dst_len Size of the output buffer in bytes.
+ */
 static void json_escape_string(const char *src, char *dst, size_t dst_len) {
     size_t dst_pos = 0;
     for (int i = 0; src[i] != '\0' && dst_pos + 1 < dst_len; i++) {
@@ -51,14 +38,33 @@ static void json_escape_string(const char *src, char *dst, size_t dst_len) {
     dst[dst_pos] = '\0';
 }
 
-// Convert simulation timestamp to readable format
+/**
+ * @brief Formats a simulation timestamp as an ISO-8601 local datetime string.
+ *
+ * Converts sim_seconds (offset from sim start) to a wall-clock time by adding
+ * wall_clock_start, then formats the result with strftime.
+ *
+ * @param sim_seconds      Simulation clock value in seconds.
+ * @param wall_clock_start Wall-clock epoch (seconds) when the simulation began.
+ * @param buf              Output buffer to write the formatted string into.
+ * @param buf_len          Size of the output buffer in bytes.
+ */
 static void format_sim_time(double sim_seconds, double wall_clock_start, char *buf, size_t buf_len) {
     time_t wall_time = (time_t)(wall_clock_start + sim_seconds);
     struct tm *timeinfo = localtime(&wall_time);
     strftime(buf, buf_len, "%Y-%m-%dT%H:%M:%S", timeinfo);
 }
 
-// Generate the JSON report
+/**
+ * @brief Reads the simulation report from shared memory and writes a JSON report file.
+ *
+ * Outputs report metadata, a simulation overview, a safety validation summary,
+ * per-flight execution statuses, and detailed violation events with positions
+ * and velocities for both involved aircraft.
+ *
+ * @param shm         Pointer to the shared memory block (read-only).
+ * @param output_file Path of the JSON file to create.
+ */
 static void generate_json_report(SharedMemoryData *shm, const char *output_file) {
     FILE *fp = fopen(output_file, "w");
     if (!fp) {
@@ -67,30 +73,25 @@ static void generate_json_report(SharedMemoryData *shm, const char *output_file)
     }
 
     SimulationReport *report = &shm->report;
-
-    // Determine pass/fail: pass if no violations, fail otherwise
     bool sim_passed = (report->total_violations_recorded == 0);
 
     fprintf(fp, "{\n");
-     fprintf(fp, "  \"reportVersion\": \"1.0\",\n");
-     fprintf(fp, "  \"reportType\": \"SimulationReport\",\n");
+    fprintf(fp, "  \"reportVersion\": \"1.0\",\n");
+    fprintf(fp, "  \"reportType\": \"SimulationReport\",\n");
 
-     // Format reportGeneratedAt as readable date/time
-     char report_time_str[32];
-     time_t now = time(NULL);
-     struct tm *timeinfo = localtime(&now);
-     strftime(report_time_str, sizeof(report_time_str), "%Y-%m-%dT%H:%M:%S", timeinfo);
-     fprintf(fp, "  \"reportGeneratedAt\": \"%s\",\n", report_time_str);
-     fprintf(fp, "\n");
+    char report_time_str[32];
+    time_t now = time(NULL);
+    struct tm *timeinfo = localtime(&now);
+    strftime(report_time_str, sizeof(report_time_str), "%Y-%m-%dT%H:%M:%S", timeinfo);
+    fprintf(fp, "  \"reportGeneratedAt\": \"%s\",\n", report_time_str);
+    fprintf(fp, "\n");
 
-    // Simulation overview
     fprintf(fp, "  \"simulation\": {\n");
     fprintf(fp, "    \"totalFlights\": %d,\n", report->total_flights);
     fprintf(fp, "    \"startTime\": %.1f,\n", report->sim_start_time);
     fprintf(fp, "    \"endTime\": %.1f,\n", report->sim_end_time);
     fprintf(fp, "    \"durationSeconds\": %.1f,\n", report->sim_end_time - report->sim_start_time);
 
-    // Format wallClockStart as readable date/time
     char wall_clock_str[32];
     time_t wall_time = (time_t)report->wall_clock_start;
     timeinfo = localtime(&wall_time);
@@ -99,7 +100,6 @@ static void generate_json_report(SharedMemoryData *shm, const char *output_file)
     fprintf(fp, "  },\n");
     fprintf(fp, "\n");
 
-    // Safety summary
     fprintf(fp, "  \"safetyValidation\": {\n");
     fprintf(fp, "    \"totalViolationsDetected\": %d,\n", report->total_violations_recorded);
     fprintf(fp, "    \"validationResult\": \"%s\",\n", sim_passed ? "PASS" : "FAIL");
@@ -107,7 +107,6 @@ static void generate_json_report(SharedMemoryData *shm, const char *output_file)
     fprintf(fp, "  },\n");
     fprintf(fp, "\n");
 
-    // Flight statuses
     fprintf(fp, "  \"flightExecutionStatuses\": [\n");
     for (int i = 0; i < report->total_flights; i++) {
         FlightStatus *status = &report->flight_statuses[i];
@@ -126,7 +125,6 @@ static void generate_json_report(SharedMemoryData *shm, const char *output_file)
     fprintf(fp, "  ],\n");
     fprintf(fp, "\n");
 
-    // Violation events
     fprintf(fp, "  \"violationEvents\": [\n");
     for (int i = 0; i < report->total_violations_recorded; i++) {
         ViolationEvent *evt = &report->violations[i];
@@ -176,28 +174,21 @@ static void generate_json_report(SharedMemoryData *shm, const char *output_file)
         fprintf(fp, "    }%s\n", (i < report->total_violations_recorded - 1) ? "," : "");
     }
     fprintf(fp, "  ]\n");
-
     fprintf(fp, "}\n");
     fclose(fp);
 
     printf("[ReportGen] Report written to: %s\n", output_file);
 }
 
-// Attach to shared memory and generate report when ready
 int main(void) {
     printf("=== AISafe Simulation Report Generator (US109) ===\n");
 
-    // Open shared memory, retrying until the simulation creates it.
     const int open_timeout_seconds = 120;
     int fd = -1;
     for (int elapsed = 0; elapsed < open_timeout_seconds; elapsed++) {
         fd = shm_open(SHM_NAME, O_RDONLY, SHM_PERMISSIONS);
-        if (fd >= 0) {
-            break;
-        }
-        if (elapsed == 0) {
-            perror("shm_open failed");
-        }
+        if (fd >= 0) break;
+        if (elapsed == 0) perror("shm_open failed");
         sleep(1);
     }
     if (fd < 0) {
@@ -205,7 +196,6 @@ int main(void) {
         return EXIT_FAILURE;
     }
 
-    // Map shared memory
     SharedMemoryData *shm = mmap(NULL, sizeof(SharedMemoryData),
                                   PROT_READ, MAP_SHARED, fd, 0);
     close(fd);
@@ -217,15 +207,13 @@ int main(void) {
 
     printf("[ReportGen] Connected to shared memory. Waiting for simulation to complete...\n");
 
-    // Wait for simulation to complete (poll report_ready flag)
-    int timeout_seconds = 3600; // 1 hour timeout
+    int timeout_seconds = 3600;
     int elapsed = 0;
     while (!shm->report.report_ready && elapsed < timeout_seconds) {
         sleep(1);
         elapsed++;
-        if (elapsed % 10 == 0) {
+        if (elapsed % 10 == 0)
             printf("[ReportGen] Still waiting... (%d seconds elapsed)\n", elapsed);
-        }
     }
 
     if (!shm->report.report_ready) {
@@ -236,16 +224,13 @@ int main(void) {
 
     printf("[ReportGen] Simulation complete. Generating report...\n");
 
-    // Generate output filename with timestamp
     time_t now = time(NULL);
     struct tm *timeinfo = localtime(&now);
     char output_file[MAX_FILENAME];
     strftime(output_file, MAX_FILENAME, "simulation_report_%Y%m%d_%H%M%S.json", timeinfo);
 
-    // Generate JSON report
     generate_json_report(shm, output_file);
 
-    // Print summary to console
     printf("\n");
     printf("╔════════════════════════════════════════════════════════════════╗\n");
     printf("║                  SIMULATION REPORT SUMMARY                     ║\n");
@@ -265,11 +250,9 @@ int main(void) {
         printf("%-12s %-12s %-12s\n", status->callsign, status_str, viol_str);
     }
 
-    // Cleanup
     munmap(shm, sizeof(SharedMemoryData));
     shm_unlink(SHM_NAME);
 
     printf("\nReport generation complete.\n");
     return EXIT_SUCCESS;
 }
-

@@ -374,7 +374,13 @@ make clean    # cleans build artifacts
 
 [Docs Folder](./docs)
 
---
+---
+
+## Libraries
+
+- CJSON - For parsing all JSON files (flight plans, simulation settings)
+
+---
 
 ## Team Members Evaluation
 

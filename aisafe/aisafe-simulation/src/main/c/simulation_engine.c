@@ -2,43 +2,32 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <time.h>           // time()
-#include <fcntl.h>          // O_CREAT, O_RDWR — flags for shm_open and sem_open
-#include <sys/mman.h>       // mmap, munmap, PROT_*, MAP_SHARED
-#include <sys/stat.h>       // mode constants (0666)
-#include <sys/wait.h>       // waitpid
-#include <unistd.h>         // fork, pipe, read, write, close, getpid
-#include <semaphore.h>      // sem_open, sem_wait, sem_post, sem_close, sem_unlink
+#include <time.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <semaphore.h>
 #include "structs.h"
 #include "json_parser.h"
 #include "flight_simulation.h"
 #include "position_tracker.h"
-#include <signal.h>     // kill, SIGUSR1, SIGTERM
+#include <signal.h>
 
-// Name of the POSIX shared memory object that all processes share.
-// The leading '/' is required by the POSIX spec for shm_open names.
+// Leading '/' is required by POSIX for shm_open names.
 #define SHM_NAME "/aisafe_sim"
 
-// ── SECTION 1 — Shared memory setup ───────────────────────────────────────────
-//
-// POSIX shared memory flow:
-//   shm_open  → creates/opens a named shared memory object (like opening a file)
-//   ftruncate → sets its size (the object starts empty, with size 0)
-//   mmap      → maps the object into this process's virtual address space
-//   close     → the file descriptor is no longer needed after mmap
-//
-// The key is MAP_SHARED: writes by any process are immediately visible to all
-// other processes that have mmap'd the same object — zero copying, zero overhead.
-// This mapping is inherited by children created with fork().
-
+/**
+ * @brief Creates and maps the POSIX shared memory block used by all processes.
+ *
+ * Removes any leftover object from a previous run, creates a new one,
+ * sizes it to hold SharedMemoryData, maps it MAP_SHARED, and zero-initialises it.
+ *
+ * @return Pointer to the mapped SharedMemoryData block. Exits on failure.
+ */
 static SharedMemoryData *setup_shared_memory(void) {
-    // Remove any leftover object from a previous crashed run.
-    // shm_unlink() on a non-existent name returns -1 (silently ignored here).
-
     shm_unlink(SHM_NAME);
-
-    // Create (O_CREAT) a new shared memory object, readable and writable (O_RDWR).
-    // 0666 = permissions: owner/group/others can read+write.
 
     int fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
     if (fd < 0) {
@@ -46,22 +35,13 @@ static SharedMemoryData *setup_shared_memory(void) {
         exit(EXIT_FAILURE);
     }
 
-    // The object starts with size 0 — resize it to hold our SharedMemoryData struct.
     if (ftruncate(fd, sizeof(SharedMemoryData)) < 0) {
         perror("ftruncate failed");
         exit(EXIT_FAILURE);
     }
 
-    // Map the shared memory object into our virtual address space.
-    // NULL  = kernel chooses the address
-    // MAP_SHARED = writes are visible to other processes (vs MAP_PRIVATE = copy-on-write)
-    // fd, 0 = map from offset 0 of the shared memory object
-
-    SharedMemoryData *shm = mmap(NULL, sizeof(SharedMemoryData),PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0); //address, bytes, permissions, share, object, offset
-
-    // The fd is only needed to create the mapping; once mmap() succeeds, close it.
-    // The mapping remains alive until munmap() is called — closing fd doesn't unmap it.
-
+    SharedMemoryData *shm = mmap(NULL, sizeof(SharedMemoryData),
+                                  PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     close(fd);
 
     if (shm == MAP_FAILED) {
@@ -69,40 +49,28 @@ static SharedMemoryData *setup_shared_memory(void) {
         exit(EXIT_FAILURE);
     }
 
-    memset(shm, 0, sizeof(SharedMemoryData)); // zero-initialise (clear any garbage)
+    memset(shm, 0, sizeof(SharedMemoryData));
     return shm;
 }
 
-// ── SECTION 2 — Named semaphore initialisation ────────────────────────────────
-//
-// Named POSIX semaphores (sem_open) — taught in SCOMP module 6.
-//
-// We use TWO kinds of semaphores, implementing the EXECUTION ORDER pattern
-// from the lectures (initialised to 0 so the first sem_wait always blocks):
-//
-//   step_sems[i]  — one per flight. Parent posts → child i unblocks and runs a step.
-//   main_sem      — shared by all. Each child posts when done → parent counts them.
-//
-// Names include the parent PID so that two simultaneous simulation runs
-// do not accidentally share semaphores (would cause deadlock).
-//
-// After fork(), child processes inherit the parent's sem_t* pointers.
-// POSIX guarantees that named semaphore descriptors survive fork(),
-// so children can call sem_wait/sem_post on the inherited pointers directly.
-
+/**
+ * @brief Creates all named POSIX semaphores needed for the step-lock pattern.
+ *
+ * Creates n per-flight step semaphores (initialised to 0, so children block
+ * until the parent posts) and one shared main semaphore for children to signal
+ * completion. Names include the parent PID to avoid collisions between concurrent runs.
+ *
+ * @param pid          Parent process ID, used to build unique semaphore names.
+ * @param n            Number of step semaphores to create (one per flight).
+ * @param step_sems    Output array of n sem_t* pointers.
+ * @param main_sem_out Output pointer to the shared main semaphore.
+ */
 static void init_semaphores(pid_t pid, int n, sem_t **step_sems, sem_t **main_sem_out) {
     for (int i = 0; i < n; i++) {
         char name[48];
-        // Build a unique name per flight, e.g. "/aisafe_step_12345_0"
         snprintf(name, sizeof(name), "/aisafe_step_%d_%d", (int)pid, i);
-
-        // Remove any stale semaphore with this name (previous crash)
         sem_unlink(name);
-
-        // O_CREAT = create if not existing; 0666 = permissions; 0 = initial value.
-        // Initial value 0 means: child calls sem_wait() → blocks immediately.
-        // It will only unblock when the parent calls sem_post().
-
+        // Initial value 0: child blocks until parent posts.
         step_sems[i] = sem_open(name, O_CREAT, 0666, 0);
         if (step_sems[i] == SEM_FAILED) {
             perror("sem_open step");
@@ -110,37 +78,31 @@ static void init_semaphores(pid_t pid, int n, sem_t **step_sems, sem_t **main_se
         }
     }
 
-    // One shared semaphore for all children to post to when their step is done.
     char main_name[48];
     snprintf(main_name, sizeof(main_name), "/aisafe_main_%d", (int)pid);
     sem_unlink(main_name);
-    *main_sem_out = sem_open(main_name, O_CREAT, 0666, 0); // also starts at 0
+    *main_sem_out = sem_open(main_name, O_CREAT, 0666, 0);
     if (*main_sem_out == SEM_FAILED) {
         perror("sem_open main");
         exit(EXIT_FAILURE);
     }
 }
 
-// ── SECTION 3 — Violation detection ───────────────────────────────────────────
-//
-// Called by the violation detection thread after every time step.
-// Checks every unique pair of active flights for proximity violations (US102)
-// and every active flight for fuel exhaustion.
-//
-// Flat-earth approximation for short-range distance in metres:
-//   dx = Δlon × cos(avg_lat) × R   — east-west, corrected for longitude convergence
-//   dy = Δlat × R                  — north-south
-// Accurate to within a few percent for separations under ~100 km.
-//
-// US102 additions vs earlier implementation:
-//   • Sends SIGUSR1 to each aircraft involved in a proximity violation.
-//   • Sends SIGTERM to ALL active aircraft when total violations exceed the
-//     configured max_violations_threshold, and sets termination_requested.
-
+/**
+ * @brief Checks all active flight pairs for proximity violations and all flights for fuel exhaustion.
+ *
+ * Sends SIGUSR1 to each aircraft involved in a proximity violation.
+ * If total violations exceed config.max_violations_threshold, sends SIGTERM to all
+ * active flights and sets shm->termination_requested.
+ *
+ * @param shm        Pointer to shared memory (reads positions, writes violation counts/flags).
+ * @param was_active Boolean array indicating which flights were active at the start of this step.
+ * @param pids       Array of child PIDs indexed by flight slot.
+ * @param num_flights Total number of flight slots.
+ */
 static void check_violations(SharedMemoryData *shm, bool *was_active, pid_t *pids, int num_flights) {
     const double R = 6371000.0;
 
-    // ── proximity check ───────────────────────────────────────────────────────
     for (int i = 0; i < shm->num_flights; i++) {
         if (!was_active[i] || !shm->flights[i].is_active) continue;
 
@@ -166,7 +128,6 @@ static void check_violations(SharedMemoryData *shm, bool *was_active, pid_t *pid
                        dist,
                        shm->config.safety_distance_threshold);
 
-                // US109: Record violation event in the report
                 if (shm->report.total_violations_recorded < MAX_RECORDED_VIOLATIONS) {
                     ViolationEvent *evt = &shm->report.violations[shm->report.total_violations_recorded];
                     evt->timestamp = shm->current_time;
@@ -180,17 +141,12 @@ static void check_violations(SharedMemoryData *shm, bool *was_active, pid_t *pid
                     shm->report.total_violations_recorded++;
                 }
 
-                // US102: notify both involved aircraft via SIGUSR1.
-                // The child's SIGUSR1 handler prints a user message and returns;
-                // SA_RESTART ensures sem_wait() is not permanently interrupted.
                 if (pids[i] > 0) kill(pids[i], SIGUSR1);
                 if (pids[j] > 0) kill(pids[j], SIGUSR1);
             }
         }
     }
 
-    // ── fuel exhaustion check ─────────────────────────────────────────────────
-    // Report once per flight the first time fuel reaches zero.
     for (int i = 0; i < shm->num_flights; i++) {
         if (!was_active[i]) continue;
         Flight *f = &shm->flights[i];
@@ -204,10 +160,8 @@ static void check_violations(SharedMemoryData *shm, bool *was_active, pid_t *pid
         }
     }
 
-    // US102: early termination if total violations exceed the configured threshold.
-    // Sends SIGTERM to every still-active flight process and sets
-    // termination_requested so the main loop breaks on its next check.
-    if (shm->config.max_violations_threshold > 0 && shm->total_violations_detected > shm->config.max_violations_threshold) {
+    if (shm->config.max_violations_threshold > 0 &&
+        shm->total_violations_detected > shm->config.max_violations_threshold) {
         printf("  [SIM] Violations (%d) exceeded threshold (%d) — "
                "sending SIGTERM to all active flights.\n",
                shm->total_violations_detected,
@@ -220,20 +174,12 @@ static void check_violations(SharedMemoryData *shm, bool *was_active, pid_t *pid
     }
 }
 
-// ── SECTION 4 — Per-step output ───────────────────────────────────────────────
-//
-// Prints the full 25-column physics table for every active flight after each step.
-// The parent collects all PipeMessage structs first (via drain_pipes), then calls
-// this function once to produce clean, non-interleaved output.
-//
-// Columns (25):
-//   callsign, phase, lat, lon, alt, d_dest, cruise_alt,
-//   T, P, rho, a,
-//   IAS, Mach, TAS,
-//   CL, CD, Lift, Drag,
-//   Te, Tt, VS,
-//   dFuel, dDist, Mass, Fuel_rem
-
+/**
+ * @brief Converts a FlightPhase enum value to a fixed-width display string.
+ *
+ * @param p Flight phase.
+ * @return 7-character null-terminated string (e.g. "CLIMB  ").
+ */
 static const char *phase_name(FlightPhase p) {
     switch (p) {
         case PHASE_GATE:    return "GATE   ";
@@ -244,6 +190,15 @@ static const char *phase_name(FlightPhase p) {
     }
 }
 
+/**
+ * @brief Prints the scheduled vs. actual arrival time and deviation for one flight leg.
+ *
+ * Does nothing if scheduled_offset_s is negative (arrival not specified in the flight plan).
+ *
+ * @param scheduled_offset_s Scheduled arrival as seconds offset from sim start, or negative if unset.
+ * @param actual_offset_s    Actual arrival as seconds offset from sim start.
+ * @param sim_start_s        Sim start time as seconds since midnight (wall-clock anchor).
+ */
 static void print_arrival_deviation(double scheduled_offset_s,
                                     double actual_offset_s,
                                     double sim_start_s) {
@@ -258,26 +213,39 @@ static void print_arrival_deviation(double scheduled_offset_s,
            dev_min, abs(dev_min), label);
 }
 
+/**
+ * @brief Prints the full 25-column physics table for all active flights after one step.
+ *
+ * Emits a step banner with time/step/active/violation counters, phase transition
+ * messages for any flights that changed phase, a column header, and one data row
+ * per flight that was active at the start of this step.
+ *
+ * @param shm        Pointer to shared memory (reads flight positions and violation count).
+ * @param msgs       Array of PipeMessage structs, one per flight slot, from the current step.
+ * @param prev_ph    Previous phase per flight (used to detect phase transitions).
+ * @param sim_time   Current simulation clock value in seconds (after advancing).
+ * @param step_num   Current step number (1-based).
+ * @param total_steps Total number of steps in the simulation.
+ * @param step_time  Simulation clock value at the start of this step (before advancing).
+ * @param was_active Boolean array indicating which flights were active at step start.
+ */
 static void print_step_table(SharedMemoryData *shm,
-                              PipeMessage *msgs,     // one per flight (indexed by flight slot)
-                              FlightPhase *prev_ph,  // previous phase per flight
+                              PipeMessage *msgs,
+                              FlightPhase *prev_ph,
                               double sim_time,
                               int step_num, int total_steps,
                               double step_time,
-                              bool *was_active) {    // which flights were active at step start
+                              bool *was_active) {
 
-    // Count flights still airborne AFTER this step (for the banner)
     int active = 0;
     for (int i = 0; i < shm->num_flights; i++)
         if (shm->flights[i].is_active && step_time >= shm->flights[i].departure_offset_s)
             active++;
-    // Also count flights still waiting to depart (not yet woken) — informational
     int pending = 0;
     for (int i = 0; i < shm->num_flights; i++)
         if (shm->flights[i].is_active && step_time < shm->flights[i].departure_offset_s)
             pending++;
 
-    // ── step banner ───────────────────────────────────────────────────────────
     int wall_s = (int)(shm->config.sim_start_seconds + sim_time);
     printf("\n");
     printf("╔══════════════════════════════════════════════════════════════════════"
@@ -290,21 +258,15 @@ static void print_step_table(SharedMemoryData *shm,
     printf("╚══════════════════════════════════════════════════════════════════════"
            "════════════════════════════════════════════════════════════════════╝\n");
 
-    // ── phase transition banners ──────────────────────────────────────────────
-    // Use was_active so that a flight landing this step (is_active just became
-    // false) still shows its final phase transition (e.g. CRUISE → DESCEND).
     for (int i = 0; i < shm->num_flights; i++) {
         if (!was_active[i]) continue;
         FlightPhase cur = msgs[i].step.phase;
         if (cur != prev_ph[i]) {
-            const char *from = phase_name(prev_ph[i]);
-            const char *to   = phase_name(cur);
             printf("  >>> %s: %s --> %s <<<\n",
-                   shm->flights[i].callsign, from, to);
+                   shm->flights[i].callsign, phase_name(prev_ph[i]), phase_name(cur));
         }
     }
 
-    // ── column header ─────────────────────────────────────────────────────────
     printf("\n");
     printf("%-8s %-7s %8s %9s %7s %8s %5s %6s %8s %9s %6s  %6s %5s %7s  %6s %6s  %8s %8s  %8s %8s  %7s  %6s %7s  %6s %6s\n",
            "CALLSGN","PHASE","LAT(deg)","LON(deg)","ALT(m)","DEST(km)","CA(m)",
@@ -322,9 +284,6 @@ static void print_step_table(SharedMemoryData *shm,
            "--------","--------","-------",
            "------","-------","------","-------");
 
-    // ── one row per flight that was active this step ───────────────────────────
-    // Including flights that just landed — their pipe message carries the landing
-    // step data (DESCEND phase, final position) so it's visible in the table.
     for (int i = 0; i < shm->num_flights; i++) {
         if (!was_active[i]) continue;
 
@@ -363,11 +322,15 @@ static void print_step_table(SharedMemoryData *shm,
     }
 }
 
-// ── US109: Finalize report with flight statuses ───────────────────────────────
-//
-// Called at the end of the main simulation loop to record final per-flight data
-// in the report. This includes completion status, violation flags, and fuel remaining.
-
+/**
+ * @brief Populates the SimulationReport in shared memory with final per-flight data.
+ *
+ * Records completion status, violation flags, fuel remaining, and legs completed
+ * for each flight, then sets report_ready = true so the report generator can proceed.
+ *
+ * @param shm          Pointer to shared memory (reads flights[], writes report).
+ * @param sim_end_time Final simulation clock value in seconds.
+ */
 static void finalize_simulation_report(SharedMemoryData *shm, double sim_end_time) {
     shm->report.sim_end_time = sim_end_time;
 
@@ -375,152 +338,129 @@ static void finalize_simulation_report(SharedMemoryData *shm, double sim_end_tim
         Flight *f = &shm->flights[i];
         FlightStatus *status = &shm->report.flight_statuses[i];
 
-        // Copy callsign
         strncpy(status->callsign, f->callsign, CALLSIGN_LEN - 1);
         status->callsign[CALLSIGN_LEN - 1] = '\0';
 
-        // Flight completed if not active AND didn't time-out waiting to depart
         status->completed_successfully = !f->is_active &&
                                          f->departure_offset_s < shm->config.end_time;
-
-        // Record violation history
         status->had_violation = f->violation_detected;
 
-        // Final fuel remaining
         double fuel_rem = f->current_mass - f->properties.empty_weight - f->payload;
         status->fuel_remaining = (fuel_rem > 0) ? fuel_rem : 0.0;
 
-        // Number of completed legs
         status->num_legs_completed = f->current_leg;
     }
 
-    // Mark report as ready for generation
     shm->report.report_ready = true;
 }
 
-// ── SECTION 5 — Simulation cleanup ────────────────────────────────────────────
-//
-// Everything created must be explicitly destroyed (POSIX resources don't
-// disappear when a process exits — they persist until unlinked or the system reboots).
-//
-//   sem_close  → decrements the reference count for THIS process
-//   sem_unlink → removes the name from the system (like deleting a file)
-//   munmap     → unmaps the shared memory from this process's address space
-//   shm_unlink → removes the shared memory object name from /dev/shm
-
+/**
+ * @brief Releases all IPC resources and waits for child processes to exit.
+ *
+ * Sets termination_requested, unblocks any children waiting on step semaphores,
+ * reaps all child processes, then closes and unlinks every semaphore and unmaps
+ * shared memory. Does NOT unlink the shared memory object — the report generator
+ * is responsible for that after reading the report.
+ *
+ * @param shm        Pointer to the shared memory block.
+ * @param pids       Array of child PIDs indexed by flight slot.
+ * @param n          Number of flights (length of pids and step_sems).
+ * @param parent_pid Parent PID used to reconstruct semaphore names for unlinking.
+ * @param step_sems  Array of per-flight step semaphore pointers.
+ * @param main_sem   Shared main semaphore pointer.
+ */
 static void cleanup(SharedMemoryData *shm, pid_t *pids, int n,
                     pid_t parent_pid, sem_t **step_sems, sem_t *main_sem) {
 
-    // Tell all children to exit on their next sem_wait() check
     shm->termination_requested = true;
 
-    // Unblock any child that is currently blocked on sem_wait(step_sem).
-    // Without this, children would sleep forever and waitpid() would hang.
-
+    // Unblock any child blocked on sem_wait so waitpid() doesn't hang.
     for (int i = 0; i < n; i++)
         sem_post(step_sems[i]);
-
-    // Wait for every child process to finish (reap zombies).
-    // NULL = we don't care about the exit status; 0 = block until done.
 
     for (int i = 0; i < n; i++)
         if (pids[i] > 0) waitpid(pids[i], NULL, 0);
 
-    // Close and remove each step semaphore
     for (int i = 0; i < n; i++) {
-        sem_close(step_sems[i]);    // close this process's reference
+        sem_close(step_sems[i]);
         char name[48];
         snprintf(name, sizeof(name), "/aisafe_step_%d_%d", (int)parent_pid, i);
-        sem_unlink(name);           // delete the semaphore from the system
+        sem_unlink(name);
     }
 
-    // Close and remove the main semaphore
     char main_name[48];
     snprintf(main_name, sizeof(main_name), "/aisafe_main_%d", (int)parent_pid);
     sem_close(main_sem);
     sem_unlink(main_name);
 
-    // Unmap the shared memory from this process's address space
     munmap(shm, sizeof(SharedMemoryData));
 
-    // Do not unlink the shared memory here.
-    // US109 needs the report generator to attach after the simulation ends.
-    // The report generator is responsible for removing the shared memory.
+    // Do not shm_unlink here: the report generator attaches after simulation ends
+    // and is responsible for removing the shared memory object.
 }
-
-// ── SECTION 6 — Main entry point ──────────────────────────────────────────────
 
 int main() {
 
     printf("=== AISafe Simulation Engine starting ===\n");
 
-    // ── 6.1  Create shared memory BEFORE fork ─────────────────────────────────
-    // Must happen before fork() so children inherit the mmap'd region.
-    // After fork(), parent and children all point to the same physical memory.
-
     SharedMemoryData *shm = setup_shared_memory();
 
-    // ── 6.2  Load configuration and flight plans ───────────────────────────────
-    // Data is written directly into shared memory, so all forked children
-    // will already have the flight plans without any extra IPC.
+    if (!load_simulation_settings("simulation_settings.json", &shm->config)) {
+        fprintf(stderr, "[SIM] Aborting: simulation settings are invalid.\n");
+        munmap(shm, sizeof(SharedMemoryData));
+        shm_unlink("/aisafe_sim");
+        return EXIT_FAILURE;
+    }
 
-    load_simulation_settings("simulation_settings.json", &shm->config);
-    load_all_flight_plans("flightplansSim", shm);
-     printf("Loaded %d flight(s). Simulation: %.0f s -> %.0f s  (step %.0f s = %.0f min)\n",
-            shm->num_flights,
-            shm->config.start_time, shm->config.end_time,
-            shm->config.time_step, shm->config.time_step / 60.0);
+    if (!load_all_flight_plans("flightplansSim", shm)) {
+        fprintf(stderr, "[SIM] Aborting: one or more flight plans failed validation.\n");
+        munmap(shm, sizeof(SharedMemoryData));
+        shm_unlink("/aisafe_sim");
+        return EXIT_FAILURE;
+    }
+    printf("Loaded %d flight(s). Simulation: %.0f s -> %.0f s  (step %.0f s = %.0f min)\n",
+           shm->num_flights,
+           shm->config.start_time, shm->config.end_time,
+           shm->config.time_step, shm->config.time_step / 60.0);
 
-     // ── US109: Initialize report structure ────────────────────────────────────────
-     shm->report.sim_start_time = shm->config.start_time;
-     shm->report.total_flights = shm->num_flights;
-     shm->report.total_violations_recorded = 0;
-     shm->report.report_ready = false;
-     time_t wall_start = time(NULL);
-     shm->report.wall_clock_start = (double)wall_start;
+    shm->report.sim_start_time = shm->config.start_time;
+    shm->report.total_flights = shm->num_flights;
+    shm->report.total_violations_recorded = 0;
+    shm->report.report_ready = false;
+    time_t wall_start = time(NULL);
+    shm->report.wall_clock_start = (double)wall_start;
 
-     // ── Scope validation: mark out-of-window flights inactive, count forkable ones ──
     int num_forked = 0;
     int sim_start_h = (int)(shm->config.sim_start_seconds / 3600);
     int sim_start_m = (int)(fmod(shm->config.sim_start_seconds, 3600.0) / 60.0);
     int sim_end_s   = (int)(shm->config.sim_start_seconds + shm->config.end_time);
 
-    printf("Sim window: %02d:%02d → %02d:%02d (%d loaded flight plans)\n", sim_start_h, sim_start_m, sim_end_s / 3600, (sim_end_s % 3600) / 60, shm->num_flights);
+    printf("Sim window: %02d:%02d → %02d:%02d (%d loaded flight plans)\n",
+           sim_start_h, sim_start_m,
+           sim_end_s / 3600, (sim_end_s % 3600) / 60,
+           shm->num_flights);
 
-    for (int i = 0; i < shm->num_flights; i++) 
-    {
+    for (int i = 0; i < shm->num_flights; i++) {
         Flight *f = &shm->flights[i];
         bool in_scope = (f->departure_offset_s >= 0.0 && f->departure_offset_s < shm->config.end_time);
         if (in_scope) {
             num_forked++;
         } else {
             f->is_active = false;
-            printf("  [SKIP] %s: departure offset %.0fs is outside sim window [0, %.0fs]\n", f->callsign, f->departure_offset_s, shm->config.end_time);
+            printf("  [SKIP] %s: departure offset %.0fs is outside sim window [0, %.0fs]\n",
+                   f->callsign, f->departure_offset_s, shm->config.end_time);
         }
     }
-    printf("%d / %d flight plans in scope — forking %d child processes.\n", num_forked, shm->num_flights, num_forked);
+    printf("%d / %d flight plans in scope — forking %d child processes.\n",
+           num_forked, shm->num_flights, num_forked);
 
     int total_steps = (int)((shm->config.end_time - shm->config.start_time) / shm->config.time_step);
 
-    // ── 6.3  Create named semaphores BEFORE fork ───────────────────────────────
-    // sem_t* pointers are inherited by children after fork().
-    // Each child only needs its own step_sems[i] and the shared main_sem.
-    pid_t parent_pid = getpid(); // used to construct unique semaphore names
-
+    pid_t parent_pid = getpid();
     sem_t *step_sems[MAX_FLIGHTS];
     sem_t *main_sem;
-    init_semaphores(parent_pid, shm->num_flights, step_sems, &main_sem); //name, number, array of step semaphores, main semaphore
+    init_semaphores(parent_pid, shm->num_flights, step_sems, &main_sem);
     shm->current_time = shm->config.start_time;
-
-    // ── 6.4  Create pipes BEFORE fork ─────────────────────────────────────────
-    //
-    // One pipe per flight:
-    //   pipe_fds[i][0] = read end  — parent reads from here
-    //   pipe_fds[i][1] = write end — child i writes to here
-    //
-    // Pipes are one-way byte streams (SCOMP module 4).
-    // Creating them before fork() ensures both ends exist in both parent and child.
-    // After fork, each side closes the end it doesn't use.
 
     int pipe_fds[MAX_FLIGHTS][2];
     for (int i = 0; i < shm->num_flights; i++) {
@@ -530,17 +470,14 @@ int main() {
         }
     }
 
-    // ── fork one child per flight ──────────────────────────────────────────────
     pid_t pids[MAX_FLIGHTS];
-    memset(pids, 0, sizeof(pids)); // 0 = not forked; set to child PID when forked
+    memset(pids, 0, sizeof(pids));
 
     for (int i = 0; i < shm->num_flights; i++) {
         shm->flights[i].process_id = 0;
 
-        if (!shm->flights[i].is_active) {
-            // Out-of-scope flight — no child process needed
+        if (!shm->flights[i].is_active)
             continue;
-        }
 
         fflush(stdout);
         pid_t pid = fork();
@@ -551,54 +488,38 @@ int main() {
         }
 
         if (pid == 0) {
-            // ════════════ CHILD PROCESS ════════════════════════════════════════
             for (int j = 0; j < shm->num_flights; j++) {
-                close(pipe_fds[j][0]); //close read ends
-                if (j != i) close(pipe_fds[j][1]); //close write ends of other flights
+                close(pipe_fds[j][0]);
+                if (j != i) close(pipe_fds[j][1]);
             }
             run_flight_process(shm, i, pipe_fds[i][1], step_sems[i], main_sem);
             close(pipe_fds[i][1]);
             exit(EXIT_SUCCESS);
-            // ════════════ END OF CHILD ═════════════════════════════════════════
         }
 
         pids[i] = pid;
-        shm->flights[i].process_id = pid; //set process id for flight
-        printf("Forked child PID %d for flight %s (departs at offset %.0fs)\n", pid, shm->flights[i].callsign, shm->flights[i].departure_offset_s);
+        shm->flights[i].process_id = pid;
+        printf("Forked child PID %d for flight %s (departs at offset %.0fs)\n",
+               pid, shm->flights[i].callsign, shm->flights[i].departure_offset_s);
     }
 
-    // Parent closes ALL write ends — it only reads from the pipes.
-    // Important: if the parent kept a write end open, read() would never return EOF.
-
+    // Parent only reads from pipes; keeping write ends open would prevent EOF.
     for (int i = 0; i < shm->num_flights; i++)
-    {
         close(pipe_fds[i][1]);
-    }
 
-    // Startup barrier: wait for every child to post main_sem once (signals ready).
-    // Guarantees all "Process started" lines appear before any simulation step output.
+    // Wait for every child to signal ready before starting the step loop.
     for (int i = 0; i < num_forked; i++)
-    {
         sem_wait(main_sem);
-    }
 
-    // Initialize all flights as GATE so the first active step always prints
-    // GATE → CLIMB, regardless of what current_phase the child set initially.
     FlightPhase prev_phase[MAX_FLIGHTS];
     for (int i = 0; i < shm->num_flights; i++)
-    {
         prev_phase[i] = PHASE_GATE;
-    }
 
-    // Storage for one PipeMessage per flight per step (re-used each iteration).
     PipeMessage step_msgs[MAX_FLIGHTS];
 
-    // Position history: one buffer per flight, filled by the parent as
-    // it reads validated updates from each flight's pipe
     static PositionHistory histories[MAX_FLIGHTS];
     for (int i = 0; i < MAX_FLIGHTS; i++) { histories[i].count = 0; histories[i].next = 0; }
 
-    // Seed step 0: departure airport position (ground level) from the first waypoint.
     for (int i = 0; i < shm->num_flights; i++) {
         Flight *f = &shm->flights[i];
         Position dep = f->flight_plan.waypoints[0].pos;
@@ -606,23 +527,8 @@ int main() {
         append_position(&histories[i], &dep);
     }
 
-    // ── 6.5  Step-lock simulation loop (parent only) ───────────────────────────
-    //
-    // This loop advances the simulation one time step at a time.
-    // Each iteration:
-    //   1. Post to each active child's step semaphore → children run in parallel
-    //   2. Wait for each child to post back to main_sem → all children are done
-    //   3. Read each child's pipe message → collect StepData for the UI table
-    //   4. Check for violations → compare all aircraft pairs
-    //   5. Advance the clock
-    //   6. Print the full 25-column table for this step
-    //
-    // This is the STEP-LOCK pattern: the simulation clock only moves forward
-    // after every active process has finished computing the current step.
-
     printf("\n--- Simulation running ---\n");
 
-    // ── Step 0: print initial state before any physics runs ───────────────────
     {
         int wall_s = (int)shm->config.sim_start_seconds;
         printf("\n");
@@ -679,10 +585,6 @@ int main() {
 
     while (shm->current_time < shm->config.end_time) {
 
-        // Snapshot which flights this step should wake: active AND past departure.
-        // Pre-departure children stay blocked on their semaphore and cost nothing.
-        // was_active also captures flights that land THIS step (is_active flips to
-        // false inside the child, but we must still drain their pipe and show them).
         double step_time = shm->current_time;
         int active = 0;
         bool was_active[MAX_FLIGHTS];
@@ -692,14 +594,11 @@ int main() {
         }
 
         if (active == 0) {
-            // No flying flights this step — check if any are still waiting to depart
             bool any_pending = false;
-            for (int i = 0; i < shm->num_flights; i++)
-            {
-                if (shm->flights[i].is_active) 
-                { 
-                    any_pending = true; 
-                    break; 
+            for (int i = 0; i < shm->num_flights; i++) {
+                if (shm->flights[i].is_active) {
+                    any_pending = true;
+                    break;
                 }
             }
             if (!any_pending) break;
@@ -709,34 +608,17 @@ int main() {
 
         step_num++;
 
-        // ── SIGNAL: wake only the flights flying this step ────────────────────
         for (int i = 0; i < shm->num_flights; i++)
-        {
             if (was_active[i])
-            {
                 sem_post(step_sems[i]);
-            }
-        }
 
-        // ── WAIT: block until every woken child finishes ──────────────────────
         for (int i = 0; i < active; i++)
-        {
             sem_wait(main_sem);
-        }
 
-        // ── DRAIN pipes ───────────────────────────────────────────────────────
-        // Read from all flights that ran this step, including those that just
-        // landed (is_active is now false but the pipe message was still written).
-        for (int i = 0; i < shm->num_flights; i++) 
-        {
+        for (int i = 0; i < shm->num_flights; i++) {
             if (!was_active[i]) continue;
-            ssize_t n = read(pipe_fds[i][0], &step_msgs[i], sizeof(PipeMessage)); //read (pipe of the child, store in array, size)
+            ssize_t n = read(pipe_fds[i][0], &step_msgs[i], sizeof(PipeMessage));
 
-            // Validate the received position and track it.
-            // A complete, valid update is appended to this flight's history so that
-            // past positions are available for safety analysis .
-            // An incomplete read or invalid coordinates are rejected without
-            // corrupting the stored data (TC05).
             if (n == (ssize_t)sizeof(PipeMessage) &&
                 step_msgs[i].type == MSG_POSITION_UPDATE) {
                 if (is_valid_position(&step_msgs[i].new_pos)) {
@@ -752,23 +634,16 @@ int main() {
             }
         }
 
-        // ── ADVANCE the simulation clock ──────────────────────────────────────
         shm->current_time += shm->config.time_step;
 
-        // ── CHECK VIOLATIONS ──────────────────────────────────────────────────
-        // Children are blocked on their step semaphores at this point, so
-        // shared memory is safe to read without extra synchronisation.
+        // Children are blocked on step semaphores here, so shared memory is safe to read.
         check_violations(shm, was_active, pids, shm->num_flights);
 
-        // ── EARLY TERMINATION CHECK ────────────────────────────────────────────
-        // check_violations sets termination_requested when max violations
-        // are exceeded and sends SIGTERM to all active flight processes.
         if (shm->termination_requested) {
             printf("[SIM] Simulation terminated early — max violations exceeded.\n");
             break;
         }
 
-        // ── PRINT the full per-step table ─────────────────────────────────────
         print_step_table(shm, step_msgs, prev_phase,
                          shm->current_time, step_num, total_steps, step_time,
                          was_active);
@@ -784,9 +659,7 @@ int main() {
                                     shm->config.sim_start_seconds);
         }
 
-        // Intermediate leg completion: child set leg_just_completed=true and is_active=true.
-        // Parent clears the flag here (child is blocked on step_sem — no concurrent write).
-        // Track which flights completed a leg so prev_phase can be reset to GATE below.
+        // Child is blocked on step_sem here — no concurrent write on leg_just_completed.
         bool leg_done[MAX_FLIGHTS];
         for (int i = 0; i < shm->num_flights; i++) leg_done[i] = false;
         for (int i = 0; i < shm->num_flights; i++) {
@@ -797,7 +670,7 @@ int main() {
             printf("[%s] Arrived at intermediate stop. Leg %d complete. "
                    "Next leg (leg %d) departs at offset %.0fs.\n",
                    f->callsign,
-                   f->current_leg - 1,   // just-completed leg (already incremented in child)
+                   f->current_leg - 1,
                    f->current_leg,
                    f->departure_offset_s);
             print_arrival_deviation(f->legs[f->current_leg - 1].scheduled_arrival_offset_s,
@@ -807,19 +680,16 @@ int main() {
 
         fflush(stdout);
 
-        // ── UPDATE prev_phase for next iteration ──────────────────────────────
         for (int i = 0; i < shm->num_flights; i++)
             if (was_active[i])
                 prev_phase[i] = step_msgs[i].step.phase;
-        // Flights that just completed a leg are back at the gate — next step
-        // should show GATE → CLIMB rather than (old phase) → CLIMB.
+
+        // Flights that just completed a leg are back at the gate.
         for (int i = 0; i < shm->num_flights; i++)
             if (leg_done[i])
                 prev_phase[i] = PHASE_GATE;
     }
 
-    // ── 6.6  Wrap up and report ────────────────────────────────────────────────
-    // US109: Finalize the simulation report with final flight statuses
     finalize_simulation_report(shm, shm->current_time);
 
     printf("\n");
@@ -836,7 +706,6 @@ int main() {
                shm->flights[i].violation_detected ? "HAD VIOLATION" : "clean");
     }
 
-    // ── US101 — Position history report ───────────────────────────────────────
     printf("\n");
     printf("╔══════════════════════════════════════════════════════╗\n");
     printf("║           POSITION HISTORY (US101)                   ║\n");
@@ -852,19 +721,14 @@ int main() {
         for (int j = 0; j < histories[i].count; j++) {
             Position *p = &histories[i].entries[(start + j) % MAX_HISTORY];
             printf("  %6d  %8.4f  %9.4f  %9.0f\n",
-                   j,
-                   p->latitude,
-                   p->longitude,
-                   p->altitude);
+                   j, p->latitude, p->longitude, p->altitude);
         }
     }
     printf("\n");
 
-    // Close the parent's pipe read ends before freeing shared memory
     for (int i = 0; i < shm->num_flights; i++)
         close(pipe_fds[i][0]);
 
-    // Release all resources: wait for children, destroy semaphores, unmap/unlink memory
     cleanup(shm, pids, shm->num_flights, parent_pid, step_sems, main_sem);
     return EXIT_SUCCESS;
 }
