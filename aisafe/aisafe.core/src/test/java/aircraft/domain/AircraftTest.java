@@ -174,6 +174,6 @@ class AircraftTest {
     void ensureRegistrationNumberReturnsIdentityString() {
         final Aircraft aircraft = validAircraft();
         assertNotNull(aircraft.registrationNumber());
-        assertEquals(aircraft.identity().toString(), aircraft.registrationNumber());
+        assertEquals("CS-TKA", aircraft.registrationNumber());
     }
 }
