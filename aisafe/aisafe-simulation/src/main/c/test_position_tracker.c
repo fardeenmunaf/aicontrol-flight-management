@@ -74,13 +74,16 @@ static int test_multiple_appends(void) {
 static int test_history_full(void) {
     static PositionHistory h;
     memset(&h, 0, sizeof(h));
-    Position p = {10.0, 10.0, 1000.0, 0.0};
-    for (int i = 0; i < MAX_HISTORY + 10; i++)
-        append_position(&h, &p);
-    return check("History does not overflow beyond MAX_HISTORY",
-                 h.count == MAX_HISTORY);
+    Position old_pos = {10.0, 10.0, 1000.0, 0.0};
+    Position new_pos = {20.0, 20.0, 2000.0, 0.0};
+    for (int i = 0; i < MAX_HISTORY; i++)
+        append_position(&h, &old_pos);
+    append_position(&h, &new_pos);
+    int ok = (h.count == MAX_HISTORY &&
+              h.entries[0].latitude == 20.0 &&
+              h.next == 1);
+    return check("Full buffer overwrites oldest entry (ring buffer)", ok);
 }
-
 
 static int test_independent_histories(void) {
     PositionHistory h1, h2;

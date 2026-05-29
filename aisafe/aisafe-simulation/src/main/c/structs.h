@@ -170,14 +170,15 @@ typedef struct {
 // ── Position history  ──────────────────────────────────────────────
 //
 // The parent process accumulates every validated position update it receives
-// from each flight process through the pipe.  MAX_HISTORY is chosen to be
-// larger than the maximum number of simulation steps (end_time / time_step).
+// from each flight process through the pipe.  When the buffer is full, the
+// oldest entry is overwritten (ring/circular buffer).
 
 #define MAX_HISTORY 200
 
 typedef struct {
-    Position entries[MAX_HISTORY]; // chronological list of past positions
-    int      count;                // how many entries are currently stored
+    Position entries[MAX_HISTORY]; // ring buffer of past positions
+    int      count;                // number of valid entries (capped at MAX_HISTORY)
+    int      next;                 // index where the next write will go
 } PositionHistory;
 
 // ── Pipe (IPC) message types ──────────────────────────────────────────────────

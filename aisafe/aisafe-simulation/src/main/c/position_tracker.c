@@ -10,8 +10,9 @@ int is_valid_position(const Position *p) {
 }
 
 void append_position(PositionHistory *h, const Position *p) {
-    if (!h || !p)               return;
-    if (h->count >= MAX_HISTORY) return;
-    h->entries[h->count] = *p;
-    h->count++;
+    if (!h || !p) return;
+    h->entries[h->next] = *p;
+    h->next = (h->next + 1) % MAX_HISTORY;
+    if (h->count < MAX_HISTORY)
+        h->count++;
 }

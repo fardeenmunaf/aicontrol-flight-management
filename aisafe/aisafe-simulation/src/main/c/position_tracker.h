@@ -13,8 +13,9 @@
 int is_valid_position(const Position *p);
 
 /*
- * Appends *p to the history buffer h if there is room (h->count < MAX_HISTORY).
- * Positions are stored in arrival order, supporting TC03 and TC06.
+ * Writes *p into the ring buffer h.  When the buffer is full the oldest entry
+ * is overwritten.  Positions are stored in arrival order (ring-buffer semantics),
+ * supporting TC03 and TC06.
  */
 void append_position(PositionHistory *h, const Position *p);
 

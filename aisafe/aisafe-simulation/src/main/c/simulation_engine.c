@@ -596,7 +596,7 @@ int main() {
     // Position history: one buffer per flight, filled by the parent as
     // it reads validated updates from each flight's pipe
     static PositionHistory histories[MAX_FLIGHTS];
-    for (int i = 0; i < MAX_FLIGHTS; i++) histories[i].count = 0;
+    for (int i = 0; i < MAX_FLIGHTS; i++) { histories[i].count = 0; histories[i].next = 0; }
 
     // Seed step 0: departure airport position (ground level) from the first waypoint.
     for (int i = 0; i < shm->num_flights; i++) {
@@ -848,8 +848,9 @@ int main() {
         printf("\n  %s  (%d steps)\n", shm->flights[i].callsign, histories[i].count);
         printf("  %6s  %8s  %9s  %9s\n", "STEP", "LAT", "LON", "ALT (m)");
         printf("  %6s  %8s  %9s  %9s\n", "------", "--------", "---------", "---------");
+        int start = (histories[i].count < MAX_HISTORY) ? 0 : histories[i].next;
         for (int j = 0; j < histories[i].count; j++) {
-            Position *p = &histories[i].entries[j];
+            Position *p = &histories[i].entries[(start + j) % MAX_HISTORY];
             printf("  %6d  %8.4f  %9.4f  %9.0f\n",
                    j,
                    p->latitude,
