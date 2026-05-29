@@ -6,7 +6,7 @@
       styleClass="root" spacing="0">
 
     <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
-        <Label text="Available Pilots" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Label fx:id="pageTitle" text="Available Pilots" styleClass="page-title" style="-fx-padding: 0;"/>
         <Region HBox.hgrow="ALWAYS"/>
         <Button text="↻  Refresh" styleClass="btn-success" onAction="#onRefresh"/>
     </HBox>
@@ -15,9 +15,10 @@
 
     <TableView fx:id="table" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
         <columns>
-            <TableColumn fx:id="colEmail"   text="Email"            prefWidth="240"/>
-            <TableColumn fx:id="colStatus"  text="Status"           prefWidth="90"/>
-            <TableColumn fx:id="colModels"  text="Certified Models" prefWidth="380"/>
+            <TableColumn fx:id="colEmail"   text="Email"            prefWidth="220"/>
+            <TableColumn fx:id="colStatus"  text="Status"           prefWidth="80"/>
+            <TableColumn fx:id="colModels"  text="Certified Models" prefWidth="300"/>
+            <TableColumn fx:id="colAction"  text="Action"           prefWidth="120"/>
         </columns>
     </TableView>
 
