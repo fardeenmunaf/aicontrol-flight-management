@@ -1,7 +1,13 @@
 package jpa;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import eapli.framework.util.Utility;
 
@@ -28,6 +34,8 @@ public final class PersistenceSettings {
     private static final String DEFAULT_USERNAME = "sa";
     private static final String DEFAULT_PASSWORD = "";
 
+    private static final Map<String, String> DOT_ENV = loadDotEnv();
+
     private PersistenceSettings() {}
 
     public static String getPersistenceUnitName() {
@@ -51,6 +59,27 @@ public final class PersistenceSettings {
         if (value == null || value.isBlank()) {
             value = System.getenv(envKey);
         }
+        if (value == null || value.isBlank()) {
+            value = DOT_ENV.get(envKey);
+        }
         return (value != null && !value.isBlank()) ? value : defaultValue;
+    }
+
+    private static Map<String, String> loadDotEnv() {
+        final Path dotEnv = Path.of(".env");
+        if (!Files.exists(dotEnv)) {
+            return Collections.emptyMap();
+        }
+        final Properties props = new Properties();
+        try (InputStream in = Files.newInputStream(dotEnv)) {
+            props.load(in);
+        } catch (IOException e) {
+            return Collections.emptyMap();
+        }
+        final Map<String, String> result = new HashMap<>();
+        for (final String name : props.stringPropertyNames()) {
+            result.put(name, props.getProperty(name));
+        }
+        return result;
     }
 }

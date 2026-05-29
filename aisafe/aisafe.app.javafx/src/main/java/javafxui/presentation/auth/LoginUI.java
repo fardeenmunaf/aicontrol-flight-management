@@ -10,6 +10,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafxui.SessionContext;
+import jpa.PersistenceSettings;
 
 import java.io.IOException;
 
@@ -18,7 +19,14 @@ public class LoginUI {
     @FXML private TextField emailField;
     @FXML private PasswordField passwordField;
     @FXML private Label errorLabel;
+    @FXML private Label dbBadge;
     @FXML private Button loginButton;
+
+    @FXML
+    private void initialize() {
+        final boolean isPostgres = PersistenceSettings.getPersistenceUnitName().contains("postgres");
+        dbBadge.setText(isPostgres ? "PostgreSQL" : "H2 In-Memory");
+    }
 
     @FXML
     private void onLogin() {
