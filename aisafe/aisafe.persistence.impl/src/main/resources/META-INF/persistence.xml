@@ -33,6 +33,7 @@
         <class>eapli.framework.infrastructure.authz.domain.model.RoleSet</class>
         <class>eapli.framework.infrastructure.authz.domain.model.RoleAssignment</class>
         <class>customercollaborator.domain.CustomerCollaborator</class>
+        <class>pilot.domain.PilotCompanyAssignment</class>
 
         <properties>
             <property name="jakarta.persistence.jdbc.driver"   value="org.h2.Driver"/>
@@ -75,6 +76,7 @@
         <class>aircontrolarea.domain.AirControlArea</class>
         <class>airtransportcompany.domain.AirTransportCompany</class>
         <class>customercollaborator.domain.CustomerCollaborator</class>
+        <class>pilot.domain.PilotCompanyAssignment</class>
         <class>eapli.framework.infrastructure.authz.domain.model.SystemUser</class>
         <class>eapli.framework.infrastructure.authz.domain.model.Role</class>
         <class>eapli.framework.infrastructure.authz.domain.model.RoleSet</class>
