@@ -129,19 +129,30 @@ typedef struct {
     int      next;
 } PositionHistory;
 
-typedef enum {
-    MSG_POSITION_UPDATE,
-    MSG_VIOLATION_NOTIFY,
-    MSG_TERMINATE,
-    MSG_SYNC_STEP
-} MessageType;
-
-// Fixed-size struct written atomically into a pipe (no pointers, no VLAs).
+// Command sent from parent to child at the start of each step.
 typedef struct {
-    MessageType type;
-    int flight_id;
-    Position new_pos;
-    StepData step;
+    double current_time;
+    bool   terminate;
+} StepCommand;
+
+// Full dynamic flight state sent from child to parent after each step.
+// Carries everything the parent needs to update its local Flight copy.
+typedef struct {
+    int         flight_id;
+    Position    current_pos;
+    Velocity    velocity;
+    FlightPhase current_phase;
+    double      current_mass;
+    double      initial_mass;
+    double      initial_fuel_mass;
+    double      payload;
+    double      departure_offset_s;
+    int         current_leg;
+    int         current_waypoint_index;
+    bool        is_active;
+    bool        leg_just_completed;
+    bool        fuel_exhaustion_reported;
+    StepData    step;
 } PipeMessage;
 
 typedef struct {
@@ -200,6 +211,6 @@ typedef struct {
     bool termination_requested;
 
     SimulationReport report;
-} SharedMemoryData;
+} SimulationData;
 
 #endif /* STRUCTS_H */

@@ -166,7 +166,7 @@ int load_simulation_settings(const char* filename, SimulationConfig* config) {
  * @param shm      Pointer to shared memory; the new flight is written into
  *                 shm->flights[shm->num_flights].
  */
-static int parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
+static int parse_flight_plan(const char* filepath, SimulationData* shm) {
     char* data = read_file(filepath);
     if (!data) return 0;
 
@@ -482,7 +482,7 @@ static int parse_flight_plan(const char* filepath, SharedMemoryData* shm) {
  * @param shm            Pointer to shared memory; flights are appended to shm->flights[].
  * @return 1 if all flight plans loaded successfully, 0 if any failed validation.
  */
-int load_all_flight_plans(const char* directory_path, SharedMemoryData* shm) {
+int load_all_flight_plans(const char* directory_path, SimulationData* shm) {
     DIR *dir;
     struct dirent *ent;
     int all_valid = 1;

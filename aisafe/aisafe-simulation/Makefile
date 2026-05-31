@@ -1,14 +1,8 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -Isrc/main/c -Isrc/main/c/libs -pthread
+LDFLAGS = -lm -pthread
 
-# -lrt é necessário no Linux (shm_open, sem_open); no macOS essas funções
-# estão na libc padrão, por isso não existe a biblioteca separada.
-UNAME := $(shell uname)
-ifeq ($(UNAME), Darwin)
-    LDFLAGS = -lm -pthread
-else
-    LDFLAGS = -lm -lrt -pthread
-endif
+all: simulation_engine report_generator
 
 simulation_engine: simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o
 	$(CC) $(CFLAGS) simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o -o simulation_engine $(LDFLAGS)
@@ -43,21 +37,18 @@ test_physics: src/main/c/test_physics.c src/main/c/physics.c
 test_position_tracker: src/main/c/test_position_tracker.c src/main/c/position_tracker.c
 	$(CC) $(CFLAGS) src/main/c/test_position_tracker.c src/main/c/position_tracker.c -o test_position_tracker $(LDFLAGS)
 
-run: simulation_engine
+run: all
+	./simulation_engine
+
+run_log: all
 	./simulation_engine > simulation_output.txt 2>&1
 	@echo "Simulation complete. Output written to simulation_output.txt"
-
-run_with_report: simulation_engine report_generator
-	nohup ./simulation_engine > simulation_output.txt 2>&1 &
-	sleep 1
-	./report_generator
-	@echo "Simulation and report generation complete"
 
 test: test_physics test_position_tracker
 	./test_physics
 	./test_position_tracker
 
 clean:
-	rm -f *.o simulation_engine report_generator test_physics test_position_tracker
+	rm -f *.o simulation_engine report_generator test_physics test_position_tracker simulation_report_*.json
 
-.PHONY: run run_with_report test clean
+.PHONY: all run test clean

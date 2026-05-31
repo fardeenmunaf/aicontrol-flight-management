@@ -24,6 +24,6 @@ int load_simulation_settings(const char* filename, SimulationConfig* config);
  * @param shm            Pointer to shared memory to populate.
  * @return 1 if all flight plans loaded successfully, 0 if any failed validation.
  */
-int load_all_flight_plans(const char* directory_path, SharedMemoryData* shm);
+int load_all_flight_plans(const char* directory_path, SimulationData* shm);
 
 #endif /* JSON_PARSER_H */

@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include "flight_simulation.h"
 #include "physics.h"
 
@@ -132,7 +133,7 @@ static void advance_position(double *lat_deg, double *lon_deg,
  * destination as that waypoint is. Stops short of the final waypoint so the
  * arrival check can fire normally.
  *
- * @param f            Pointer to the Flight in shared memory.
+ * @param f            Pointer to the Flight in local memory.
  * @param dist_to_dest Current great-circle distance to the destination in metres.
  * @param dest_lat     Destination latitude in degrees.
  * @param dest_lon     Destination longitude in degrees.
@@ -170,17 +171,14 @@ static double ias_schedule_knots(double altitude_m, FlightPhase phase) {
 /**
  * @brief Executes one physics time step for a single flight.
  *
- * Reads current state from shm->flights[idx], computes atmosphere, speed,
- * aerodynamic forces, thrust, position update, and mass update, then writes
- * results back into shared memory. Also checks for arrival and sets
- * f->is_active = false when the aircraft reaches the destination.
+ * Reads and updates the child's local Flight copy. Also checks for arrival
+ * and sets f->is_active = false when the aircraft reaches the destination.
  *
- * @param shm Pointer to shared memory (reads config, reads/writes flights[idx]).
+ * @param shm Local simulation data block (reads config and flights[idx]).
  * @param idx Index of the flight to advance.
- * @param out Output struct filled with all 25 intermediate physics values
- *            for the parent's per-step table.
+ * @param out Output struct filled with all 25 intermediate physics values.
  */
-static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) {
+static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
     Flight *f  = &shm->flights[idx];
     double dt  = shm->config.time_step;
 
@@ -219,20 +217,14 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 
     double total_thrust;
     switch (phase) {
-        case PHASE_CRUISE:
-            total_thrust = drag;
-            break;
-        case PHASE_DESCEND:
-            total_thrust = thrust_per_engine * f->properties.num_engines * 0.1;
-            break;
-        default:
-            total_thrust = thrust_per_engine * f->properties.num_engines;
-            break;
+        case PHASE_CRUISE:  total_thrust = drag; break;
+        case PHASE_DESCEND: total_thrust = thrust_per_engine * f->properties.num_engines * 0.1; break;
+        default:            total_thrust = thrust_per_engine * f->properties.num_engines; break;
     }
 
-    double climb_rate = calculate_climb_rate(total_thrust, drag, tas, f->current_mass);
+    double climb_rate  = calculate_climb_rate(total_thrust, drag, tas, f->current_mass);
     double fuel_burned = calculate_fuel_burn(total_thrust, f->properties.tsfc, dt);
-    double horiz_dist = calculate_step_distance(tas, climb_rate, dt);
+    double horiz_dist  = calculate_step_distance(tas, climb_rate, dt);
 
     double hdg = bearing_rad(f->current_pos.latitude, f->current_pos.longitude, dest_lat, dest_lon);
 
@@ -266,8 +258,7 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
     f->velocity.speed          = tas;
     f->velocity.vertical_speed = climb_rate;
     f->velocity.heading        = hdg * 180.0 / M_PI;
-
-    f->current_phase = phase;
+    f->current_phase           = phase;
 
     double new_dist = haversine_m(f->current_pos.latitude, f->current_pos.longitude,
                                    dest_lat, dest_lon);
@@ -298,20 +289,18 @@ static void compute_physics_step(SharedMemoryData *shm, int idx, StepData *out) 
 /**
  * @brief Entry point for a child flight process. Runs the step-lock loop until landing or termination.
  *
- * Installs SIGUSR1 / SIGTERM handlers, signals the parent that it is ready,
- * then repeatedly waits for the parent's step semaphore, computes one physics
- * step, writes a PipeMessage, and posts back to the parent's main semaphore.
- * Exits when the aircraft lands, g_terminate is set, or termination_requested
- * is true in shared memory.
+ * Installs SIGUSR1/SIGTERM handlers, signals the parent that it is ready,
+ * then repeatedly reads a StepCommand from cmd_read_fd, computes one physics step,
+ * and sends a PipeMessage with the full updated flight state to data_write_fd.
+ * Exits when the aircraft lands, g_terminate is set, or StepCommand.terminate is true.
  *
- * @param shm           Pointer to the shared memory block.
+ * @param shm           Pointer to the local simulation data block (read-only after fork).
  * @param flight_index  Index of this flight in shm->flights[].
- * @param pipe_write_fd Write end of the pipe to the parent process.
- * @param step_sem      Semaphore the parent posts to wake this process each step.
- * @param main_sem      Semaphore this process posts when a step is complete.
+ * @param data_write_fd Write end of the child→parent data pipe.
+ * @param cmd_read_fd   Read end of the parent→child command pipe.
  */
-void run_flight_process(SharedMemoryData *shm, int flight_index,
-                        int pipe_write_fd, sem_t *step_sem, sem_t *main_sem) {
+void run_flight_process(SimulationData *shm, int flight_index,
+                        int data_write_fd, int cmd_read_fd) {
     Flight *f = &shm->flights[flight_index];
 
     strncpy(g_callsign, f->callsign, CALLSIGN_LEN - 1);
@@ -321,8 +310,6 @@ void run_flight_process(SharedMemoryData *shm, int flight_index,
     struct sigaction sa_usr1;
     sa_usr1.sa_handler = sigusr1_handler;
     sigemptyset(&sa_usr1.sa_mask);
-    sigaddset(&sa_usr1.sa_mask, SIGTERM);
-    sigaddset(&sa_usr1.sa_mask, SIGUSR1);
     sa_usr1.sa_flags = SA_RESTART;
     sigaction(SIGUSR1, &sa_usr1, NULL);
 
@@ -341,22 +328,28 @@ void run_flight_process(SharedMemoryData *shm, int flight_index,
            f->initial_mass, f->initial_fuel_mass, f->payload);
     fflush(stdout);
 
-    sem_post(main_sem);
+    // Signal parent that this child is ready.
+    char ready = 'R';
+    write(data_write_fd, &ready, 1);
 
     while (1) {
-        sem_wait(step_sem);
+        // Read step command from parent. SIGTERM (no SA_RESTART) causes EINTR — check g_terminate.
+        StepCommand cmd;
+        ssize_t n;
+        do {
+            n = read(cmd_read_fd, &cmd, sizeof(cmd));
+        } while (n < 0 && errno == EINTR && !g_terminate);
 
-        if (g_terminate || shm->termination_requested || !f->is_active)
+        if (n <= 0 || g_terminate || cmd.terminate || !f->is_active)
             break;
 
         PipeMessage msg;
-        msg.type = MSG_POSITION_UPDATE;
         msg.flight_id = f->id;
 
         compute_physics_step(shm, flight_index, &msg.step);
 
         // If this leg is done and there is a next leg, reset per-leg state and stay active.
-        // Must happen BEFORE sem_post so the parent sees updated state after sem_wait.
+        // Must happen BEFORE writing to the pipe so the parent sees updated state.
         if (!f->is_active && f->current_leg < f->num_legs - 1) {
             f->current_leg++;
             Leg *next = &f->legs[f->current_leg];
@@ -372,10 +365,22 @@ void run_flight_process(SharedMemoryData *shm, int flight_index,
             f->fuel_exhaustion_reported           = false;
         }
 
-        msg.new_pos = f->current_pos;
+        // Fill the message with the full updated flight state.
+        msg.current_pos             = f->current_pos;
+        msg.velocity                = f->velocity;
+        msg.current_phase           = f->current_phase;
+        msg.current_mass            = f->current_mass;
+        msg.initial_mass            = f->initial_mass;
+        msg.initial_fuel_mass       = f->initial_fuel_mass;
+        msg.payload                 = f->payload;
+        msg.departure_offset_s      = f->departure_offset_s;
+        msg.current_leg             = f->current_leg;
+        msg.current_waypoint_index  = f->flight_plan.current_waypoint_index;
+        msg.is_active               = f->is_active;
+        msg.leg_just_completed      = f->leg_just_completed;
+        msg.fuel_exhaustion_reported = f->fuel_exhaustion_reported;
 
-        write(pipe_write_fd, &msg, sizeof(msg));
-        sem_post(main_sem);
+        write(data_write_fd, &msg, sizeof(msg));
 
         if (!f->is_active)
             break;
