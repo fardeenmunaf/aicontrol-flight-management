@@ -1,36 +1,61 @@
 package weatherData.dto;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class WeatherDataDTO {
 
-    private final String airControlArea;
-    private final LocalDateTime dateTime;
-    private final Double windDirection;
+    private final String acaCode;
+    private final Double latitude1;
+    private final Double longitude1;
+    private final Double latitude2;
+    private final Double longitude2;
+    private final Double altitudeInf;
+    private final Double altitudeSup;
+    private final Double direction;
     private final Double windSpeed;
-    private final Double temperature;
-    private final Double pressure;
+    private final LocalDate date;
+    private final LocalTime startHour;
+    private final LocalTime endHour;
 
     public WeatherDataDTO(
-            final String airControlArea,
-            final LocalDateTime dateTime,
-            final Double windDirection,
+            final String acaCode,
+            final Double latitude1,
+            final Double longitude1,
+            final Double latitude2,
+            final Double longitude2,
+            final Double altitudeInf,
+            final Double altitudeSup,
+            final Double direction,
             final Double windSpeed,
-            final Double temperature,
-            final Double pressure) {
+            final LocalDate date,
+            final LocalTime startHour,
+            final LocalTime endHour) {
 
-        this.airControlArea = airControlArea;
-        this.dateTime = dateTime;
-        this.windDirection = windDirection;
+        this.acaCode = acaCode;
+        this.latitude1 = latitude1;
+        this.longitude1 = longitude1;
+        this.latitude2 = latitude2;
+        this.longitude2 = longitude2;
+        this.altitudeInf = altitudeInf;
+        this.altitudeSup = altitudeSup;
+        this.direction = direction;
         this.windSpeed = windSpeed;
-        this.temperature = temperature;
-        this.pressure = pressure;
+        this.date = date;
+        this.startHour = startHour;
+        this.endHour = endHour;
     }
 
-    public String airControlArea() { return airControlArea; }
-    public LocalDateTime dateTime() { return dateTime; }
-    public Double windDirection() { return windDirection; }
+    public String acaCode() { return acaCode; }
+    public Double latitude1() { return latitude1; }
+    public Double longitude1() { return longitude1; }
+    public Double latitude2() { return latitude2; }
+    public Double longitude2() { return longitude2; }
+    public Double altitudeInf() { return altitudeInf; }
+    public Double altitudeSup() { return altitudeSup; }
+    public Double direction() { return direction; }
     public Double windSpeed() { return windSpeed; }
-    public Double temperature() { return temperature; }
-    public Double pressure() { return pressure; }
+    public LocalDate date() { return date; }
+    public LocalTime startHour() { return startHour; }
+    public LocalTime endHour() { return endHour; }
 }

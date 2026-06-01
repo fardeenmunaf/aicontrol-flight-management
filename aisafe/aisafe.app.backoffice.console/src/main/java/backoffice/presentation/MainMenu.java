@@ -21,6 +21,7 @@ public class MainMenu extends AbstractUI {
     private static final int CUSTOMER_COLLABORATORS_OPTION = 5;
     private static final int AIR_TRANSPORT_COMPANIES_OPTION = 6;
     private static final int AIR_CONTROL_AREAS_OPTION = 7;
+    private static final int WEATHER_DATA_OPTION = 8;
 
     private final AuthorizationService authz = AuthzRegistry.authorizationService();
 
@@ -66,6 +67,8 @@ public class MainMenu extends AbstractUI {
                     new backoffice.presentation.airtransportcompany.AirTransportCompaniesMenuAction());
             mainMenu.addItem(AIR_CONTROL_AREAS_OPTION, "Air Control Areas",
                     new backoffice.presentation.aircontrolarea.AirControlAreasMenuAction());
+            mainMenu.addItem(WEATHER_DATA_OPTION, "Weather Data (by Day & Area)",
+                    new backoffice.presentation.weather.ViewWeatherDataMenuAction());
         }
 
         mainMenu.addItem(EXIT_OPTION, "Exit", new ExitWithMessageAction("Thank you for using the AISafe Backoffice."));

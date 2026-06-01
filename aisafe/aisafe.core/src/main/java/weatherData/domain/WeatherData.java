@@ -1,6 +1,7 @@
 package weatherData.domain;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EmbeddedId;
@@ -22,55 +23,95 @@ public class WeatherData implements AggregateRoot<WeatherDataId> {
     @EmbeddedId
     private WeatherDataId weatherDataId;
 
-
-    private String airControlArea;
-    private LocalDateTime dateTime;
+    private String acaCode;
+    private Double latitude1;
+    private Double longitude1;
+    private Double latitude2;
+    private Double longitude2;
+    private Double altitudeInf;
+    private Double altitudeSup;
+    private Double direction;
     private Double windSpeed;
-    private Double windDirection;
-    private Double temperature;
-    private Double pressure;
+    private LocalDate date;
+    private LocalTime startHour;
+    private LocalTime endHour;
 
     public WeatherData(
-            final String airControlArea,
-            final LocalDateTime dateTime,
-            final Double windDirection,
+            final String acaCode,
+            final Double latitude1,
+            final Double longitude1,
+            final Double latitude2,
+            final Double longitude2,
+            final Double altitudeInf,
+            final Double altitudeSup,
+            final Double direction,
             final Double windSpeed,
-            final Double temperature,
-            final Double pressure) {
+            final LocalDate date,
+            final LocalTime startHour,
+            final LocalTime endHour) {
 
         Preconditions.noneNull(
-                airControlArea, dateTime, windDirection,
-                windSpeed, temperature, pressure
+                acaCode, latitude1, longitude1, latitude2, longitude2,
+                altitudeInf, altitudeSup, direction, windSpeed, date, startHour, endHour
         );
 
-        if (airControlArea.isBlank()) {
-            throw new IllegalArgumentException("Air control area cannot be empty");
+        if (acaCode.isBlank()) {
+            throw new IllegalArgumentException("ACA code cannot be empty");
+        }
+
+        if (latitude1 < -90 || latitude1 > 90) {
+            throw new IllegalArgumentException("Latitude 1 must be between -90 and 90");
+        }
+
+        if (latitude2 < -90 || latitude2 > 90) {
+            throw new IllegalArgumentException("Latitude 2 must be between -90 and 90");
+        }
+
+        if (longitude1 < -180 || longitude1 > 180) {
+            throw new IllegalArgumentException("Longitude 1 must be between -180 and 180");
+        }
+
+        if (longitude2 < -180 || longitude2 > 180) {
+            throw new IllegalArgumentException("Longitude 2 must be between -180 and 180");
+        }
+
+        if (altitudeInf < 0) {
+            throw new IllegalArgumentException("Altitude inferior must be non-negative");
+        }
+
+        if (altitudeSup < 0) {
+            throw new IllegalArgumentException("Altitude superior must be non-negative");
+        }
+
+        if (altitudeInf > altitudeSup) {
+            throw new IllegalArgumentException("Altitude inferior must be less than or equal to altitude superior");
+        }
+
+        if (direction < 0 || direction > 360) {
+            throw new IllegalArgumentException("Direction must be between 0 and 360 degrees");
         }
 
         if (windSpeed < 0) {
             throw new IllegalArgumentException("Wind speed must be non-negative");
         }
 
-        if (windDirection < 0 || windDirection > 360) {
-            throw new IllegalArgumentException("Wind direction must be between 0 and 360 degrees");
-        }
-
-
-        if (pressure <= 0) {
-            throw new IllegalArgumentException("Pressure must be positive");
-        }
-
-        if (temperature < -100 || temperature > 100) {
-            throw new IllegalArgumentException("Temperature out of realistic range");
+        if (startHour.isAfter(endHour)) {
+            throw new IllegalArgumentException("Start hour must be before or equal to end hour");
         }
 
         this.weatherDataId = WeatherDataId.newId();
-        this.airControlArea = airControlArea;
-        this.dateTime = dateTime;
-        this.windDirection = windDirection;
+        this.acaCode = acaCode;
+        this.latitude1 = latitude1;
+        this.longitude1 = longitude1;
+        this.latitude2 = latitude2;
+        this.longitude2 = longitude2;
+        this.altitudeInf = altitudeInf;
+        this.altitudeSup = altitudeSup;
+        this.direction = direction;
         this.windSpeed = windSpeed;
-        this.temperature = temperature;
-        this.pressure = pressure;
+        this.date = date;
+        this.startHour = startHour;
+        this.endHour = endHour;
     }
 
     protected WeatherData() {
@@ -97,28 +138,51 @@ public class WeatherData implements AggregateRoot<WeatherDataId> {
         return DomainEntities.hashCode(this);
     }
 
-
-    public String airControlArea() {
-        return airControlArea;
+    public String acaCode() {
+        return acaCode;
     }
 
-    public LocalDateTime dateTime() {
-        return dateTime;
+    public Double latitude1() {
+        return latitude1;
+    }
+
+    public Double longitude1() {
+        return longitude1;
+    }
+
+    public Double latitude2() {
+        return latitude2;
+    }
+
+    public Double longitude2() {
+        return longitude2;
+    }
+
+    public Double altitudeInf() {
+        return altitudeInf;
+    }
+
+    public Double altitudeSup() {
+        return altitudeSup;
+    }
+
+    public Double direction() {
+        return direction;
     }
 
     public Double windSpeed() {
         return windSpeed;
     }
 
-    public Double windDirection() {
-        return windDirection;
+    public LocalDate date() {
+        return date;
     }
 
-    public Double temperature() {
-        return temperature;
+    public LocalTime startHour() {
+        return startHour;
     }
 
-    public Double pressure() {
-        return pressure;
+    public LocalTime endHour() {
+        return endHour;
     }
 }

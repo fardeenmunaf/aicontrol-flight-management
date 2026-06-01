@@ -27,8 +27,19 @@ public class InMemoryWeatherDataRepository extends InMemoryDomainRepository<Weat
             return Optional.empty();
         }
         for (final WeatherData wd : this.findAll()) {
-            if (area.equals(wd.airControlArea()) && dateTime.equals(wd.dateTime())) {
-                return Optional.of(wd);
+            // Match by ACA and by date/time falling within the weather data's date and time window
+            if (area.equals(wd.acaCode())) {
+                if (wd.date() != null) {
+                    if (wd.date().equals(dateTime.toLocalDate())) {
+                        // check time between start and end (inclusive)
+                        if (wd.startHour() != null && wd.endHour() != null) {
+                            final java.time.LocalTime t = dateTime.toLocalTime();
+                            if (!t.isBefore(wd.startHour()) && !t.isAfter(wd.endHour())) {
+                                return Optional.of(wd);
+                            }
+                        }
+                    }
+                }
             }
         }
         return Optional.empty();
@@ -41,7 +52,7 @@ public class InMemoryWeatherDataRepository extends InMemoryDomainRepository<Weat
             return result;
         }
         for (final WeatherData wd : this.findAll()) {
-            if (area.equals(wd.airControlArea())) {
+            if (area.equals(wd.acaCode())) {
                 result.add(wd);
             }
         }
