@@ -83,4 +83,18 @@ public class Pilot implements AggregateRoot<PilotId> {
     public Set<AircraftModel> certifiedAircraftModels() {
         return new HashSet<>(certifiedAircraftModels);
     }
+
+    public void deactivate() {
+        if (this.status == PilotStatus.INACTIVE) {
+            throw new IllegalStateException("Pilot is already inactive");
+        }
+        this.status = PilotStatus.INACTIVE;
+    }
+
+    public void activate() {
+        if (this.status == PilotStatus.ACTIVE) {
+            throw new IllegalStateException("Pilot is already active");
+        }
+        this.status = PilotStatus.ACTIVE;
+    }
 }
