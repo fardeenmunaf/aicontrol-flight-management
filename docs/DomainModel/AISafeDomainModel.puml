@@ -45,6 +45,18 @@ package "Pilot Aggregate" <<Aggregate>> #EBD6FF {
   end note
 }
 
+package "PilotCompanyAssignment Aggregate" <<Aggregate>> #D6EBFF {
+  class PilotCompanyAssignment <<Aggregate Root>> {
+    pilotUserId
+    companyId
+  }
+
+  note right of PilotCompanyAssignment
+    Tracks which pilots belong to which company roster.
+    Supports US75 (add), US76 (list), US77 (remove/deactivate).
+  end note
+}
+
 package "AirTransportCompany Aggregate" <<Aggregate>> #E6FFE6 {
   class AirTransportCompany <<Aggregate Root>> {
     name
@@ -271,6 +283,10 @@ CustomerCollaborator "0..*" --> "0..1" AirControlArea : works for >
 ' Pilot cross-aggregate
 Pilot "0..*" --> "1" User : account >
 Pilot "0..*" --> "1..*" AircraftModel : certified for >
+
+' PilotCompanyAssignment cross-aggregate
+PilotCompanyAssignment "0..*" --> "1" Pilot : roster entry for >
+PilotCompanyAssignment "0..*" --> "1" AirTransportCompany : assigned to >
 
 ' Topography internal
 Airport "1" *-- "1" AirportCoordinates : located at >
