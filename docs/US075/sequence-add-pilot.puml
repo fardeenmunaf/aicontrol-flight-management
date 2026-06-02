@@ -1,0 +1,78 @@
+@startuml sequence-add-pilot
+title US075 — Add a Pilot to My Company: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "ATCC" as User
+participant "AddPilotToCompanyUI" as UI #DDEEFF
+participant "AuthzRegistry\n(eapli)" as Registry #EEEEEE
+participant "CustomerCollaborator\nRepository" as CollabRepo #FFF5CC
+participant "PilotRepository" as PilotRepo #DDFFD8
+participant "JpaPilotCompanyAssignment\nRepository" as AssignRepo #FFE8E8
+database "Database\n(JPA)" as DB #EEEEEE
+
+== Company Resolution ==
+
+User -> UI ++ : select "Add Pilot to Company"
+
+UI -> Registry ++ : authorizationService().session()
+Registry --> UI -- : Optional<UserSession>
+UI -> UI : extract username (email) from session
+
+UI -> CollabRepo ++ : findByUserId(UserId.valueOf(email))
+CollabRepo -> DB ++ : SELECT CustomerCollaborator WHERE user_id = ?
+DB --> CollabRepo -- : CustomerCollaborator
+CollabRepo --> UI -- : Optional<CustomerCollaborator>
+
+alt not linked to an Air Transport Company
+    UI --> User : "Your account is not linked to an air transport company."
+    deactivate UI
+else company resolved
+    UI -> UI : companyId = collab.airTransportCompanyId()
+end
+
+== Load Unassigned Pilots ==
+
+UI -> AssignRepo ++ : findAll()
+AssignRepo -> DB ++ : SELECT * FROM PilotCompanyAssignment
+DB --> AssignRepo -- : List<PilotCompanyAssignment>
+AssignRepo --> UI -- : Iterable<PilotCompanyAssignment>
+UI -> UI : collect alreadyAssignedIds = { pilotUserId.toString() }
+
+UI -> PilotRepo ++ : findAll()
+PilotRepo -> DB ++ : SELECT * FROM Pilot (with certifiedAircraftModels)
+DB --> PilotRepo -- : List<Pilot>
+PilotRepo --> UI -- : Iterable<Pilot>
+
+UI -> UI : available = pilots\n  .filter(p → !alreadyAssignedIds.contains(p.userId()))
+
+alt no unassigned pilots
+    UI --> User : "No unassigned pilots available."
+    deactivate UI
+else pilots available
+    UI --> User : display table\n(No. | EMAIL | STATUS | CERTIFIED MODELS)
+end
+
+== Pilot Selection ==
+
+User -> UI : enter pilot number (or 0 to cancel)
+
+alt input = 0 or invalid
+    UI --> User : "Cancelled." / "Invalid input."
+    deactivate UI
+else valid selection
+    UI -> UI : selected = available.get(choice - 1)
+end
+
+== Assignment ==
+
+UI -> AssignRepo ++ : save(\n  new PilotCompanyAssignment(\n    selected.userId(), companyId))
+AssignRepo -> DB ++ : INSERT INTO PilotCompanyAssignment\n  (pilot_user_id, company_id)
+DB --> AssignRepo -- : ok
+AssignRepo --> UI -- : PilotCompanyAssignment
+
+UI --> User -- : "Pilot <email> added to your company's roster."
+
+@enduml
