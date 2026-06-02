@@ -17,6 +17,11 @@ class SessionContextTest {
     }
 
     @Test
+    void initially_not_weather_client() {
+        assertFalse(SessionContext.isWeatherClient());
+    }
+
+    @Test
     void set_authenticated_marks_authenticated() {
         SessionContext.setAuthenticated(true);
         assertTrue(SessionContext.isAuthenticated());
@@ -27,6 +32,26 @@ class SessionContextTest {
         SessionContext.setAuthenticated(true);
         SessionContext.clear();
         assertFalse(SessionContext.isAuthenticated());
+    }
+
+    @Test
+    void clear_resets_weather_client() {
+        SessionContext.setWeatherClient(true);
+        SessionContext.clear();
+        assertFalse(SessionContext.isWeatherClient());
+    }
+
+    @Test
+    void set_authenticated_false_clears_weather_client() {
+        SessionContext.setWeatherClient(true);
+        SessionContext.setAuthenticated(false);
+        assertFalse(SessionContext.isWeatherClient());
+    }
+
+    @Test
+    void set_weather_client_marks_weather_client() {
+        SessionContext.setWeatherClient(true);
+        assertTrue(SessionContext.isWeatherClient());
     }
 
     @Test

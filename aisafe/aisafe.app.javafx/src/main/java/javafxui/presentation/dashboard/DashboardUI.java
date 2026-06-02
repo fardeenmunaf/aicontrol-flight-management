@@ -73,6 +73,10 @@ public class DashboardUI {
             addNavButton("Flight Plans", "/javafxui/presentation/flightplan/FlightPlanView.fxml");
         }
 
+        if (SessionContext.isWeatherClient()) {
+            addNavButton("Weather Client", "/javafxui/presentation/weather/WeatherClientView.fxml");
+        }
+
         final Region spacer = new Region();
         VBox.setVgrow(spacer, Priority.ALWAYS);
         sidebar.getChildren().add(spacer);

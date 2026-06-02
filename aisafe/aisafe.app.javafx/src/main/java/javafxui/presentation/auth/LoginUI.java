@@ -16,6 +16,9 @@ import java.io.IOException;
 
 public class LoginUI {
 
+    private static final String WEATHER_EMAIL = "weather@aisafe.com";
+    private static final String WEATHER_PASSWORD = "Weather1234!";
+
     @FXML private TextField emailField;
     @FXML private PasswordField passwordField;
     @FXML private Label errorLabel;
@@ -45,6 +48,7 @@ public class LoginUI {
             return;
         }
         SessionContext.setAuthenticated(true);
+        SessionContext.setWeatherClient(isWeatherLogin(email, password));
         openDashboard();
     }
 
@@ -70,5 +74,9 @@ public class LoginUI {
         } catch (final IOException e) {
             errorLabel.setText("Error loading dashboard: " + e.getMessage());
         }
+    }
+
+    private boolean isWeatherLogin(final String email, final String password) {
+        return WEATHER_EMAIL.equalsIgnoreCase(email) && WEATHER_PASSWORD.equals(password);
     }
 }
