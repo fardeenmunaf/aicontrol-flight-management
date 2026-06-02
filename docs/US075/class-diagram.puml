@@ -1,0 +1,138 @@
+@startuml class-diagram
+title US075 — Add a Pilot to My Company: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer — Console ───────────────────────────────────────────
+package "airtransport.presentation.pilot" #DDEEFF {
+    class AddPilotToCompanyAction {
+        +execute() : boolean
+    }
+
+    class AddPilotToCompanyUI {
+        +doShow() : boolean
+        +headline() : String
+        -resolveCompanyId() : AirTransportCompanyId
+        -assignments() : JpaPilotCompanyAssignmentRepository
+    }
+}
+
+' ─── Presentation Layer — JavaFX ────────────────────────────────────────────
+package "javafxui.presentation.pilot" #DDEEFF {
+    class AvailablePilotsUI {
+        -myCompanyId : AirTransportCompanyId
+        +initialize() : void
+        -detectCompany() : void
+        -refresh() : void
+        -onAssign(pilot : Pilot) : void
+        -assignments() : JpaPilotCompanyAssignmentRepository
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "pilot.domain" #DDFFD8 {
+    class Pilot <<Aggregate Root>> {
+        -pilotId : PilotId
+        -userId : UserId
+        -status : PilotStatus
+        -certifiedAircraftModels : Set<AircraftModel>
+        +userId() : UserId
+        +status() : PilotStatus
+        +certifiedAircraftModels() : Set<AircraftModel>
+    }
+
+    enum PilotStatus {
+        ACTIVE
+        INACTIVE
+    }
+
+    class PilotCompanyAssignment <<Aggregate Root>> {
+        -pilotUserId : UserId
+        -companyId : AirTransportCompanyId
+        +identity() : UserId
+        +pilotUserId() : UserId
+        +companyId() : AirTransportCompanyId
+    }
+}
+
+package "pilot.repository" #DDFFD8 {
+    interface PilotRepository {
+        +findAll() : Iterable<Pilot>
+        +findByStatus(status) : List<Pilot>
+        +findCertifiedFor(model) : List<Pilot>
+    }
+}
+
+' ─── Supporting Domain ───────────────────────────────────────────────────────
+package "customercollaborator.domain" #FFF5CC {
+    class CustomerCollaborator {
+        +airTransportCompanyId() : AirTransportCompanyId
+        +customerType() : CustomerType
+    }
+}
+
+package "shared.domain" #FFF5CC {
+    class UserId <<Value Object>> {
+        -value : String
+        {static} +valueOf(email) : UserId
+        +toString() : String
+    }
+
+    class AirTransportCompanyId <<Value Object>> {
+        -value : Long
+    }
+}
+
+' ─── Infrastructure Layer ────────────────────────────────────────────────────
+package "jpa" #FFE8E8 {
+    class JpaPilotCompanyAssignmentRepository {
+        +save(assignment) : PilotCompanyAssignment
+        +findAll() : Iterable<PilotCompanyAssignment>
+        +findByCompanyId(companyId) : List<PilotCompanyAssignment>
+        +ofIdentity(id) : Optional<PilotCompanyAssignment>
+        +delete(assignment) : void
+    }
+}
+
+' ─── eapli Auth Framework ────────────────────────────────────────────────────
+package "eapli.framework.infrastructure.authz" #EEEEEE {
+    class AuthzRegistry <<utility>> {
+        {static} +authorizationService() : AuthorizationService
+    }
+    interface AuthorizationService {
+        +session() : Optional<UserSession>
+        +ensureAuthenticatedUserHasAnyOf(roles) : void
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+AddPilotToCompanyAction ..> AddPilotToCompanyUI : creates and shows
+
+AddPilotToCompanyUI ..> PilotRepository : findAll()
+AddPilotToCompanyUI ..> JpaPilotCompanyAssignmentRepository : findAll() / save()
+AddPilotToCompanyUI ..> AuthzRegistry : session()
+AddPilotToCompanyUI ..> CustomerCollaborator : resolves company
+AddPilotToCompanyUI ..> PilotCompanyAssignment : <<creates>>
+
+AvailablePilotsUI ..> PilotRepository : findAll()
+AvailablePilotsUI ..> JpaPilotCompanyAssignmentRepository : findAll() / save()
+AvailablePilotsUI ..> AuthzRegistry : session()
+AvailablePilotsUI ..> CustomerCollaborator : resolves company
+AvailablePilotsUI ..> PilotCompanyAssignment : <<creates>>
+
+Pilot --> PilotStatus : has status >
+Pilot "0..*" --> "1" UserId : identified by >
+
+PilotCompanyAssignment --> UserId : keyed by >
+PilotCompanyAssignment --> AirTransportCompanyId : assigned to >
+
+JpaPilotCompanyAssignmentRepository ..|> PilotRepository : (separate root)
+
+AuthzRegistry --> AuthorizationService : provides
+
+@enduml

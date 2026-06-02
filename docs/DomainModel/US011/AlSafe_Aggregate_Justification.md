@@ -2,7 +2,7 @@
 
 > **Project:** AISafe – Air Traffic Management System  
 > **Artefact:** US011 – Aggregate Justification Document  
-> **Version:** 2.0  
+> **Version:** 3.0  
 
 ---
 
@@ -79,6 +79,7 @@ In a full implementation, these would be *shared kernel* types defined in a comm
 13. [Simulation Aggregate](#13-simulation-aggregate)
 14. [WeatherData Aggregate](#14-weatherdata-aggregate)
 15. [SimulationReport Aggregate](#15-simulationreport-aggregate)
+16. [PilotCompanyAssignment Aggregate](#16-pilotcompanyassignment-aggregate)
 
 ---
 
@@ -491,6 +492,34 @@ The aggregate contains no nested Entities or Value Objects. Its data (`totalFlig
 - `generatedAt` must be chronologically after the `endDateTime` of the referenced `Simulation`.
 - `validationResult` must be one of the defined enumerated outcomes (e.g., `PASS`, `FAIL`, `INCONCLUSIVE`).
 - The report is *immutable once generated* — any subsequent analysis or correction requires a new report instance, preserving the audit trail.
+
+---
+
+## 16. PilotCompanyAssignment Aggregate
+
+### Aggregate Root: `PilotCompanyAssignment`
+
+**Bounded Context:** Aviation Operations – Crew Roster Management
+
+**Justification:**
+
+`PilotCompanyAssignment` is introduced to model the *roster membership* relationship between a `Pilot` and an `AirTransportCompany`. Although the `AirTransportCompany` aggregate already tracks general employee associations (via `UserId`), the pilot-company relationship carries distinct operational semantics tied to US75, US76, and US077: a collaborator may enrol a pilot into their company's roster, list the roster, or remove a pilot from it — none of which are operations that belong inside the `Pilot` aggregate (which governs only operational status and type-rating certifications) or the `AirTransportCompany` aggregate (which governs IATA/ICAO identity and resource ownership).
+
+Modelling this as its own aggregate respects *aggregate autonomy*: the act of assigning a pilot to a company is a *domain event* with its own lifecycle — it can be created and deleted independently of both the pilot's operational state and the company's configuration. A separate aggregate boundary also allows the roster to be queried and modified without acquiring a transactional lock on either the `Pilot` or the `AirTransportCompany` root, which would be an unnecessarily broad transactional scope.
+
+The assignment is keyed by `pilotUserId` (the pilot's system identity as a `UserId` Value Object) rather than `PilotId`, following the *reference-by-identity* convention and preserving the link to the IAM bounded context without coupling the roster aggregate to the internal identity scheme of the `Pilot` aggregate.
+
+**Internal Structure:**
+
+- **`pilotUserId`** *(Value Object — `UserId`)*: The system identity of the pilot being assigned. Acts as the aggregate root identity and as the cross-aggregate reference token back to both the `User` and `Pilot` aggregates. Using `UserId` as the identity key ensures that a pilot can only be enrolled in one company at a time (one assignment per `UserId`).
+- **`companyId`** *(Value Object — `AirTransportCompanyId`)*: The identifier of the company to whose roster the pilot is added. Maintained as a *reference-by-identity* to avoid coupling this aggregate's lifecycle to the `AirTransportCompany` aggregate.
+
+**Key Invariants Enforced:**
+
+- A `pilotUserId` may only appear in one active `PilotCompanyAssignment` — a pilot cannot be on multiple company rosters simultaneously.
+- The referenced `Pilot` aggregate must exist and be in `ACTIVE` status before a roster assignment can be created.
+- Deleting a `PilotCompanyAssignment` removes the pilot from the company roster but does **not** affect the `Pilot` aggregate's status or certifications.
+- A `Pilot` with active `FlightPlan` assignments may not be deactivated (US077); this cross-aggregate lifecycle constraint is enforced at the application-layer via a domain service that queries both the `FlightPlan` and `Pilot` aggregates before permitting the status transition.
 
 ---
 
