@@ -6,9 +6,12 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import jpa.JpaPilotCompanyAssignmentRepository;
 import pilot.domain.Pilot;
+import pilot.domain.PilotStatus;
 import shared.domain.AirTransportCompanyId;
 import shared.domain.UserId;
 
@@ -45,15 +48,27 @@ public class CompanyPilotsUI {
         });
 
         colAction.setCellFactory(col -> new TableCell<>() {
-            private final Button btn = new Button("Remove");
+            private final Button btnToggle = new Button();
+            private final Button btnRemove = new Button("Remove");
+            private final HBox box = new HBox(6, btnToggle, btnRemove);
             {
-                btn.getStyleClass().add("btn-danger");
-                btn.setOnAction(e -> onRemove(getTableView().getItems().get(getIndex())));
+                box.setAlignment(Pos.CENTER);
+                btnRemove.getStyleClass().add("btn-danger");
+                btnRemove.setOnAction(e -> onRemove(getTableView().getItems().get(getIndex())));
+                btnToggle.setOnAction(e -> onToggleStatus(getTableView().getItems().get(getIndex())));
             }
             @Override
             protected void updateItem(final String item, final boolean empty) {
                 super.updateItem(item, empty);
-                setGraphic(empty ? null : btn);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    final Pilot pilot = getTableView().getItems().get(getIndex());
+                    final boolean active = pilot.status() == PilotStatus.ACTIVE;
+                    btnToggle.setText(active ? "Deactivate" : "Activate");
+                    btnToggle.getStyleClass().setAll("button", active ? "btn-warning" : "btn-success");
+                    setGraphic(box);
+                }
             }
         });
 
@@ -89,6 +104,26 @@ public class CompanyPilotsUI {
     @FXML
     private void onRefresh() {
         refresh();
+    }
+
+    private void onToggleStatus(final Pilot pilot) {
+        final boolean isActive = pilot.status() == PilotStatus.ACTIVE;
+        final String action = isActive ? "deactivate" : "activate";
+        final Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                "Are you sure you want to " + action + " pilot \"" + pilot.userId() + "\"?",
+                ButtonType.YES, ButtonType.NO);
+        confirm.showAndWait().filter(b -> b == ButtonType.YES).ifPresent(b -> {
+            try {
+                final var repo = PersistenceContext.repositories().pilots();
+                final var fresh = repo.ofIdentity(pilot.identity())
+                        .orElseThrow(() -> new IllegalStateException("Pilot not found"));
+                if (isActive) fresh.deactivate(); else fresh.activate();
+                repo.save(fresh);
+                refresh();
+            } catch (final Exception e) {
+                statusLabel.setText("Error: " + e.getMessage());
+            }
+        });
     }
 
     private void onRemove(final Pilot pilot) {
