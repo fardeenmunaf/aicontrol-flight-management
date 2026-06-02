@@ -40,6 +40,11 @@ public final class AISafeBootstrap {
                 repositories.airTransportCompanies(),
                 repositories.airControlAreas()
         ).execute();
+        new FlightRouteBootstrap(
+                repositories.flightRoutes(),
+                repositories.airports(),
+                repositories.airTransportCompanies()
+        ).execute();
         System.out.println("AISafe bootstrap completed.");
     }
 }

@@ -8,14 +8,14 @@ INSERT INTO T_ROLESET (pk) VALUES (1), (2), (3), (4), (5), (6), (7), (8);
 
 INSERT INTO T_ROLEASSIGNMENT (pk, assignedOn, expired, roleName, unassignedOn)
 VALUES
-    (1, '2026-05-12', FALSE, 'ADMIN',                              NULL),
-    (2, '2026-05-12', FALSE, 'BACKOFFICE_OPERATOR',                NULL),
-    (3, '2026-05-12', FALSE, 'PILOT',                              NULL),
-    (4, '2026-05-12', FALSE, 'FLIGHT_CONTROL_OPERATOR',            NULL),
-    (5, '2026-05-12', FALSE, 'WEATHER_PERSON',                     NULL),
-    (6, '2026-05-12', FALSE, 'AIR_TRANSPORT_COMPANY_COLLABORATOR', NULL),
-    (7, '2026-05-12', FALSE, 'AIR_TRANSPORT_COMPANY_COLLABORATOR', NULL),
-    (8, '2026-05-12', FALSE, 'FLIGHT_CONTROL_OPERATOR',            NULL);
+    (1, '2026-05-12', FALSE, 'ADMIN',            NULL),
+    (2, '2026-05-12', FALSE, 'BACKOFFICE_OPERATOR', NULL),
+    (3, '2026-05-12', FALSE, 'PILOT',            NULL),
+    (4, '2026-05-12', FALSE, 'FCO',              NULL),
+    (5, '2026-05-12', FALSE, 'WEATHER_PERSON',   NULL),
+    (6, '2026-05-12', FALSE, 'ATCC',             NULL),
+    (7, '2026-05-12', FALSE, 'ATCC',             NULL),
+    (8, '2026-05-12', FALSE, 'FCO',              NULL);
 
 INSERT INTO T_ROLESET_T_ROLEASSIGNMENT (RoleSet_pk, assignments_pk)
 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8);
@@ -228,12 +228,12 @@ VALUES
 -- FLIGHT PLANNING
 -- ============================================================
 
-INSERT INTO FlightRoute (flight_route_id, designation, activeFrom, activeUntil, version)
+INSERT INTO FlightRoute (flight_route_id, designation, activeFrom, activeUntil, originAirport_airport_id, destinationAirport_airport_id, company_air_transport_company_id, version)
 VALUES
-    ('fr-001', 'TP123', '2026-05-01', NULL,         0),
-    ('fr-002', 'BA45',  '2026-05-01', NULL,         0),
-    ('fr-003', 'LH999', '2026-05-01', NULL,         0),
-    ('fr-004', 'AF77',  '2026-05-01', '2026-05-20', 0);
+    ('fr-001', 'TP123', '2026-05-01', NULL,         'apt-LIS', 'apt-OPO', 'atc-001', 0),
+    ('fr-002', 'BA45',  '2026-05-01', NULL,         'apt-LHR', 'apt-LIS', 'atc-006', 0),
+    ('fr-003', 'LH999', '2026-05-01', NULL,         'apt-FRA', 'apt-LIS', 'atc-004', 0),
+    ('fr-004', 'AF77',  '2026-05-01', '2026-05-20', 'apt-CDG', 'apt-LIS', 'atc-005', 0);
 
 INSERT INTO Flight (flight_id, flightDesignator, type, scheduledDepartureTime, scheduledArrivalTime, aircraft_aircraft_id, version)
 VALUES
@@ -241,12 +241,12 @@ VALUES
     ('fl-002', 'BA450',  'REGULAR', '2026-05-12 09:30:00', '2026-05-12 12:10:00', 'ac-002', 0),
     ('fl-003', 'LH9991', 'CHARTER', '2026-05-12 13:00:00', '2026-05-12 16:20:00', 'ac-003', 0);
 
-INSERT INTO FlightPlan (flight_plan_id, departureDateTime, fuelQuantity, passengerLoad, cargoLoad, status, aircraftId, version)
+INSERT INTO FlightPlan (flight_plan_id, departureDateTime, fuelQuantity, passengerLoad, cargoLoad, status, aircraftId, flightRouteId, version)
 VALUES
-    ('fp-001', '2026-05-12 08:00:00', 8200.0, 150, 1200.0, 'DRAFT',    'ac-001', 0),
-    ('fp-002', '2026-05-12 09:30:00', 7600.0, 140,  800.0, 'TESTED',   'ac-002', 0),
-    ('fp-003', '2026-05-12 13:00:00', 5400.0,  70,  500.0, 'DRAFT',    'ac-003', 0),
-    ('fp-004', '2026-05-13 08:00:00', 9000.0, 160, 1400.0, 'APPROVED', 'ac-001', 0);
+    ('fp-001', '2026-05-12 08:00:00', 8200.0, 150, 1200.0, 'DRAFT',    'ac-001', 'fr-001', 0),
+    ('fp-002', '2026-05-12 09:30:00', 7600.0, 140,  800.0, 'TESTED',   'ac-002', 'fr-002', 0),
+    ('fp-003', '2026-05-12 13:00:00', 5400.0,  70,  500.0, 'DRAFT',    'ac-003', 'fr-003', 0),
+    ('fp-004', '2026-05-13 08:00:00', 9000.0, 160, 1400.0, 'APPROVED', 'ac-001', 'fr-001', 0);
 
 INSERT INTO FlightLeg (id, sequenceNumber, departureTime, arrivalTime, fuelQuantity, departure_airport_id, arrival_airport_id, flight_plan_ref)
 VALUES

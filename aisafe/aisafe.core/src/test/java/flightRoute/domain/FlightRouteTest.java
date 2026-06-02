@@ -1,5 +1,9 @@
 package flightRoute.domain;
 
+import aircontrolarea.domain.AirControlArea;
+import airport.domain.Airport;
+import airport.domain.AirportCoordinates;
+import airtransportcompany.domain.AirTransportCompany;
 import org.junit.jupiter.api.Test;
 import shared.domain.FlightRouteId;
 
@@ -13,8 +17,20 @@ class FlightRouteTest {
     private static final RouteDesignation DESIGNATION = new RouteDesignation("TP123");
     private static final LocalDate ACTIVE_FROM = LocalDate.of(2026, 1, 1);
 
+    private static final AirControlArea CONTROL_AREA = new AirControlArea("PT", 100.0, "Portugal");
+
+    private static final Airport ORIGIN = new Airport(
+            "Lisbon Airport", "Lisbon", "Portugal", "LIS", "LPPT", 114.0,
+            new AirportCoordinates(38.7742, -9.1342), CONTROL_AREA);
+
+    private static final Airport DESTINATION = new Airport(
+            "Porto Airport", "Porto", "Portugal", "OPO", "LPPR", 69.0,
+            new AirportCoordinates(41.2481, -8.6814), CONTROL_AREA);
+
+    private static final AirTransportCompany COMPANY = new AirTransportCompany("TAP Air Portugal", "TP", "TAP");
+
     private FlightRoute validRoute() {
-        return new FlightRoute(ROUTE_ID, DESIGNATION, ACTIVE_FROM);
+        return new FlightRoute(ROUTE_ID, DESIGNATION, ACTIVE_FROM, ORIGIN, DESTINATION, COMPANY);
     }
 
     // --- Construction: happy path ---
@@ -27,7 +43,10 @@ class FlightRouteTest {
                 () -> assertEquals(DESIGNATION, route.designation()),
                 () -> assertEquals(ACTIVE_FROM, route.activeFrom()),
                 () -> assertNull(route.activeUntil()),
-                () -> assertTrue(route.isActiveOn(ACTIVE_FROM))
+                () -> assertTrue(route.isActiveOn(ACTIVE_FROM)),
+                () -> assertEquals(ORIGIN, route.originAirport()),
+                () -> assertEquals(DESTINATION, route.destinationAirport()),
+                () -> assertEquals(COMPANY, route.company())
         );
     }
 
@@ -35,17 +54,44 @@ class FlightRouteTest {
 
     @Test
     void ensureNullIdIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new FlightRoute(null, DESIGNATION, ACTIVE_FROM));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FlightRoute(null, DESIGNATION, ACTIVE_FROM, ORIGIN, DESTINATION, COMPANY));
     }
 
     @Test
     void ensureNullDesignationIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new FlightRoute(ROUTE_ID, null, ACTIVE_FROM));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FlightRoute(ROUTE_ID, null, ACTIVE_FROM, ORIGIN, DESTINATION, COMPANY));
     }
 
     @Test
     void ensureNullActivFromIsRejected() {
-        assertThrows(IllegalArgumentException.class, () -> new FlightRoute(ROUTE_ID, DESIGNATION, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new FlightRoute(ROUTE_ID, DESIGNATION, null, ORIGIN, DESTINATION, COMPANY));
+    }
+
+    @Test
+    void ensureNullOriginAirportIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new FlightRoute(ROUTE_ID, DESIGNATION, ACTIVE_FROM, null, DESTINATION, COMPANY));
+    }
+
+    @Test
+    void ensureNullDestinationAirportIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new FlightRoute(ROUTE_ID, DESIGNATION, ACTIVE_FROM, ORIGIN, null, COMPANY));
+    }
+
+    @Test
+    void ensureNullCompanyIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new FlightRoute(ROUTE_ID, DESIGNATION, ACTIVE_FROM, ORIGIN, DESTINATION, null));
+    }
+
+    @Test
+    void ensureSameOriginAndDestinationIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new FlightRoute(ROUTE_ID, DESIGNATION, ACTIVE_FROM, ORIGIN, ORIGIN, COMPANY));
     }
 
     // --- isActiveOn ---
@@ -125,7 +171,11 @@ class FlightRouteTest {
     @Test
     void ensureTwoDifferentRoutesAreNotEqual() {
         final FlightRoute r1 = validRoute();
-        final FlightRoute r2 = new FlightRoute(FlightRouteId.newId(), new RouteDesignation("BA99"), ACTIVE_FROM);
+        final Airport altDest = new Airport(
+                "Faro Airport", "Faro", "Portugal", "FAO", "LPFR", 24.0,
+                new AirportCoordinates(37.0144, -7.9659), CONTROL_AREA);
+        final FlightRoute r2 = new FlightRoute(
+                FlightRouteId.newId(), new RouteDesignation("BA99"), ACTIVE_FROM, ORIGIN, altDest, COMPANY);
         assertNotEquals(r1, r2);
     }
 
@@ -151,15 +201,15 @@ class FlightRouteTest {
 
     @Test
     void ensureIsActiveReturnsTrueWhenActiveNow() {
-        // Create a route that started in the past (still active)
-        final FlightRoute route = new FlightRoute(ROUTE_ID, DESIGNATION, LocalDate.of(2020, 1, 1));
+        final FlightRoute route = new FlightRoute(
+                ROUTE_ID, DESIGNATION, LocalDate.of(2020, 1, 1), ORIGIN, DESTINATION, COMPANY);
         assertTrue(route.isActive());
     }
 
     @Test
     void ensureIsActiveReturnsFalseWhenDeactivated() {
-        // Create a route that started and ended in the past
-        final FlightRoute route = new FlightRoute(ROUTE_ID, DESIGNATION, LocalDate.of(2020, 1, 1));
+        final FlightRoute route = new FlightRoute(
+                ROUTE_ID, DESIGNATION, LocalDate.of(2020, 1, 1), ORIGIN, DESTINATION, COMPANY);
         route.deactivateFrom(LocalDate.of(2021, 1, 1));
         assertFalse(route.isActive());
     }

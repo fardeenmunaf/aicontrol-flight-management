@@ -18,5 +18,7 @@ public interface FlightPlanRepository extends DomainRepository<FlightPlanId, Fli
     Iterable<FlightPlan> findByStatus(FlightPlanStatus status);
 
     Iterable<FlightPlan> findByDepartureBetween(Instant start, Instant end);
+
+    Iterable<FlightPlan> findByRouteIdAndDepartureAfter(String routeId, Instant departure);
 }
 

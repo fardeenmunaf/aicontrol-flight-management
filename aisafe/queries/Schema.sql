@@ -252,11 +252,14 @@ CREATE TABLE CustomerCollaborator (
 -- ============================================================
 
 CREATE TABLE FlightRoute (
-                             flight_route_id VARCHAR(255) PRIMARY KEY,
-                             designation     VARCHAR(255),
-                             activeFrom      DATE,
-                             activeUntil     DATE,
-                             version         BIGINT
+                             flight_route_id                          VARCHAR(255) PRIMARY KEY,
+                             designation                              VARCHAR(255),
+                             activeFrom                               DATE NOT NULL,
+                             activeUntil                              DATE,
+                             originAirport_airport_id                 VARCHAR(255) NOT NULL REFERENCES Airport(airport_id),
+                             destinationAirport_airport_id            VARCHAR(255) NOT NULL REFERENCES Airport(airport_id),
+                             company_air_transport_company_id         VARCHAR(255) NOT NULL REFERENCES AirTransportCompany(air_transport_company_id),
+                             version                                  BIGINT
 );
 
 CREATE TABLE Flight (
@@ -277,6 +280,7 @@ CREATE TABLE FlightPlan (
                             cargoLoad         DOUBLE PRECISION,
                             status            VARCHAR(255),
                             aircraftId        VARCHAR(255),
+                            flightRouteId     VARCHAR(255),
                             version           BIGINT
 );
 

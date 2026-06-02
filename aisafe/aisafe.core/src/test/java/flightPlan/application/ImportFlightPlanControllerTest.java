@@ -145,6 +145,11 @@ class ImportFlightPlanControllerTest {
         public Iterable<FlightPlan> findByDepartureBetween(final Instant a, final Instant b) {
             return List.of();
         }
+
+        @Override
+        public Iterable<FlightPlan> findByRouteIdAndDepartureAfter(final String routeId, final Instant departure) {
+            return List.of();
+        }
     }
 
     static class StubNodeRepository
