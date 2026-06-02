@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.web.*?>
 <VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="javafxui.presentation.weather.WeatherClientUI"
       styleClass="root" spacing="0">
@@ -10,6 +11,7 @@
         <Button text="Register Weather Data" styleClass="btn-primary" onAction="#showRegister"/>
         <Button text="View Weather Data" styleClass="btn-primary" onAction="#showView"/>
         <Button text="Bulk Import Weather Data" styleClass="btn-primary" onAction="#showBulkImport"/>
+        <Button text="Map View" styleClass="btn-primary" onAction="#showMap"/>
         <Button text="Exit" styleClass="btn-danger" onAction="#onExit"/>
     </HBox>
     <Label fx:id="statusLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
@@ -135,6 +137,26 @@
             </HBox>
             <TextArea fx:id="importResult" editable="false" wrapText="true" prefRowCount="6"/>
             <Label fx:id="importError" styleClass="error-label" text="" wrapText="true"/>
+        </VBox>
+
+        <VBox fx:id="mapPane" managed="false" visible="false" spacing="12">
+            <Label text="Weather Map" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Air Control Area (ACA)"/>
+                    <TextField fx:id="mapArea" promptText="e.g. SCPA"/>
+                </VBox>
+                <VBox spacing="4">
+                    <Label text="Date"/>
+                    <DatePicker fx:id="mapDate"/>
+                </VBox>
+                <VBox spacing="8" alignment="BOTTOM_LEFT">
+                    <Button text="Apply" styleClass="btn-primary" onAction="#onApplyMapFilter"/>
+                    <Button text="Clear" styleClass="btn-danger" onAction="#onClearMapFilter"/>
+                </VBox>
+            </HBox>
+            <Label fx:id="mapStatus" styleClass="status-label" text=""/>
+            <WebView fx:id="mapView" VBox.vgrow="ALWAYS"/>
         </VBox>
     </StackPane>
 </VBox>

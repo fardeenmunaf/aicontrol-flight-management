@@ -40,26 +40,51 @@ L.tileLayer(
   { maxZoom: 18 }
 ).addTo(map);
 
-var Legend = L.Control.extend({
-  options: { position: 'bottomleft' },
-  onAdd: function() {
-    var div = L.DomUtil.create('div', 'legend');
-    div.innerHTML =
-      '<b style="display:block;margin-bottom:2px;">Flight phases</b>' +
-      '<span class="legend-dot" style="background:#66bb6a;"></span>Climb<br/>' +
-      '<span class="legend-dot" style="background:#42a5f5;"></span>Cruise<br/>' +
-      '<span class="legend-dot" style="background:#ffa726;"></span>Descend<br/>' +
-      '<span class="legend-dot" style="background:#e94560;box-shadow:0 0 6px #e94560;"></span>Violation';
-    return div;
+var legendControl = null;
+var legendContainer = null;
+var flightLegendHtml =
+  '<b style="display:block;margin-bottom:2px;">Flight phases</b>' +
+  '<span class="legend-dot" style="background:#66bb6a;"></span>Climb<br/>' +
+  '<span class="legend-dot" style="background:#42a5f5;"></span>Cruise<br/>' +
+  '<span class="legend-dot" style="background:#ffa726;"></span>Descend<br/>' +
+  '<span class="legend-dot" style="background:#e94560;box-shadow:0 0 6px #e94560;"></span>Violation';
+
+function setLegend(html) {
+  if (!legendControl) {
+    legendControl = L.control({ position: 'bottomleft' });
+    legendControl.onAdd = function() {
+      legendContainer = L.DomUtil.create('div', 'legend');
+      legendContainer.innerHTML = html;
+      return legendContainer;
+    };
+    legendControl.addTo(map);
+  } else if (legendContainer) {
+    legendContainer.innerHTML = html;
   }
-});
-new Legend().addTo(map);
+}
+
+function showFlightLegend() {
+  setLegend(flightLegendHtml);
+}
+
+function showWeatherLegend() {
+  setLegend(
+    '<b style="display:block;margin-bottom:2px;">Wind</b>' +
+    '<span class="legend-dot" style="background:#42a5f5;"></span>💨 0–10 kts<br/>' +
+    '<span class="legend-dot" style="background:#66bb6a;"></span>🌤️ 10–20 kts<br/>' +
+    '<span class="legend-dot" style="background:#ffa726;"></span>🌧️ 20–30 kts<br/>' +
+    '<span class="legend-dot" style="background:#ef5350;"></span>⛈️ 30+ kts'
+  );
+}
+
+showFlightLegend();
 
 var airportPins    = {};
 var flightMarkers  = {};
 var flightPaths    = {};
 var violatedFlights = {};
 var prevPositions  = {};
+var weatherMarkers = [];
 
 var airportIcon = L.divIcon({
   html: '<div style="width:10px;height:10px;border-radius:50%;background:#1565c0;border:2px solid #fff;box-shadow:0 0 4px rgba(0,0,0,0.6);"></div>',
@@ -163,6 +188,35 @@ function clearFlights() {
   flightPaths     = {};
   violatedFlights = {};
   prevPositions   = {};
+}
+
+function addWeatherMarker(id, lat, lon, iconHtml, popupHtml) {
+  var icon = L.divIcon({
+    html: iconHtml,
+    className: '',
+    iconAnchor: [12, 12]
+  });
+  var marker = L.marker([lat, lon], { icon: icon }).addTo(map);
+  if (popupHtml) {
+    marker.bindPopup(popupHtml);
+  }
+  weatherMarkers.push({ id: id, layer: marker });
+}
+
+function clearWeather() {
+  weatherMarkers.forEach(function(w) {
+    map.removeLayer(w.layer);
+  });
+  weatherMarkers = [];
+}
+
+function fitWeather() {
+  map.invalidateSize(true);
+  if (weatherMarkers.length === 0) return;
+  var latlngs = weatherMarkers.map(function(w) { return w.layer.getLatLng(); });
+  var bounds = L.latLngBounds(latlngs);
+  // Avoid over-zooming into tiny rectangles where ArcGIS has no imagery tiles.
+  if (bounds) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
 }
 
 function fitAirports() {

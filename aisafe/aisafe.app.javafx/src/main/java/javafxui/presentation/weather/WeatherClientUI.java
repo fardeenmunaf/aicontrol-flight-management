@@ -1,8 +1,13 @@
 package javafxui.presentation.weather;
 
+import airport.application.ListAirportsController;
+import airport.domain.Airport;
+import infrastructure.persistence.PersistenceContext;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
@@ -11,6 +16,9 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import javafxui.presentation.simulation.SimulationMapBridge;
 import weatherData.application.BulkImportWeatherDataController;
 import weatherData.application.ListWeatherDataController;
 import weatherData.application.RegisterWeatherDataController;
@@ -23,6 +31,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class WeatherClientUI {
 
@@ -70,10 +79,20 @@ public class WeatherClientUI {
     @FXML private TextArea importResult;
     @FXML private Label importError;
 
+    @FXML private VBox mapPane;
+    @FXML private TextField mapArea;
+    @FXML private DatePicker mapDate;
+    @FXML private Label mapStatus;
+    @FXML private WebView mapView;
+
     private final RegisterWeatherDataController registerCtrl = new RegisterWeatherDataController();
     private final ListWeatherDataController listCtrl = new ListWeatherDataController();
     private final BulkImportWeatherDataController bulkCtrl = new BulkImportWeatherDataController();
+    private final ListAirportsController airportsController = new ListAirportsController(
+            PersistenceContext.repositories().airports());
     private final ObservableList<WeatherDataDTO> viewData = FXCollections.observableArrayList();
+    private WebEngine mapEngine;
+    private boolean mapReady = false;
 
     @FXML
     public void initialize() {
@@ -93,6 +112,7 @@ public class WeatherClientUI {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
         table.setItems(viewData);
         showPlaceholder(EMPTY_MENU_MESSAGE);
+        initMap();
     }
 
     @FXML
@@ -111,6 +131,16 @@ public class WeatherClientUI {
     private void showBulkImport() {
         importError.setText("");
         showPane(importPane, "Bulk Import Weather Data");
+    }
+
+    @FXML
+    private void showMap() {
+        showPane(mapPane, "Weather Map");
+        if (!mapReady) {
+            mapStatus.setText("Map loading...");
+            return;
+        }
+        renderWeatherMap(mapArea.getText(), mapDate.getValue());
     }
 
     @FXML
@@ -155,12 +185,7 @@ public class WeatherClientUI {
 
     @FXML
     private void onApplyFilter() {
-        final String area = filterArea.getText().trim();
-        final LocalDate date = filterDate.getValue();
-        final Iterable<WeatherDataDTO> records = (area.isEmpty() && date == null)
-                ? listCtrl.listAll()
-                : listCtrl.listByDateAndArea(area.isEmpty() ? null : area, date);
-        refreshView(records);
+        refreshView(resolveWeatherData(filterArea.getText(), filterDate.getValue()));
     }
 
     @FXML
@@ -168,6 +193,18 @@ public class WeatherClientUI {
         filterArea.clear();
         filterDate.setValue(null);
         loadAllWeatherData();
+    }
+
+    @FXML
+    private void onApplyMapFilter() {
+        renderWeatherMap(mapArea.getText(), mapDate.getValue());
+    }
+
+    @FXML
+    private void onClearMapFilter() {
+        mapArea.clear();
+        mapDate.setValue(null);
+        renderWeatherMap("", null);
     }
 
     @FXML
@@ -197,6 +234,7 @@ public class WeatherClientUI {
         setPaneVisible(registerPane, false);
         setPaneVisible(viewPane, false);
         setPaneVisible(importPane, false);
+        setPaneVisible(mapPane, false);
         setPaneVisible(placeholderLabel, false);
         setPaneVisible(pane, true);
         statusLabel.setText(status);
@@ -206,6 +244,7 @@ public class WeatherClientUI {
         setPaneVisible(registerPane, false);
         setPaneVisible(viewPane, false);
         setPaneVisible(importPane, false);
+        setPaneVisible(mapPane, false);
         setPaneVisible(placeholderLabel, true);
         placeholderLabel.setText(status);
         statusLabel.setText(status);
@@ -223,6 +262,14 @@ public class WeatherClientUI {
 
     private void loadAllWeatherData() {
         refreshView(listCtrl.listAll());
+    }
+
+    private Iterable<WeatherDataDTO> resolveWeatherData(final String areaRaw, final LocalDate date) {
+        final String area = areaRaw == null ? "" : areaRaw.trim();
+        if (area.isEmpty() && date == null) {
+            return listCtrl.listAll();
+        }
+        return listCtrl.listByDateAndArea(area.isEmpty() ? null : area, date);
     }
 
     private void refreshView(final Iterable<WeatherDataDTO> records) {
@@ -303,5 +350,112 @@ public class WeatherClientUI {
 
     private String safe(final String value) {
         return value == null ? "—" : value;
+    }
+
+    private void initMap() {
+        mapEngine = mapView.getEngine();
+        final var mapResource = getClass().getResource("/javafxui/map.html");
+        if (mapResource == null) {
+            mapStatus.setText("Error: map.html not found");
+            return;
+        }
+        mapEngine.load(mapResource.toExternalForm());
+        SimulationMapBridge.install(mapEngine, iata -> {});
+        mapEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+            if (newState == Worker.State.SUCCEEDED) {
+                Platform.runLater(() -> {
+                    loadAirportPins(mapEngine);
+                    mapEngine.executeScript("showWeatherLegend()");
+                    mapReady = true;
+                });
+            }
+        });
+    }
+
+    private void loadAirportPins(final WebEngine engine) {
+        for (final Airport airport : airportsController.listAirports()) {
+            final String iata = airport.iataCode();
+            final String name = airport.name().replace("'", "\\'");
+            final double lat = airport.coordinates().latitude();
+            final double lon = airport.coordinates().longitude();
+            engine.executeScript(String.format(Locale.ROOT,
+                    "addPin('%s', '%s', %f, %f)", iata, name, lat, lon));
+        }
+    }
+
+    private void renderWeatherMap(final String areaRaw, final LocalDate date) {
+        if (!mapReady) {
+            mapStatus.setText("Map loading...");
+            return;
+        }
+        final Iterable<WeatherDataDTO> records = resolveWeatherData(areaRaw, date);
+        mapEngine.executeScript("clearWeather()");
+        int count = 0;
+        for (final WeatherDataDTO dto : records) {
+            final double minLat = Math.min(dto.latitude1(), dto.latitude2());
+            final double maxLat = Math.max(dto.latitude1(), dto.latitude2());
+            final double minLon = Math.min(dto.longitude1(), dto.longitude2());
+            final double maxLon = Math.max(dto.longitude1(), dto.longitude2());
+            final double centerLat = (minLat + maxLat) / 2.0;
+            final double centerLon = (minLon + maxLon) / 2.0;
+            final String id = "wd-" + count;
+            final String icon = escapeJs(buildIcon(dto));
+            final String popup = escapeJs(buildPopup(dto));
+            mapEngine.executeScript(String.format(Locale.ROOT,
+                    "addWeatherMarker('%s', %f, %f, '%s', '%s')",
+                    id, centerLat, centerLon, icon, popup));
+            count++;
+        }
+        if (count > 0) {
+            mapEngine.executeScript("fitWeather()");
+        } else {
+            mapEngine.executeScript("fitAirports()");
+        }
+        mapStatus.setText(count == 0 ? "No weather areas found." : count + " weather areas");
+    }
+
+    private String buildPopup(final WeatherDataDTO dto) {
+        return String.format(Locale.ROOT,
+                "<b>ACA:</b> %s<br/>" +
+                "<b>Wind:</b> %.1f kts @ %.0f°<br/>" +
+                "<b>Alt:</b> %.0f–%.0f ft<br/>" +
+                "<b>Date:</b> %s<br/>" +
+                "<b>Start:</b> %s<br/>" +
+                "<b>End:</b> %s",
+                safe(dto.acaCode()),
+                dto.windSpeed(), dto.direction(),
+                dto.altitudeInf(), dto.altitudeSup(),
+                dto.date(), dto.startHour(), dto.endHour());
+    }
+
+    private String escapeJs(final String value) {
+        if (value == null) return "";
+        return value.replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\n", "\\n")
+                .replace("\r", "");
+    }
+
+    private String buildIcon(final WeatherDataDTO dto) {
+        final String emoji = weatherEmoji(dto.windSpeed());
+        final String arrow = windArrow(dto.direction());
+        return "<div style=\"font-size:24px;line-height:24px;text-align:center;\">" + emoji + "</div>" +
+                "<div style=\"font-size:12px;line-height:12px;text-align:center;\">" + arrow + "</div>";
+    }
+
+    private String weatherEmoji(final Double speed) {
+        if (speed == null) return "💨";
+        if (speed < 10) return "💨";
+        if (speed < 20) return "🌤️";
+        if (speed < 30) return "🌧️";
+        return "⛈️";
+    }
+
+    private String windArrow(final Double direction) {
+        if (direction == null) return "";
+        final double normalized = ((direction % 360) + 360) % 360;
+        final int index = (int) Math.round(normalized / 45.0) % 8;
+        final String[] arrows = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖"};
+        return arrows[index];
     }
 }
