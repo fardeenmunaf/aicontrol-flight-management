@@ -4,6 +4,10 @@
 #include <math.h>
 #include <time.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <semaphore.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
 #include "structs.h"
@@ -141,7 +145,6 @@ static void print_arrival_deviation(double scheduled_offset_s,
  * @param was_active Boolean array indicating which flights were active at step start.
  */
 static void print_step_table(SimulationData *sim,
-                              PipeMessage *msgs,
                               FlightPhase *prev_ph,
                               double sim_time,
                               int step_num, int total_steps,
@@ -165,7 +168,7 @@ static void print_step_table(SimulationData *sim,
 
     for (int i = 0; i < sim->num_flights; i++) {
         if (!was_active[i]) continue;
-        FlightPhase cur = msgs[i].step.phase;
+        FlightPhase cur = sim->last_step[i].phase;
         if (cur != prev_ph[i])
             printf("  >>> %s: %s --> %s <<<\n",
                    sim->flights[i].callsign, phase_name(prev_ph[i]), phase_name(cur));
@@ -185,7 +188,7 @@ static void print_step_table(SimulationData *sim,
     for (int i = 0; i < sim->num_flights; i++) {
         if (!was_active[i]) continue;
         Flight   *f = &sim->flights[i];
-        StepData *s = &msgs[i].step;
+        StepData *s = &sim->last_step[i];
         double fuel_rem = f->current_mass - f->properties.empty_weight - f->payload;
         if (fuel_rem < 0.0) fuel_rem = 0.0;
         printf("%-8s %-7s %8.4f %9.4f %7.0f %8.1f %5.0f %6.2f %8.0f %9.4f %6.1f  %6.1f %5.3f %7.1f  %6.4f %6.4f  %8.0f %8.0f  %8.0f %8.0f  %7.2f  %6.0f %7.1f  %6.0f %7.0f\n",
@@ -199,6 +202,202 @@ static void print_step_table(SimulationData *sim,
                s->fuel_burned, s->horiz_dist / 1000.0,
                f->current_mass, fuel_rem);
     }
+}
+
+// ── Simulation threads ─────────────────────────────────────────────────────────
+
+/**
+ * @brief Dispatcher thread — posts step_go for each active child, then signals Results.
+ *
+ * @param arg Pointer to SimContext (cast from void *).
+ * @return NULL
+ */
+static void *dispatcher_thread(void *arg) {
+    SimContext *ctx = (SimContext *)arg;
+    while (1) 
+    {
+        pthread_mutex_lock(&ctx->mutex);
+        while (ctx->current_thread != THREAD_DISPATCHER && !ctx->sim_done)
+            pthread_cond_wait(&ctx->cond_dispatch, &ctx->mutex);
+        if (ctx->sim_done) { 
+            pthread_mutex_unlock(&ctx->mutex); 
+            break; 
+        }
+        
+        bool active[MAX_FLIGHTS];
+        memcpy(active, ctx->was_active, sizeof(active)); // copy was_active to active in order to unlock the mutex and post semaphores
+        pthread_mutex_unlock(&ctx->mutex);
+
+        for (int i = 0; i < ctx->num_flights; i++)
+        {
+            if (active[i])
+            {
+                sem_post(&ctx->shm->step_go[i]);
+            }
+        }
+
+        pthread_mutex_lock(&ctx->mutex);
+        ctx->current_thread = THREAD_RESULTS;
+        pthread_cond_signal(&ctx->cond_results);
+        pthread_mutex_unlock(&ctx->mutex);
+    }
+    return NULL;
+}
+
+/**
+ * @brief Results thread — waits on step_done for each active child, then appends
+ *        positions to history and signals Violations.
+ *
+ * @param arg Pointer to SimContext (cast from void *).
+ * @return NULL
+ */
+static void *results_thread(void *arg) {
+    SimContext *ctx = (SimContext *)arg;
+    while (1) 
+    {
+        pthread_mutex_lock(&ctx->mutex);
+        while (ctx->current_thread != THREAD_RESULTS && !ctx->sim_done)
+        {
+            pthread_cond_wait(&ctx->cond_results, &ctx->mutex);
+        }
+        if (ctx->sim_done) 
+        {
+            pthread_mutex_unlock(&ctx->mutex); 
+            break; 
+        }
+        
+        bool active[MAX_FLIGHTS];
+        memcpy(active, ctx->was_active, sizeof(active));
+        pthread_mutex_unlock(&ctx->mutex);
+
+        for (int i = 0; i < ctx->num_flights; i++)
+        {
+            if (active[i])
+            {
+                sem_wait(&ctx->shm->step_done[i]); // block until child posts step_done
+            }
+        }
+
+        for (int i = 0; i < ctx->num_flights; i++)
+        {
+            if (!active[i])
+            {
+                continue;
+            }
+            if (is_valid_position(&ctx->shm->sim.flights[i].current_pos))
+            {
+                append_position(&ctx->histories[i], &ctx->shm->sim.flights[i].current_pos);
+            }
+            else
+            {
+                printf("[WARN] Flight %d sent invalid position — update rejected\n",
+                       ctx->shm->sim.flights[i].id);
+            }
+        }
+        pthread_mutex_lock(&ctx->mutex);
+        ctx->current_thread = THREAD_VIOLATIONS;
+        pthread_cond_signal(&ctx->cond_violations);
+        pthread_mutex_unlock(&ctx->mutex);
+    }
+    return NULL;
+}
+
+/**
+ * @brief Violations thread — runs violation detection, advances the clock, 
+ *        prints the step table, handles landing/leg-completion messages, then 
+ *        signals main.
+ *
+ * @param arg Pointer to SimContext (cast from void *).
+ * @return NULL
+ */
+static void *violations_thread(void *arg) {
+    SimContext *ctx = (SimContext *)arg;
+    SimulationData *sim = &ctx->shm->sim;
+
+    while (1) 
+    {
+        pthread_mutex_lock(&ctx->mutex);
+        while (ctx->current_thread != THREAD_VIOLATIONS && !ctx->sim_done) 
+        {
+            pthread_cond_wait(&ctx->cond_violations, &ctx->mutex);
+        }
+        if (ctx->sim_done) 
+        {
+            pthread_mutex_unlock(&ctx->mutex); 
+            break; 
+        }
+        bool active[MAX_FLIGHTS];
+        memcpy(active, ctx->was_active, sizeof(active));
+        double step_time   = ctx->step_time;
+        int    step_num    = ctx->step_num;
+        int    total_steps = ctx->total_steps;
+        pthread_mutex_unlock(&ctx->mutex);
+
+        check_violations(sim, active, ctx->pids, ctx->num_flights);
+
+        /* Advance the simulation clock now that all children have finished. */
+        sim->current_time += sim->config.time_step;
+
+        print_step_table(sim, ctx->prev_phase,
+                         sim->current_time, step_num, total_steps,
+                         step_time, active);
+
+        /* Print landing summary for flights that became inactive this step. */
+        for (int i = 0; i < ctx->num_flights; i++) 
+        {
+            if (!active[i] || sim->flights[i].is_active) 
+            {
+                continue;
+            }
+            Flight *f = &sim->flights[i];
+            double remaining_fuel = f->current_mass - f->properties.empty_weight - f->payload;
+            printf("[%s] Landed. Remaining fuel: %.0f kg | Total mass: %.0f kg\n",
+                   f->callsign, remaining_fuel, f->current_mass);
+            print_arrival_deviation(f->legs[f->current_leg].scheduled_arrival_offset_s,
+                                    sim->current_time, sim->config.sim_start_seconds);
+        }
+
+        /* Print intermediate-stop messages for multi-leg flights.
+           Child is blocked on step_go — safe to clear leg_just_completed here. */
+        for (int i = 0; i < ctx->num_flights; i++) 
+        {
+            if (!active[i] || !sim->flights[i].leg_just_completed) 
+            {
+                continue;
+            }
+            sim->flights[i].leg_just_completed = false;
+            Flight *f = &sim->flights[i];
+            printf("[%s] Arrived at intermediate stop. Leg %d complete. "
+                   "Next leg (leg %d) departs at offset %.0fs.\n",
+                   f->callsign, f->current_leg - 1, f->current_leg, f->departure_offset_s);
+            print_arrival_deviation(f->legs[f->current_leg - 1].scheduled_arrival_offset_s,
+                                    sim->current_time, sim->config.sim_start_seconds);
+        }
+
+        /* Update phase history for transition detection in the next step. */
+        for (int i = 0; i < ctx->num_flights; i++)
+        {
+            if (active[i])
+            {
+                ctx->prev_phase[i] = sim->last_step[i].phase;
+            }
+        }
+        for (int i = 0; i < ctx->num_flights; i++)
+        {
+            if (active[i] && !sim->flights[i].is_active && sim->flights[i].leg_just_completed == false)
+            {
+                ctx->prev_phase[i] = PHASE_GATE;
+            }
+        }
+
+        fflush(stdout);
+
+        pthread_mutex_lock(&ctx->mutex);
+        ctx->current_thread = THREAD_IDLE;
+        pthread_cond_signal(&ctx->cond_step_done);
+        pthread_mutex_unlock(&ctx->mutex);
+    }
+    return NULL;
 }
 
 // ── Report finalisation ────────────────────────────────────────────────────────
@@ -271,39 +470,18 @@ static void finalize_and_write_report(SimulationData *sim, double sim_end_time, 
 
 // ── Cleanup ────────────────────────────────────────────────────────────────────
 
-/**
- * @brief Sends terminate commands to all children, waits for them to exit, and closes all pipes.
- *
- * Ignores SIGPIPE so writes to pipes of already-exited children (killed by SIGTERM)
- * don't abort the parent.
- *
- * @param sim       Pointer to the local simulation data block.
- * @param pids      Array of child PIDs indexed by flight slot.
- * @param n         Number of flights.
- * @param data_pipe data_pipe[i] = {read_end, write_end} of child i's data pipe.
- * @param cmd_pipe  cmd_pipe[i]  = {read_end, write_end} of child i's command pipe.
- */
-static void cleanup(SimulationData *sim, pid_t *pids, int n,
-                    int (*data_pipe)[2], int (*cmd_pipe)[2]) {
-    sim->termination_requested = true;
-
-    // Ignore SIGPIPE: children that already exited (via SIGTERM) have closed their
-    // cmd_pipe read end — writing to it would raise SIGPIPE otherwise.
+static void cleanup(SharedBlock *shm, pid_t *pids, int n) {
+    shm->terminate = true;
     signal(SIGPIPE, SIG_IGN);
 
-    StepCommand term = { 0.0, true };
-    for (int i = 0; i < n; i++) {
+    /* Unblock children that are waiting on step_go. */
+    for (int i = 0; i < n; i++)
         if (pids[i] > 0)
-            write(cmd_pipe[i][1], &term, sizeof(term));
-    }
+            sem_post(&shm->step_go[i]);
 
     for (int i = 0; i < n; i++)
-        if (pids[i] > 0) waitpid(pids[i], NULL, 0);
-
-    for (int i = 0; i < n; i++) {
-        close(cmd_pipe[i][1]);
-        close(data_pipe[i][0]);
-    }
+        if (pids[i] > 0)
+            waitpid(pids[i], NULL, 0);
 }
 
 // ── Flight selection menu ──────────────────────────────────────────────────────
@@ -368,7 +546,7 @@ static int run_flight_selection_menu(SimulationData *sim) {
             }
         }
 
-        printf("\n  Enter a flight number to add/remove, or press Enter to start: ");
+        printf("\n  Enter a flight number to add/remove, 'a' to select all, or press Enter to start: ");
         fflush(stdout);
 
         char line[64];
@@ -381,6 +559,12 @@ static int run_flight_selection_menu(SimulationData *sim) {
                 continue;
             }
             break;
+        }
+
+        if (line[0] == 'a' || line[0] == 'A') {
+            for (int i = 0; i < sim->num_flights; i++)
+                if (in_scope[i]) included[i] = true;
+            continue;
         }
 
         int num = atoi(line);
@@ -407,130 +591,132 @@ static int run_flight_selection_menu(SimulationData *sim) {
 int main(void) {
     printf("=== AISafe Simulation Engine starting ===\n");
 
-    // All simulation state lives in the parent's local memory.
-    // Children get a copy via fork() and communicate exclusively through pipes.
-    static SimulationData sim;
-    memset(&sim, 0, sizeof(sim));
+    /* Clean up any leftover shared memory from a previous crashed run. */
+    shm_unlink("/aisafe_sim");
 
-    if (!load_simulation_settings("simulation_settings.json", &sim.config)) {
+    int shm_fd = shm_open("/aisafe_sim", O_CREAT | O_RDWR, 0600);
+    if (shm_fd < 0) { perror("shm_open"); return EXIT_FAILURE; }
+    if (ftruncate(shm_fd, sizeof(SharedBlock)) < 0) { perror("ftruncate"); return EXIT_FAILURE; }
+
+    SharedBlock *shm = mmap(NULL, sizeof(SharedBlock),
+                            PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    close(shm_fd);
+    if (shm == MAP_FAILED) { perror("mmap"); return EXIT_FAILURE; }
+
+    memset(shm, 0, sizeof(SharedBlock));
+
+    for (int i = 0; i < MAX_FLIGHTS; i++) {
+        sem_init(&shm->step_go[i],   1, 0);
+        sem_init(&shm->step_done[i], 1, 0);
+    }
+
+    SimulationData *sim = &shm->sim;
+
+    if (!load_simulation_settings("simulation_settings.json", &sim->config)) {
         fprintf(stderr, "[SIM] Aborting: simulation settings are invalid.\n");
         return EXIT_FAILURE;
     }
 
-    if (!load_all_flight_plans("flightplansSim", &sim)) {
+    if (!load_all_flight_plans("flightplansSim", sim)) {
         fprintf(stderr, "[SIM] Aborting: one or more flight plans failed validation.\n");
         return EXIT_FAILURE;
     }
     printf("Loaded %d flight(s). Simulation: %.0f s -> %.0f s  (step %.0f s = %.0f min)\n",
-           sim.num_flights,
-           sim.config.start_time, sim.config.end_time,
-           sim.config.time_step, sim.config.time_step / 60.0);
+           sim->num_flights,
+           sim->config.start_time, sim->config.end_time,
+           sim->config.time_step, sim->config.time_step / 60.0);
 
-    sim.report.sim_start_time          = sim.config.start_time;
-    sim.report.total_flights           = sim.num_flights;
-    sim.report.total_violations_recorded = 0;
-    sim.report.report_ready            = false;
-    time_t wall_start                  = time(NULL);
-    sim.report.wall_clock_start        = (double)wall_start;
+    sim->report.sim_start_time            = sim->config.start_time;
+    sim->report.total_flights             = sim->num_flights;
+    sim->report.total_violations_recorded = 0;
+    sim->report.report_ready              = false;
+    time_t wall_start                     = time(NULL);
+    sim->report.wall_clock_start          = (double)wall_start;
 
-    int num_forked = run_flight_selection_menu(&sim);
+    int num_forked = run_flight_selection_menu(sim);
 
     printf("\n%d flight(s) selected — forking %d child processes.\n",
            num_forked, num_forked);
 
-    int total_steps = (int)((sim.config.end_time - sim.config.start_time) / sim.config.time_step);
+    int total_steps = (int)((sim->config.end_time - sim->config.start_time) / sim->config.time_step);
 
-    // ── Create pipes ───────────────────────────────────────────────────────────
-    // data_pipe[i]: child i → parent  (PipeMessage with flight state each step)
-    // cmd_pipe[i]:  parent → child i  (StepCommand each step)
-    int data_pipe[MAX_FLIGHTS][2];
-    int cmd_pipe[MAX_FLIGHTS][2];
-
-    for (int i = 0; i < sim.num_flights; i++) {
-        if (pipe(data_pipe[i]) < 0 || pipe(cmd_pipe[i]) < 0) {
-            perror("pipe failed");
-            return EXIT_FAILURE;
-        }
-    }
-
-    // ── Fork one child per in-scope flight ────────────────────────────────────
+    /* ── Fork one child per selected flight ─────────────────────────────── */
     pid_t pids[MAX_FLIGHTS];
     memset(pids, 0, sizeof(pids));
-    sim.current_time = sim.config.start_time;
+    sim->current_time = sim->config.start_time;
 
-    for (int i = 0; i < sim.num_flights; i++) {
-        sim.flights[i].process_id = 0;
-        if (!sim.flights[i].is_active) continue;
+    for (int i = 0; i < sim->num_flights; i++) {
+        sim->flights[i].process_id = 0;
+        if (!sim->flights[i].is_active) continue;
 
         fflush(stdout);
         pid_t pid = fork();
         if (pid < 0) {
             perror("fork failed");
-            cleanup(&sim, pids, sim.num_flights, data_pipe, cmd_pipe);
+            cleanup(shm, pids, sim->num_flights);
             return EXIT_FAILURE;
         }
 
         if (pid == 0) {
-            // ── Child: close all pipe ends except its own pair ─────────────────
-            for (int j = 0; j < sim.num_flights; j++) {
-                close(data_pipe[j][0]);          // parent reads; child never reads data_pipe
-                if (j != i) close(data_pipe[j][1]);
-                close(cmd_pipe[j][1]);           // parent writes; child never writes cmd_pipe
-                if (j != i) close(cmd_pipe[j][0]);
-            }
-            run_flight_process(&sim, i, data_pipe[i][1], cmd_pipe[i][0]);
-            close(data_pipe[i][1]);
-            close(cmd_pipe[i][0]);
+            run_flight_process(shm, i);
             exit(EXIT_SUCCESS);
         }
 
         pids[i] = pid;
-        sim.flights[i].process_id = pid;
+        sim->flights[i].process_id = pid;
         printf("Forked child PID %d for flight %s (departs at offset %.0fs)\n",
-               pid, sim.flights[i].callsign, sim.flights[i].departure_offset_s);
+               pid, sim->flights[i].callsign, sim->flights[i].departure_offset_s);
     }
 
-    // Parent closes the child ends of all pipes.
-    for (int i = 0; i < sim.num_flights; i++) {
-        close(data_pipe[i][1]);   // child writes here
-        close(cmd_pipe[i][0]);    // child reads here
-    }
+    /* ── Startup barrier: wait for all children to post step_done once ───── */
+    for (int i = 0; i < sim->num_flights; i++)
+        if (pids[i] > 0)
+            sem_wait(&shm->step_done[i]);
 
-    // ── Startup barrier: wait for all children to signal ready ────────────────
-    for (int i = 0; i < sim.num_flights; i++) {
-        if (pids[i] <= 0) continue;
-        char ready;
-        read(data_pipe[i][0], &ready, 1);
-    }
-
-    FlightPhase prev_phase[MAX_FLIGHTS];
-    for (int i = 0; i < sim.num_flights; i++)
-        prev_phase[i] = PHASE_GATE;
-
-    PipeMessage step_msgs[MAX_FLIGHTS];
-
+    /* ── Initialise SimContext ─────────────────────────────────────────── */
     static PositionHistory histories[MAX_FLIGHTS];
     for (int i = 0; i < MAX_FLIGHTS; i++) { histories[i].count = 0; histories[i].next = 0; }
 
-    // Only seed position history for flights that were actually selected.
-    for (int i = 0; i < sim.num_flights; i++) {
+    for (int i = 0; i < sim->num_flights; i++) {
         if (pids[i] <= 0) continue;
-        Flight *f = &sim.flights[i];
-        Position dep = f->flight_plan.waypoints[0].pos;
+        Position dep = sim->flights[i].flight_plan.waypoints[0].pos;
         dep.timestamp = 0.0;
         append_position(&histories[i], &dep);
     }
 
-    // ── Step 0: print initial state ───────────────────────────────────────────
+    SimContext ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.shm         = shm;
+    ctx.num_flights = sim->num_flights;
+    ctx.total_steps = total_steps;
+    ctx.histories   = histories;
+    ctx.sim_done    = false;
+    memcpy(ctx.pids, pids, sizeof(pids));
+    pthread_mutex_init(&ctx.mutex, NULL);
+    pthread_cond_init(&ctx.cond_dispatch,   NULL);
+    pthread_cond_init(&ctx.cond_results,    NULL);
+    pthread_cond_init(&ctx.cond_violations, NULL);
+    pthread_cond_init(&ctx.cond_step_done,  NULL);
+    ctx.current_thread = THREAD_IDLE;
+
+    for (int i = 0; i < MAX_FLIGHTS; i++)
+        ctx.prev_phase[i] = PHASE_GATE;
+
+    pthread_t thr_dispatcher, thr_results, thr_violations;
+    pthread_create(&thr_dispatcher,  NULL, dispatcher_thread,  &ctx);
+    pthread_create(&thr_results,     NULL, results_thread,     &ctx);
+    pthread_create(&thr_violations,  NULL, violations_thread,  &ctx);
+
+    /* ── Step 0: print initial state ─────────────────────────────────────── */
     printf("\n--- Simulation running ---\n");
     {
-        int wall_s = (int)sim.config.sim_start_seconds;
+        int wall_s = (int)sim->config.sim_start_seconds;
         printf("\n╔══════════════════════════════════════════════════════════════════════"
                "════════════════════════════════════════════════════════════════════╗\n");
         printf("║  t=       0 s  [%02d:%02d]  |  step   0 / %-3d  |  active= 0  pending=%2d  |  violations=  0"
                "                                                      ║\n",
                wall_s / 3600, (wall_s % 3600) / 60,
-               (int)((sim.config.end_time - sim.config.start_time) / sim.config.time_step),
+               (int)((sim->config.end_time - sim->config.start_time) / sim->config.time_step),
                num_forked);
         printf("╚══════════════════════════════════════════════════════════════════════"
                "════════════════════════════════════════════════════════════════════╝\n\n");
@@ -544,8 +730,8 @@ int main(void) {
                "------","--------","---------","------","------","-----","-------",
                "------","------","--------","--------","--------","--------","-------",
                "------","-------","------","-------");
-        for (int i = 0; i < sim.num_flights; i++) {
-            Flight *f = &sim.flights[i];
+        for (int i = 0; i < sim->num_flights; i++) {
+            Flight *f = &sim->flights[i];
             if (!f->is_active) continue;
             double fuel_rem = f->initial_fuel_mass;
             int last_wp = f->legs[0].waypoint_end_index;
@@ -568,139 +754,85 @@ int main(void) {
         }
     }
 
-    // ── Main simulation loop ───────────────────────────────────────────────────
+    /* ── Main simulation loop ────────────────────────────────────────────── */
     int step_num = 0;
 
-    while (sim.current_time < sim.config.end_time) {
+    while (sim->current_time < sim->config.end_time) {
 
-        double step_time = sim.current_time;
-        int active = 0;
+        double step_time = sim->current_time;
+        int active_count = 0;
         bool was_active[MAX_FLIGHTS];
-        for (int i = 0; i < sim.num_flights; i++) {
-            was_active[i] = sim.flights[i].is_active &&
-                            step_time >= sim.flights[i].departure_offset_s;
-            if (was_active[i]) active++;
+        for (int i = 0; i < sim->num_flights; i++) {
+            was_active[i] = sim->flights[i].is_active &&
+                            step_time >= sim->flights[i].departure_offset_s;
+            if (was_active[i]) active_count++;
         }
 
-        if (active == 0) {
+        if (active_count == 0) {
             bool any_pending = false;
-            for (int i = 0; i < sim.num_flights; i++)
-                if (sim.flights[i].is_active) { any_pending = true; break; }
+            for (int i = 0; i < sim->num_flights; i++)
+                if (sim->flights[i].is_active) { any_pending = true; break; }
             if (!any_pending) break;
-            sim.current_time += sim.config.time_step;
+            sim->current_time += sim->config.time_step;
             continue;
         }
 
         step_num++;
 
-        // ── Send step command to each active child ─────────────────────────────
-        StepCommand cmd = { sim.current_time, false };
-        for (int i = 0; i < sim.num_flights; i++)
-            if (was_active[i])
-                write(cmd_pipe[i][1], &cmd, sizeof(cmd));
+        pthread_mutex_lock(&ctx.mutex);
+        memcpy(ctx.was_active, was_active, sizeof(was_active));
+        ctx.step_time      = step_time;
+        ctx.step_num       = step_num;
+        ctx.current_thread = THREAD_DISPATCHER;
+        pthread_cond_signal(&ctx.cond_dispatch);
+        pthread_cond_wait(&ctx.cond_step_done, &ctx.mutex);
+        pthread_mutex_unlock(&ctx.mutex);
 
-        // ── Read result from each active child (blocking — provides sync) ──────
-        for (int i = 0; i < sim.num_flights; i++) {
-            if (!was_active[i]) continue;
-            ssize_t n = read(data_pipe[i][0], &step_msgs[i], sizeof(PipeMessage));
-
-            if (n == (ssize_t)sizeof(PipeMessage)) {
-                // Apply the child's updated state to the parent's local copy.
-                Flight *f = &sim.flights[i];
-                f->current_pos                        = step_msgs[i].current_pos;
-                f->velocity                           = step_msgs[i].velocity;
-                f->current_phase                      = step_msgs[i].current_phase;
-                f->current_mass                       = step_msgs[i].current_mass;
-                f->initial_mass                       = step_msgs[i].initial_mass;
-                f->initial_fuel_mass                  = step_msgs[i].initial_fuel_mass;
-                f->payload                            = step_msgs[i].payload;
-                f->departure_offset_s                 = step_msgs[i].departure_offset_s;
-                f->current_leg                        = step_msgs[i].current_leg;
-                f->flight_plan.current_waypoint_index = step_msgs[i].current_waypoint_index;
-                f->is_active                          = step_msgs[i].is_active;
-                f->leg_just_completed                 = step_msgs[i].leg_just_completed;
-                f->fuel_exhaustion_reported           = step_msgs[i].fuel_exhaustion_reported;
-
-                if (is_valid_position(&step_msgs[i].current_pos))
-                    append_position(&histories[i], &step_msgs[i].current_pos);
-                else
-                    printf("[WARN] Flight %d sent invalid position "
-                           "(lat=%.4f lon=%.4f alt=%.2f) — update rejected\n",
-                           step_msgs[i].flight_id,
-                           step_msgs[i].current_pos.latitude,
-                           step_msgs[i].current_pos.longitude,
-                           step_msgs[i].current_pos.altitude);
-            }
-        }
-
-        sim.current_time += sim.config.time_step;
-
-        // Children are blocked on read(cmd_pipe) here — safe to check violations.
-        check_violations(&sim, was_active, pids, sim.num_flights);
-
-        if (sim.termination_requested) {
+        if (sim->termination_requested) {
             printf("[SIM] Simulation terminated early — max violations exceeded.\n");
             break;
         }
-
-        print_step_table(&sim, step_msgs, prev_phase,
-                         sim.current_time, step_num, total_steps, step_time,
-                         was_active);
-
-        for (int i = 0; i < sim.num_flights; i++) {
-            if (!was_active[i] || sim.flights[i].is_active) continue;
-            Flight *f = &sim.flights[i];
-            double remaining_fuel = f->current_mass - f->properties.empty_weight - f->payload;
-            printf("[%s] Landed. Remaining fuel: %.0f kg | Total mass: %.0f kg\n",
-                   f->callsign, remaining_fuel, f->current_mass);
-            print_arrival_deviation(f->legs[f->current_leg].scheduled_arrival_offset_s,
-                                    sim.current_time, sim.config.sim_start_seconds);
-        }
-
-        // Child is blocked on read(cmd_pipe) — no concurrent write on leg_just_completed.
-        bool leg_done[MAX_FLIGHTS];
-        for (int i = 0; i < sim.num_flights; i++) leg_done[i] = false;
-        for (int i = 0; i < sim.num_flights; i++) {
-            if (!was_active[i] || !sim.flights[i].leg_just_completed) continue;
-            sim.flights[i].leg_just_completed = false;
-            leg_done[i] = true;
-            Flight *f = &sim.flights[i];
-            printf("[%s] Arrived at intermediate stop. Leg %d complete. "
-                   "Next leg (leg %d) departs at offset %.0fs.\n",
-                   f->callsign, f->current_leg - 1, f->current_leg, f->departure_offset_s);
-            print_arrival_deviation(f->legs[f->current_leg - 1].scheduled_arrival_offset_s,
-                                    sim.current_time, sim.config.sim_start_seconds);
-        }
-
-        fflush(stdout);
-
-        for (int i = 0; i < sim.num_flights; i++)
-            if (was_active[i]) prev_phase[i] = step_msgs[i].step.phase;
-        for (int i = 0; i < sim.num_flights; i++)
-            if (leg_done[i]) prev_phase[i] = PHASE_GATE;
     }
 
-    // ── Wrap up ────────────────────────────────────────────────────────────────
-    cleanup(&sim, pids, sim.num_flights, data_pipe, cmd_pipe);
+    /* ── Shutdown threads ────────────────────────────────────────────────── */
+    pthread_mutex_lock(&ctx.mutex);
+    ctx.sim_done = true;
+    pthread_cond_broadcast(&ctx.cond_dispatch);
+    pthread_cond_broadcast(&ctx.cond_results);
+    pthread_cond_broadcast(&ctx.cond_violations);
+    pthread_mutex_unlock(&ctx.mutex);
 
-    finalize_and_write_report(&sim, sim.current_time, pids);
+    pthread_join(thr_dispatcher,  NULL);
+    pthread_join(thr_results,     NULL);
+    pthread_join(thr_violations,  NULL);
+
+    pthread_mutex_destroy(&ctx.mutex);
+    pthread_cond_destroy(&ctx.cond_dispatch);
+    pthread_cond_destroy(&ctx.cond_results);
+    pthread_cond_destroy(&ctx.cond_violations);
+    pthread_cond_destroy(&ctx.cond_step_done);
+
+    /* ── Cleanup children ────────────────────────────────────────────────── */
+    cleanup(shm, pids, sim->num_flights);
+
+    finalize_and_write_report(sim, sim->current_time, pids);
 
     printf("\n╔══════════════════════════════════════════════════════╗\n");
     printf("║              SIMULATION COMPLETE                     ║\n");
     printf("╚══════════════════════════════════════════════════════╝\n");
-    printf("Total violations detected: %d\n", sim.total_violations_detected);
-    for (int i = 0; i < sim.num_flights; i++) {
+    printf("Total violations detected: %d\n", sim->total_violations_detected);
+    for (int i = 0; i < sim->num_flights; i++) {
         if (pids[i] <= 0) continue;
-        printf("  %-8s : %s\n", sim.flights[i].callsign,
-               sim.flights[i].violation_detected ? "HAD VIOLATION" : "clean");
+        printf("  %-8s : %s\n", sim->flights[i].callsign,
+               sim->flights[i].violation_detected ? "HAD VIOLATION" : "clean");
     }
 
     printf("\n╔══════════════════════════════════════════════════════╗\n");
-    printf("║           POSITION HISTORY (US101)                   ║\n");
+    printf("║           POSITION HISTORY                           ║\n");
     printf("╚══════════════════════════════════════════════════════╝\n");
-    for (int i = 0; i < sim.num_flights; i++) {
+    for (int i = 0; i < sim->num_flights; i++) {
         if (pids[i] <= 0 || histories[i].count == 0) continue;
-        printf("\n  %s  (%d steps)\n", sim.flights[i].callsign, histories[i].count);
+        printf("\n  %s  (%d steps)\n", sim->flights[i].callsign, histories[i].count);
         printf("  %6s  %8s  %9s  %9s\n", "STEP", "LAT", "LON", "ALT (m)");
         printf("  %6s  %8s  %9s  %9s\n", "------", "--------", "---------", "---------");
         int start = (histories[i].count < MAX_HISTORY) ? 0 : histories[i].next;
@@ -711,6 +843,14 @@ int main(void) {
         }
     }
     printf("\n");
+
+    /* ── Release shared memory ───────────────────────────────────────────── */
+    for (int i = 0; i < MAX_FLIGHTS; i++) {
+        sem_destroy(&shm->step_go[i]);
+        sem_destroy(&shm->step_done[i]);
+    }
+    munmap(shm, sizeof(SharedBlock));
+    shm_unlink("/aisafe_sim");
 
     return EXIT_SUCCESS;
 }

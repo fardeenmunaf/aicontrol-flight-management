@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/wait.h>
 #include "position_tracker.h"
 
 #define PASS "\033[32mPASS\033[0m"
@@ -121,48 +119,9 @@ static int test_history_accessible(void) {
 }
 
 
-static int test_pipe_position_update(void) {
-    int fd[2];
-    if (pipe(fd) < 0) {
-        printf("[%s] Pipe() failed\n", FAIL);
-        return 1;
-    }
-
-    pid_t pid = fork();
-    if (pid == 0) {
-        close(fd[0]);
-        PipeMessage msg;
-        msg.type      = MSG_POSITION_UPDATE;
-        msg.flight_id = 1;
-        msg.new_pos.latitude  = 41.26;
-        msg.new_pos.longitude = -8.68;
-        msg.new_pos.altitude  = 9000.0;
-        msg.new_pos.timestamp = 1800.0;
-        write(fd[1], &msg, sizeof(msg));
-        close(fd[1]);
-        _exit(0);
-    }
-
-    close(fd[1]);
-    PipeMessage received;
-    ssize_t n = read(fd[0], &received, sizeof(received));
-    close(fd[0]);
-    waitpid(pid, NULL, 0);
-
-    int ok = (n == (ssize_t)sizeof(PipeMessage) &&
-              received.type      == MSG_POSITION_UPDATE &&
-              received.flight_id == 1 &&
-              received.new_pos.latitude  == 41.26 &&
-              received.new_pos.longitude == -8.68 &&
-              received.new_pos.altitude  == 9000.0);
-    return check("Flight sends position update through pipe", ok);
-}
-
 int main(void) {
     int failures = 0;
 
-
-    failures += test_pipe_position_update();
     failures += test_single_append();
     failures += test_multiple_appends();
     failures += test_history_full();

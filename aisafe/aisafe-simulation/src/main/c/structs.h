@@ -2,9 +2,13 @@
 #define STRUCTS_H
 
 #include <sys/types.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <semaphore.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <time.h>
+#include <pthread.h>
 
 #define MAX_FLIGHTS   100
 #define MAX_WAYPOINTS  50
@@ -13,33 +17,32 @@
 
 #define FUEL_DENSITY_KG_PER_L  0.804
 
-// sentinel: arrival time not present in JSON
 #define ARRIVAL_OFFSET_NOT_SET (-1.0)
 
 typedef struct {
-    double latitude;    // degrees, –90 to +90
-    double longitude;   // degrees, –180 to +180
-    double altitude;    // metres above MSL
-    double timestamp;   // simulation clock (seconds)
+    double latitude;
+    double longitude;
+    double altitude;
+    double timestamp;
 } Position;
 
 typedef struct {
-    double speed;           // TAS in m/s
-    double heading;         // degrees clockwise from north
-    double vertical_speed;  // m/s, positive = climbing
+    double speed;
+    double heading;
+    double vertical_speed;
 } Velocity;
 
 typedef struct {
     double empty_weight;
-    double wing_area;                   // m²
+    double wing_area;
     double aspect_ratio;
-    double oswald_efficiency;           // 0–1
+    double oswald_efficiency;
     double cd0;
     int    num_engines;
-    double thrust_sea_level_stopped;    // N per engine at Mach 0
-    double thrust_sea_level_cruise;     // N per engine at Mach 0.9
+    double thrust_sea_level_stopped;
+    double thrust_sea_level_cruise;
     double thrust_lapse_rate;
-    double tsfc;                        // N/N/s
+    double tsfc;
 } AircraftProperties;
 
 typedef enum {
@@ -63,9 +66,9 @@ typedef struct {
 
 typedef struct {
     double departure_offset_s;
-    double scheduled_arrival_offset_s;  // ARRIVAL_OFFSET_NOT_SET if not in JSON
-    double fuel_mass;                   // kg
-    double payload;                     // kg
+    double scheduled_arrival_offset_s;
+    double fuel_mass;
+    double payload;
     int    waypoint_start_index;
     int    waypoint_end_index;
 } Leg;
@@ -73,22 +76,22 @@ typedef struct {
 typedef struct {
     double dist_to_dest;
     double cruise_alt;
-    double temperature;     // K
-    double pressure;        // Pa
-    double rho;             // kg/m³
-    double speed_of_sound;  // m/s
+    double temperature;
+    double pressure;
+    double rho;
+    double speed_of_sound;
     double ias_kts;
     double mach;
-    double tas;             // m/s
+    double tas;
     double cl;
     double cd;
-    double lift;            // N
-    double drag;            // N
+    double lift;
+    double drag;
     double thrust_per_engine;
     double total_thrust;
-    double climb_rate;      // m/s
-    double fuel_burned;     // kg
-    double horiz_dist;      // m
+    double climb_rate;
+    double fuel_burned;
+    double horiz_dist;
     FlightPhase phase;
 } StepData;
 
@@ -129,39 +132,13 @@ typedef struct {
     int      next;
 } PositionHistory;
 
-// Command sent from parent to child at the start of each step.
-typedef struct {
-    double current_time;
-    bool   terminate;
-} StepCommand;
-
-// Full dynamic flight state sent from child to parent after each step.
-// Carries everything the parent needs to update its local Flight copy.
-typedef struct {
-    int         flight_id;
-    Position    current_pos;
-    Velocity    velocity;
-    FlightPhase current_phase;
-    double      current_mass;
-    double      initial_mass;
-    double      initial_fuel_mass;
-    double      payload;
-    double      departure_offset_s;
-    int         current_leg;
-    int         current_waypoint_index;
-    bool        is_active;
-    bool        leg_just_completed;
-    bool        fuel_exhaustion_reported;
-    StepData    step;
-} PipeMessage;
-
 typedef struct {
     double start_time;
     double end_time;
     double time_step;
-    double safety_distance_threshold;   // metres
+    double safety_distance_threshold;
     int    max_violations_threshold;
-    double sim_start_seconds;           // seconds since midnight
+    double sim_start_seconds;
 } SimulationConfig;
 
 typedef struct {
@@ -211,6 +188,47 @@ typedef struct {
     bool termination_requested;
 
     SimulationReport report;
+
+    StepData last_step[MAX_FLIGHTS];
 } SimulationData;
+
+/* Inter-process shared memory block.
+   Placed in POSIX shared memory so parent and child processes share it. */
+typedef struct {
+    SimulationData sim;
+    sem_t          step_go[MAX_FLIGHTS];    /* parent posts → child wakes  */
+    sem_t          step_done[MAX_FLIGHTS];  /* child posts  → Results wakes */
+    bool           terminate;               /* set by cleanup to unblock children */
+} SharedBlock;
+
+/* Parent thread phase — guards condition variable waits against spurious wakeups. */
+typedef enum {
+    THREAD_IDLE,
+    THREAD_DISPATCHER,
+    THREAD_RESULTS,
+    THREAD_VIOLATIONS
+} SimThreadPhase;
+
+/* Parent-process thread coordination context.
+   Holds the shared memory pointer, mutex, condition variables, and
+   per-step state shared between the Dispatcher, Results, and Violations threads. */
+typedef struct {
+    SharedBlock      *shm;
+    pthread_mutex_t   mutex;
+    pthread_cond_t    cond_dispatch;
+    pthread_cond_t    cond_results;
+    pthread_cond_t    cond_violations;
+    pthread_cond_t    cond_step_done;
+    SimThreadPhase    current_thread;
+    bool              was_active[MAX_FLIGHTS];
+    int               num_flights;
+    pid_t             pids[MAX_FLIGHTS];
+    PositionHistory  *histories;
+    FlightPhase       prev_phase[MAX_FLIGHTS];
+    double            step_time;
+    int               step_num;
+    int               total_steps;
+    bool              sim_done;
+} SimContext;
 
 #endif /* STRUCTS_H */

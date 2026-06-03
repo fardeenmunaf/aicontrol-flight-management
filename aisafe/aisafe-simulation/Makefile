@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -Isrc/main/c -Isrc/main/c/libs -pthread
-LDFLAGS = -lm -pthread
+LDFLAGS = -lm -pthread -lrt
 
 all: simulation_engine report_generator
 
