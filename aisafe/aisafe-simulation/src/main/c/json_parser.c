@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <dirent.h>
+#include <sys/stat.h>
 #include "cJSON.h"
 #include "json_parser.h"
 
@@ -483,25 +484,29 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
  * @return 1 if all flight plans loaded successfully, 0 if any failed validation.
  */
 int load_all_flight_plans(const char* directory_path, SimulationData* shm) {
-    DIR *dir;
-    struct dirent *ent;
+    struct dirent **entries;
     int all_valid = 1;
 
-    if ((dir = opendir(directory_path)) != NULL) {
-        while ((ent = readdir(dir)) != NULL) {
-            size_t len = strlen(ent->d_name);
-            if (len > 5 && strcmp(ent->d_name + len - 5, ".json") == 0) {
-                char filepath[1024];
-                snprintf(filepath, sizeof(filepath), "%s/%s", directory_path, ent->d_name);
-                if (!parse_flight_plan(filepath, shm))
-                    all_valid = 0;
-            }
-        }
-        closedir(dir);
-    } else {
+    /* scandir with alphasort guarantees alphabetical order so the menu numbering
+       is deterministic and matches any external tool that lists the same directory. */
+    int n = scandir(directory_path, &entries, NULL, alphasort);
+    if (n < 0) {
         perror("Could not open flightplansSim directory");
         return 0;
     }
+
+    for (int i = 0; i < n; i++) {
+        const char *name = entries[i]->d_name;
+        size_t len = strlen(name);
+        if (len > 5 && strcmp(name + len - 5, ".json") == 0) {
+            char filepath[1024];
+            snprintf(filepath, sizeof(filepath), "%s/%s", directory_path, name);
+            if (!parse_flight_plan(filepath, shm))
+                all_valid = 0;
+        }
+        free(entries[i]);
+    }
+    free(entries);
 
     return all_valid;
 }

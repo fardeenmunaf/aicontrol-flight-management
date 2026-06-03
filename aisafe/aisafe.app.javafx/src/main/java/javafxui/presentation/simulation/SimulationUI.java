@@ -15,16 +15,28 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+import javafx.geometry.Insets;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.VBox;
 
 public class SimulationUI {
 
@@ -90,6 +102,10 @@ public class SimulationUI {
     @FXML
     private void onRunSimulation() {
         if (!mapReady) return;
+
+        final List<Integer> selected = showFlightSelectionDialog();
+        if (selected == null || selected.isEmpty()) return;
+
         runButton.setDisable(true);
         stepBatches.clear();
         pendingBatch.clear();
@@ -103,7 +119,58 @@ public class SimulationUI {
         violationBanner.setManaged(false);
 
         startStepScheduler();
-        startSimProcess();
+        startSimProcess(selected);
+    }
+
+    /**
+     * Lists flight plans from flightplansSim/ alphabetically (matching the C simulation order)
+     * and shows a checkbox dialog. Returns the 1-based indices of selected flights, or null
+     * if the user cancelled.
+     */
+    private List<Integer> showFlightSelectionDialog() {
+        final File dir = Paths.get("aisafe-simulation/flightplansSim").toAbsolutePath().toFile();
+        final File[] jsonFiles = dir.listFiles((d, name) -> name.endsWith(".json"));
+        if (jsonFiles == null || jsonFiles.length == 0) {
+            showBanner("No flight plans found in flightplansSim/");
+            return null;
+        }
+        Arrays.sort(jsonFiles, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+
+        final List<CheckBox> checkBoxes = new ArrayList<>();
+        final VBox box = new VBox(6);
+        box.setPadding(new Insets(10));
+        for (final File f : jsonFiles) {
+            final String callsign = f.getName().replace(".json", "");
+            final CheckBox cb = new CheckBox(callsign);
+            checkBoxes.add(cb);
+            box.getChildren().add(cb);
+        }
+
+        final Button selectAll = new Button("Select All");
+        selectAll.setOnAction(e -> {
+            final boolean allSelected = checkBoxes.stream().allMatch(CheckBox::isSelected);
+            checkBoxes.forEach(cb -> cb.setSelected(!allSelected));
+        });
+
+        final VBox content = new VBox(8, selectAll, new ScrollPane(box));
+        content.setPadding(new Insets(10));
+        ((ScrollPane) content.getChildren().get(1)).setFitToWidth(true);
+        ((ScrollPane) content.getChildren().get(1)).setPrefHeight(300);
+
+        final Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Flight Selection");
+        dialog.setHeaderText("Select flights to simulate:");
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        final Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) return null;
+
+        final List<Integer> selected = new ArrayList<>();
+        for (int i = 0; i < checkBoxes.size(); i++)
+            if (checkBoxes.get(i).isSelected())
+                selected.add(i + 1);
+        return selected;
     }
 
     private void startStepScheduler() {
@@ -133,13 +200,34 @@ public class SimulationUI {
         }
     }
 
-    private void startSimProcess() {
+    private void startSimProcess(final List<Integer> selectedFlights) {
         final Thread readerThread = new Thread(() -> {
             try {
+                final File simDir = Paths.get("aisafe-simulation").toAbsolutePath().toFile();
+
+                // Compile the simulation binary (make is a no-op if nothing changed).
+                final Process make = new ProcessBuilder("make")
+                        .directory(simDir)
+                        .redirectErrorStream(true)
+                        .start();
+                if (make.waitFor() != 0) {
+                    simProcessDone = true;
+                    Platform.runLater(() -> showBanner("make failed — could not compile simulation"));
+                    return;
+                }
+
                 final ProcessBuilder pb = new ProcessBuilder("./simulation_engine");
-                pb.directory(Paths.get("aisafe-simulation").toAbsolutePath().toFile());
+                pb.directory(simDir);
                 pb.redirectErrorStream(true);
                 final Process process = pb.start();
+
+                // Write selected flight numbers followed by a blank line to confirm.
+                try (final BufferedWriter stdin = new BufferedWriter(
+                        new OutputStreamWriter(process.getOutputStream()))) {
+                    for (final int n : selectedFlights)
+                        stdin.write(n + "\n");
+                    stdin.write("\n");
+                }
 
                 try (final BufferedReader reader = new BufferedReader(
                         new InputStreamReader(process.getInputStream()))) {

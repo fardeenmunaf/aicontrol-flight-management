@@ -1,4 +1,4 @@
-package weather.presentation;
+package weather.presentation.weatherData;
 
 import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
@@ -35,8 +35,7 @@ public class BulkImportWeatherUI extends AbstractUI {
             final WeatherDataImporter importer = new CSVWeatherDataImporter(filePath);
 
             // Execute bulk import
-            final BulkImportWeatherDataController.ImportResult result =
-                controller.importBulkWeatherData(importer);
+            final BulkImportWeatherDataController.ImportResult result = controller.importBulkWeatherData(importer);
 
             // Display results
             System.out.println("\n" + result.toString());
@@ -55,4 +54,3 @@ public class BulkImportWeatherUI extends AbstractUI {
         return "Bulk Import Weather Data";
     }
 }
-
