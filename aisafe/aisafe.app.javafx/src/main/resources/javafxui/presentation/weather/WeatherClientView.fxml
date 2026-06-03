@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.web.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.weather.WeatherClientUI"
+      styleClass="root" spacing="0">
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="12">
+        <Label text="Weather Client" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Register Weather Data" styleClass="btn-primary" onAction="#showRegister"/>
+        <Button text="View Weather Data" styleClass="btn-primary" onAction="#showView"/>
+        <Button text="Bulk Import Weather Data" styleClass="btn-primary" onAction="#showBulkImport"/>
+        <Button text="Map View" styleClass="btn-primary" onAction="#showMap"/>
+        <Button text="Exit" styleClass="btn-danger" onAction="#onExit"/>
+    </HBox>
+    <Label fx:id="statusLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
+    <StackPane VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
+        <Label fx:id="placeholderLabel" styleClass="status-label" text=""/>
+
+        <VBox fx:id="registerPane" managed="false" visible="false"
+              styleClass="form-panel" spacing="12">
+            <Label text="Register Weather Data" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="ACA Code"/>
+                    <TextField fx:id="fAcaCode" promptText="e.g. SCPA"/>
+                </VBox>
+                <VBox spacing="4">
+                    <Label text="Date"/>
+                    <DatePicker fx:id="fDate"/>
+                </VBox>
+            </HBox>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Latitude 1"/>
+                    <TextField fx:id="fLat1" promptText="e.g. 38.5"/>
+                </VBox>
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Longitude 1"/>
+                    <TextField fx:id="fLon1" promptText="e.g. -9.0"/>
+                </VBox>
+            </HBox>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Latitude 2"/>
+                    <TextField fx:id="fLat2" promptText="e.g. 39.0"/>
+                </VBox>
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Longitude 2"/>
+                    <TextField fx:id="fLon2" promptText="e.g. -8.5"/>
+                </VBox>
+            </HBox>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Altitude Inferior (ft)"/>
+                    <TextField fx:id="fAltInf" promptText="e.g. 0"/>
+                </VBox>
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Altitude Superior (ft)"/>
+                    <TextField fx:id="fAltSup" promptText="e.g. 10000"/>
+                </VBox>
+            </HBox>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Wind Direction (degrees)"/>
+                    <TextField fx:id="fDirection" promptText="e.g. 180"/>
+                </VBox>
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Wind Speed (knots)"/>
+                    <TextField fx:id="fWindSpeed" promptText="e.g. 15.5"/>
+                </VBox>
+            </HBox>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Start Hour (HH:mm)"/>
+                    <TextField fx:id="fStartHour" promptText="e.g. 08:00"/>
+                </VBox>
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="End Hour (HH:mm)"/>
+                    <TextField fx:id="fEndHour" promptText="e.g. 18:00"/>
+                </VBox>
+            </HBox>
+            <HBox spacing="12">
+                <Button text="Save" styleClass="btn-primary" onAction="#onSaveRegister"/>
+                <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelRegister"/>
+            </HBox>
+            <Label fx:id="registerError" styleClass="error-label" text="" wrapText="true"/>
+        </VBox>
+
+        <VBox fx:id="viewPane" managed="false" visible="false" spacing="12">
+            <Label text="View Weather Data" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Air Control Area (ACA)"/>
+                    <TextField fx:id="filterArea" promptText="e.g. SCPA"/>
+                </VBox>
+                <VBox spacing="4">
+                    <Label text="Date"/>
+                    <DatePicker fx:id="filterDate"/>
+                </VBox>
+                <VBox spacing="8" alignment="BOTTOM_LEFT">
+                    <Button text="Apply" styleClass="btn-primary" onAction="#onApplyFilter"/>
+                    <Button text="Clear" styleClass="btn-danger" onAction="#onClearFilter"/>
+                </VBox>
+            </HBox>
+            <TableView fx:id="table" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="colAca" text="ACA" prefWidth="90"/>
+                    <TableColumn fx:id="colLat1" text="Lat1" prefWidth="100"/>
+                    <TableColumn fx:id="colLon1" text="Lon1" prefWidth="100"/>
+                    <TableColumn fx:id="colLat2" text="Lat2" prefWidth="100"/>
+                    <TableColumn fx:id="colLon2" text="Lon2" prefWidth="100"/>
+                    <TableColumn fx:id="colAltInf" text="Alt Inf" prefWidth="90"/>
+                    <TableColumn fx:id="colAltSup" text="Alt Sup" prefWidth="90"/>
+                    <TableColumn fx:id="colDirection" text="Dir" prefWidth="80"/>
+                    <TableColumn fx:id="colWindSpeed" text="Wind" prefWidth="90"/>
+                    <TableColumn fx:id="colDate" text="Date" prefWidth="110"/>
+                    <TableColumn fx:id="colStart" text="Start" prefWidth="80"/>
+                    <TableColumn fx:id="colEnd" text="End" prefWidth="80"/>
+                </columns>
+            </TableView>
+            <Label fx:id="viewStatus" styleClass="status-label" text=""/>
+        </VBox>
+
+        <VBox fx:id="importPane" managed="false" visible="false"
+              styleClass="form-panel" spacing="12">
+            <Label text="Bulk Import Weather Data" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+            <Label text="CSV format (semicolon-delimited): ACA;Lat1;Long1;Lat2;Long2;Alt_inf;Alt_sup;Direction;Value;Date;Start_hour;End_hour"
+                   wrapText="true"/>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="CSV file path"/>
+                    <TextField fx:id="importPath" promptText="/path/to/weather.csv"/>
+                </VBox>
+                <Button text="Import" styleClass="btn-primary" onAction="#onImport"/>
+            </HBox>
+            <TextArea fx:id="importResult" editable="false" wrapText="true" prefRowCount="6"/>
+            <Label fx:id="importError" styleClass="error-label" text="" wrapText="true"/>
+        </VBox>
+
+        <VBox fx:id="mapPane" managed="false" visible="false" spacing="12">
+            <Label text="Weather Map" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+            <HBox spacing="12">
+                <VBox spacing="4" HBox.hgrow="ALWAYS">
+                    <Label text="Air Control Area (ACA)"/>
+                    <TextField fx:id="mapArea" promptText="e.g. SCPA"/>
+                </VBox>
+                <VBox spacing="4">
+                    <Label text="Date"/>
+                    <DatePicker fx:id="mapDate"/>
+                </VBox>
+                <VBox spacing="8" alignment="BOTTOM_LEFT">
+                    <Button text="Apply" styleClass="btn-primary" onAction="#onApplyMapFilter"/>
+                    <Button text="Clear" styleClass="btn-danger" onAction="#onClearMapFilter"/>
+                </VBox>
+            </HBox>
+            <Label fx:id="mapStatus" styleClass="status-label" text=""/>
+            <WebView fx:id="mapView" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </StackPane>
+</VBox>

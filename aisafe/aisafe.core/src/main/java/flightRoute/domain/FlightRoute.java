@@ -2,9 +2,13 @@ package flightRoute.domain;
 
 import java.time.LocalDate;
 
+import airport.domain.Airport;
+import airtransportcompany.domain.AirTransportCompany;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Version;
 import shared.domain.FlightRouteId;
 import eapli.framework.domain.model.AggregateRoot;
@@ -26,21 +30,34 @@ public class FlightRoute implements AggregateRoot<FlightRouteId> {
     @Embedded
     private RouteDesignation designation;
 
+    @Column(nullable = false)
     private LocalDate activeFrom;
 
-    /**
-     * Null means the route is still active.
-     * When set, the route is deactivated from that date onwards (US074).
-     */
+    @Column(nullable = true)
     private LocalDate activeUntil;
 
+    @ManyToOne(optional = false)
+    private Airport originAirport;
+
+    @ManyToOne(optional = false)
+    private Airport destinationAirport;
+
+    @ManyToOne(optional = false)
+    private AirTransportCompany company;
+
     public FlightRoute(final FlightRouteId flightRouteId, final RouteDesignation designation,
-                       final LocalDate activeFrom) {
-        Preconditions.noneNull(flightRouteId, designation, activeFrom);
-        this.flightRouteId = flightRouteId;
-        this.designation   = designation;
-        this.activeFrom    = activeFrom;
-        this.activeUntil   = null; // active by default
+                       final LocalDate activeFrom, final Airport originAirport,
+                       final Airport destinationAirport, final AirTransportCompany company) {
+        Preconditions.noneNull(flightRouteId, designation, activeFrom, originAirport, destinationAirport, company);
+        Preconditions.ensure(!originAirport.identity().equals(destinationAirport.identity()),
+                "Origin and destination airports must be different");
+        this.flightRouteId      = flightRouteId;
+        this.designation        = designation;
+        this.activeFrom         = activeFrom;
+        this.activeUntil        = null;
+        this.originAirport      = originAirport;
+        this.destinationAirport = destinationAirport;
+        this.company            = company;
     }
 
     protected FlightRoute() {
@@ -58,7 +75,8 @@ public class FlightRoute implements AggregateRoot<FlightRouteId> {
         Preconditions.ensure(!date.isBefore(activeFrom),
                 "Deactivation date must be on or after the route's active-from date");
         if (this.activeUntil != null && !date.isAfter(this.activeUntil)) {
-            throw new IllegalStateException("Route is already deactivated on or before " + date);
+            throw new IllegalStateException(
+                    "Cannot set deactivation to " + date + ": route is already deactivated on " + this.activeUntil);
         }
         this.activeUntil = date;
     }
@@ -107,6 +125,25 @@ public class FlightRoute implements AggregateRoot<FlightRouteId> {
 
     public boolean isActive() {
         return isActiveOn(LocalDate.now());
+    }
+
+    public void reactivate() {
+        if (this.activeUntil == null) {
+            throw new IllegalStateException("Route is already active");
+        }
+        this.activeUntil = null;
+    }
+
+    public Airport originAirport() {
+        return originAirport;
+    }
+
+    public Airport destinationAirport() {
+        return destinationAirport;
+    }
+
+    public AirTransportCompany company() {
+        return company;
     }
 
 

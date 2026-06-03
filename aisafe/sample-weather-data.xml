@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<weatherDataList>
+  <weatherData>
+    <acaCode>SCPA</acaCode>
+    <latitude1>38.5</latitude1>
+    <longitude1>-9.0</longitude1>
+    <latitude2>39.0</latitude2>
+    <longitude2>-8.5</longitude2>
+    <altitudeInf>0</altitudeInf>
+    <altitudeSup>10000</altitudeSup>
+    <direction>180</direction>
+    <windSpeed>15.5</windSpeed>
+    <date>2024-01-15</date>
+    <startHour>08:00:00</startHour>
+    <endHour>18:00:00</endHour>
+  </weatherData>
+  <weatherData>
+    <acaCode>LPPC</acaCode>
+    <latitude1>39.5</latitude1>
+    <longitude1>-7.0</longitude1>
+    <latitude2>40.5</latitude2>
+    <longitude2>-6.5</longitude2>
+    <altitudeInf>1000</altitudeInf>
+    <altitudeSup>12000</altitudeSup>
+    <direction>90</direction>
+    <windSpeed>18.5</windSpeed>
+    <date>2024-01-15</date>
+    <startHour>06:00:00</startHour>
+    <endHour>16:00:00</endHour>
+  </weatherData>
+  <weatherData>
+    <acaCode>LPMA</acaCode>
+    <latitude1>32.5</latitude1>
+    <longitude1>-16.5</longitude1>
+    <latitude2>33.5</latitude2>
+    <longitude2>-15.5</longitude2>
+    <altitudeInf>100</altitudeInf>
+    <altitudeSup>5000</altitudeSup>
+    <direction>45</direction>
+    <windSpeed>20.0</windSpeed>
+    <date>2024-01-15</date>
+    <startHour>09:00:00</startHour>
+    <endHour>19:00:00</endHour>
+  </weatherData>
+</weatherDataList>
+

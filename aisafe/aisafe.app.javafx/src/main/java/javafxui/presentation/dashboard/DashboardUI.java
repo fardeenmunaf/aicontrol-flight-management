@@ -64,12 +64,17 @@ public class DashboardUI {
 
         if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.AIR_TRANSPORT_COMPANY_COLLABORATOR)) {
             addNavButton("Fleet",             "/javafxui/presentation/fleet/FleetView.fxml");
+            addNavButton("Flight Routes",     "/javafxui/presentation/flightroute/FlightRoutesView.fxml");
             addNavButton("Available Pilots",  "/javafxui/presentation/pilot/AvailablePilotsView.fxml");
             addNavButton("Company Pilots",    "/javafxui/presentation/pilot/CompanyPilotsView.fxml");
         }
 
         if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.PILOT)) {
             addNavButton("Flight Plans", "/javafxui/presentation/flightplan/FlightPlanView.fxml");
+        }
+
+        if (SessionContext.isWeatherClient()) {
+            addNavButton("Weather Client", "/javafxui/presentation/weather/WeatherClientView.fxml");
         }
 
         final Region spacer = new Region();

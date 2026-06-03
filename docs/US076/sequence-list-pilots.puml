@@ -1,0 +1,65 @@
+@startuml sequence-list-pilots
+title US076 — List My Company's Pilot Roster: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "ATCC" as User
+participant "ListCompanyPilotsUI" as UI #DDEEFF
+participant "AuthzRegistry\n(eapli)" as Registry #EEEEEE
+participant "CustomerCollaborator\nRepository" as CollabRepo #FFF5CC
+participant "JpaPilotCompanyAssignment\nRepository" as AssignRepo #FFE8E8
+participant "PilotRepository" as PilotRepo #DDFFD8
+database "Database\n(JPA)" as DB #EEEEEE
+
+== Company Resolution ==
+
+User -> UI ++ : select "My Company's Pilot Roster"
+
+UI -> Registry ++ : authorizationService().session()
+Registry --> UI -- : Optional<UserSession>
+UI -> UI : extract username (email) from session
+
+UI -> CollabRepo ++ : findByUserId(UserId.valueOf(email))
+CollabRepo -> DB ++ : SELECT CustomerCollaborator WHERE user_id = ?
+DB --> CollabRepo -- : CustomerCollaborator
+CollabRepo --> UI -- : Optional<CustomerCollaborator>
+
+alt not linked to an Air Transport Company
+    UI --> User : "Your account is not linked to an air transport company."
+    deactivate UI
+else company resolved
+    UI -> UI : companyId = collab.airTransportCompanyId()
+end
+
+== Load Roster Assignments ==
+
+UI -> AssignRepo ++ : findByCompanyId(companyId)
+AssignRepo -> DB ++ : SELECT * FROM PilotCompanyAssignment\n  WHERE company_id = ?
+DB --> AssignRepo -- : List<PilotCompanyAssignment>
+AssignRepo --> UI -- : List<PilotCompanyAssignment>
+UI -> UI : myPilotIds = { pilotUserId.toString() }
+
+== Load and Filter Pilots ==
+
+UI -> PilotRepo ++ : findAll()
+PilotRepo -> DB ++ : SELECT * FROM Pilot (with certifiedAircraftModels)
+DB --> PilotRepo -- : List<Pilot>
+PilotRepo --> UI -- : Iterable<Pilot>
+
+UI -> UI : companyPilots = pilots\n  .filter(p → myPilotIds.contains(p.userId()))
+
+== Display ==
+
+alt no pilots assigned
+    UI --> User : "No pilots assigned to your company."
+    deactivate UI
+else roster has entries
+    loop for each Pilot in companyPilots
+        UI -> UI : format row:\n  userId | status | certifiedModels (sorted)
+    end
+    UI --> User -- : display table\n(EMAIL | STATUS | CERTIFIED MODELS)\n+ "<N> pilot(s) in your roster."
+end
+
+@enduml

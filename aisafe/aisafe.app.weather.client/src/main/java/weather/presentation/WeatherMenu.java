@@ -1,7 +1,6 @@
 package weather.presentation;
 
-import weather.presentation.weatherData.RegisterWeatherDataUI;
-import weather.presentation.weatherData.ViewWeatherDataUI;
+import weather.presentation.weatherData.*;
 
 public class WeatherMenu {
 
@@ -18,6 +17,7 @@ public class WeatherMenu {
         System.out.println("Weather Client Menu:");
         System.out.println("1. Register Weather Data");
         System.out.println("2. View Weather Data");
+        System.out.println("3. Bulk Import Weather Data");
         System.out.println("0. Exit");
     }
 
@@ -37,6 +37,9 @@ public class WeatherMenu {
                 break;
             case 2:
                 new ViewWeatherDataUI().show();
+                break;
+            case 3:
+                new BulkImportWeatherUI().show();
                 break;
             case 0:
                 System.out.println("Exiting...");

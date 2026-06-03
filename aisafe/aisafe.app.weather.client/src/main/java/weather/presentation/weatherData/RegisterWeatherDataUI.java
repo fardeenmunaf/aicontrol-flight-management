@@ -1,48 +1,53 @@
 package weather.presentation.weatherData;
 
-import aircontrolarea.domain.AirControlArea;
-import aircontrolarea.repositories.AirControlAreaRepository;
 import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
-import infrastructure.persistence.PersistenceContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 
 import weatherData.application.RegisterWeatherDataController;
 import weatherData.dto.WeatherDataDTO;
 
 
-
 public class RegisterWeatherDataUI extends AbstractUI {
 
-
     private final RegisterWeatherDataController controller = new RegisterWeatherDataController();
-    private final AirControlAreaRepository airControlAreaRepository =
-            PersistenceContext.repositories().airControlAreas();
 
     @Override
     public boolean doShow() {
         try {
-            final String airControlArea = selectAirControlArea();
-            if (airControlArea == null) {
-                return false;
-            }
-            final LocalDateTime dateTime = readDateTime();
-            final Double windDirection = readDouble("Wind Direction (degrees)");
-            final Double windSpeed = readDouble("Wind Speed (m/s)");
-            final Double temperature = readDouble("Temperature (C)");
-            final Double pressure = readDouble("Pressure (hPa)");
+            System.out.println("\n=== Register Weather Data ===");
+
+            final String acaCode = readString("ACA Code");
+            final Double latitude1 = readDouble("Latitude 1 (degrees)");
+            final Double longitude1 = readDouble("Longitude 1 (degrees)");
+            final Double latitude2 = readDouble("Latitude 2 (degrees)");
+            final Double longitude2 = readDouble("Longitude 2 (degrees)");
+            final Double altitudeInf = readDouble("Altitude Inferior (ft)");
+            final Double altitudeSup = readDouble("Altitude Superior (ft)");
+            final Double direction = readDouble("Wind Direction (degrees)");
+            final Double windSpeed = readDouble("Wind Speed (knots)");
+            final LocalDate date = readDate("Date (YYYY-MM-DD)");
+            final LocalTime startHour = readTime("Start Hour (HH:MM)");
+            final LocalTime endHour = readTime("End Hour (HH:MM)");
 
             WeatherDataDTO dto = new WeatherDataDTO(
-                    airControlArea,
-                    dateTime,
-                    windDirection,
+                    acaCode,
+                    latitude1,
+                    longitude1,
+                    latitude2,
+                    longitude2,
+                    altitudeInf,
+                    altitudeSup,
+                    direction,
                     windSpeed,
-                    temperature,
-                    pressure
+                    date,
+                    startHour,
+                    endHour
             );
 
             controller.registerWeatherData(dto);
@@ -52,7 +57,6 @@ public class RegisterWeatherDataUI extends AbstractUI {
             System.out.println("Error: " + ex.getMessage());
             return false;
         }
-
     }
 
     @Override
@@ -60,30 +64,18 @@ public class RegisterWeatherDataUI extends AbstractUI {
         return "Register Weather Data";
     }
 
-    private String selectAirControlArea() {
-        final List<AirControlArea> areas = toList(airControlAreaRepository.findAll());
-
-        if (areas.isEmpty()) {
-            System.out.println("No air control areas available.");
-            return null;
+    private String readString(final String prompt) {
+        while (true) {
+            try {
+                final String input = Console.readLine(prompt);
+                if (input == null || input.isBlank()) {
+                    throw new IllegalArgumentException("Input cannot be empty");
+                }
+                return input.trim();
+            } catch (final IllegalArgumentException ex) {
+                System.out.println(ex.getMessage());
+            }
         }
-
-        System.out.println("\nAvailable Air Control Areas:");
-        for (int i = 0; i < areas.size(); i++) {
-            final AirControlArea area = areas.get(i);
-            System.out.printf("%d - Code: %s | MinFuel: %.2f | Boundaries: %s%n",
-                    i + 1,
-                    area.areaCode(),
-                    area.minimumRequiredArrivalFuel(),
-                    area.geographicBoundaries());
-        }
-
-        final int choice = readInteger();
-        if (choice < 1 || choice > areas.size()) {
-            throw new IllegalArgumentException("Invalid air control area option");
-        }
-
-        return areas.get(choice - 1).areaCode();
     }
 
     private Double readDouble(final String prompt) {
@@ -102,32 +94,32 @@ public class RegisterWeatherDataUI extends AbstractUI {
         }
     }
 
-    private LocalDateTime readDateTime() {
+    private LocalDate readDate(final String prompt) {
         while (true) {
             try {
-                final String input = Console.readLine("Date/Time (YYYY-MM-DDTHH:MM)");
+                final String input = Console.readLine(prompt);
                 if (input == null || input.isBlank()) {
                     throw new IllegalArgumentException("Input cannot be empty");
                 }
-                return LocalDateTime.parse(input);
+                return LocalDate.parse(input);
             } catch (final DateTimeParseException ex) {
-                System.out.println("Invalid date/time. Please use format YYYY-MM-DDTHH:MM.");
+                System.out.println("Invalid date. Please use format YYYY-MM-DD.");
             } catch (final IllegalArgumentException ex) {
                 System.out.println(ex.getMessage());
             }
         }
     }
 
-    private int readInteger() {
+    private LocalTime readTime(final String prompt) {
         while (true) {
             try {
-                final String input = Console.readLine("Choose one air control area");
+                final String input = Console.readLine(prompt);
                 if (input == null || input.isBlank()) {
                     throw new IllegalArgumentException("Input cannot be empty");
                 }
-                return Integer.parseInt(input);
-            } catch (final NumberFormatException ex) {
-                System.out.println("Invalid number. Please enter a valid integer value.");
+                return LocalTime.parse(input);
+            } catch (final DateTimeParseException ex) {
+                System.out.println("Invalid time. Please use format HH:MM.");
             } catch (final IllegalArgumentException ex) {
                 System.out.println(ex.getMessage());
             }

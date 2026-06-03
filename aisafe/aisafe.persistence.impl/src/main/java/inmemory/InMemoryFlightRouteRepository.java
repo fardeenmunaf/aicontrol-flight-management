@@ -4,6 +4,7 @@ import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainR
 import flightRoute.domain.FlightRoute;
 import flightRoute.domain.RouteDesignation;
 import flightRoute.repository.FlightRouteRepository;
+import shared.domain.AirTransportCompanyId;
 import shared.domain.FlightRouteId;
 
 import java.time.LocalDate;
@@ -27,6 +28,11 @@ public class InMemoryFlightRouteRepository extends InMemoryDomainRepository<Flig
     @Override
     public Iterable<FlightRoute> findActiveOn(final LocalDate date) {
         return match(fr -> fr.isActiveOn(date));
+    }
+
+    @Override
+    public Iterable<FlightRoute> findByCompanyId(final AirTransportCompanyId companyId) {
+        return match(fr -> fr.company().identity().equals(companyId));
     }
 }
 

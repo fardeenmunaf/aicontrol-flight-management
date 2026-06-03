@@ -46,5 +46,13 @@ class JpaFlightPlanRepository extends BaseJpaRepositoryBase<FlightPlan, FlightPl
         params.put("end", end);
         return match("e.departureDateTime BETWEEN :start AND :end", params);
     }
+
+    @Override
+    public Iterable<FlightPlan> findByRouteIdAndDepartureAfter(final String routeId, final Instant departure) {
+        final Map<String, Object> params = new HashMap<>();
+        params.put("routeId", routeId);
+        params.put("departure", departure);
+        return match("e.flightRouteId = :routeId AND e.departureDateTime > :departure", params);
+    }
 }
 

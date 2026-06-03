@@ -34,5 +34,11 @@ public class InMemoryFlightPlanRepository extends InMemoryDomainRepository<Fligh
         return match(fp -> !fp.departureDateTime().isBefore(start)
                 && !fp.departureDateTime().isAfter(end));
     }
+
+    @Override
+    public Iterable<FlightPlan> findByRouteIdAndDepartureAfter(final String routeId, final Instant departure) {
+        return match(fp -> routeId.equals(fp.flightRouteId())
+                && fp.departureDateTime().isAfter(departure));
+    }
 }
 

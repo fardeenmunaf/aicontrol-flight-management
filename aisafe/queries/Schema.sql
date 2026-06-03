@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS SafetyViolation_recordedVectors CASCADE;
 DROP TABLE IF EXISTS SafetyViolation_Aircraft CASCADE;
 DROP TABLE IF EXISTS Simulation_WeatherData CASCADE;
 DROP TABLE IF EXISTS Simulation_Flight CASCADE;
+DROP TABLE IF EXISTS PilotCompanyAssignment CASCADE;
 DROP TABLE IF EXISTS Pilot_AircraftModel CASCADE;
 DROP TABLE IF EXISTS aircraftmodel_enginemodel CASCADE;
 DROP TABLE IF EXISTS AltitudeSlot CASCADE;
@@ -224,6 +225,11 @@ CREATE TABLE Pilot (
                        version  BIGINT
 );
 
+CREATE TABLE PilotCompanyAssignment (
+                                     pilot_user_id VARCHAR(255) PRIMARY KEY,
+                                     company_id    VARCHAR(255) REFERENCES AirTransportCompany(air_transport_company_id)
+);
+
 CREATE TABLE Pilot_AircraftModel (
                                      Pilot_pilot_id                            VARCHAR(255) NOT NULL REFERENCES Pilot(pilot_id),
                                      certifiedAircraftModels_aircraft_model_id VARCHAR(255) NOT NULL REFERENCES AircraftModel(aircraft_model_id),
@@ -246,11 +252,14 @@ CREATE TABLE CustomerCollaborator (
 -- ============================================================
 
 CREATE TABLE FlightRoute (
-                             flight_route_id VARCHAR(255) PRIMARY KEY,
-                             designation     VARCHAR(255),
-                             activeFrom      DATE,
-                             activeUntil     DATE,
-                             version         BIGINT
+                             flight_route_id                          VARCHAR(255) PRIMARY KEY,
+                             designation                              VARCHAR(255),
+                             activeFrom                               DATE NOT NULL,
+                             activeUntil                              DATE,
+                             originAirport_airport_id                 VARCHAR(255) NOT NULL REFERENCES Airport(airport_id),
+                             destinationAirport_airport_id            VARCHAR(255) NOT NULL REFERENCES Airport(airport_id),
+                             company_air_transport_company_id         VARCHAR(255) NOT NULL REFERENCES AirTransportCompany(air_transport_company_id),
+                             version                                  BIGINT
 );
 
 CREATE TABLE Flight (
@@ -271,6 +280,7 @@ CREATE TABLE FlightPlan (
                             cargoLoad         DOUBLE PRECISION,
                             status            VARCHAR(255),
                             aircraftId        VARCHAR(255),
+                            flightRouteId     VARCHAR(255),
                             version           BIGINT
 );
 
@@ -308,12 +318,18 @@ CREATE TABLE AltitudeSlot (
 
 CREATE TABLE WeatherData (
                              weather_data_id VARCHAR(255) PRIMARY KEY,
-                             airControlArea  VARCHAR(255),
-                             dateTime        TIMESTAMP,
+                             acaCode         VARCHAR(255),
+                             latitude1       DOUBLE PRECISION,
+                             longitude1      DOUBLE PRECISION,
+                             latitude2       DOUBLE PRECISION,
+                             longitude2      DOUBLE PRECISION,
+                             altitudeInf     DOUBLE PRECISION,
+                             altitudeSup     DOUBLE PRECISION,
+                             direction       DOUBLE PRECISION,
                              windSpeed       DOUBLE PRECISION,
-                             windDirection   DOUBLE PRECISION,
-                             temperature     DOUBLE PRECISION,
-                             pressure        DOUBLE PRECISION,
+                             date            DATE,
+                             startHour       TIME,
+                             endHour         TIME,
                              version         BIGINT
 );
 

@@ -82,7 +82,7 @@ public class CreateFlightPlanUI extends AbstractUI {
                 "Two uppercase letters + 1-4 digits + optional letter suffix");
         final String type = promptChoice("Flight type", new String[] { "regular", "charter" }, "regular");
         final String aircraftId = prompt("Aircraft registration", "A380",
-                "Aircraft registration identifier (e.g. A380 or 777-200ER)");
+                "Must start with a letter, letters and digits only (e.g. A380, B777, CS300)");
         final String routeRef = prompt("Route reference identifier", "AA123", "Letter followed by letters/digits");
         final String origin = prompt("Route origin airport code (IATA or ICAO)", "OPO",
                 "3-letter IATA or 4-letter ICAO, uppercase");

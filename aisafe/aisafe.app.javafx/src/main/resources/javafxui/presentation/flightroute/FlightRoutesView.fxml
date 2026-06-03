@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.flightroute.FlightRoutesUI"
+      styleClass="root" spacing="0">
+
+    <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
+        <Label text="Flight Routes" styleClass="page-title" style="-fx-padding: 0;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="⟳ Refresh" styleClass="btn-primary" onAction="#onRefresh"/>
+        <Button text="Create Route" styleClass="btn-primary" onAction="#onCreateRoute"/>
+    </HBox>
+
+    <Label fx:id="messageLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
+
+    <TableView fx:id="routesTable" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
+        <columns>
+            <TableColumn fx:id="colDesignation" text="Designation"   prefWidth="110"/>
+            <TableColumn fx:id="colOrigin"      text="Origin"        prefWidth="80"/>
+            <TableColumn fx:id="colDestination" text="Destination"   prefWidth="100"/>
+            <TableColumn fx:id="colActiveFrom"  text="Active From"   prefWidth="120"/>
+            <TableColumn fx:id="colStatus"      text="Status"        prefWidth="120"/>
+            <TableColumn fx:id="colAction"      text="Action"        prefWidth="140"/>
+        </columns>
+    </TableView>
+
+    <!-- Create Route Form -->
+    <VBox fx:id="createForm" managed="false" visible="false" styleClass="form-panel">
+        <Label text="Create New Flight Route (US073)" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Designation"/>
+                <HBox spacing="4" alignment="CENTER_LEFT">
+                    <Label fx:id="lblPrefix" styleClass="status-label" style="-fx-font-weight:bold;"/>
+                    <TextField fx:id="fSuffix" promptText="123" prefWidth="80"/>
+                </HBox>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Active From"/>
+                <DatePicker fx:id="dpActiveFrom" maxWidth="Infinity"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Origin Airport"/>
+                <ComboBox fx:id="cbOrigin" maxWidth="Infinity"/>
+            </VBox>
+            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                <Label text="Destination Airport"/>
+                <ComboBox fx:id="cbDestination" maxWidth="Infinity"/>
+            </VBox>
+        </HBox>
+        <HBox spacing="12">
+            <Button text="Save" styleClass="btn-primary" onAction="#onSaveCreate"/>
+            <Button text="Cancel" styleClass="btn-danger" onAction="#onCancelCreate"/>
+        </HBox>
+        <Label fx:id="formError" styleClass="error-label" text="" wrapText="true"/>
+    </VBox>
+</VBox>

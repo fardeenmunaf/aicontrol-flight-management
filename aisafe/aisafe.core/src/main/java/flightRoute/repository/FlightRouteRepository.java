@@ -3,6 +3,7 @@ package flightRoute.repository;
 import eapli.framework.domain.repositories.DomainRepository;
 import flightRoute.domain.FlightRoute;
 import flightRoute.domain.RouteDesignation;
+import shared.domain.AirTransportCompanyId;
 import shared.domain.FlightRouteId;
 
 import java.time.LocalDate;
@@ -16,5 +17,7 @@ public interface FlightRouteRepository extends DomainRepository<FlightRouteId, F
     Optional<FlightRoute> findByDesignation(RouteDesignation designation);
 
     Iterable<FlightRoute> findActiveOn(LocalDate date);
+
+    Iterable<FlightRoute> findByCompanyId(AirTransportCompanyId companyId);
 }
 

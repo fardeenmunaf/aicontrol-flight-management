@@ -4,6 +4,7 @@ import eapli.framework.domain.repositories.TransactionalContext;
 import flightRoute.domain.FlightRoute;
 import flightRoute.domain.RouteDesignation;
 import flightRoute.repository.FlightRouteRepository;
+import shared.domain.AirTransportCompanyId;
 import shared.domain.FlightRouteId;
 
 import java.time.LocalDate;
@@ -37,6 +38,13 @@ class JpaFlightRouteRepository extends BaseJpaRepositoryBase<FlightRoute, Flight
         final Map<String, Object> params = new HashMap<>();
         params.put("date", date);
         return match("e.activeFrom <= :date AND (e.activeUntil IS NULL OR e.activeUntil >= :date)", params);
+    }
+
+    @Override
+    public Iterable<FlightRoute> findByCompanyId(final AirTransportCompanyId companyId) {
+        final Map<String, Object> params = new HashMap<>();
+        params.put("companyId", companyId);
+        return match("e.company.airTransportCompanyId = :companyId", params);
     }
 }
 

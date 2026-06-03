@@ -40,6 +40,8 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
 
     private String aircraftId;
 
+    private String flightRouteId;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "flight_plan_ref")
     @OrderBy("sequenceNumber ASC")
@@ -148,6 +150,15 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
 
     public String aircraftId() {
         return aircraftId;
+    }
+
+    public String flightRouteId() {
+        return flightRouteId;
+    }
+
+    public void assignToRoute(final String routeId) {
+        Preconditions.nonEmpty(routeId, "Route ID must not be null or empty");
+        this.flightRouteId = routeId;
     }
 
     public List<FlightLeg> legs() {
