@@ -137,8 +137,13 @@ typedef struct {
     double end_time;
     double time_step;
     double safety_distance_threshold;
+    double collision_distance_threshold;
     int    max_violations_threshold;
     double sim_start_seconds;
+    bool   reroute;
+    int    sim_start_year;
+    int    sim_start_month;
+    int    sim_start_day;
 } SimulationConfig;
 
 typedef struct {
@@ -190,6 +195,8 @@ typedef struct {
     SimulationReport report;
 
     StepData last_step[MAX_FLIGHTS];
+    double   deviation_rad[MAX_FLIGHTS];
+    Position prev_pos[MAX_FLIGHTS];
 } SimulationData;
 
 /* Inter-process shared memory block.

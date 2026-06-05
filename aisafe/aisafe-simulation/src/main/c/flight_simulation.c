@@ -54,7 +54,6 @@ static void sigusr1_handler(int sig) {
  */
 static void sigterm_handler(int sig) {
     (void)sig;
-    sig_write_msg(g_callsign, "SIGTERM: simulation terminated (max violations exceeded). Cleaning up.\n");
     g_terminate = 1;
 }
 
@@ -226,7 +225,7 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
     double fuel_burned = calculate_fuel_burn(total_thrust, f->properties.tsfc, dt);
     double horiz_dist  = calculate_step_distance(tas, climb_rate, dt);
 
-    double hdg = bearing_rad(f->current_pos.latitude, f->current_pos.longitude, dest_lat, dest_lon);
+    double reroute_angle = bearing_rad(f->current_pos.latitude, f->current_pos.longitude, dest_lat, dest_lon) + shm->deviation_rad[idx];
 
     // Snap to destination to avoid oscillating past it every step.
     if (dist_to_dest <= horiz_dist) {
@@ -237,7 +236,7 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
         phase = PHASE_DESCEND;
         f->current_phase = phase;
     } else {
-        advance_position(&f->current_pos.latitude, &f->current_pos.longitude, horiz_dist, hdg);
+        advance_position(&f->current_pos.latitude, &f->current_pos.longitude, horiz_dist, reroute_angle);
     }
 
     f->current_pos.altitude += climb_rate * dt;
@@ -257,7 +256,7 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
 
     f->velocity.speed          = tas;
     f->velocity.vertical_speed = climb_rate;
-    f->velocity.heading        = hdg * 180.0 / M_PI;
+    f->velocity.heading        = reroute_angle * 180.0 / M_PI;
     f->current_phase           = phase;
 
     double new_dist = haversine_m(f->current_pos.latitude, f->current_pos.longitude,

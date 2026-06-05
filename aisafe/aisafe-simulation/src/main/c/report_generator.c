@@ -104,8 +104,13 @@ static void generate_json_report(const SimulationConfig *config,
     }
     fprintf(fp, "  ],\n\n");
 
+    /* Count actual collision events: entries are zero-initialised, valid ones have timestamp > 0. */
+    int num_events = 0;
+    for (int i = 0; i < MAX_RECORDED_VIOLATIONS && report->violations[i].timestamp > 0.0; i++)
+        num_events++;
+
     fprintf(fp, "  \"violationEvents\": [\n");
-    for (int i = 0; i < report->total_violations_recorded; i++) {
+    for (int i = 0; i < num_events; i++) {
         const ViolationEvent *evt = &report->violations[i];
         char time_str[32], esc_a[CALLSIGN_LEN * 2], esc_b[CALLSIGN_LEN * 2];
         format_sim_time(evt->timestamp, report->wall_clock_start, time_str, sizeof(time_str));
@@ -133,7 +138,7 @@ static void generate_json_report(const SimulationConfig *config,
                 evt->vel_b.speed, evt->vel_b.heading, evt->vel_b.vertical_speed);
         fprintf(fp, "      },\n");
         fprintf(fp, "      \"separationMeters\": %.1f\n", evt->distance);
-        fprintf(fp, "    }%s\n", (i < report->total_violations_recorded - 1) ? "," : "");
+        fprintf(fp, "    }%s\n", (i < num_events - 1) ? "," : "");
     }
     fprintf(fp, "  ]\n}\n");
     fclose(fp);
