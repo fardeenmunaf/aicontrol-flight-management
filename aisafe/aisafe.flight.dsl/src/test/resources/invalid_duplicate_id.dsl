@@ -3,6 +3,7 @@
 flight TP1234 {
     type:  regular;
     aircraft:  A320;
+        pilot:     atcc1@tap.pt;
     route: AA123 from OPO to MAD;
 
     leg {
@@ -36,6 +37,7 @@ flight TP1234 {
 flight TP1234 {
     type:  charter;
     aircraft:  A320;
+        pilot:     atcc1@tap.pt;
     route: BB456 from LIS to BCN;
 
     leg {

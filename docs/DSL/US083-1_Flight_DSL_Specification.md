@@ -276,6 +276,7 @@ A valid DSL file contains **one or more `flight` blocks**. The flight identifier
 flight <FLIGHT-DESIGNATOR> {
     type:      <flight-type>;
     aircraft:  <ID>;
+    pilot:     <email>;
     route:     <route-name> from <airport-code> to <airport-code>;
 
     leg { ... }
@@ -422,6 +423,7 @@ A condensed reference of every block and its mandatory vs. optional fields.
 |---|---|---|---|
 | `type` | keyword (`regular`\|`charter`) | Yes | Type of flight |
 | `aircraft` | identifier | Yes | Aircraft registration identifier |
+| `pilot` | email address | Yes | Email of the pilot responsible for this flight plan |
 | `route` | identifier + `from` airport + `to` airport | Yes | Route reference with explicit origin and destination airports |
 | `leg` | block | Yes (1 or more) | One leg per non-stop journey segment |
 

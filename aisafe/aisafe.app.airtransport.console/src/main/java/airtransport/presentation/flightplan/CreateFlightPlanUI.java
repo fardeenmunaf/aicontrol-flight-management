@@ -24,6 +24,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -54,20 +55,54 @@ public class CreateFlightPlanUI extends AbstractUI {
             return true;
         }
 
-        System.out.println("Fill in each field. Correct examples are shown in brackets.");
-        System.out.println("Press ENTER to accept the shown example.");
-        System.out.println();
+        System.out.println("How do you want to create the flight plan?");
+        System.out.println("  1 - Fill in fields interactively");
+        System.out.println("  2 - Import from an existing .dsl file");
+        final String choice = Console.readLine("Option [1]");
 
-        final String dsl = buildDsl();
-
-        System.out.println();
-        System.out.println("+=== Generated Flight DSL =======================================+");
-        System.out.println(dsl);
-        System.out.println("+================================================================+");
-        System.out.println();
-
-        validate(dsl);
+        if ("2".equals(choice != null ? choice.trim() : "")) {
+            importFromFile();
+        } else {
+            final String dsl = buildDsl();
+            System.out.println();
+            System.out.println("+=== Generated Flight DSL =======================================+");
+            System.out.println(dsl);
+            System.out.println("+================================================================+");
+            System.out.println();
+            validate(dsl);
+        }
         return true;
+    }
+
+    private void importFromFile() {
+        final String raw = Console.readLine("Path to .dsl file");
+        if (raw == null || raw.trim().isEmpty()) {
+            System.out.println("No path provided.");
+            return;
+        }
+        final java.nio.file.Path path = Paths.get(raw.trim());
+        if (!path.toFile().exists()) {
+            System.out.println("File not found: " + path.toAbsolutePath());
+            return;
+        }
+        if (!path.toFile().isFile() || !raw.trim().toLowerCase().endsWith(".dsl")) {
+            System.out.println("File must be a .dsl file.");
+            return;
+        }
+
+        System.out.println("Reading file: " + path.toAbsolutePath());
+        System.out.println();
+
+        try {
+            final String dsl = java.nio.file.Files.readString(path);
+            System.out.println("+=== Flight DSL File Contents ===================================+");
+            System.out.println(dsl);
+            System.out.println("+================================================================+");
+            System.out.println();
+            validate(dsl);
+        } catch (final IOException e) {
+            System.out.println("Error reading file: " + e.getMessage());
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -78,6 +113,10 @@ public class CreateFlightPlanUI extends AbstractUI {
         final StringBuilder sb = new StringBuilder();
 
         // flightPlan: FLIGHT ID LBRACE type route leg+ RBRACE
+        final String pilotEmail = AuthzRegistry.authorizationService().session()
+                .map(s -> s.authenticatedUser().identity().toString())
+                .orElse("pilot@example.com");
+
         final String designator = prompt("Flight designator", "TP1234",
                 "Two uppercase letters + 1-4 digits + optional letter suffix");
         final String type = promptChoice("Flight type", new String[] { "regular", "charter" }, "regular");
@@ -92,6 +131,7 @@ public class CreateFlightPlanUI extends AbstractUI {
         sb.append("flight ").append(designator).append(" {\n");
         sb.append("    type:      ").append(type).append(";\n");
         sb.append("    aircraft:  ").append(aircraftId).append(";\n");
+        sb.append("    pilot:     ").append(pilotEmail).append(";\n");
         sb.append("    route:     ").append(routeRef)
                 .append(" from ").append(origin)
                 .append(" to ").append(dest).append(";\n");
@@ -300,7 +340,7 @@ public class CreateFlightPlanUI extends AbstractUI {
         for (final FlightPlanAst fp : result.document().flightPlans()) {
             try {
                 final List<LegImportRequest> legReqs = buildLegRequests(fp.legs());
-                final FlightPlan saved = controller.importFlightPlan(fp.flightDesignator(), fp.aircraftId(), legReqs);
+                final FlightPlan saved = controller.importFlightPlan(fp.flightDesignator(), fp.aircraftId(), fp.pilotRef(), legReqs);
                 System.out.println("  Imported: " + saved.identity());
                 ok++;
             } catch (final Exception e) {
@@ -326,6 +366,7 @@ public class CreateFlightPlanUI extends AbstractUI {
             planMap.put("flightDesignator", fp.flightDesignator());
             planMap.put("type", fp.type().name().toLowerCase());
             planMap.put("aircraftId", fp.aircraftId());
+            planMap.put("pilotRef", fp.pilotRef());
 
             final Map<String, String> routeMap = new LinkedHashMap<>();
             routeMap.put("reference", fp.routeReference());

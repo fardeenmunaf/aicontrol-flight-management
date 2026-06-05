@@ -3,6 +3,7 @@
 flight TP9999 {
     type:  regular;
     aircraft:  A320;
+        pilot:     atcc1@tap.pt;
     route: XX001 from OPO to OPO;
 
     leg {
