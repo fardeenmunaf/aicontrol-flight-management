@@ -41,6 +41,7 @@
         <module>aisafe.infrastructure.application</module>
         <module>aisafe.persistence.impl</module>
         <module>aisafe.flight.dsl</module>
+        <module>aisafe.logging</module>
     </modules>
 
     <dependencies>
