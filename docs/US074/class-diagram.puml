@@ -1,0 +1,142 @@
+@startuml class-diagram
+title US074 — Deactivate a Flight Route: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "airtransport.presentation.flightroute" #DDEEFF {
+
+    class FlightRouteMenuUI {
+        +doShow() : boolean
+        +headline() : String
+    }
+
+    class DeleteFlightRouteAction {
+        +execute() : boolean
+    }
+
+    class DeleteFlightRouteUI {
+        -controller : DeleteFlightRouteController
+        +doShow() : boolean
+        +headline() : String
+    }
+}
+
+package "javafxui.presentation.flightroute" #DDEEFF {
+
+    class FlightRoutesUI {
+        -deleteCtrl : DeleteFlightRouteController
+        -companyId : AirTransportCompanyId
+        +initialize() : void
+        -onDeactivate(route) : void
+        -onReactivate(route) : void
+        -onRefresh() : void
+        -refreshTable() : void
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "flightRoute.application" #DDFFD8 {
+
+    class DeleteFlightRouteController {
+        -authz : AuthorizationService
+        -flightRouteRepository : FlightRouteRepository
+        -flightPlanRepository : FlightPlanRepository
+        -collaboratorRepository : CustomerCollaboratorRepository
+        -companyRepository : AirTransportCompanyRepository
+        +deleteFlightRoute(routeId, deactivationDate) : void
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "flightRoute.domain" #FFF3CD {
+
+    class FlightRoute <<Entity>> <<AggregateRoot>> {
+        -flightRouteId : FlightRouteId
+        -designation : RouteDesignation
+        -activeFrom : LocalDate
+        -activeUntil : LocalDate
+        -originAirport : Airport
+        -destinationAirport : Airport
+        -company : AirTransportCompany
+        +identity() : FlightRouteId
+        +activeUntil() : LocalDate
+        +isActive() : boolean
+        +isActiveOn(date) : boolean
+        +deactivateFrom(date) : void
+        +reactivate() : void
+    }
+}
+
+package "flightPlan.domain" #FFF3CD {
+    class FlightPlan <<Entity>> <<AggregateRoot>> {
+        -flightPlanId : FlightPlanId
+        -departureDateTime : Instant
+        -flightRouteId : String
+        +flightRouteId() : String
+        +assignToRoute(routeId) : void
+        +departureDateTime() : Instant
+    }
+}
+
+package "airtransportcompany.domain" #FFF3CD {
+    class AirTransportCompany <<Entity>> <<AggregateRoot>> {
+        -airTransportCompanyId : AirTransportCompanyId
+        +identity() : AirTransportCompanyId
+    }
+}
+
+' ─── Repositories ────────────────────────────────────────────────────────────
+package "flightRoute.repository" #F0E6FF {
+    interface FlightRouteRepository <<DomainRepository>> {
+        +ofIdentity(id) : Optional<FlightRoute>
+        +findByCompanyId(companyId) : Iterable<FlightRoute>
+        +save(route) : FlightRoute
+    }
+}
+
+package "flightPlan.repository" #F0E6FF {
+    interface FlightPlanRepository <<DomainRepository>> {
+        +findByRouteIdAndDepartureAfter(routeId, departure) : Iterable<FlightPlan>
+    }
+}
+
+package "airtransportcompany.repositories" #F0E6FF {
+    interface AirTransportCompanyRepository <<DomainRepository>> {
+        +ofIdentity(id) : Optional<AirTransportCompany>
+    }
+}
+
+package "customercollaborator.repositories" #F0E6FF {
+    interface CustomerCollaboratorRepository <<DomainRepository>> {
+        +findByUserId(userId) : Optional<CustomerCollaborator>
+    }
+}
+
+' ─── Auth ────────────────────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} AIR_TRANSPORT_COMPANY_COLLABORATOR : Role
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+FlightRouteMenuUI ..> DeleteFlightRouteAction : creates
+DeleteFlightRouteAction ..> DeleteFlightRouteUI : creates
+DeleteFlightRouteUI --> DeleteFlightRouteController : uses
+FlightRoutesUI --> DeleteFlightRouteController : uses
+
+DeleteFlightRouteController --> FlightRouteRepository : uses
+DeleteFlightRouteController --> FlightPlanRepository : uses
+DeleteFlightRouteController --> CustomerCollaboratorRepository : uses
+DeleteFlightRouteController --> AirTransportCompanyRepository : uses
+DeleteFlightRouteController ..> AISafeRoles : uses
+
+FlightRoute --> AirTransportCompany : company
+
+@enduml

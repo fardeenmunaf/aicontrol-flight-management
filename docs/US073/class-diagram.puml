@@ -1,0 +1,164 @@
+@startuml class-diagram
+title US073 — Create a Flight Route: Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer ─────────────────────────────────────────────────────
+package "airtransport.presentation.flightroute" #DDEEFF {
+
+    class FlightRouteMenuUI {
+        +doShow() : boolean
+        +headline() : String
+    }
+
+    class CreateFlightRouteAction {
+        +execute() : boolean
+    }
+
+    class CreateFlightRouteUI {
+        -controller : CreateFlightRouteController
+        +doShow() : boolean
+        +headline() : String
+        -selectAirport(airports, prompt) : Airport
+    }
+}
+
+package "javafxui.presentation.flightroute" #DDEEFF {
+
+    class FlightRoutesUI {
+        -createCtrl : CreateFlightRouteController
+        -deleteCtrl : DeleteFlightRouteController
+        -companyIataPrefix : String
+        -companyId : AirTransportCompanyId
+        +initialize() : void
+        -onCreateRoute() : void
+        -onSaveCreate() : void
+        -onCancelCreate() : void
+        -onRefresh() : void
+        -refreshTable() : void
+    }
+}
+
+' ─── Application Layer ──────────────────────────────────────────────────────
+package "flightRoute.application" #DDFFD8 {
+
+    class CreateFlightRouteController {
+        -authz : AuthorizationService
+        -flightRouteRepository : FlightRouteRepository
+        -airportRepository : AirportRepository
+        -collaboratorRepository : CustomerCollaboratorRepository
+        -companyRepository : AirTransportCompanyRepository
+        +createFlightRoute(designationStr, originIata,\ndestinationIata, activeFrom) : FlightRoute
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "flightRoute.domain" #FFF3CD {
+
+    class FlightRoute <<Entity>> <<AggregateRoot>> {
+        -flightRouteId : FlightRouteId
+        -designation : RouteDesignation
+        -activeFrom : LocalDate
+        -activeUntil : LocalDate
+        -originAirport : Airport
+        -destinationAirport : Airport
+        -company : AirTransportCompany
+        +identity() : FlightRouteId
+        +designation() : RouteDesignation
+        +originAirport() : Airport
+        +destinationAirport() : Airport
+        +company() : AirTransportCompany
+        +isActive() : boolean
+        +isActiveOn(date) : boolean
+        +deactivateFrom(date) : void
+        +reactivate() : void
+    }
+
+    class RouteDesignation <<ValueObject>> {
+        -designation : String
+        -{static} DESIGNATION_PATTERN : Pattern
+        +RouteDesignation(designation)
+        +value() : String
+    }
+}
+
+package "airport.domain" #FFF3CD {
+    class Airport <<Entity>> <<AggregateRoot>> {
+        -airportId : AirportId
+        -iataCode : String
+        -name : String
+        -town : String
+        -country : String
+        +identity() : AirportId
+        +iataCode() : String
+        +name() : String
+    }
+}
+
+package "airtransportcompany.domain" #FFF3CD {
+    class AirTransportCompany <<Entity>> <<AggregateRoot>> {
+        -airTransportCompanyId : AirTransportCompanyId
+        -iataCode : String
+        +identity() : AirTransportCompanyId
+        +iataCode() : String
+    }
+}
+
+' ─── Repositories ────────────────────────────────────────────────────────────
+package "flightRoute.repository" #F0E6FF {
+    interface FlightRouteRepository <<DomainRepository>> {
+        +findByDesignation(designation) : Optional<FlightRoute>
+        +findByCompanyId(companyId) : Iterable<FlightRoute>
+        +findActiveOn(date) : Iterable<FlightRoute>
+        +save(route) : FlightRoute
+    }
+}
+
+package "airport.repositories" #F0E6FF {
+    interface AirportRepository <<DomainRepository>> {
+        +findByIataCode(iataCode) : Optional<Airport>
+    }
+}
+
+package "airtransportcompany.repositories" #F0E6FF {
+    interface AirTransportCompanyRepository <<DomainRepository>> {
+        +ofIdentity(id) : Optional<AirTransportCompany>
+    }
+}
+
+package "customercollaborator.repositories" #F0E6FF {
+    interface CustomerCollaboratorRepository <<DomainRepository>> {
+        +findByUserId(userId) : Optional<CustomerCollaborator>
+    }
+}
+
+' ─── Auth ────────────────────────────────────────────────────────────────────
+package "auth.domain" #FFE8E8 {
+    class AISafeRoles <<utility>> {
+        {static} AIR_TRANSPORT_COMPANY_COLLABORATOR : Role
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+FlightRouteMenuUI ..> CreateFlightRouteAction : creates
+CreateFlightRouteAction ..> CreateFlightRouteUI : creates
+CreateFlightRouteUI --> CreateFlightRouteController : uses
+FlightRoutesUI --> CreateFlightRouteController : uses
+
+CreateFlightRouteController --> FlightRouteRepository : uses
+CreateFlightRouteController --> AirportRepository : uses
+CreateFlightRouteController --> CustomerCollaboratorRepository : uses
+CreateFlightRouteController --> AirTransportCompanyRepository : uses
+CreateFlightRouteController ..> AISafeRoles : uses
+
+FlightRoute *-- RouteDesignation : designation
+FlightRoute --> Airport : originAirport
+FlightRoute --> Airport : destinationAirport
+FlightRoute --> AirTransportCompany : company
+
+@enduml

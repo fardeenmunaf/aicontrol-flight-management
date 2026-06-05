@@ -1,0 +1,156 @@
+@startuml sequence-create-flight-route
+title US073 — Create a Flight Route: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Air Transport Company Collaborator" as Collaborator
+participant "FlightRouteMenuUI" as MenuUI #DDEEFF
+participant "CreateFlightRouteAction" as Action #DDEEFF
+participant "CreateFlightRouteUI" as UI #DDEEFF
+participant "CreateFlightRouteController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "CustomerCollaboratorRepository" as CollabRepo #F0E6FF
+participant "AirTransportCompanyRepository" as CompanyRepo #F0E6FF
+participant "AirportRepository" as AirportRepo #F0E6FF
+participant "FlightRouteRepository" as RouteRepo #F0E6FF
+participant "RouteDesignation" as RD #FFF3CD
+participant "FlightRoute" as Route #FFF3CD
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+activate Collaborator
+Collaborator -> MenuUI ++ : selects "Create Flight Route"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Load Context ==
+
+UI -> Authz ++ : session()
+Authz --> UI -- : authenticated user
+
+UI -> CollabRepo ++ : findByUserId(userId)
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> UI -- : Optional<CustomerCollaborator>
+
+alt not an air transport company collaborator
+    UI -> Collaborator : "You are not assigned to an air transport company."
+    return
+end
+
+UI -> CompanyRepo ++ : ofIdentity(companyId)
+CompanyRepo -> DB ++ : SELECT AirTransportCompany
+DB --> CompanyRepo -- : company
+CompanyRepo --> UI -- : Optional<AirTransportCompany>
+
+UI -> AirportRepo ++ : findAll()
+AirportRepo -> DB ++ : SELECT Airport
+DB --> AirportRepo -- : airports
+AirportRepo --> UI -- : Iterable<Airport>
+
+alt no airports registered
+    UI -> Collaborator : "No airports registered. Cannot create a route."
+    return
+end
+
+== User Input ==
+
+UI -> Collaborator : display company name and IATA prefix\ndisplay numbered list of airports
+Collaborator -> UI : selects origin airport (by number)
+Collaborator -> UI : selects destination airport (by number)
+Collaborator -> UI : enters numeric suffix (e.g. "123")
+Collaborator -> UI : enters activation date (optional)
+
+== Controller Execution ==
+
+UI -> Ctrl ++ : createFlightRoute(designation, originIata, destinationIata, activeFrom)
+
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(AIR_TRANSPORT_COMPANY_COLLABORATOR)
+alt not authorized
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Collaborator : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+Ctrl -> Authz ++ : session()
+Authz --> Ctrl -- : authenticated user
+
+Ctrl -> CollabRepo ++ : findByUserId(userId)
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> Ctrl -- : Optional<CustomerCollaborator>
+
+Ctrl -> CompanyRepo ++ : ofIdentity(companyId)
+CompanyRepo -> DB ++ : SELECT AirTransportCompany
+DB --> CompanyRepo -- : company
+CompanyRepo --> Ctrl -- : Optional<AirTransportCompany>
+
+Ctrl -> RD ++ : new RouteDesignation(designationStr)
+alt invalid format
+    RD --> Ctrl -- : throws IllegalArgumentException
+    Ctrl --> UI -- : propagates exception
+    UI -> Collaborator : "Error: ..."
+    return
+end
+RD --> Ctrl -- : designation
+
+Ctrl -> Ctrl : validate designation prefix\nmatches company IATA code
+alt prefix mismatch
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Collaborator : "Error: Route designation must start with 'TP'"
+    return
+end
+
+Ctrl -> RouteRepo ++ : findByDesignation(designation)
+RouteRepo -> DB ++ : SELECT FlightRoute WHERE designation = ?
+DB --> RouteRepo -- : result
+RouteRepo --> Ctrl -- : Optional<FlightRoute>
+
+alt designation already exists
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Collaborator : "Error: A route with this designation already exists"
+    return
+end
+
+Ctrl -> AirportRepo ++ : findByIataCode(originCode)
+AirportRepo -> DB ++ : SELECT Airport WHERE iataCode = ?
+DB --> AirportRepo -- : origin
+AirportRepo --> Ctrl -- : Optional<Airport>
+
+Ctrl -> AirportRepo ++ : findByIataCode(destCode)
+AirportRepo -> DB ++ : SELECT Airport WHERE iataCode = ?
+DB --> AirportRepo -- : destination
+AirportRepo --> Ctrl -- : Optional<Airport>
+
+alt airports not found or same airport
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Collaborator : "Error: ..."
+    return
+end
+
+== Creation ==
+
+Ctrl -> Route ++ : new FlightRoute(id, designation, activeFrom,\norigin, destination, company)
+Route --> Ctrl -- : route
+
+Ctrl -> RouteRepo ++ : save(route)
+RouteRepo -> DB ++ : INSERT FlightRoute
+DB --> RouteRepo -- : saved
+RouteRepo --> Ctrl -- : FlightRoute
+
+Ctrl --> UI -- : FlightRoute
+
+== Feedback ==
+
+UI -> Collaborator : display route details\n(designation, origin, destination, activeFrom)
+deactivate UI
+deactivate Action
+deactivate MenuUI
+deactivate Collaborator
+
+@enduml

@@ -170,9 +170,12 @@ package "Aircraft Aggregate" <<Aggregate>> #E6FFFF {
 
 package "FlightRoute Aggregate" <<Aggregate>> #FFE6F0 {
   class FlightRoute <<Aggregate Root>> {
-    designation
     activeFrom
     activeUntil
+  }
+
+  class RouteDesignation <<Value Object>> {
+    designation
   }
 }
 
@@ -192,6 +195,7 @@ package "FlightPlan Aggregate" <<Aggregate>> #FFF5E6 {
     passengerLoad
     cargoLoad
     status
+    flightRouteId
   }
 
   note right of FlightPlan
@@ -312,6 +316,13 @@ Aircraft "1" *-- "1" CabinConfiguration : configured with >
 ' Cross-Aggregate: Fleet to Catalog
 Aircraft "0..*" --> "1" AircraftModel : is of type >
 
+' FlightRoute internal
+FlightRoute "1" *-- "1" RouteDesignation : identified by >
+
+' FlightRoute cross-aggregate
+FlightRoute "0..*" --> "1" Airport : origin >
+FlightRoute "0..*" --> "1" Airport : destination >
+
 ' Flight Planning internal & cross-aggregate
 FlightRoute "1" --> "0..*" Flight : schedules >
 Flight "1" --> "0..*" FlightPlan : uses >
@@ -324,6 +335,9 @@ FlightPlan "0..*" --> "1" Aircraft : assigns >
 FlightPlan "0..*" --> "1" Pilot : assigns pilot >
 FlightPlan "1" --> "2..*" Airport : involves airports >
 FlightPlan "1" --> "0..*" Node : traverses nodes >
+
+' FlightPlan -> FlightRoute reference
+FlightPlan "0..*" ..> "0..1" FlightRoute : for route >
 
 ' Simulation internal
 Simulation "1" *-- "0..*" AircraftPosition : generates >
