@@ -4,6 +4,7 @@
 flight TP7777 {
     type:  regular;
     aircraft:  A320;
+        pilot:     atcc1@tap.pt;
     route: RP001 from LIS to BCN;
 
     leg {

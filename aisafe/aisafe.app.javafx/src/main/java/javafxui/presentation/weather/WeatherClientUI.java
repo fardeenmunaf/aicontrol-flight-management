@@ -396,14 +396,12 @@ public class WeatherClientUI {
             final double maxLat = Math.max(dto.latitude1(), dto.latitude2());
             final double minLon = Math.min(dto.longitude1(), dto.longitude2());
             final double maxLon = Math.max(dto.longitude1(), dto.longitude2());
-            final double centerLat = (minLat + maxLat) / 2.0;
-            final double centerLon = (minLon + maxLon) / 2.0;
+            final double speed = dto.windSpeed() != null ? dto.windSpeed() : 0.0;
             final String id = "wd-" + count;
-            final String icon = escapeJs(buildIcon(dto));
             final String popup = escapeJs(buildPopup(dto));
             mapEngine.executeScript(String.format(Locale.ROOT,
-                    "addWeatherMarker('%s', %f, %f, '%s', '%s')",
-                    id, centerLat, centerLon, icon, popup));
+                    "addWeatherRect('%s', %f, %f, %f, %f, %f, '%s')",
+                    id, minLat, minLon, maxLat, maxLon, speed, popup));
             count++;
         }
         if (count > 0) {
@@ -417,13 +415,13 @@ public class WeatherClientUI {
     private String buildPopup(final WeatherDataDTO dto) {
         return String.format(Locale.ROOT,
                 "<b>ACA:</b> %s<br/>" +
-                "<b>Wind:</b> %.1f kts @ %.0f°<br/>" +
+                "<b>Wind:</b> %.1f kts %s @ %.0f°<br/>" +
                 "<b>Alt:</b> %.0f–%.0f ft<br/>" +
                 "<b>Date:</b> %s<br/>" +
                 "<b>Start:</b> %s<br/>" +
                 "<b>End:</b> %s",
                 safe(dto.acaCode()),
-                dto.windSpeed(), dto.direction(),
+                dto.windSpeed(), windArrow(dto.direction()), dto.direction(),
                 dto.altitudeInf(), dto.altitudeSup(),
                 dto.date(), dto.startHour(), dto.endHour());
     }
@@ -434,21 +432,6 @@ public class WeatherClientUI {
                 .replace("'", "\\'")
                 .replace("\n", "\\n")
                 .replace("\r", "");
-    }
-
-    private String buildIcon(final WeatherDataDTO dto) {
-        final String emoji = weatherEmoji(dto.windSpeed());
-        final String arrow = windArrow(dto.direction());
-        return "<div style=\"font-size:24px;line-height:24px;text-align:center;\">" + emoji + "</div>" +
-                "<div style=\"font-size:12px;line-height:12px;text-align:center;\">" + arrow + "</div>";
-    }
-
-    private String weatherEmoji(final Double speed) {
-        if (speed == null) return "💨";
-        if (speed < 10) return "💨";
-        if (speed < 20) return "🌤️";
-        if (speed < 30) return "🌧️";
-        return "⛈️";
     }
 
     private String windArrow(final Double direction) {

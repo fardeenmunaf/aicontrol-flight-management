@@ -3,6 +3,7 @@
 flight TP5678 {
     type:  regular;
     aircraft:  A320;
+        pilot:     atcc1@tap.pt;
     route: TP001 from OPO to BCN;
 
     leg {

@@ -86,6 +86,7 @@ public class FlightDslProcessorTest {
         assertNotNull(result.document());
         assertFalse(result.document().flightPlans().isEmpty());
         assertEquals("TP1234", result.document().flightPlans().get(0).flightDesignator());
+        assertEquals("atcc1@tap.pt", result.document().flightPlans().get(0).pilotRef());
         assertEquals("OPO", result.document().flightPlans().get(0).routeOrigin());
         assertEquals("MAD", result.document().flightPlans().get(0).routeDestination());
     }
@@ -170,9 +171,9 @@ public class FlightDslProcessorTest {
                 "segment { from: (41.0, -4.3, altitude: 9249 m); to: (40.4895, -3.5643, altitude: 610 m); " +
                 "altslot [ min: 0 m, max: 9249 m, width: 50 m ]; wind { direction: 270; speed: 10 m/s; } mode: descend; } ";
         final String dsl =
-                "flight TP0001 { type: regular; aircraft: A320; route: ZZ001 from OPO to MAD; " +
-                "leg { departure { airport: OPO; date: 2026-01-01; time: 06:00; } " +
-                "arrival { airport: MAD; date: 2026-01-01; time: 08:00; } " +
+                "flight TP0001 { type: regular; aircraft: A320; pilot: atcc1@tap.pt; route: ZZ001 from OPO to MAD; " +
+                "leg { departure { airport: OPO; date: 2027-01-01; time: 06:00; } " +
+                "arrival { airport: MAD; date: 2027-01-01; time: 08:00; } " +
                 "fuel { quantity: 1 kg; } " + seg1 + seg2 + seg3 + "} }";
 
         final FlightDslProcessingResult result = processor.process(dsl);
@@ -193,6 +194,42 @@ public class FlightDslProcessorTest {
     void shouldThrowParseExceptionForSegmentMissingAltslot() throws Exception {
         assertThrows(ParseCancellationException.class,
                 () -> processor.process(resourcePath("invalid_wrong_segment_order.dsl")));
+    }
+
+    @Test
+    void shouldRejectDepartureInThePast() throws Exception {
+        final FlightDslProcessingResult result = processor.process(resourcePath("invalid_past_departure_date.dsl"));
+
+        assertFalse(result.semanticErrors().isEmpty());
+        assertTrue(result.semanticErrors().stream()
+                .anyMatch(e -> e.message().contains("must not be in the past")));
+    }
+
+    @Test
+    void shouldRejectClimbSegmentWithDecreasingAltitude() throws Exception {
+        final FlightDslProcessingResult result = processor.process(resourcePath("invalid_climb_altitude_not_increasing.dsl"));
+
+        assertFalse(result.semanticErrors().isEmpty());
+        assertTrue(result.semanticErrors().stream()
+                .anyMatch(e -> e.message().contains("Climb segment") && e.message().contains("increasing altitude")));
+    }
+
+    @Test
+    void shouldRejectDescendSegmentWithIncreasingAltitude() throws Exception {
+        final FlightDslProcessingResult result = processor.process(resourcePath("invalid_descend_altitude_not_decreasing.dsl"));
+
+        assertFalse(result.semanticErrors().isEmpty());
+        assertTrue(result.semanticErrors().stream()
+                .anyMatch(e -> e.message().contains("Descend segment") && e.message().contains("decreasing altitude")));
+    }
+
+    @Test
+    void shouldRejectExcessiveAltitude() throws Exception {
+        final FlightDslProcessingResult result = processor.process(resourcePath("invalid_altitude_too_high.dsl"));
+
+        assertFalse(result.semanticErrors().isEmpty());
+        assertTrue(result.semanticErrors().stream()
+                .anyMatch(e -> e.message().contains("exceeds maximum allowed")));
     }
 
     private Path resourcePath(final String resourceName) throws Exception {

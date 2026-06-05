@@ -8,6 +8,7 @@ public class FlightPlanAst {
     private final String flightDesignator;
     private final FlightTypeAst type;
     private final String aircraftId;
+    private final String pilotRef;
     private final String routeReference;
     private final String routeOrigin;
     private final String routeDestination;
@@ -16,6 +17,7 @@ public class FlightPlanAst {
     public FlightPlanAst(final String flightDesignator,
                          final FlightTypeAst type,
                          final String aircraftId,
+                         final String pilotRef,
                          final String routeReference,
                          final String routeOrigin,
                          final String routeDestination,
@@ -23,6 +25,7 @@ public class FlightPlanAst {
         this.flightDesignator = Objects.requireNonNull(flightDesignator, "flightDesignator");
         this.type = Objects.requireNonNull(type, "type");
         this.aircraftId = Objects.requireNonNull(aircraftId, "aircraftId");
+        this.pilotRef = Objects.requireNonNull(pilotRef, "pilotRef");
         this.routeReference = Objects.requireNonNull(routeReference, "routeReference");
         this.routeOrigin = Objects.requireNonNull(routeOrigin, "routeOrigin");
         this.routeDestination = Objects.requireNonNull(routeDestination, "routeDestination");
@@ -39,6 +42,10 @@ public class FlightPlanAst {
 
     public String aircraftId() {
         return aircraftId;
+    }
+
+    public String pilotRef() {
+        return pilotRef;
     }
 
     public String routeReference() {

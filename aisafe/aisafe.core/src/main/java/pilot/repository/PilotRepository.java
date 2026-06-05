@@ -5,7 +5,6 @@ import pilot.domain.Pilot;
 import pilot.domain.PilotStatus;
 import aircraftmodel.domain.AircraftModel;
 import shared.domain.PilotId;
-
 import java.util.List;
 
 /**

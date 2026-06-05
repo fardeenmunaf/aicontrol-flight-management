@@ -1,0 +1,150 @@
+@startuml sequence-deactivate-flight-route
+title US074 — Deactivate a Flight Route: Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "Air Transport Company Collaborator" as Collaborator
+participant "FlightRouteMenuUI" as MenuUI #DDEEFF
+participant "DeleteFlightRouteAction" as Action #DDEEFF
+participant "DeleteFlightRouteUI" as UI #DDEEFF
+participant "DeleteFlightRouteController" as Ctrl #DDFFD8
+participant "AuthorizationService\n(AuthzRegistry)" as Authz #FFE8E8
+participant "CustomerCollaboratorRepository" as CollabRepo #F0E6FF
+participant "AirTransportCompanyRepository" as CompanyRepo #F0E6FF
+participant "FlightRouteRepository" as RouteRepo #F0E6FF
+participant "FlightPlanRepository" as PlanRepo #F0E6FF
+participant "FlightRoute" as Route #FFF3CD
+database "Database" as DB #EEEEEE
+
+== Navigation ==
+
+activate Collaborator
+Collaborator -> MenuUI ++ : selects "Deactivate Flight Route"
+MenuUI -> Action ++ : execute()
+Action -> UI ++ : show()
+
+== Load Active Routes ==
+
+UI -> Authz ++ : session()
+Authz --> UI -- : authenticated user
+
+UI -> CollabRepo ++ : findByUserId(userId)
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> UI -- : Optional<CustomerCollaborator>
+
+alt not an air transport company collaborator
+    UI -> Collaborator : "You are not assigned to an air transport company."
+    return
+end
+
+UI -> CompanyRepo ++ : ofIdentity(companyId)
+CompanyRepo -> DB ++ : SELECT AirTransportCompany
+DB --> CompanyRepo -- : company
+CompanyRepo --> UI -- : Optional<AirTransportCompany>
+
+UI -> RouteRepo ++ : findByCompanyId(company.identity())
+RouteRepo -> DB ++ : SELECT FlightRoute WHERE company = ?
+DB --> RouteRepo -- : routes
+RouteRepo --> UI -- : Iterable<FlightRoute>
+
+UI -> UI : filter active routes\n(activeUntil == null)
+
+alt no active routes
+    UI -> Collaborator : "No active flight routes found for your company."
+    return
+end
+
+== User Input ==
+
+UI -> Collaborator : display numbered list of active routes
+Collaborator -> UI : selects route (by number)
+Collaborator -> UI : enters deactivation date (YYYY-MM-DD)
+Collaborator -> UI : confirms (yes/no)
+
+alt cancelled
+    UI -> Collaborator : "Cancelled."
+    return
+end
+
+== Controller Execution ==
+
+UI -> Ctrl ++ : deleteFlightRoute(routeId, deactivationDate)
+
+Ctrl -> Authz ++ : ensureAuthenticatedUserHasAnyOf(AIR_TRANSPORT_COMPANY_COLLABORATOR)
+alt not authorized
+    Authz --> Ctrl -- : throws AuthorizationException
+    Ctrl --> UI -- : propagates exception
+    UI -> Collaborator : "Error: ..."
+    return
+end
+Authz --> Ctrl -- : ok
+
+Ctrl -> Authz ++ : session()
+Authz --> Ctrl -- : authenticated user
+
+Ctrl -> CollabRepo ++ : findByUserId(userId)
+CollabRepo -> DB ++ : SELECT CustomerCollaborator
+DB --> CollabRepo -- : collaborator
+CollabRepo --> Ctrl -- : Optional<CustomerCollaborator>
+
+Ctrl -> CompanyRepo ++ : ofIdentity(companyId)
+CompanyRepo -> DB ++ : SELECT AirTransportCompany
+DB --> CompanyRepo -- : company
+CompanyRepo --> Ctrl -- : Optional<AirTransportCompany>
+
+Ctrl -> RouteRepo ++ : ofIdentity(routeId)
+RouteRepo -> DB ++ : SELECT FlightRoute WHERE id = ?
+DB --> RouteRepo -- : route
+RouteRepo --> Ctrl -- : Optional<FlightRoute>
+
+alt route not found
+    Ctrl --> UI -- : throws IllegalArgumentException
+    UI -> Collaborator : "Error: Flight route not found"
+    return
+end
+
+Ctrl -> Ctrl : validate route belongs to company
+alt route belongs to another company
+    Ctrl --> UI -- : throws IllegalStateException
+    UI -> Collaborator : "Error: Flight route does not belong to your company"
+    return
+end
+
+== Planned Flights Check ==
+
+Ctrl -> PlanRepo ++ : findByRouteIdAndDepartureAfter(routeId, cutoff)
+PlanRepo -> DB ++ : SELECT FlightPlan WHERE flightRouteId = ?\nAND departureDateTime > ?
+DB --> PlanRepo -- : plans
+PlanRepo --> Ctrl -- : Iterable<FlightPlan>
+
+alt planned flights exist after deactivation date
+    Ctrl --> UI -- : throws IllegalStateException
+    UI -> Collaborator : "Error: Cannot deactivate route:\nthere are planned flights after <date>"
+    return
+end
+
+== Deactivation ==
+
+Ctrl -> Route ++ : deactivateFrom(deactivationDate)
+Route -> Route : validate date >= activeFrom\nvalidate date not before current activeUntil
+Route --> Ctrl -- : ok
+
+Ctrl -> RouteRepo ++ : save(route)
+RouteRepo -> DB ++ : UPDATE FlightRoute SET activeUntil = ?
+DB --> RouteRepo -- : saved
+RouteRepo --> Ctrl -- : FlightRoute
+
+Ctrl --> UI -- : void
+
+== Feedback ==
+
+UI -> Collaborator : "Route <designation> deactivated.\nLast active day: <date>"
+deactivate UI
+deactivate Action
+deactivate MenuUI
+deactivate Collaborator
+
+@enduml

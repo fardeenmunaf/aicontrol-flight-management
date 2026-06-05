@@ -53,9 +53,19 @@ public class ImportFlightPlanController {
      * Persists a flight plan imported from a validated DSL file.
      * Segments are anchored to new transient Node entities created from the DSL coordinates.
      */
-    public FlightPlan importFlightPlan(final String designator, final String aircraftId, final List<LegImportRequest> legs) {
+    public FlightPlan importFlightPlan(final String designator, final String aircraftId,
+                                        final String pilotRef, final List<LegImportRequest> legs) {
         AuthzRegistry.authorizationService().ensureAuthenticatedUserHasAnyOf(
                 AISafeRoles.AIR_TRANSPORT_COMPANY_COLLABORATOR, AISafeRoles.PILOT);
+
+        final String loggedInEmail = AuthzRegistry.authorizationService().session()
+                .map(s -> s.authenticatedUser().identity().toString())
+                .orElseThrow(() -> new IllegalStateException("No authenticated session"));
+
+        if (pilotRef != null && !pilotRef.equalsIgnoreCase(loggedInEmail)) {
+            throw new IllegalArgumentException(
+                    "Pilot in the DSL file (" + pilotRef + ") does not match the logged-in user (" + loggedInEmail + ")");
+        }
 
         Objects.requireNonNull(designator, "designator");
         Objects.requireNonNull(aircraftId, "aircraftId");

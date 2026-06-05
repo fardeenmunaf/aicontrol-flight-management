@@ -10,9 +10,15 @@ flightPlan
     : FLIGHT FLIGHT_DESIGNATOR LBRACE
         TYPE COLON flightType SEMI
         AIRCRAFT COLON aircraftId SEMI
+        PILOT COLON pilotRef SEMI
         ROUTE COLON routeRef FROM airportCode TO airportCode SEMI
         leg+
       RBRACE
+    ;
+
+pilotRef
+    : EMAIL
+    | ID
     ;
 
 aircraftId
@@ -189,6 +195,7 @@ TO        : [Tt][Oo] ;
 REGULAR   : [Rr][Ee][Gg][Uu][Ll][Aa][Rr] ;
 CHARTER   : [Cc][Hh][Aa][Rr][Tt][Ee][Rr] ;
 AIRCRAFT  : [Aa][Ii][Rr][Cc][Rr][Aa][Ff][Tt] ;
+PILOT     : [Pp][Ii][Ll][Oo][Tt] ;
 ALTSLOT   : [Aa][Ll][Tt][Ss][Ll][Oo][Tt] ;
 WIND      : [Ww][Ii][Nn][Dd] ;
 DIRECTION : [Dd][Ii][Rr][Ee][Cc][Tt][Ii][Oo][Nn] ;
@@ -212,6 +219,7 @@ FLIGHT_DESIGNATOR : [A-Z][A-Z][0-9][0-9]?[0-9]?[0-9]?[A-Z]? ;
 // Airport codes and identifiers
 ICAO_CODE : [A-Z][A-Z][A-Z][A-Z] ;
 IATA_CODE : [A-Z][A-Z][A-Z] ;
+EMAIL     : [A-Za-z0-9._%+-]+ '@' [A-Za-z0-9.-]+ '.' [A-Za-z]+ ;
 ID        : [A-Za-z][A-Za-z0-9]* ;
 
 // Literals

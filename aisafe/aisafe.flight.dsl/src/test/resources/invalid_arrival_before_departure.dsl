@@ -3,6 +3,7 @@
 flight TP1234 {
     type:  regular;
     aircraft:  A320;
+        pilot:     atcc1@tap.pt;
     route: AA123 from OPO to MAD;
 
     leg {
