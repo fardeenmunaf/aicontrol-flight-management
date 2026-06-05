@@ -150,7 +150,7 @@ class DeleteFlightRouteControllerTest {
         final LocalDate deactivation = LocalDate.of(2027, 1, 1);
 
         final FlightPlan plan = new FlightPlan(
-                FlightPlanId.newId(), "AC-REG", Instant.parse("2026-06-01T10:00:00Z"), 5000.0, 100, 0.0);
+                FlightPlanId.newId(), "AC-REG", Instant.parse("2026-12-01T10:00:00Z"), 5000.0, 100, 0.0);
         plan.assignToRoute(route.identity().toString());
         planRepo.save(plan);
 
