@@ -14,6 +14,7 @@
 #include "json_parser.h"
 #include "flight_simulation.h"
 #include "position_tracker.h"
+#include "physics.h"
 
 // ── Violation detection ────────────────────────────────────────────────────────
 
@@ -31,7 +32,9 @@
  */
 static void check_violations(SimulationData *sim, bool *was_active,
                               pid_t *pids, int num_flights) {
-    const double R = 6371000.0;
+    /* Clear all deviations each step; re-set only for pairs still in proximity. */
+    for (int i = 0; i < num_flights; i++)
+        sim->deviation_rad[i] = 0.0;
 
     for (int i = 0; i < sim->num_flights; i++) {
         if (!was_active[i] || !sim->flights[i].is_active) continue;
@@ -39,22 +42,14 @@ static void check_violations(SimulationData *sim, bool *was_active,
         for (int j = i + 1; j < sim->num_flights; j++) {
             if (!was_active[j] || !sim->flights[j].is_active) continue;
 
-            Position *a = &sim->flights[i].current_pos;
-            Position *b = &sim->flights[j].current_pos;
+            double dist = min_separation_m(&sim->prev_pos[i], &sim->flights[i].current_pos,
+                                           &sim->prev_pos[j], &sim->flights[j].current_pos);
 
-            double lat_avg = (a->latitude + b->latitude) / 2.0 * M_PI / 180.0;
-            double dx = (b->longitude - a->longitude) * M_PI / 180.0 * cos(lat_avg) * R;
-            double dy = (b->latitude  - a->latitude)  * M_PI / 180.0 * R;
-            double dz = b->altitude - a->altitude;
-            double dist = sqrt(dx*dx + dy*dy + dz*dz);
-
-            if (dist < sim->config.safety_distance_threshold) {
+            if (dist < sim->config.collision_distance_threshold) {
+                /* Hard collision — kill both regardless of reroute setting. */
                 sim->total_violations_detected++;
                 sim->flights[i].violation_detected = true;
                 sim->flights[j].violation_detected = true;
-                printf("  *** VIOLATION: %s <-> %s  dist=%.0f m  (threshold %.0f m) ***\n",
-                       sim->flights[i].callsign, sim->flights[j].callsign,
-                       dist, sim->config.safety_distance_threshold);
 
                 if (sim->report.total_violations_recorded < MAX_RECORDED_VIOLATIONS) {
                     ViolationEvent *evt = &sim->report.violations[sim->report.total_violations_recorded];
@@ -69,8 +64,30 @@ static void check_violations(SimulationData *sim, bool *was_active,
                     sim->report.total_violations_recorded++;
                 }
 
-                if (pids[i] > 0) kill(pids[i], SIGUSR1);
-                if (pids[j] > 0) kill(pids[j], SIGUSR1);
+                printf("  *** COLLISION: %s <-> %s  dist=%.1f m — both flights destroyed ***\n",
+                       sim->flights[i].callsign, sim->flights[j].callsign, dist);
+                if (pids[i] > 0) {
+                    kill(pids[i], SIGTERM);
+                    sim->flights[i].is_active = false;
+                    pids[i] = 0;
+                }
+                if (pids[j] > 0) {
+                    kill(pids[j], SIGTERM);
+                    sim->flights[j].is_active = false;
+                    pids[j] = 0;
+                }
+
+            } else if (dist < sim->config.safety_distance_threshold) {
+                /* Proximity warning — reroute if enabled, warn regardless. */
+                printf("  *** WARNING: %s <-> %s  dist=%.0f m (threshold %.0f m)%s ***\n",
+                       sim->flights[i].callsign, sim->flights[j].callsign,
+                       dist, sim->config.safety_distance_threshold,
+                       sim->config.reroute ? " — rerouting" : "");
+
+                if (sim->config.reroute) {
+                    sim->deviation_rad[i] += M_PI / 12.0;
+                    sim->deviation_rad[j] -= M_PI / 12.0;
+                }
             }
         }
     }
@@ -83,7 +100,43 @@ static void check_violations(SimulationData *sim, bool *was_active,
             f->fuel_exhaustion_reported = true;
             f->violation_detected       = true;
             sim->total_violations_detected++;
-            printf("  *** VIOLATION: %s fuel exhausted (0 kg remaining) ***\n", f->callsign);
+            printf("  *** VIOLATION: %s fuel exhausted — flight destroyed ***\n", f->callsign);
+            if (pids[i] > 0) {
+                kill(pids[i], SIGTERM);
+                f->is_active = false;
+                pids[i] = 0;
+            }
+        }
+    }
+
+    /* Lookahead: project each active flight one step forward and check if any pair
+       would collide next step. Apply deviation now so next step's physics avoids it. */
+    if (sim->config.reroute) {
+        for (int i = 0; i < sim->num_flights; i++) {
+            if (!was_active[i] || !sim->flights[i].is_active) continue;
+
+            double step_dist_i = sim->flights[i].velocity.speed * sim->config.time_step;
+            Position next_i = advance_pos(sim->flights[i].current_pos,
+                                          sim->flights[i].velocity.heading, step_dist_i);
+
+            for (int j = i + 1; j < sim->num_flights; j++) {
+                if (!was_active[j] || !sim->flights[j].is_active) continue;
+                if (sim->deviation_rad[i] != 0.0 || sim->deviation_rad[j] != 0.0) continue;
+
+                double step_dist_j = sim->flights[j].velocity.speed * sim->config.time_step;
+                Position next_j = advance_pos(sim->flights[j].current_pos,
+                                              sim->flights[j].velocity.heading, step_dist_j);
+
+                double pred = min_separation_m(&sim->flights[i].current_pos, &next_i,
+                                               &sim->flights[j].current_pos, &next_j);
+
+                if (pred < sim->config.safety_distance_threshold) {
+                    printf("  *** WARNING: %s <-> %s predicted proximity %.0f m — rerouting ***\n",
+                           sim->flights[i].callsign, sim->flights[j].callsign, pred);
+                    sim->deviation_rad[i] += M_PI / 12.0;
+                    sim->deviation_rad[j] -= M_PI / 12.0;
+                }
+            }
         }
     }
 
@@ -118,9 +171,8 @@ static const char *phase_name(FlightPhase p) {
  * @param actual_offset_s    Actual arrival offset in seconds.
  * @param sim_start_s        Wall-clock anchor in seconds since midnight.
  */
-static void print_arrival_deviation(double scheduled_offset_s,
-                                    double actual_offset_s,
-                                    double sim_start_s) {
+static void print_arrival_deviation(double scheduled_offset_s,double actual_offset_s,
+    double sim_start_s) {
     if (scheduled_offset_s < 0.0) return;
     int dev_min    = (int)((actual_offset_s - scheduled_offset_s) / 60.0);
     int sched_wall = (int)(sim_start_s + scheduled_offset_s);
@@ -160,7 +212,7 @@ static void print_step_table(SimulationData *sim,
     printf("\n╔══════════════════════════════════════════════════════════════════════"
            "════════════════════════════════════════════════════════════════════╗\n");
     printf("║  t=%7.0f s  [%02d:%02d]  |  step %3d / %-3d  |  active=%2d  pending=%2d  |  violations=%3d"
-           "                                                      ║\n",
+           "                                                    ║\n",
            sim_time, wall_s / 3600, (wall_s % 3600) / 60,
            step_num, total_steps, active, pending, sim->total_violations_detected);
     printf("╚══════════════════════════════════════════════════════════════════════"
@@ -335,6 +387,12 @@ static void *violations_thread(void *arg) {
 
         check_violations(sim, active, ctx->pids, ctx->num_flights);
 
+        /* Remove collision-killed flights from active[] so the table and landing
+           messages don't show them as if they completed normally. */
+        for (int i = 0; i < ctx->num_flights; i++)
+            if (active[i] && !sim->flights[i].is_active && sim->flights[i].violation_detected)
+                active[i] = false;
+
         /* Advance the simulation clock now that all children have finished. */
         sim->current_time += sim->config.time_step;
 
@@ -342,10 +400,10 @@ static void *violations_thread(void *arg) {
                          sim->current_time, step_num, total_steps,
                          step_time, active);
 
-        /* Print landing summary for flights that became inactive this step. */
-        for (int i = 0; i < ctx->num_flights; i++) 
+        /* Print landing summary for flights that completed normally this step. */
+        for (int i = 0; i < ctx->num_flights; i++)
         {
-            if (!active[i] || sim->flights[i].is_active) 
+            if (!active[i] || sim->flights[i].is_active)
             {
                 continue;
             }
@@ -392,6 +450,11 @@ static void *violations_thread(void *arg) {
 
         fflush(stdout);
 
+        /* Save current positions as prev_pos for next step's continuous collision detection. */
+        for (int i = 0; i < ctx->num_flights; i++)
+            if (sim->flights[i].is_active)
+                sim->prev_pos[i] = sim->flights[i].current_pos;
+
         pthread_mutex_lock(&ctx->mutex);
         ctx->current_thread = THREAD_IDLE;
         pthread_cond_signal(&ctx->cond_step_done);
@@ -430,6 +493,7 @@ static void finalize_and_write_report(SimulationData *sim, double sim_end_time, 
         status->num_legs_completed = f->current_leg;
     }
     sim->report.total_flights = count;
+    sim->report.total_violations_recorded = sim->total_violations_detected;
 
     int report_pipe[2];
     if (pipe(report_pipe) < 0) {
@@ -673,6 +737,11 @@ int main(void) {
         if (pids[i] > 0)
             sem_wait(&shm->step_done[i]);
 
+    /* Initialise prev_pos to each flight's departure position. */
+    for (int i = 0; i < sim->num_flights; i++)
+        if (pids[i] > 0)
+            sim->prev_pos[i] = sim->flights[i].current_pos;
+
     /* ── Initialise SimContext ─────────────────────────────────────────── */
     static PositionHistory histories[MAX_FLIGHTS];
     for (int i = 0; i < MAX_FLIGHTS; i++) { histories[i].count = 0; histories[i].next = 0; }
@@ -714,7 +783,7 @@ int main(void) {
         printf("\n╔══════════════════════════════════════════════════════════════════════"
                "════════════════════════════════════════════════════════════════════╗\n");
         printf("║  t=       0 s  [%02d:%02d]  |  step   0 / %-3d  |  active= 0  pending=%2d  |  violations=  0"
-               "                                                      ║\n",
+               "                                                   ║\n",
                wall_s / 3600, (wall_s % 3600) / 60,
                (int)((sim->config.end_time - sim->config.start_time) / sim->config.time_step),
                num_forked);

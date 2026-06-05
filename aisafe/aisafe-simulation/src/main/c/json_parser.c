@@ -116,24 +116,49 @@ int load_simulation_settings(const char* filename, SimulationConfig* config) {
     if (cJSON_IsNumber(item)) config->start_time = item->valuedouble;
 
     item = cJSON_GetObjectItemCaseSensitive(json, "end_time");
-    if (cJSON_IsNumber(item)) config->end_time = item->valuedouble;
+    if (cJSON_IsNumber(item)) config->end_time = item->valuedouble * 86400.0;
 
     item = cJSON_GetObjectItemCaseSensitive(json, "time_step");
-    if (cJSON_IsNumber(item)) config->time_step = item->valuedouble;
+    if (cJSON_IsNumber(item)) config->time_step = item->valuedouble * 60.0;
 
     item = cJSON_GetObjectItemCaseSensitive(json, "safety_distance_threshold");
     if (cJSON_IsNumber(item)) config->safety_distance_threshold = item->valuedouble;
 
+    config->collision_distance_threshold = 100.0;
+    item = cJSON_GetObjectItemCaseSensitive(json, "collision_distance_threshold");
+    if (cJSON_IsNumber(item)) config->collision_distance_threshold = item->valuedouble;
+
     item = cJSON_GetObjectItemCaseSensitive(json, "max_violations_threshold");
     if (cJSON_IsNumber(item)) config->max_violations_threshold = item->valueint;
 
+    item = cJSON_GetObjectItemCaseSensitive(json, "reroute");
+    config->reroute = cJSON_IsTrue(item);
+
     item = cJSON_GetObjectItemCaseSensitive(json, "sim_start");
     if (cJSON_IsString(item)) {
-        const char *t = strchr(item->valuestring, 'T');
-        if (t) {
-            int h = 0, m = 0, s = 0;
-            sscanf(t + 1, "%d:%d:%d", &h, &m, &s);
-            config->sim_start_seconds = h * 3600.0 + m * 60.0 + s;
+        int sy = 0, sm = 0, sd = 0, h = 0, mi = 0, s = 0;
+        sscanf(item->valuestring, "%d-%d-%dT%d:%d:%d", &sy, &sm, &sd, &h, &mi, &s);
+        config->sim_start_seconds = h * 3600.0 + mi * 60.0 + s;
+        config->sim_start_year   = sy;
+        config->sim_start_month  = sm;
+        config->sim_start_day    = sd;
+
+        /* sim_start date must be >= today. */
+        time_t now = time(NULL);
+        struct tm *today = localtime(&now);
+        int ty = today->tm_year + 1900;
+        int tm_ = today->tm_mon + 1;
+        int td = today->tm_mday;
+
+        int sim_date  = sy * 10000 + sm * 100 + sd;
+        int today_date = ty * 10000 + tm_ * 100 + td;
+
+        if (sim_date < today_date) {
+            fprintf(stderr, "[settings] sim_start date (%04d-%02d-%02d) is in the past — must be >= today (%04d-%02d-%02d)\n",
+                    sy, sm, sd, ty, tm_, td);
+            cJSON_Delete(json);
+            free(data);
+            return 0;
         }
     }
 
@@ -141,17 +166,18 @@ int load_simulation_settings(const char* filename, SimulationConfig* config) {
     free(data);
 
     if (config->end_time <= config->start_time) {
-        fprintf(stderr, "[settings] end_time (%.1f) must be greater than start_time (%.1f)\n",
-                config->end_time, config->start_time);
+        fprintf(stderr, "[settings] end_time (%.4f days) must be greater than start_time\n",
+                config->end_time / 86400.0);
         return 0;
     }
 
-    printf("Loaded settings: start=%.1f end=%.1f step=%.1f dist=%.1f max_viol=%d sim_start=%.0fs (%02.0f:%02.0f)\n",
-           config->start_time, config->end_time, config->time_step,
-           config->safety_distance_threshold, config->max_violations_threshold,
-           config->sim_start_seconds,
+    printf("Loaded settings: duration=%.2f days  step=%.0f min  warn=%.0f m  collision=%.0f m  max_viol=%d  sim_start=%02.0f:%02.0f  reroute=%s\n",
+           config->end_time / 86400.0, config->time_step / 60.0,
+           config->safety_distance_threshold, config->collision_distance_threshold,
+           config->max_violations_threshold,
            floor(config->sim_start_seconds / 3600.0),
-           fmod(config->sim_start_seconds, 3600.0) / 60.0);
+           fmod(config->sim_start_seconds, 3600.0) / 60.0,
+           config->reroute ? "ON" : "OFF");
     return 1;
 }
 
@@ -167,6 +193,20 @@ int load_simulation_settings(const char* filename, SimulationConfig* config) {
  * @param shm      Pointer to shared memory; the new flight is written into
  *                 shm->flights[shm->num_flights].
  */
+/**
+ * @brief Returns the number of days from (y1,m1,d1) to (y2,m2,d2) using Julian Day Numbers.
+ *
+ * Negative result means date2 is before date1.
+ */
+static int days_between(int y1, int m1, int d1, int y2, int m2, int d2) {
+    int a1 = (14 - m1) / 12, a2 = (14 - m2) / 12;
+    int jd1 = d1 + (153*(m1 + 12*a1 - 3) + 2)/5 + 365*(y1 - a1)
+              + (y1 - a1)/4 - (y1 - a1)/100 + (y1 - a1)/400 - 32045;
+    int jd2 = d2 + (153*(m2 + 12*a2 - 3) + 2)/5 + 365*(y2 - a2)
+              + (y2 - a2)/4 - (y2 - a2)/100 + (y2 - a2)/400 - 32045;
+    return jd2 - jd1;
+}
+
 static int parse_flight_plan(const char* filepath, SimulationData* shm) {
     char* data = read_file(filepath);
     if (!data) return 0;
@@ -339,29 +379,49 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
             double departure_s = -1.0;
             cJSON *dep_obj = cJSON_GetObjectItemCaseSensitive(leg, "departure");
             if (cJSON_IsObject(dep_obj)) {
+                cJSON *dep_date = cJSON_GetObjectItemCaseSensitive(dep_obj, "date");
                 cJSON *dep_time = cJSON_GetObjectItemCaseSensitive(dep_obj, "time");
                 if (cJSON_IsString(dep_time)) {
                     int dh = 0, dm = 0;
                     if (sscanf(dep_time->valuestring, "%d:%d", &dh, &dm) == 2) {
                         departure_s = dh * 3600.0 + dm * 60.0;
-                        cur_leg->departure_offset_s = departure_s - shm->config.sim_start_seconds;
+                        double day_offset_s = 0.0;
+                        if (cJSON_IsString(dep_date)) {
+                            int dy = 0, dmo = 0, dd = 0;
+                            if (sscanf(dep_date->valuestring, "%d-%d-%d", &dy, &dmo, &dd) == 3) {
+                                day_offset_s = days_between(
+                                    shm->config.sim_start_year, shm->config.sim_start_month, shm->config.sim_start_day,
+                                    dy, dmo, dd) * 86400.0;
+                            }
+                        }
+                        cur_leg->departure_offset_s = day_offset_s + departure_s - shm->config.sim_start_seconds;
                     }
                 }
             }
 
             cJSON *arr_obj = cJSON_GetObjectItemCaseSensitive(leg, "arrival");
             if (cJSON_IsObject(arr_obj)) {
+                cJSON *arr_date = cJSON_GetObjectItemCaseSensitive(arr_obj, "date");
                 cJSON *arr_time = cJSON_GetObjectItemCaseSensitive(arr_obj, "time");
                 if (cJSON_IsString(arr_time)) {
                     int ah = 0, am = 0;
                     if (sscanf(arr_time->valuestring, "%d:%d", &ah, &am) == 2) {
                         double arrive_s = ah * 3600.0 + am * 60.0;
-                        if (departure_s >= 0.0 && arrive_s <= departure_s) {
-                            fprintf(stderr, "[%s] Leg %d: arrival time must be after departure time\n",
-                                    label, leg_index);
+                        double arr_day_offset_s = 0.0;
+                        if (cJSON_IsString(arr_date)) {
+                            int ay = 0, amo = 0, ad = 0;
+                            if (sscanf(arr_date->valuestring, "%d-%d-%d", &ay, &amo, &ad) == 3) {
+                                arr_day_offset_s = days_between(
+                                    shm->config.sim_start_year, shm->config.sim_start_month, shm->config.sim_start_day,
+                                    ay, amo, ad) * 86400.0;
+                            }
+                        }
+                        double arrival_offset = arr_day_offset_s + arrive_s - shm->config.sim_start_seconds;
+                        if (departure_s >= 0.0 && arrival_offset <= cur_leg->departure_offset_s) {
+                            fprintf(stderr, "[%s] Leg %d: arrival must be after departure\n", label, leg_index);
                             valid = 0;
                         } else {
-                            cur_leg->scheduled_arrival_offset_s = arrive_s - shm->config.sim_start_seconds;
+                            cur_leg->scheduled_arrival_offset_s = arrival_offset;
                         }
                     }
                 }

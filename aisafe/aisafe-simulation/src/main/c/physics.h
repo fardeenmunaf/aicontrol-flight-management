@@ -1,6 +1,8 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
+#include "structs.h"
+
 /** @brief Returns the ISA temperature (K) at altitude_m metres above MSL. */
 double isa_temperature(double altitude_m);
 
@@ -123,5 +125,32 @@ double calculate_fuel_burn(double total_thrust, double tsfc, double dt);
  * @return Horizontal distance in metres. Returns 0.0 for invalid inputs.
  */
 double calculate_step_distance(double tas, double climb_rate, double dt);
+
+/**
+ * @brief Returns the minimum 3D separation (m) between two flights over a time step.
+ *
+ * Models each flight as moving linearly from its previous position to its current
+ * position. Finds the time t in [0,1] (normalised step duration) at which the
+ * relative distance is smallest, using flat-earth Cartesian approximation.
+ * This catches collisions that occur between discrete step samples.
+ *
+ * @param a0 Flight A position at step start.
+ * @param a1 Flight A position at step end.
+ * @param b0 Flight B position at step start.
+ * @param b1 Flight B position at step end.
+ * @return Minimum separation in metres over the step.
+ */
+double min_separation_m(const Position *a0, const Position *a1,
+                        const Position *b0, const Position *b1);
+
+/**
+ * @brief Projects a position one step forward along heading_deg (degrees) by dist_m.
+ *
+ * @param p           Starting position.
+ * @param heading_deg Bearing in degrees (0 = north, 90 = east).
+ * @param dist_m      Distance to project in metres.
+ * @return Projected position (altitude unchanged).
+ */
+Position advance_pos(Position p, double heading_deg, double dist_m);
 
 #endif /* PHYSICS_H */

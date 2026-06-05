@@ -1,3 +1,4 @@
+#include "structs.h"
 #include "physics.h"
 #include <math.h>
 
@@ -245,4 +246,50 @@ double calculate_step_distance(double tas, double climb_rate, double dt) {
     if (sin_angle >  1.0) sin_angle =  1.0;
     if (sin_angle < -1.0) sin_angle = -1.0;
     return tas * cos(asin(sin_angle)) * dt;
+}
+
+double min_separation_m(const Position *a0, const Position *a1,
+                        const Position *b0, const Position *b1) {
+    const double R       = 6371000.0;
+    const double deg2rad = M_PI / 180.0;
+
+    double lat_avg = (a0->latitude + b0->latitude) / 2.0 * deg2rad;
+    double cos_lat = cos(lat_avg);
+    double k       = deg2rad * R;
+
+    /* Relative position vector at step start and end (flat-earth Cartesian). */
+    double dx0 = (a0->longitude - b0->longitude) * k * cos_lat;
+    double dy0 = (a0->latitude  - b0->latitude)  * k;
+    double dz0 =  a0->altitude  - b0->altitude;
+
+    double dx1 = (a1->longitude - b1->longitude) * k * cos_lat;
+    double dy1 = (a1->latitude  - b1->latitude)  * k;
+    double dz1 =  a1->altitude  - b1->altitude;
+
+    /* Relative velocity (parametrised so t in [0,1] spans the full step). */
+    double vx = dx1 - dx0, vy = dy1 - dy0, vz = dz1 - dz0;
+
+    /* Time of closest approach: t = -(D0 · V) / |V|^2, clamped to [0,1]. */
+    double v2  = vx*vx + vy*vy + vz*vz;
+    double dot = dx0*vx + dy0*vy + dz0*vz;
+    double t   = (v2 > 1e-10) ? -dot / v2 : 0.0;
+    if (t < 0.0) t = 0.0;
+    if (t > 1.0) t = 1.0;
+
+    double dx = dx0 + t*vx, dy = dy0 + t*vy, dz = dz0 + t*vz;
+    return sqrt(dx*dx + dy*dy + dz*dz);
+}
+
+Position advance_pos(Position p, double heading_deg, double dist_m) {
+    const double R = 6371000.0;
+    double hdg   = heading_deg * M_PI / 180.0;
+    double delta = dist_m / R;
+    double lat   = p.latitude  * M_PI / 180.0;
+    double lon   = p.longitude * M_PI / 180.0;
+    double lat2  = asin(sin(lat)*cos(delta) + cos(lat)*sin(delta)*cos(hdg));
+    double lon2  = lon + atan2(sin(hdg)*sin(delta)*cos(lat),
+                               cos(delta) - sin(lat)*sin(lat2));
+    p.latitude  = lat2 * 180.0 / M_PI;
+    p.longitude = lon2 * 180.0 / M_PI;
+    return p;
 }

@@ -50,6 +50,7 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
     public FlightPlan(final FlightPlanId flightPlanId, final String aircraftId, final Instant departureDateTime,
             final double fuelQuantity, final int passengerLoad, final double cargoLoad) {
         Preconditions.noneNull(flightPlanId, aircraftId, departureDateTime);
+        Preconditions.ensure(departureDateTime.isAfter(Instant.now()), "Departure date/time must be in the future");
         Preconditions.ensure(fuelQuantity > 0, "Fuel quantity must be strictly positive");
         Preconditions.ensure(passengerLoad >= 0, "Passenger load must be non-negative");
         Preconditions.ensure(cargoLoad >= 0, "Cargo load must be non-negative");
