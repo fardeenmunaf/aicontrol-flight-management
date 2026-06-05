@@ -7,6 +7,7 @@
     <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
         <Label text="Flight Plans" styleClass="page-title" style="-fx-padding: 0;"/>
         <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="btnImportFile" text="Import DSL File" styleClass="btn-primary" onAction="#onImportFromFile"/>
         <Button fx:id="btnNewFlightPlan" text="+ New Flight Plan" styleClass="btn-primary" onAction="#onShowNewForm"/>
     </HBox>
     <Label fx:id="pilotWarning" text="" wrapText="true"

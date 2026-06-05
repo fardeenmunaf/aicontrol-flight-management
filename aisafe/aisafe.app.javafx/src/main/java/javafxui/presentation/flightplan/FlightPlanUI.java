@@ -23,6 +23,8 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
 import javafx.util.StringConverter;
 import jpa.JpaPilotCompanyAssignmentRepository;
 import pilot.domain.Pilot;
@@ -75,6 +77,7 @@ public class FlightPlanUI {
     // ── Pilot warning banner ───────────────────────────────────────────────────
     @FXML private Label  pilotWarning;
     @FXML private Button btnNewFlightPlan;
+    @FXML private Button btnImportFile;
 
     // ── Right panel switching ──────────────────────────────────────────────────
     @FXML private VBox  detailPanel;
@@ -259,6 +262,8 @@ public class FlightPlanUI {
         canCreatePlans = false;
         btnNewFlightPlan.setVisible(false);
         btnNewFlightPlan.setManaged(false);
+        btnImportFile.setVisible(false);
+        btnImportFile.setManaged(false);
         formPanel.setVisible(false);
         formPanel.setManaged(false);
     }
@@ -272,6 +277,61 @@ public class FlightPlanUI {
         formPanel.setVisible(true);
         formPanel.setManaged(true);
         planTable.getSelectionModel().clearSelection();
+    }
+
+    @FXML private void onImportFromFile() {
+        if (!canCreatePlans) return;
+        final Window window = planTable.getScene().getWindow();
+        final FileChooser chooser = new FileChooser();
+        chooser.setTitle("Select Flight Plan DSL File");
+        chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Flight DSL files", "*.dsl", "*.flight", "*.txt"),
+                new FileChooser.ExtensionFilter("All files", "*.*"));
+        final File selected = chooser.showOpenDialog(window);
+        if (selected == null) return;
+
+        try {
+            final FlightDslProcessingResult result = processor.process(selected.toPath());
+            if (!result.isValid()) {
+                final StringBuilder sb = new StringBuilder("DSL errors in file:\n");
+                result.semanticErrors().forEach(e -> sb.append("  • ").append(e).append("\n"));
+                showFileImportResult(sb.toString(), false);
+                return;
+            }
+
+            final ImportFlightPlanController importCtrl = new ImportFlightPlanController(
+                    PersistenceContext.repositories().flightPlans(),
+                    PersistenceContext.repositories().nodes(),
+                    PersistenceContext.repositories().aircraftModels(),
+                    PersistenceContext.repositories().airports(),
+                    PersistenceContext.repositories().airTransportCompanies());
+
+            int imported = 0;
+            final StringBuilder sb = new StringBuilder();
+            for (final FlightPlanAst planAst : result.document().flightPlans()) {
+                try {
+                    importCtrl.importFlightPlan(planAst.flightDesignator(),
+                            planAst.aircraftId(), planAst.pilotRef(), buildLegRequests(planAst));
+                    sb.append("✓ Imported: ").append(planAst.flightDesignator()).append("\n");
+                    imported++;
+                } catch (final Exception e) {
+                    sb.append("✗ ").append(planAst.flightDesignator())
+                            .append(": ").append(e.getMessage()).append("\n");
+                }
+            }
+            if (imported > 0) refreshTable();
+            showFileImportResult(sb.toString().trim(), imported > 0);
+        } catch (final Exception e) {
+            showFileImportResult("Parse error: " + e.getMessage(), false);
+        }
+    }
+
+    private void showFileImportResult(final String message, final boolean success) {
+        final Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR);
+        alert.setTitle("DSL File Import");
+        alert.setHeaderText(success ? "Import successful" : "Import failed");
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
     @FXML private void onCloseDetail() {
@@ -630,27 +690,45 @@ public class FlightPlanUI {
             sb.append("            quantity: ").append(fuelQty).append(" ").append(fuelUnit).append(";\n");
             sb.append("        }\n");
 
-            if (leg.hasSegments.isSelected()) {
-                for (int s = 0; s < SEGMENT_MODES.length; s++) {
-                    final String fLat = require(leg.fromLat[s],
-                            "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Lat");
-                    final String fLon = require(leg.fromLon[s],
-                            "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Lon");
-                    final String fAlt = require(leg.fromAlt[s],
-                            "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Alt");
-                    final String fUnit = leg.fromAltUnit[s].getValue() == null ? "m" : leg.fromAltUnit[s].getValue();
-                    final String tLat = require(leg.toLat[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Lat");
-                    final String tLon = require(leg.toLon[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Lon");
-                    final String tAlt = require(leg.toAlt[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Alt");
-                    final String tUnit = leg.toAltUnit[s].getValue() == null ? "m" : leg.toAltUnit[s].getValue();
-                    sb.append("        segment {\n");
-                    sb.append("            mode: ").append(SEGMENT_MODES[s]).append(";\n");
-                    sb.append("            from: (").append(fLat).append(", ").append(fLon)
-                            .append(", altitude: ").append(fAlt).append(" ").append(fUnit).append(");\n");
-                    sb.append("            to:   (").append(tLat).append(", ").append(tLon)
-                            .append(", altitude: ").append(tAlt).append(" ").append(tUnit).append(");\n");
-                    sb.append("        }\n");
-                }
+            for (int s = 0; s < SEGMENT_MODES.length; s++) {
+                final String fLat = require(leg.fromLat[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Lat");
+                final String fLon = require(leg.fromLon[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Lon");
+                final String fAlt = require(leg.fromAlt[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Alt");
+                final String fUnit = leg.fromAltUnit[s].getValue() == null ? "m" : leg.fromAltUnit[s].getValue();
+                final String tLat = require(leg.toLat[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Lat");
+                final String tLon = require(leg.toLon[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Lon");
+                final String tAlt = require(leg.toAlt[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Alt");
+                final String tUnit = leg.toAltUnit[s].getValue() == null ? "m" : leg.toAltUnit[s].getValue();
+                final String sMin = require(leg.slotMin[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Slot Min");
+                final String sMinU = leg.slotMinUnit[s].getValue() == null ? "m" : leg.slotMinUnit[s].getValue();
+                final String sMax = require(leg.slotMax[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Slot Max");
+                final String sMaxU = leg.slotMaxUnit[s].getValue() == null ? "m" : leg.slotMaxUnit[s].getValue();
+                final String sWidth = require(leg.slotWidth[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Slot Width");
+                final String sWidthU = leg.slotWidthUnit[s].getValue() == null ? "m" : leg.slotWidthUnit[s].getValue();
+                final String wDir = require(leg.windDir[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Wind Direction");
+                final String wSpeed = require(leg.windSpeed[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Wind Speed");
+                sb.append("        segment {\n");
+                sb.append("            from: (").append(fLat).append(", ").append(fLon)
+                        .append(", altitude: ").append(fAlt).append(" ").append(fUnit).append(");\n");
+                sb.append("            to:   (").append(tLat).append(", ").append(tLon)
+                        .append(", altitude: ").append(tAlt).append(" ").append(tUnit).append(");\n");
+                sb.append("            altslot[min: ").append(sMin).append(" ").append(sMinU)
+                        .append(", max: ").append(sMax).append(" ").append(sMaxU)
+                        .append(", width: ").append(sWidth).append(" ").append(sWidthU).append("];\n");
+                sb.append("            wind {\n");
+                sb.append("                direction: ").append(wDir).append(";\n");
+                sb.append("                speed: ").append(wSpeed).append(" m/s;\n");
+                sb.append("            }\n");
+                sb.append("            mode: ").append(SEGMENT_MODES[s]).append(";\n");
+                sb.append("        }\n");
             }
             sb.append("    }\n");
         }
@@ -753,8 +831,6 @@ public class FlightPlanUI {
         final TextField arrAirport, arrDate, arrTime;
         final TextField fuelQty;
         final ComboBox<String> fuelUnit;
-        final CheckBox hasSegments;
-        final VBox segmentsPanel;
 
         final TextField[] fromLat = new TextField[3];
         final TextField[] fromLon = new TextField[3];
@@ -766,6 +842,17 @@ public class FlightPlanUI {
         final TextField[] toAlt = new TextField[3];
         @SuppressWarnings("unchecked")
         final ComboBox<String>[] toAltUnit = new ComboBox[3];
+        final TextField[] slotMin = new TextField[3];
+        @SuppressWarnings("unchecked")
+        final ComboBox<String>[] slotMinUnit = new ComboBox[3];
+        final TextField[] slotMax = new TextField[3];
+        @SuppressWarnings("unchecked")
+        final ComboBox<String>[] slotMaxUnit = new ComboBox[3];
+        final TextField[] slotWidth = new TextField[3];
+        @SuppressWarnings("unchecked")
+        final ComboBox<String>[] slotWidthUnit = new ComboBox[3];
+        final TextField[] windDir = new TextField[3];
+        final TextField[] windSpeed = new TextField[3];
 
         LegEntry(final int num) {
             panel = new VBox(8);
@@ -798,15 +885,8 @@ public class FlightPlanUI {
             fuelUnit.setMaxWidth(80);
             final HBox fuelRow = new HBox(12, labeled("Quantity", fuelQty), labeled("Unit", fuelUnit));
 
-            hasSegments = new CheckBox("Include flight profile segments (climb / cruise / descend)");
-            hasSegments.setStyle("-fx-text-fill:#e0e0e0;-fx-padding:4 0 0 0;");
-            segmentsPanel = new VBox(8);
-            segmentsPanel.setManaged(false);
-            segmentsPanel.setVisible(false);
-            hasSegments.selectedProperty().addListener((obs, o, n) -> {
-                segmentsPanel.setVisible(n);
-                segmentsPanel.setManaged(n);
-            });
+            final Label segsTitle = sectionLabel("Flight Segments (climb · cruise · descend)");
+            final VBox segmentsPanel = new VBox(8);
 
             for (int s = 0; s < 3; s++) {
                 fromLat[s] = field("Lat (e.g. 41.262891)");
@@ -818,6 +898,16 @@ public class FlightPlanUI {
                 toAlt[s] = field("Alt (e.g. 9249)");
                 toAltUnit[s] = altUnitBox();
 
+                slotMin[s] = fieldWithDefault("Min alt", "0");
+                slotMinUnit[s] = altUnitBox();
+                slotMax[s] = fieldWithDefault("Max alt", "10000");
+                slotMaxUnit[s] = altUnitBox();
+                slotWidth[s] = fieldWithDefault("Width", "500");
+                slotWidthUnit[s] = altUnitBox();
+
+                windDir[s] = fieldWithDefault("0–359", "180");
+                windSpeed[s] = fieldWithDefault("m/s", "5");
+
                 final Label segTitle = sectionLabel(capitalize(SEGMENT_MODES[s]) + " Segment");
                 final HBox fromRow = new HBox(8,
                         labeled("From Lat", fromLat[s]), labeled("Lon", fromLon[s]),
@@ -825,9 +915,18 @@ public class FlightPlanUI {
                 final HBox toRow = new HBox(8,
                         labeled("To Lat", toLat[s]), labeled("Lon", toLon[s]),
                         labeled("Alt", toAlt[s]), labeled("Unit", toAltUnit[s]));
+                final HBox slotRow = new HBox(8,
+                        labeled("Slot Min", slotMin[s]), labeled("Unit", slotMinUnit[s]),
+                        labeled("Max", slotMax[s]), labeled("Unit", slotMaxUnit[s]),
+                        labeled("Width", slotWidth[s]), labeled("Unit", slotWidthUnit[s]));
+                final HBox windRow = new HBox(8,
+                        labeled("Wind Dir (°)", windDir[s]),
+                        labeled("Speed (m/s)", windSpeed[s]));
                 setHGrow(fromRow);
                 setHGrow(toRow);
-                segmentsPanel.getChildren().addAll(segTitle, fromRow, toRow);
+                setHGrow(slotRow);
+                setHGrow(windRow);
+                segmentsPanel.getChildren().addAll(segTitle, fromRow, toRow, slotRow, windRow);
             }
 
             if (num > 1) {
@@ -838,10 +937,10 @@ public class FlightPlanUI {
                     legs.remove(this);
                 });
                 panel.getChildren().addAll(title, depTitle, depRow, arrTitle, arrRow,
-                        fuelTitle, fuelRow, hasSegments, segmentsPanel, removeBtn);
+                        fuelTitle, fuelRow, segsTitle, segmentsPanel, removeBtn);
             } else {
                 panel.getChildren().addAll(title, depTitle, depRow, arrTitle, arrRow,
-                        fuelTitle, fuelRow, hasSegments, segmentsPanel);
+                        fuelTitle, fuelRow, segsTitle, segmentsPanel);
             }
         }
 
