@@ -391,7 +391,7 @@ public class FlightPlanUI {
             for (final FlightPlanAst planAst : result.document().flightPlans()) {
                 try {
                     importCtrl.importFlightPlan(planAst.flightDesignator(),
-                            planAst.aircraftId(), buildLegRequests(planAst));
+                            planAst.aircraftId(), planAst.pilotRef(), buildLegRequests(planAst));
                     sb.append("✓ Imported: ").append(planAst.flightDesignator()).append("\n");
                     imported++;
                 } catch (final Exception e) {
