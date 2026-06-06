@@ -2,6 +2,7 @@ package javafxui.presentation.flightplan;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import flight.dsl.ast.FlightPlanAst;
 import flight.dsl.ast.LegAst;
 import flight.dsl.ast.SegmentAst;
@@ -12,6 +13,9 @@ import flightPlan.application.LegImportRequest;
 import flightPlan.application.SegmentImportRequest;
 import flightPlan.domain.FlightLeg;
 import flightPlan.domain.FlightPlan;
+import aircraft.domain.Aircraft;
+import aircraft.domain.AircraftOperationStatus;
+import flightRoute.domain.FlightRoute;
 import infrastructure.persistence.PersistenceContext;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -19,16 +23,26 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
+import javafx.stage.Window;
+import javafx.util.StringConverter;
+import jpa.JpaPilotCompanyAssignmentRepository;
+import pilot.domain.Pilot;
+import pilot.domain.PilotStatus;
+import shared.domain.AirTransportCompanyId;
+import shared.domain.UserId;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 public class FlightPlanUI {
 
@@ -52,13 +66,18 @@ public class FlightPlanUI {
     @FXML
     private ComboBox<String> fType;
     @FXML
-    private TextField fAircraft;
+    private ComboBox<Aircraft> fAircraft;
     @FXML
-    private TextField fRouteRef;
+    private ComboBox<FlightRoute> fRouteRef;
     @FXML
     private TextField fOrigin;
     @FXML
     private TextField fDestination;
+
+    // ── Pilot warning banner ───────────────────────────────────────────────────
+    @FXML private Label  pilotWarning;
+    @FXML private Button btnNewFlightPlan;
+    @FXML private Button btnImportFile;
 
     // ── Right panel switching ──────────────────────────────────────────────────
     @FXML private VBox  detailPanel;
@@ -80,14 +99,10 @@ public class FlightPlanUI {
     private final List<LegEntry> legs = new ArrayList<>();
     private final ObservableList<FlightPlanRow> data = FXCollections.observableArrayList();
     private final ObjectMapper mapper = new ObjectMapper();
-
-    private final ImportFlightPlanController importCtrl = new ImportFlightPlanController(
-            PersistenceContext.repositories().flightPlans(),
-            PersistenceContext.repositories().nodes(),
-            PersistenceContext.repositories().aircraftModels(),
-            PersistenceContext.repositories().airports(),
-            PersistenceContext.repositories().airTransportCompanies());
     private final FlightDslProcessor processor = new FlightDslProcessor();
+    private boolean canCreatePlans = true;
+    private String companyIataCode = null;
+    private AirTransportCompanyId companyId = null;
 
     @FXML
     public void initialize() {
@@ -126,13 +141,137 @@ public class FlightPlanUI {
         fType.setItems(FXCollections.observableArrayList("regular", "charter"));
         fType.setValue("regular");
 
-        refreshTable();
+        checkPilotEligibility();
+
+        try {
+            refreshTable();
+        } catch (final Exception e) {
+            tableStatus.setText("Could not load flight plans: " + e.getMessage());
+        }
         addLegEntry();
+    }
+
+    private void checkPilotEligibility() {
+        try {
+            final String email = AuthzRegistry.authorizationService().session()
+                    .map(s -> s.authenticatedUser().username().toString())
+                    .orElse(null);
+            if (email == null) return;
+
+            final UserId userId = UserId.valueOf(email);
+            final var assignment = new JpaPilotCompanyAssignmentRepository("aisafe-pu")
+                    .ofIdentity(userId);
+
+            if (assignment.isEmpty()) {
+                showWarning("You must be associated with an Air Transport Company before creating flight plans. Please contact your company administrator.");
+                disableForm();
+                return;
+            }
+
+            companyId = assignment.get().companyId();
+            PersistenceContext.repositories().airTransportCompanies()
+                    .ofIdentity(companyId)
+                    .ifPresent(c -> companyIataCode = c.iataCode());
+
+            final boolean isInactive = StreamSupport
+                    .stream(PersistenceContext.repositories().pilots().findAll().spliterator(), false)
+                    .filter(p -> email.equalsIgnoreCase(p.userId().toString()))
+                    .map(Pilot::status)
+                    .anyMatch(s -> s == PilotStatus.INACTIVE);
+
+            if (isInactive) {
+                showWarning("Your pilot account is inactive. You may view existing flight plans but cannot create new ones.");
+                disableForm();
+                return;
+            }
+
+            setupFormForCompany();
+        } catch (final Exception ignored) {
+        }
+    }
+
+    private void setupFormForCompany() {
+        if (companyIataCode != null) {
+            fDesignator.setText(companyIataCode);
+            fDesignator.setPromptText(companyIataCode + "1234");
+        }
+
+        if (companyId != null) {
+            final List<Aircraft> fleet = PersistenceContext.repositories().aircraft()
+                    .findByAirTransportCompanyId(companyId).stream()
+                    .filter(a -> a.operationStatus() != AircraftOperationStatus.DECOMISSIONED)
+                    .toList();
+            fAircraft.setItems(FXCollections.observableArrayList(fleet));
+            fAircraft.setConverter(new StringConverter<>() {
+                @Override
+                public String toString(final Aircraft a) {
+                    if (a == null) return "";
+                    return String.format("%s  (%s)%s",
+                            a.registrationNumber(),
+                            a.aircraftModel().modelName(),
+                            a.operationStatus() == AircraftOperationStatus.MAINTENANCE ? "  [maintenance]" : "");
+                }
+                @Override
+                public Aircraft fromString(final String s) { return null; }
+            });
+        }
+
+        final StringConverter<FlightRoute> routeConverter = new StringConverter<>() {
+            @Override
+            public String toString(final FlightRoute r) {
+                if (r == null) return "";
+                return String.format("%s  (%s → %s)%s",
+                        r.designation().value(),
+                        r.originAirport().iataCode(),
+                        r.destinationAirport().iataCode(),
+                        r.isActive() ? "" : "  [inactive]");
+            }
+            @Override
+            public FlightRoute fromString(final String s) { return null; }
+        };
+        fRouteRef.setConverter(routeConverter);
+
+        if (companyId != null) {
+            final List<FlightRoute> routes = new ArrayList<>();
+            StreamSupport.stream(
+                    PersistenceContext.repositories().flightRoutes()
+                            .findByCompanyId(companyId).spliterator(), false)
+                    .forEach(routes::add);
+            fRouteRef.setItems(FXCollections.observableArrayList(routes));
+        }
+
+        fRouteRef.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                fOrigin.setText(newVal.originAirport().iataCode());
+                fDestination.setText(newVal.destinationAirport().iataCode());
+                if (!legs.isEmpty()) {
+                    legs.get(0).depAirport.setText(newVal.originAirport().iataCode());
+                    legs.get(legs.size() - 1).arrAirport.setText(newVal.destinationAirport().iataCode());
+                }
+            }
+        });
+    }
+
+    private void showWarning(final String message) {
+        pilotWarning.setText(message);
+        pilotWarning.setVisible(true);
+        pilotWarning.setManaged(true);
+    }
+
+    private void disableForm() {
+        canCreatePlans = false;
+        btnNewFlightPlan.setVisible(false);
+        btnNewFlightPlan.setManaged(false);
+        btnImportFile.setVisible(false);
+        btnImportFile.setManaged(false);
+        formPanel.setVisible(false);
+        formPanel.setManaged(false);
     }
 
     // ── Right-panel switching ──────────────────────────────────────────────────
 
     @FXML private void onShowNewForm() {
+        if (!canCreatePlans) return;
         detailPanel.setVisible(false);
         detailPanel.setManaged(false);
         formPanel.setVisible(true);
@@ -140,8 +279,69 @@ public class FlightPlanUI {
         planTable.getSelectionModel().clearSelection();
     }
 
+    @FXML private void onImportFromFile() {
+        if (!canCreatePlans) return;
+        final Window window = planTable.getScene().getWindow();
+        final FileChooser chooser = new FileChooser();
+        chooser.setTitle("Select Flight Plan DSL File");
+        chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Flight DSL files", "*.dsl", "*.flight", "*.txt"),
+                new FileChooser.ExtensionFilter("All files", "*.*"));
+        final File selected = chooser.showOpenDialog(window);
+        if (selected == null) return;
+
+        try {
+            final FlightDslProcessingResult result = processor.process(selected.toPath());
+            if (!result.isValid()) {
+                final StringBuilder sb = new StringBuilder("DSL errors in file:\n");
+                result.semanticErrors().forEach(e -> sb.append("  • ").append(e).append("\n"));
+                showFileImportResult(sb.toString(), false);
+                return;
+            }
+
+            final ImportFlightPlanController importCtrl = new ImportFlightPlanController(
+                    PersistenceContext.repositories().flightPlans(),
+                    PersistenceContext.repositories().nodes(),
+                    PersistenceContext.repositories().aircraftModels(),
+                    PersistenceContext.repositories().airports(),
+                    PersistenceContext.repositories().airTransportCompanies());
+
+            int imported = 0;
+            final StringBuilder sb = new StringBuilder();
+            for (final FlightPlanAst planAst : result.document().flightPlans()) {
+                try {
+                    importCtrl.importFlightPlan(planAst.flightDesignator(),
+                            planAst.aircraftId(), planAst.pilotRef(), buildLegRequests(planAst));
+                    sb.append("✓ Imported: ").append(planAst.flightDesignator()).append("\n");
+                    imported++;
+                } catch (final Exception e) {
+                    sb.append("✗ ").append(planAst.flightDesignator())
+                            .append(": ").append(e.getMessage()).append("\n");
+                }
+            }
+            if (imported > 0) refreshTable();
+            showFileImportResult(sb.toString().trim(), imported > 0);
+        } catch (final Exception e) {
+            showFileImportResult("Parse error: " + e.getMessage(), false);
+        }
+    }
+
+    private void showFileImportResult(final String message, final boolean success) {
+        final Alert alert = new Alert(success ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR);
+        alert.setTitle("DSL File Import");
+        alert.setHeaderText(success ? "Import successful" : "Import failed");
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
     @FXML private void onCloseDetail() {
-        onShowNewForm();
+        detailPanel.setVisible(false);
+        detailPanel.setManaged(false);
+        if (canCreatePlans) {
+            formPanel.setVisible(true);
+            formPanel.setManaged(true);
+        }
+        planTable.getSelectionModel().clearSelection();
     }
 
     private void showDetail(final FlightPlanRow row) {
@@ -353,15 +553,27 @@ public class FlightPlanUI {
         final LegEntry entry = new LegEntry(num);
         legs.add(entry);
         legsContainer.getChildren().add(entry.panel);
+
+        final FlightRoute route = fRouteRef == null ? null : fRouteRef.getValue();
+        if (route != null) {
+            if (num == 1) {
+                entry.depAirport.setText(route.originAirport().iataCode());
+            }
+            entry.arrAirport.setText(route.destinationAirport().iataCode());
+            // clear arrAirport from the previous last leg (it's now an intermediate)
+            if (legs.size() > 1) {
+                legs.get(legs.size() - 2).arrAirport.clear();
+            }
+        }
     }
 
     // ── Form actions ───────────────────────────────────────────────────────────
 
     @FXML
     private void onClearForm() {
-        fDesignator.clear();
-        fAircraft.clear();
-        fRouteRef.clear();
+        fDesignator.setText(companyIataCode != null ? companyIataCode : "");
+        fAircraft.setValue(null);
+        fRouteRef.setValue(null);
         fOrigin.clear();
         fDestination.clear();
         fType.setValue("regular");
@@ -385,6 +597,13 @@ public class FlightPlanUI {
                 formResult.setText(sb.toString());
                 return;
             }
+
+            final ImportFlightPlanController importCtrl = new ImportFlightPlanController(
+                    PersistenceContext.repositories().flightPlans(),
+                    PersistenceContext.repositories().nodes(),
+                    PersistenceContext.repositories().aircraftModels(),
+                    PersistenceContext.repositories().airports(),
+                    PersistenceContext.repositories().airTransportCompanies());
 
             int imported = 0;
             final StringBuilder sb = new StringBuilder();
@@ -416,20 +635,32 @@ public class FlightPlanUI {
     private String buildDsl() {
         final String designator = require(fDesignator, "Flight Designator");
         final String type = fType.getValue() == null ? "regular" : fType.getValue();
-        final String aircraft = require(fAircraft, "Aircraft Registration");
-        final String routeRef = require(fRouteRef, "Route Reference");
-        final String origin = require(fOrigin, "Origin Airport");
-        final String dest = require(fDestination, "Destination Airport");
+        final Aircraft selectedAircraft = fAircraft.getValue();
+        if (selectedAircraft == null) throw new IllegalArgumentException("Aircraft is required. Please select an aircraft from the fleet.");
+        final String aircraft = selectedAircraft.aircraftModel().modelName();
+
+        final FlightRoute selectedRoute = fRouteRef.getValue();
+        if (selectedRoute == null) throw new IllegalArgumentException("Route is required. Please select a route from the list.");
+        final String routeRef = selectedRoute.designation().value();
+        final String origin = fOrigin.getText().trim().isEmpty()
+                ? selectedRoute.originAirport().iataCode() : fOrigin.getText().trim();
+        final String dest = fDestination.getText().trim().isEmpty()
+                ? selectedRoute.destinationAirport().iataCode() : fDestination.getText().trim();
 
         if (legs.isEmpty()) {
             formResult.setText("At least one leg is required.");
             return null;
         }
 
+        final String pilotEmail = AuthzRegistry.authorizationService().session()
+                .map(s -> s.authenticatedUser().identity().toString())
+                .orElseThrow(() -> new IllegalStateException("No authenticated session"));
+
         final StringBuilder sb = new StringBuilder();
         sb.append("flight ").append(designator).append(" {\n");
         sb.append("    type:     ").append(type).append(";\n");
         sb.append("    aircraft: ").append(aircraft).append(";\n");
+        sb.append("    pilot:    ").append(pilotEmail).append(";\n");
         sb.append("    route:    ").append(routeRef)
                 .append(" from ").append(origin).append(" to ").append(dest).append(";\n\n");
 
@@ -459,27 +690,45 @@ public class FlightPlanUI {
             sb.append("            quantity: ").append(fuelQty).append(" ").append(fuelUnit).append(";\n");
             sb.append("        }\n");
 
-            if (leg.hasSegments.isSelected()) {
-                for (int s = 0; s < SEGMENT_MODES.length; s++) {
-                    final String fLat = require(leg.fromLat[s],
-                            "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Lat");
-                    final String fLon = require(leg.fromLon[s],
-                            "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Lon");
-                    final String fAlt = require(leg.fromAlt[s],
-                            "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Alt");
-                    final String fUnit = leg.fromAltUnit[s].getValue() == null ? "m" : leg.fromAltUnit[s].getValue();
-                    final String tLat = require(leg.toLat[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Lat");
-                    final String tLon = require(leg.toLon[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Lon");
-                    final String tAlt = require(leg.toAlt[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Alt");
-                    final String tUnit = leg.toAltUnit[s].getValue() == null ? "m" : leg.toAltUnit[s].getValue();
-                    sb.append("        segment {\n");
-                    sb.append("            mode: ").append(SEGMENT_MODES[s]).append(";\n");
-                    sb.append("            from: (").append(fLat).append(", ").append(fLon)
-                            .append(", altitude: ").append(fAlt).append(" ").append(fUnit).append(");\n");
-                    sb.append("            to:   (").append(tLat).append(", ").append(tLon)
-                            .append(", altitude: ").append(tAlt).append(" ").append(tUnit).append(");\n");
-                    sb.append("        }\n");
-                }
+            for (int s = 0; s < SEGMENT_MODES.length; s++) {
+                final String fLat = require(leg.fromLat[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Lat");
+                final String fLon = require(leg.fromLon[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Lon");
+                final String fAlt = require(leg.fromAlt[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " From Alt");
+                final String fUnit = leg.fromAltUnit[s].getValue() == null ? "m" : leg.fromAltUnit[s].getValue();
+                final String tLat = require(leg.toLat[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Lat");
+                final String tLon = require(leg.toLon[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Lon");
+                final String tAlt = require(leg.toAlt[s], "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " To Alt");
+                final String tUnit = leg.toAltUnit[s].getValue() == null ? "m" : leg.toAltUnit[s].getValue();
+                final String sMin = require(leg.slotMin[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Slot Min");
+                final String sMinU = leg.slotMinUnit[s].getValue() == null ? "m" : leg.slotMinUnit[s].getValue();
+                final String sMax = require(leg.slotMax[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Slot Max");
+                final String sMaxU = leg.slotMaxUnit[s].getValue() == null ? "m" : leg.slotMaxUnit[s].getValue();
+                final String sWidth = require(leg.slotWidth[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Slot Width");
+                final String sWidthU = leg.slotWidthUnit[s].getValue() == null ? "m" : leg.slotWidthUnit[s].getValue();
+                final String wDir = require(leg.windDir[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Wind Direction");
+                final String wSpeed = require(leg.windSpeed[s],
+                        "Leg " + (i + 1) + " " + SEGMENT_MODES[s] + " Wind Speed");
+                sb.append("        segment {\n");
+                sb.append("            from: (").append(fLat).append(", ").append(fLon)
+                        .append(", altitude: ").append(fAlt).append(" ").append(fUnit).append(");\n");
+                sb.append("            to:   (").append(tLat).append(", ").append(tLon)
+                        .append(", altitude: ").append(tAlt).append(" ").append(tUnit).append(");\n");
+                sb.append("            altslot[min: ").append(sMin).append(" ").append(sMinU)
+                        .append(", max: ").append(sMax).append(" ").append(sMaxU)
+                        .append(", width: ").append(sWidth).append(" ").append(sWidthU).append("];\n");
+                sb.append("            wind {\n");
+                sb.append("                direction: ").append(wDir).append(";\n");
+                sb.append("                speed: ").append(wSpeed).append(" m/s;\n");
+                sb.append("            }\n");
+                sb.append("            mode: ").append(SEGMENT_MODES[s]).append(";\n");
+                sb.append("        }\n");
             }
             sb.append("    }\n");
         }
@@ -582,8 +831,6 @@ public class FlightPlanUI {
         final TextField arrAirport, arrDate, arrTime;
         final TextField fuelQty;
         final ComboBox<String> fuelUnit;
-        final CheckBox hasSegments;
-        final VBox segmentsPanel;
 
         final TextField[] fromLat = new TextField[3];
         final TextField[] fromLon = new TextField[3];
@@ -595,6 +842,17 @@ public class FlightPlanUI {
         final TextField[] toAlt = new TextField[3];
         @SuppressWarnings("unchecked")
         final ComboBox<String>[] toAltUnit = new ComboBox[3];
+        final TextField[] slotMin = new TextField[3];
+        @SuppressWarnings("unchecked")
+        final ComboBox<String>[] slotMinUnit = new ComboBox[3];
+        final TextField[] slotMax = new TextField[3];
+        @SuppressWarnings("unchecked")
+        final ComboBox<String>[] slotMaxUnit = new ComboBox[3];
+        final TextField[] slotWidth = new TextField[3];
+        @SuppressWarnings("unchecked")
+        final ComboBox<String>[] slotWidthUnit = new ComboBox[3];
+        final TextField[] windDir = new TextField[3];
+        final TextField[] windSpeed = new TextField[3];
 
         LegEntry(final int num) {
             panel = new VBox(8);
@@ -603,16 +861,21 @@ public class FlightPlanUI {
             final Label title = new Label("Leg " + num);
             title.setStyle("-fx-text-fill:#42a5f5;-fx-font-weight:bold;");
 
+            final DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            final DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
+            final LocalDateTime defaultDep = LocalDateTime.now().plusHours(1).withSecond(0).withNano(0);
+            final LocalDateTime defaultArr = defaultDep.plusHours(2);
+
             final Label depTitle = sectionLabel("Departure");
             depAirport = field("Airport (e.g. OPO)");
-            depDate = field("Date (YYYY-MM-DD, e.g. 2026-05-05)");
-            depTime = field("Time (HH:MM, e.g. 08:00)");
+            depDate = fieldWithDefault("yyyy-MM-dd", defaultDep.format(dateFmt));
+            depTime = fieldWithDefault("HH:mm", defaultDep.format(timeFmt));
             final HBox depRow = labeled3("Airport", depAirport, "Date", depDate, "Time", depTime);
 
             final Label arrTitle = sectionLabel("Arrival");
             arrAirport = field("Airport (e.g. MAD)");
-            arrDate = field("Date (YYYY-MM-DD)");
-            arrTime = field("Time (HH:MM, e.g. 09:30)");
+            arrDate = fieldWithDefault("yyyy-MM-dd", defaultArr.format(dateFmt));
+            arrTime = fieldWithDefault("HH:mm", defaultArr.format(timeFmt));
             final HBox arrRow = labeled3("Airport", arrAirport, "Date", arrDate, "Time", arrTime);
 
             final Label fuelTitle = sectionLabel("Fuel");
@@ -622,15 +885,8 @@ public class FlightPlanUI {
             fuelUnit.setMaxWidth(80);
             final HBox fuelRow = new HBox(12, labeled("Quantity", fuelQty), labeled("Unit", fuelUnit));
 
-            hasSegments = new CheckBox("Include flight profile segments (climb / cruise / descend)");
-            hasSegments.setStyle("-fx-text-fill:#e0e0e0;-fx-padding:4 0 0 0;");
-            segmentsPanel = new VBox(8);
-            segmentsPanel.setManaged(false);
-            segmentsPanel.setVisible(false);
-            hasSegments.selectedProperty().addListener((obs, o, n) -> {
-                segmentsPanel.setVisible(n);
-                segmentsPanel.setManaged(n);
-            });
+            final Label segsTitle = sectionLabel("Flight Segments (climb · cruise · descend)");
+            final VBox segmentsPanel = new VBox(8);
 
             for (int s = 0; s < 3; s++) {
                 fromLat[s] = field("Lat (e.g. 41.262891)");
@@ -642,6 +898,16 @@ public class FlightPlanUI {
                 toAlt[s] = field("Alt (e.g. 9249)");
                 toAltUnit[s] = altUnitBox();
 
+                slotMin[s] = fieldWithDefault("Min alt", "0");
+                slotMinUnit[s] = altUnitBox();
+                slotMax[s] = fieldWithDefault("Max alt", "10000");
+                slotMaxUnit[s] = altUnitBox();
+                slotWidth[s] = fieldWithDefault("Width", "500");
+                slotWidthUnit[s] = altUnitBox();
+
+                windDir[s] = fieldWithDefault("0–359", "180");
+                windSpeed[s] = fieldWithDefault("m/s", "5");
+
                 final Label segTitle = sectionLabel(capitalize(SEGMENT_MODES[s]) + " Segment");
                 final HBox fromRow = new HBox(8,
                         labeled("From Lat", fromLat[s]), labeled("Lon", fromLon[s]),
@@ -649,9 +915,18 @@ public class FlightPlanUI {
                 final HBox toRow = new HBox(8,
                         labeled("To Lat", toLat[s]), labeled("Lon", toLon[s]),
                         labeled("Alt", toAlt[s]), labeled("Unit", toAltUnit[s]));
+                final HBox slotRow = new HBox(8,
+                        labeled("Slot Min", slotMin[s]), labeled("Unit", slotMinUnit[s]),
+                        labeled("Max", slotMax[s]), labeled("Unit", slotMaxUnit[s]),
+                        labeled("Width", slotWidth[s]), labeled("Unit", slotWidthUnit[s]));
+                final HBox windRow = new HBox(8,
+                        labeled("Wind Dir (°)", windDir[s]),
+                        labeled("Speed (m/s)", windSpeed[s]));
                 setHGrow(fromRow);
                 setHGrow(toRow);
-                segmentsPanel.getChildren().addAll(segTitle, fromRow, toRow);
+                setHGrow(slotRow);
+                setHGrow(windRow);
+                segmentsPanel.getChildren().addAll(segTitle, fromRow, toRow, slotRow, windRow);
             }
 
             if (num > 1) {
@@ -662,15 +937,21 @@ public class FlightPlanUI {
                     legs.remove(this);
                 });
                 panel.getChildren().addAll(title, depTitle, depRow, arrTitle, arrRow,
-                        fuelTitle, fuelRow, hasSegments, segmentsPanel, removeBtn);
+                        fuelTitle, fuelRow, segsTitle, segmentsPanel, removeBtn);
             } else {
                 panel.getChildren().addAll(title, depTitle, depRow, arrTitle, arrRow,
-                        fuelTitle, fuelRow, hasSegments, segmentsPanel);
+                        fuelTitle, fuelRow, segsTitle, segmentsPanel);
             }
         }
 
         private TextField field(final String prompt) {
             final TextField tf = new TextField();
+            tf.setPromptText(prompt);
+            return tf;
+        }
+
+        private TextField fieldWithDefault(final String prompt, final String defaultValue) {
+            final TextField tf = new TextField(defaultValue);
             tf.setPromptText(prompt);
             return tf;
         }

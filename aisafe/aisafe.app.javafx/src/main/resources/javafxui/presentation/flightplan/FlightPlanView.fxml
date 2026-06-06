@@ -7,8 +7,12 @@
     <HBox styleClass="sim-status-bar" alignment="CENTER_LEFT" spacing="16">
         <Label text="Flight Plans" styleClass="page-title" style="-fx-padding: 0;"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="+ New Flight Plan" styleClass="btn-primary" onAction="#onShowNewForm"/>
+        <Button fx:id="btnImportFile" text="Import DSL File" styleClass="btn-primary" onAction="#onImportFromFile"/>
+        <Button fx:id="btnNewFlightPlan" text="+ New Flight Plan" styleClass="btn-primary" onAction="#onShowNewForm"/>
     </HBox>
+    <Label fx:id="pilotWarning" text="" wrapText="true"
+           style="-fx-text-fill:#ef9a9a;-fx-background-color:#3b1c1c;-fx-padding:8 16 8 16;-fx-font-size:12px;"
+           managed="false" visible="false"/>
     <SplitPane VBox.vgrow="ALWAYS" dividerPositions="0.42" orientation="HORIZONTAL">
 
         <!-- Left: existing plans -->
@@ -64,21 +68,21 @@
                         </HBox>
                         <HBox spacing="12">
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Aircraft Registration"/>
-                                <TextField fx:id="fAircraft" promptText="e.g. CS-TUA"/>
+                                <Label text="Aircraft (fleet)"/>
+                                <ComboBox fx:id="fAircraft" maxWidth="Infinity" promptText="Select aircraft..."/>
                             </VBox>
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Route Reference"/>
-                                <TextField fx:id="fRouteRef" promptText="e.g. AA123"/>
+                                <Label text="Route"/>
+                                <ComboBox fx:id="fRouteRef" maxWidth="Infinity" promptText="Select a route..."/>
                             </VBox>
                         </HBox>
                         <HBox spacing="12">
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Origin Airport (IATA/ICAO)"/>
+                                <Label text="Origin Airport (auto-filled from route)"/>
                                 <TextField fx:id="fOrigin" promptText="e.g. OPO"/>
                             </VBox>
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                <Label text="Destination Airport (IATA/ICAO)"/>
+                                <Label text="Destination Airport (auto-filled from route)"/>
                                 <TextField fx:id="fDestination" promptText="e.g. MAD"/>
                             </VBox>
                         </HBox>

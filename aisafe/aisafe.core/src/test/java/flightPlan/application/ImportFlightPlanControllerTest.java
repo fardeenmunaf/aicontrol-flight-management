@@ -74,7 +74,7 @@ class ImportFlightPlanControllerTest {
 
     private LegImportRequest singleLeg() {
         return new LegImportRequest(1,
-                "2026-05-05", "08:00", "2026-05-05", "09:30",
+                "2027-05-05", "08:00", "2027-05-05", "09:30",
                 40200.0, "OPO", "MAD",
                 List.of(new SegmentImportRequest(41.26, -8.68, 40.49, -3.56)));
     }
@@ -113,7 +113,7 @@ class ImportFlightPlanControllerTest {
     @Test
     void ensureMultipleLegsAreImported() {
         final LegImportRequest leg2 = new LegImportRequest(2,
-                "2026-05-05", "11:00", "2026-05-05", "12:30",
+                "2027-05-05", "11:00", "2027-05-05", "12:30",
                 38000.0, "MAD", "BCN",
                 List.of(new SegmentImportRequest(40.49, -3.56, 41.29, 2.07)));
         final FlightPlan plan = controller().importFlightPlan("TP5678", "A380", PILOT_EMAIL, List.of(singleLeg(), leg2));

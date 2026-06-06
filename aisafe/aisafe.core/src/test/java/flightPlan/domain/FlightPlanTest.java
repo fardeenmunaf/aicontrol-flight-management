@@ -11,10 +11,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class FlightPlanTest {
 
     private static final FlightPlanId PLAN_ID = FlightPlanId.newId();
-    private static final Instant DEP_TIME = Instant.parse("2026-06-01T08:00:00Z");
-    private static final Instant LEG1_ARR = Instant.parse("2026-06-01T10:00:00Z");
+    private static final Instant DEP_TIME = Instant.parse("2027-06-01T08:00:00Z");
+    private static final Instant LEG1_ARR = Instant.parse("2027-06-01T10:00:00Z");
     private static final Instant LEG2_DEP = LEG1_ARR;
-    private static final Instant LEG2_ARR = Instant.parse("2026-06-01T12:00:00Z");
+    private static final Instant LEG2_ARR = Instant.parse("2027-06-01T12:00:00Z");
 
     private static final AirportId LIS = AirportId.valueOf("LIS");
     private static final AirportId MAD = AirportId.valueOf("MAD");
