@@ -144,12 +144,14 @@ double min_separation_m(const Position *a0, const Position *a1,
                         const Position *b0, const Position *b1);
 
 /**
- * @brief Projects a position one step forward along heading_deg (degrees) by dist_m.
+ * @brief Projects a position forward along heading_deg (degrees) by dist_m.
+ *
+ * Used by the reroute lookahead to extrapolate a flight's path. Altitude unchanged.
  *
  * @param p           Starting position.
  * @param heading_deg Bearing in degrees (0 = north, 90 = east).
  * @param dist_m      Distance to project in metres.
- * @return Projected position (altitude unchanged).
+ * @return Projected position.
  */
 Position advance_pos(Position p, double heading_deg, double dist_m);
 

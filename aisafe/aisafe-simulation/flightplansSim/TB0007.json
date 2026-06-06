@@ -2,36 +2,90 @@
   {
     "flightDesignator": "TB0007",
     "type": "regular",
-    "route": { "reference": "TB007", "origin": "AMS", "destination": "VIE" },
+    "route": {
+      "reference": "TB007",
+      "origin": "AMS",
+      "destination": "VIE"
+    },
     "aircraft": {
-      "emptyWeight": 41413, "wingArea": 125.08, "aspectRatio": 10.24,
-      "oswaldEfficiency": 0.85, "cd0": 0.0265, "numberOfEngines": 2
+      "emptyWeight": 41413,
+      "wingArea": 125.08,
+      "aspectRatio": 10.24,
+      "oswaldEfficiency": 0.85,
+      "cd0": 0.0265,
+      "numberOfEngines": 2
     },
     "engine": {
-      "thrustSeaLevelStopped": 121436, "thrustSeaLevelCruise": 85000,
-      "thrustLapseRate": 0.9, "thrustSpecificFuelConsumption": 0.000165
+      "thrustSeaLevelStopped": 121436,
+      "thrustSeaLevelCruise": 85000,
+      "thrustLapseRate": 0.9,
+      "thrustSpecificFuelConsumption": 0.000165
     },
     "legs": [
       {
-        "departure": { "airport": "AMS", "date": "2026-07-03", "time": "09:00" },
-        "arrival":   { "airport": "VIE", "date": "2026-07-03", "time": "11:00" },
-        "fuel":    { "quantity": 12000.0, "unit": "kg" },
-        "payload": { "quantity": 13000.0, "unit": "kg" },
+        "departure": {
+          "airport": "AMS",
+          "date": "2026-07-03",
+          "time": "09:00"
+        },
+        "arrival": {
+          "airport": "VIE",
+          "date": "2026-07-03",
+          "time": "11:00"
+        },
+        "fuel": {
+          "quantity": 12000.0,
+          "unit": "kg"
+        },
+        "payload": {
+          "quantity": 13000.0,
+          "unit": "kg"
+        },
         "segments": [
           {
             "mode": "climb",
-            "from": { "latitude": 52.3105, "longitude": 4.7683, "altitude": 5.0,    "altitudeUnit": "m" },
-            "to":   { "latitude": 51.5,    "longitude": 7.0,    "altitude": 8000.0, "altitudeUnit": "m" }
+            "from": {
+              "latitude": 52.3105,
+              "longitude": 4.7683,
+              "altitude": 5.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 51.5,
+              "longitude": 7.0,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            }
           },
           {
             "mode": "cruise",
-            "from": { "latitude": 51.5, "longitude":  7.0, "altitude": 8000.0, "altitudeUnit": "m" },
-            "to":   { "latitude": 49.5, "longitude": 13.0, "altitude": 8000.0, "altitudeUnit": "m" }
+            "from": {
+              "latitude": 51.5,
+              "longitude": 7.0,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 49.5,
+              "longitude": 13.0,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            }
           },
           {
             "mode": "descend",
-            "from": { "latitude": 49.5,    "longitude": 13.0,   "altitude": 8000.0, "altitudeUnit": "m" },
-            "to":   { "latitude": 48.1103, "longitude": 16.5697,"altitude": 183.0,  "altitudeUnit": "m" }
+            "from": {
+              "latitude": 49.5,
+              "longitude": 13.0,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 48.1103,
+              "longitude": 16.5697,
+              "altitude": 183.0,
+              "altitudeUnit": "m"
+            }
           }
         ]
       }

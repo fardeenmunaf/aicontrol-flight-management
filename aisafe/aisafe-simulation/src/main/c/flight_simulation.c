@@ -225,7 +225,13 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
     double fuel_burned = calculate_fuel_burn(total_thrust, f->properties.tsfc, dt);
     double horiz_dist  = calculate_step_distance(tas, climb_rate, dt);
 
-    double reroute_angle = bearing_rad(f->current_pos.latitude, f->current_pos.longitude, dest_lat, dest_lon) + shm->deviation_rad[idx];
+    // Intent: bearing straight to destination (before any reroute deviation).
+    // Stored so the conflict check can look ahead along the un-deviated path.
+    double intent_angle = bearing_rad(f->current_pos.latitude, f->current_pos.longitude, dest_lat, dest_lon);
+    f->intent_heading   = intent_angle * 180.0 / M_PI;
+
+    // Actual flown heading = intent plus the reroute deviation set by check_violations.
+    double heading_angle = intent_angle + shm->deviation_rad[idx];
 
     // Snap to destination to avoid oscillating past it every step.
     if (dist_to_dest <= horiz_dist) {
@@ -236,7 +242,7 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
         phase = PHASE_DESCEND;
         f->current_phase = phase;
     } else {
-        advance_position(&f->current_pos.latitude, &f->current_pos.longitude, horiz_dist, reroute_angle);
+        advance_position(&f->current_pos.latitude, &f->current_pos.longitude, horiz_dist, heading_angle);
     }
 
     f->current_pos.altitude += climb_rate * dt;
@@ -256,7 +262,7 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
 
     f->velocity.speed          = tas;
     f->velocity.vertical_speed = climb_rate;
-    f->velocity.heading        = reroute_angle * 180.0 / M_PI;
+    f->velocity.heading        = heading_angle * 180.0 / M_PI;
     f->current_phase           = phase;
 
     double new_dist = haversine_m(f->current_pos.latitude, f->current_pos.longitude,

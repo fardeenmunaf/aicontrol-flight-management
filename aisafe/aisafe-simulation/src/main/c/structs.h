@@ -102,6 +102,7 @@ typedef struct {
 
     Position current_pos;
     Velocity velocity;
+    double   intent_heading;   /* bearing to destination (deg), before any reroute deviation */
     AircraftProperties properties;
     FlightPlan flight_plan;
 
@@ -195,7 +196,7 @@ typedef struct {
     SimulationReport report;
 
     StepData last_step[MAX_FLIGHTS];
-    double   deviation_rad[MAX_FLIGHTS];
+    double   deviation_rad[MAX_FLIGHTS];   /* reroute turn applied per flight this step */
     Position prev_pos[MAX_FLIGHTS];
 } SimulationData;
 

@@ -293,3 +293,4 @@ Position advance_pos(Position p, double heading_deg, double dist_m) {
     p.longitude = lon2 * 180.0 / M_PI;
     return p;
 }
+

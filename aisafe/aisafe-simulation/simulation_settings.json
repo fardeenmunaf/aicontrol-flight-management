@@ -4,7 +4,7 @@
   "end_time": 2.0,
   "time_step": 15,
   "safety_distance_threshold": 2000.0,
-  "collision_distance_threshold": 100.0,
+  "collision_distance_threshold": 150.0,
   "max_violations_threshold": 100,
   "reroute": true
 }

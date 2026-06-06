@@ -2,36 +2,90 @@
   {
     "flightDesignator": "TB0010",
     "type": "regular",
-    "route": { "reference": "TB010", "origin": "DUB", "destination": "BCN" },
+    "route": {
+      "reference": "TB010",
+      "origin": "DUB",
+      "destination": "BCN"
+    },
     "aircraft": {
-      "emptyWeight": 41413, "wingArea": 125.08, "aspectRatio": 10.24,
-      "oswaldEfficiency": 0.85, "cd0": 0.0265, "numberOfEngines": 2
+      "emptyWeight": 41413,
+      "wingArea": 125.08,
+      "aspectRatio": 10.24,
+      "oswaldEfficiency": 0.85,
+      "cd0": 0.0265,
+      "numberOfEngines": 2
     },
     "engine": {
-      "thrustSeaLevelStopped": 121436, "thrustSeaLevelCruise": 85000,
-      "thrustLapseRate": 0.9, "thrustSpecificFuelConsumption": 0.000165
+      "thrustSeaLevelStopped": 121436,
+      "thrustSeaLevelCruise": 85000,
+      "thrustLapseRate": 0.9,
+      "thrustSpecificFuelConsumption": 0.000165
     },
     "legs": [
       {
-        "departure": { "airport": "DUB", "date": "2026-07-03", "time": "12:00" },
-        "arrival":   { "airport": "BCN", "date": "2026-07-03", "time": "14:30" },
-        "fuel":    { "quantity": 14500.0, "unit": "kg" },
-        "payload": { "quantity": 13000.0, "unit": "kg" },
+        "departure": {
+          "airport": "DUB",
+          "date": "2026-07-04",
+          "time": "12:00"
+        },
+        "arrival": {
+          "airport": "BCN",
+          "date": "2026-07-04",
+          "time": "14:30"
+        },
+        "fuel": {
+          "quantity": 14500.0,
+          "unit": "kg"
+        },
+        "payload": {
+          "quantity": 13000.0,
+          "unit": "kg"
+        },
         "segments": [
           {
             "mode": "climb",
-            "from": { "latitude": 53.4213, "longitude": -6.2701, "altitude": 74.0,   "altitudeUnit": "m" },
-            "to":   { "latitude": 50.5,    "longitude": -4.5,    "altitude": 8000.0, "altitudeUnit": "m" }
+            "from": {
+              "latitude": 53.4213,
+              "longitude": -6.2701,
+              "altitude": 74.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 50.5,
+              "longitude": -4.5,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            }
           },
           {
             "mode": "cruise",
-            "from": { "latitude": 50.5, "longitude": -4.5, "altitude": 8000.0, "altitudeUnit": "m" },
-            "to":   { "latitude": 44.5, "longitude": -0.5, "altitude": 8000.0, "altitudeUnit": "m" }
+            "from": {
+              "latitude": 50.5,
+              "longitude": -4.5,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 44.5,
+              "longitude": -0.5,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            }
           },
           {
             "mode": "descend",
-            "from": { "latitude": 44.5,    "longitude": -0.5,   "altitude": 8000.0, "altitudeUnit": "m" },
-            "to":   { "latitude": 41.2971, "longitude":  2.0785,"altitude": 4.0,    "altitudeUnit": "m" }
+            "from": {
+              "latitude": 44.5,
+              "longitude": -0.5,
+              "altitude": 8000.0,
+              "altitudeUnit": "m"
+            },
+            "to": {
+              "latitude": 41.2971,
+              "longitude": 2.0785,
+              "altitude": 4.0,
+              "altitudeUnit": "m"
+            }
           }
         ]
       }

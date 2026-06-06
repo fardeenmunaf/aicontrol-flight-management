@@ -32,7 +32,7 @@
  */
 static void check_violations(SimulationData *sim, bool *was_active,
                               pid_t *pids, int num_flights) {
-    /* Clear all deviations each step; re-set only for pairs still in proximity. */
+    /* Clear deviations each step; the lookahead below re-sets them for active conflicts. */
     for (int i = 0; i < num_flights; i++)
         sim->deviation_rad[i] = 0.0;
 
@@ -46,7 +46,7 @@ static void check_violations(SimulationData *sim, bool *was_active,
                                            &sim->prev_pos[j], &sim->flights[j].current_pos);
 
             if (dist < sim->config.collision_distance_threshold) {
-                /* Hard collision — kill both regardless of reroute setting. */
+                /* Hard collision — kill both. */
                 sim->total_violations_detected++;
                 sim->flights[i].violation_detected = true;
                 sim->flights[j].violation_detected = true;
@@ -78,16 +78,9 @@ static void check_violations(SimulationData *sim, bool *was_active,
                 }
 
             } else if (dist < sim->config.safety_distance_threshold) {
-                /* Proximity warning — reroute if enabled, warn regardless. */
-                printf("  *** WARNING: %s <-> %s  dist=%.0f m (threshold %.0f m)%s ***\n",
+                printf("  *** WARNING: %s <-> %s  dist=%.0f m (threshold %.0f m) ***\n",
                        sim->flights[i].callsign, sim->flights[j].callsign,
-                       dist, sim->config.safety_distance_threshold,
-                       sim->config.reroute ? " — rerouting" : "");
-
-                if (sim->config.reroute) {
-                    sim->deviation_rad[i] += M_PI / 12.0;
-                    sim->deviation_rad[j] -= M_PI / 12.0;
-                }
+                       dist, sim->config.safety_distance_threshold);
             }
         }
     }
@@ -109,32 +102,36 @@ static void check_violations(SimulationData *sim, bool *was_active,
         }
     }
 
-    /* Lookahead: project each active flight one step forward and check if any pair
-       would collide next step. Apply deviation now so next step's physics avoids it. */
+    /* Reroute lookahead: project each active pair 500 km along their intent heading
+       (bearing to destination, before deviation) and measure the closest they would
+       get. If that is under 2x the safety threshold, both aircraft turn right 15deg
+       (ICAO head-on rule) so they pass on opposite sides. Projecting along intent —
+       not the already-deviated heading — keeps the check honest: it always answers
+       "would they collide if we stopped deviating now?", so the turn isn't dropped
+       prematurely. Stateless: recomputed fresh every step. */
     if (sim->config.reroute) {
+        const double LOOKAHEAD_M = 500000.0;
+        const double reroute_threshold = 2.0 * sim->config.safety_distance_threshold;
         for (int i = 0; i < sim->num_flights; i++) {
             if (!was_active[i] || !sim->flights[i].is_active) continue;
 
-            double step_dist_i = sim->flights[i].velocity.speed * sim->config.time_step;
-            Position next_i = advance_pos(sim->flights[i].current_pos,
-                                          sim->flights[i].velocity.heading, step_dist_i);
+            Position future_i = advance_pos(sim->flights[i].current_pos,
+                                            sim->flights[i].intent_heading, LOOKAHEAD_M);
 
             for (int j = i + 1; j < sim->num_flights; j++) {
                 if (!was_active[j] || !sim->flights[j].is_active) continue;
-                if (sim->deviation_rad[i] != 0.0 || sim->deviation_rad[j] != 0.0) continue;
 
-                double step_dist_j = sim->flights[j].velocity.speed * sim->config.time_step;
-                Position next_j = advance_pos(sim->flights[j].current_pos,
-                                              sim->flights[j].velocity.heading, step_dist_j);
+                Position future_j = advance_pos(sim->flights[j].current_pos,
+                                                sim->flights[j].intent_heading, LOOKAHEAD_M);
 
-                double pred = min_separation_m(&sim->flights[i].current_pos, &next_i,
-                                               &sim->flights[j].current_pos, &next_j);
+                double pred = min_separation_m(&sim->flights[i].current_pos, &future_i,
+                                               &sim->flights[j].current_pos, &future_j);
 
-                if (pred < sim->config.safety_distance_threshold) {
-                    printf("  *** WARNING: %s <-> %s predicted proximity %.0f m — rerouting ***\n",
+                if (pred < reroute_threshold) {
+                    printf("  *** AVOIDANCE: %s <-> %s predicted %.0f m within 500 km — both turn right ***\n",
                            sim->flights[i].callsign, sim->flights[j].callsign, pred);
-                    sim->deviation_rad[i] += M_PI / 12.0;
-                    sim->deviation_rad[j] -= M_PI / 12.0;
+                    sim->deviation_rad[i] = M_PI / 12.0;
+                    sim->deviation_rad[j] = M_PI / 12.0;
                 }
             }
         }
@@ -209,11 +206,20 @@ static void print_step_table(SimulationData *sim,
     }
 
     int wall_s = (int)(sim->config.sim_start_seconds + sim_time);
+    struct tm wall_tm = {0};
+    wall_tm.tm_year = sim->config.sim_start_year - 1900;
+    wall_tm.tm_mon  = sim->config.sim_start_month - 1;
+    wall_tm.tm_mday = sim->config.sim_start_day + wall_s / 86400;
+    wall_tm.tm_hour = (wall_s % 86400) / 3600;
+    wall_tm.tm_min  = (wall_s % 3600) / 60;
+    mktime(&wall_tm);
     printf("\n╔══════════════════════════════════════════════════════════════════════"
            "════════════════════════════════════════════════════════════════════╗\n");
-    printf("║  t=%7.0f s  [%02d:%02d]  |  step %3d / %-3d  |  active=%2d  pending=%2d  |  violations=%3d"
-           "                                                    ║\n",
-           sim_time, wall_s / 3600, (wall_s % 3600) / 60,
+    printf("║  t=%7.0f s  [%02d/%02d/%04d %02d:%02d]  |  step %3d / %-3d  |  active=%2d  pending=%2d  |  violations=%3d"
+           "                              ║\n",
+           sim_time,
+           wall_tm.tm_mday, wall_tm.tm_mon + 1, wall_tm.tm_year + 1900,
+           wall_tm.tm_hour, wall_tm.tm_min,
            step_num, total_steps, active, pending, sim->total_violations_detected);
     printf("╚══════════════════════════════════════════════════════════════════════"
            "════════════════════════════════════════════════════════════════════╝\n");
@@ -780,11 +786,19 @@ int main(void) {
     printf("\n--- Simulation running ---\n");
     {
         int wall_s = (int)sim->config.sim_start_seconds;
+        struct tm wall_tm0 = {0};
+        wall_tm0.tm_year = sim->config.sim_start_year - 1900;
+        wall_tm0.tm_mon  = sim->config.sim_start_month - 1;
+        wall_tm0.tm_mday = sim->config.sim_start_day;
+        wall_tm0.tm_hour = wall_s / 3600;
+        wall_tm0.tm_min  = (wall_s % 3600) / 60;
+        mktime(&wall_tm0);
         printf("\n╔══════════════════════════════════════════════════════════════════════"
                "════════════════════════════════════════════════════════════════════╗\n");
-        printf("║  t=       0 s  [%02d:%02d]  |  step   0 / %-3d  |  active= 0  pending=%2d  |  violations=  0"
-               "                                                   ║\n",
-               wall_s / 3600, (wall_s % 3600) / 60,
+        printf("║  t=       0 s  [%02d/%02d/%04d %02d:%02d]  |  step   0 / %-3d  |  active= 0  pending=%2d  |  violations=  0"
+               "                              ║\n",
+               wall_tm0.tm_mday, wall_tm0.tm_mon + 1, wall_tm0.tm_year + 1900,
+               wall_tm0.tm_hour, wall_tm0.tm_min,
                (int)((sim->config.end_time - sim->config.start_time) / sim->config.time_step),
                num_forked);
         printf("╚══════════════════════════════════════════════════════════════════════"

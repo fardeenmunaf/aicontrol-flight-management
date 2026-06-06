@@ -7,6 +7,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import jpa.PersistenceSettings;
+import java.nio.file.Paths;
 
 public class AisafeApp extends Application {
 
@@ -27,6 +28,16 @@ public class AisafeApp extends Application {
         primaryStage.setTitle("AISafe");
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    @Override
+    public void stop() throws Exception {
+        new ProcessBuilder("make", "clean")
+                .directory(Paths.get("aisafe-simulation").toAbsolutePath().toFile())
+                .inheritIO()
+                .start()
+                .waitFor();
+        super.stop();
     }
 
     public static void main(final String[] args) {

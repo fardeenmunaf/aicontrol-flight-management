@@ -44,6 +44,7 @@ public class SimulationUI {
     @FXML private Label stepLabel;
     @FXML private Label activeLabel;
     @FXML private Label violationLabel;
+    @FXML private Label clockLabel;
     @FXML private Label violationText;
     @FXML private HBox  violationBanner;
     @FXML private Button runButton;
@@ -53,10 +54,14 @@ public class SimulationUI {
     private final SimulationStepParser    parser       = new SimulationStepParser();
     private final SimulationReportParser  reportParser = new SimulationReportParser();
 
-    // Each entry is one simulation timestep worth of flight positions.
-    private final Queue<List<SimStep>> stepBatches = new ConcurrentLinkedQueue<>();
+    // Bundles one full timestep's banner info + flight positions + violations together.
+    private record StepFrame(SimulationStepParser.StepBanner banner, List<SimStep> steps, List<String> violations) {}
+
+    private final Queue<StepFrame> stepFrames      = new ConcurrentLinkedQueue<>();
     // Accumulates rows for the current timestep on the reader thread.
-    private final List<SimStep> pendingBatch = new ArrayList<>();
+    private final List<SimStep>    pendingBatch     = new ArrayList<>();
+    private final List<String>     pendingViolations = new ArrayList<>();
+    private SimulationStepParser.StepBanner pendingBanner = null;
 
     private volatile boolean simProcessDone = false;
     private volatile int    simExitCode     = 0;
@@ -107,13 +112,16 @@ public class SimulationUI {
         if (selected == null || selected.isEmpty()) return;
 
         runButton.setDisable(true);
-        stepBatches.clear();
+        stepFrames.clear();
         pendingBatch.clear();
+        pendingViolations.clear();
+        pendingBanner = null;
         simProcessDone = false;
         simExitCode    = 0;
         lastStep       = 0;
         lastActive     = 0;
         lastViolations = 0;
+        clockLabel.setText("⏱ —:—");
         mapView.getEngine().executeScript("clearFlights()");
         violationBanner.setVisible(false);
         violationBanner.setManaged(false);
@@ -181,9 +189,24 @@ public class SimulationUI {
         });
         // Each tick: apply one full simulation timestep (all flights at once).
         scheduler.scheduleAtFixedRate(() -> {
-            final List<SimStep> batch = stepBatches.poll();
-            if (batch != null) {
-                Platform.runLater(() -> batch.forEach(this::applyStep));
+            final StepFrame frame = stepFrames.poll();
+            if (frame != null) {
+                Platform.runLater(() -> {
+                    if (frame.banner() != null) {
+                        lastStep       = frame.banner().step();
+                        lastActive     = frame.banner().active();
+                        lastViolations = frame.banner().violations();
+                        stepLabel.setText("Step: " + frame.banner().step());
+                        activeLabel.setText("Active: " + frame.banner().active());
+                        violationLabel.setText("Violations: " + frame.banner().violations());
+                        clockLabel.setText("⏱ " + frame.banner().simTime() + "h");
+                    }
+                    frame.steps().forEach(this::applyStep);
+                    frame.violations().forEach(callsign -> {
+                        final String safe = callsign.replace("\\", "\\\\").replace("'", "\\'");
+                        mapView.getEngine().executeScript("flagViolation('" + safe + "')");
+                    });
+                });
             } else if (simProcessDone) {
                 // Queue drained and process finished — wrap up.
                 scheduler.shutdown();
@@ -238,9 +261,10 @@ public class SimulationUI {
                 }
 
                 // Flush any remaining rows after the last banner.
-                if (!pendingBatch.isEmpty()) {
-                    stepBatches.add(new ArrayList<>(pendingBatch));
+                if (!pendingBatch.isEmpty() || !pendingViolations.isEmpty()) {
+                    stepFrames.add(new StepFrame(pendingBanner, new ArrayList<>(pendingBatch), new ArrayList<>(pendingViolations)));
                     pendingBatch.clear();
+                    pendingViolations.clear();
                 }
 
                 simExitCode    = process.waitFor();
@@ -262,26 +286,23 @@ public class SimulationUI {
     // Called only from the reader thread.
     private void processLine(final String line) {
         parser.parseStepBanner(line).ifPresent(banner -> {
-            // A new timestep starts — commit the previous batch.
-            if (!pendingBatch.isEmpty()) {
-                stepBatches.add(new ArrayList<>(pendingBatch));
+            // A new timestep starts — commit the previous batch as a queued frame.
+            if (pendingBanner != null || !pendingBatch.isEmpty()) {
+                stepFrames.add(new StepFrame(pendingBanner, new ArrayList<>(pendingBatch), new ArrayList<>(pendingViolations)));
                 pendingBatch.clear();
+                pendingViolations.clear();
             }
-            lastStep       = banner.step();
-            lastActive     = banner.active();
-            lastViolations = banner.violations();
-            Platform.runLater(() -> {
-                stepLabel.setText("Step: " + banner.step());
-                activeLabel.setText("Active: " + banner.active());
-                violationLabel.setText("Violations: " + banner.violations());
-            });
+            pendingBanner = banner;
         });
 
         parser.parsePhysicsRow(line).ifPresent(pendingBatch::add);
 
-        parser.parseViolation(line).ifPresent(callsign -> Platform.runLater(() -> {
+        // Batch violations with the current step so they fire when the step is displayed.
+        parser.parseViolation(line).ifPresent(pendingViolations::add);
+
+        parser.parseLanded(line).ifPresent(callsign -> Platform.runLater(() -> {
             final String safe = callsign.replace("\\", "\\\\").replace("'", "\\'");
-            mapView.getEngine().executeScript("flagViolation('" + safe + "')");
+            mapView.getEngine().executeScript("landFlight('" + safe + "')");
         }));
     }
 
@@ -292,6 +313,7 @@ public class SimulationUI {
             return;
         }
         stepLabel.setText("Step: complete");
+        clockLabel.setText("⏱ done");
         showReportDialog();
     }
 

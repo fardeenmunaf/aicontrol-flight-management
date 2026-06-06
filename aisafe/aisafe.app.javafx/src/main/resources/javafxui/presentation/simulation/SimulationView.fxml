@@ -11,6 +11,7 @@
         <Label fx:id="activeLabel"     styleClass="status-label" text="Active: —"/>
         <Label fx:id="violationLabel"  styleClass="status-label" text="Violations: —"/>
         <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="clockLabel" styleClass="status-label" text="⏱ —:—"/>
         <Button fx:id="runButton" text="Run Simulation" styleClass="btn-primary"
                 onAction="#onRunSimulation"/>
     </HBox>

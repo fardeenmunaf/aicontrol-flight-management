@@ -12,8 +12,14 @@ public class SimulationStepParser {
     private static final Pattern VIOLATION = Pattern.compile(
             "^\\[([A-Z0-9]+)\\]\\s+SIGUSR1:\\s+safety violation detected\\.");
 
+    private static final Pattern FUEL_EXHAUSTED = Pattern.compile(
+            "^\\s*\\*{3}\\s+VIOLATION:\\s+([A-Z0-9]+)\\s+fuel exhausted");
+
+    private static final Pattern LANDED = Pattern.compile(
+            "^\\[([A-Z0-9]+)\\]\\s+Landed\\.");
+
     private static final Pattern STEP_BANNER = Pattern.compile(
-            "t=\\s*[\\d.]+\\s+s.*step\\s+(?<step>\\d+)\\s*/\\s*\\d+.*active=\\s*(?<active>\\d+)\\s+pending=\\s*(?<pending>\\d+).*violations=\\s*(?<violations>\\d+)");
+            "t=\\s*[\\d.]+\\s+s\\s+\\[(?<time>\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2})\\].*step\\s+(?<step>\\d+)\\s*/\\s*\\d+.*active=\\s*(?<active>\\d+)\\s+pending=\\s*(?<pending>\\d+).*violations=\\s*(?<violations>\\d+)");
 
     public Optional<SimStep> parsePhysicsRow(final String line) {
         final Matcher m = PHYSICS_ROW.matcher(line.trim());
@@ -40,6 +46,14 @@ public class SimulationStepParser {
 
     public Optional<String> parseViolation(final String line) {
         final Matcher m = VIOLATION.matcher(line.trim());
+        if (m.matches()) return Optional.of(m.group(1));
+        final Matcher mf = FUEL_EXHAUSTED.matcher(line.trim());
+        if (mf.find()) return Optional.of(mf.group(1));
+        return Optional.empty();
+    }
+
+    public Optional<String> parseLanded(final String line) {
+        final Matcher m = LANDED.matcher(line.trim());
         if (!m.matches()) return Optional.empty();
         return Optional.of(m.group(1));
     }
@@ -51,8 +65,9 @@ public class SimulationStepParser {
                 Integer.parseInt(m.group("step")),
                 Integer.parseInt(m.group("active")),
                 Integer.parseInt(m.group("pending")),
-                Integer.parseInt(m.group("violations"))));
+                Integer.parseInt(m.group("violations")),
+                m.group("time")));
     }
 
-    public record StepBanner(int step, int active, int pending, int violations) {}
+    public record StepBanner(int step, int active, int pending, int violations, String simTime) {}
 }

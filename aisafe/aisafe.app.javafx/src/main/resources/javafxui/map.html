@@ -191,6 +191,18 @@ function flagViolation(callsign) {
   }
 }
 
+function landFlight(callsign) {
+  if (!flightMarkers[callsign]) return;
+  var violated = !!violatedFlights[callsign];
+  var color = violated ? '#e94560' : '#b0bec5';
+  var shadow = violated ? 'filter:drop-shadow(0 0 6px #e94560);' : '';
+  var icon = L.divIcon({
+    html: '<div style="opacity:0.55;' + shadow + '">' + planeSvg(color, 0) + '</div>',
+    className: '', iconAnchor: [11, 11]
+  });
+  flightMarkers[callsign].dot.setIcon(icon);
+}
+
 function clearFlights() {
   Object.keys(flightMarkers).forEach(function(cs) {
     map.removeLayer(flightMarkers[cs].dot);
