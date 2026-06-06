@@ -13,15 +13,22 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.util.Callback;
 import javafx.util.StringConverter;
 import shared.domain.AirTransportCompanyId;
 import shared.domain.UserId;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 public class FlightRoutesUI {
 
@@ -229,36 +236,83 @@ public class FlightRoutesUI {
     }
 
     private void onDeactivate(final FlightRoute route) {
-        final TextInputDialog dialog = new TextInputDialog(LocalDate.now().toString());
-        dialog.setTitle("Deactivate Flight Route");
-        dialog.setHeaderText("Deactivate route " + route.designation().value()
-                + "  [" + route.originAirport().iataCode()
-                + " → " + route.destinationAirport().iataCode() + "]");
-        dialog.setContentText("Last active date (YYYY-MM-DD):");
+        // Find the latest future flight departure for this route
+        final Instant nowInstant = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant();
+        final Optional<Instant> latestDeparture = StreamSupport.stream(
+                PersistenceContext.repositories().flightPlans()
+                        .findByRouteIdAndDepartureAfter(route.identity().toString(), nowInstant)
+                        .spliterator(), false)
+                .map(fp -> fp.departureDateTime())
+                .max(Comparator.naturalOrder());
 
-        final Optional<String> result = dialog.showAndWait();
-        result.ifPresent(dateStr -> {
-            try {
-                final LocalDate deactivationDate = LocalDate.parse(dateStr.trim());
-                final Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                        "Deactivate route " + route.designation().value()
-                                + " from " + deactivationDate + "?\n"
-                                + "No new flights can be created after this date.",
-                        ButtonType.YES, ButtonType.NO);
-                confirm.setTitle("Confirm Deactivation");
-                confirm.showAndWait().filter(b -> b == ButtonType.YES).ifPresent(b -> {
-                    try {
-                        deleteCtrl.deleteFlightRoute(route.identity().toString(), deactivationDate);
-                        refreshTable();
-                        messageLabel.setText("Route " + route.designation().value()
-                                + " deactivated. Last active day: " + deactivationDate);
-                    } catch (final Exception e) {
-                        messageLabel.setText("Error: " + e.getMessage());
-                    }
-                });
-            } catch (final Exception e) {
-                messageLabel.setText("Error: " + e.getMessage());
+        // Minimum valid deactivation date = day after the latest flight (so no future flights remain after cutoff)
+        final LocalDate minFromFlights = latestDeparture
+                .map(d -> d.atZone(ZoneOffset.UTC).toLocalDate().plusDays(1))
+                .orElse(LocalDate.now());
+
+        final LocalDate minDate = List.of(LocalDate.now(), route.activeFrom(), minFromFlights)
+                .stream().max(Comparator.naturalOrder()).orElse(LocalDate.now());
+
+        final DatePicker datePicker = new DatePicker(minDate);
+        datePicker.setShowWeekNumbers(false);
+        datePicker.setMaxWidth(Double.MAX_VALUE);
+
+        final Callback<DatePicker, DateCell> dayCellFactory = dp -> new DateCell() {
+            @Override
+            public void updateItem(final LocalDate item, final boolean empty) {
+                super.updateItem(item, empty);
+                if (item.isBefore(minDate)) {
+                    setDisable(true);
+                    setStyle("-fx-background-color:#3b1c1c;-fx-text-fill:#888;");
+                }
             }
+        };
+        datePicker.setDayCellFactory(dayCellFactory);
+
+        final String hintText = latestDeparture.isPresent()
+                ? "Earliest selectable date: " + minDate + " (route has flights until "
+                        + latestDeparture.get().atZone(ZoneOffset.UTC).toLocalDate() + ")"
+                : "Earliest selectable date: " + minDate;
+        final Label hint = new Label(hintText);
+        hint.setWrapText(true);
+        hint.setStyle("-fx-text-fill:#90caf9;-fx-font-size:11px;");
+
+        final VBox content = new VBox(8, datePicker, hint);
+        content.setPrefWidth(280);
+
+        final Dialog<LocalDate> dialog = new Dialog<>();
+        dialog.setTitle("Deactivate Flight Route");
+        dialog.setHeaderText("Route: " + route.designation().value()
+                + "  [" + route.originAirport().iataCode()
+                + " → " + route.destinationAirport().iataCode() + "]\n"
+                + "Select the last active date:");
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        final Button okBtn = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
+        okBtn.setDisable(datePicker.getValue() == null);
+        datePicker.valueProperty().addListener((obs, o, n) ->
+                okBtn.setDisable(n == null || n.isBefore(minDate)));
+
+        dialog.setResultConverter(btn -> btn == ButtonType.OK ? datePicker.getValue() : null);
+
+        dialog.showAndWait().ifPresent(deactivationDate -> {
+            final Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
+                    "Deactivate route " + route.designation().value()
+                            + " from " + deactivationDate + "?\n"
+                            + "No new flights can be created after this date.",
+                    ButtonType.YES, ButtonType.NO);
+            confirm.setTitle("Confirm Deactivation");
+            confirm.showAndWait().filter(b -> b == ButtonType.YES).ifPresent(b -> {
+                try {
+                    deleteCtrl.deleteFlightRoute(route.identity().toString(), deactivationDate);
+                    refreshTable();
+                    messageLabel.setText("Route " + route.designation().value()
+                            + " deactivated. Last active day: " + deactivationDate);
+                } catch (final Exception e) {
+                    messageLabel.setText("Error: " + e.getMessage());
+                }
+            });
         });
     }
 }
