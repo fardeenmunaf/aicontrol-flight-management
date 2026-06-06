@@ -16,6 +16,8 @@
 #include "position_tracker.h"
 #include "physics.h"
 
+static const double LOOKAHEAD_M = 500000.0;
+
 // ── Violation detection ────────────────────────────────────────────────────────
 
 /**
@@ -110,7 +112,6 @@ static void check_violations(SimulationData *sim, bool *was_active,
        "would they collide if we stopped deviating now?", so the turn isn't dropped
        prematurely. Stateless: recomputed fresh every step. */
     if (sim->config.reroute) {
-        const double LOOKAHEAD_M = 500000.0;
         const double reroute_threshold = 2.0 * sim->config.safety_distance_threshold;
         for (int i = 0; i < sim->num_flights; i++) {
             if (!was_active[i] || !sim->flights[i].is_active) continue;
