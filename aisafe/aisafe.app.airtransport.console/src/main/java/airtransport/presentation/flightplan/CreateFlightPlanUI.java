@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,12 +49,12 @@ public class CreateFlightPlanUI extends AbstractUI {
     // Validation patterns (mirror the grammar token rules)
     // -------------------------------------------------------------------------
 
-    private static final Pattern DESIGNATOR  = Pattern.compile("[A-Z]{2}[0-9]{1,4}[A-Z]?");
+    private static final Pattern DESIGNATOR = Pattern.compile("[A-Z]{2}[0-9]{1,4}[A-Z]?");
     private static final Pattern AIRCRAFT_ID = Pattern.compile("[A-Za-z][A-Za-z0-9]*");
-    private static final Pattern ROUTE_REF   = Pattern.compile("[A-Za-z][A-Za-z0-9]*");
-    private static final Pattern AIRPORT     = Pattern.compile("[A-Z]{3,4}");
-    private static final Pattern DATE_FMT    = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
-    private static final Pattern TIME_FMT    = Pattern.compile("([01]\\d|2[0-3]):[0-5]\\d");
+    private static final Pattern ROUTE_REF = Pattern.compile("[A-Za-z][A-Za-z0-9]*");
+    private static final Pattern AIRPORT = Pattern.compile("[A-Z]{3,4}");
+    private static final Pattern DATE_FMT = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
+    private static final Pattern TIME_FMT = Pattern.compile("([01]\\d|2[0-3]):[0-5]\\d");
 
     // -------------------------------------------------------------------------
 
@@ -142,7 +141,7 @@ public class CreateFlightPlanUI extends AbstractUI {
                 v -> DESIGNATOR.matcher(v).matches(),
                 "Must be exactly 2 uppercase letters followed by 1-4 digits and an optional uppercase letter.");
 
-        final String type = promptChoice("Flight type", new String[]{"regular", "charter"}, "regular");
+        final String type = promptChoice("Flight type", new String[] { "regular", "charter" }, "regular");
 
         final String aircraftId = promptValidated(
                 "Aircraft registration", "A380",
@@ -194,7 +193,10 @@ public class CreateFlightPlanUI extends AbstractUI {
         return sb.toString();
     }
 
-    /** leg: departure arrival fuel profile? climbSegment cruiseSegment descendSegment */
+    /**
+     * leg: departure arrival fuel profile? climbSegment cruiseSegment
+     * descendSegment
+     */
     private void buildLeg(final StringBuilder sb) {
         // Compute defaults at call time so they are always in the future
         final LocalDateTime defaultDep = LocalDateTime.now().plusHours(1).withSecond(0).withNano(0);
@@ -236,9 +238,13 @@ public class CreateFlightPlanUI extends AbstractUI {
                 "    Date", defaultDate,
                 "YYYY-MM-DD — must be today (" + LocalDate.now() + ") or a future date",
                 v -> {
-                    if (!DATE_FMT.matcher(v).matches()) return false;
-                    try { return !LocalDate.parse(v).isBefore(LocalDate.now()); }
-                    catch (DateTimeParseException e) { return false; }
+                    if (!DATE_FMT.matcher(v).matches())
+                        return false;
+                    try {
+                        return !LocalDate.parse(v).isBefore(LocalDate.now());
+                    } catch (DateTimeParseException e) {
+                        return false;
+                    }
                 },
                 "Must be a valid date (YYYY-MM-DD) that is today or in the future.");
 
@@ -272,9 +278,13 @@ public class CreateFlightPlanUI extends AbstractUI {
                 "    Date", defaultDate,
                 "YYYY-MM-DD — must be today (" + LocalDate.now() + ") or a future date",
                 v -> {
-                    if (!DATE_FMT.matcher(v).matches()) return false;
-                    try { return !LocalDate.parse(v).isBefore(LocalDate.now()); }
-                    catch (DateTimeParseException e) { return false; }
+                    if (!DATE_FMT.matcher(v).matches())
+                        return false;
+                    try {
+                        return !LocalDate.parse(v).isBefore(LocalDate.now());
+                    } catch (DateTimeParseException e) {
+                        return false;
+                    }
                 },
                 "Must be a valid date (YYYY-MM-DD) that is today or in the future.");
 
@@ -298,9 +308,15 @@ public class CreateFlightPlanUI extends AbstractUI {
         final String qty = promptValidated(
                 "    Quantity", "40200",
                 "Positive number > 0 (e.g. 40200 or 18500.5)",
-                v -> { try { return Double.parseDouble(v) > 0; } catch (NumberFormatException e) { return false; } },
+                v -> {
+                    try {
+                        return Double.parseDouble(v) > 0;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                },
                 "Must be a positive number greater than 0.");
-        final String unit = promptChoice("    Unit", new String[]{"kg", "l"}, "kg");
+        final String unit = promptChoice("    Unit", new String[] { "kg", "l" }, "kg");
         sb.append("        fuel {\n")
                 .append("            quantity: ").append(qty).append(" ").append(unit).append(";\n")
                 .append("        }\n");
@@ -308,29 +324,42 @@ public class CreateFlightPlanUI extends AbstractUI {
 
     /**
      * profile: PROFILE LBRACE profileEntry+ RBRACE
-     * climbEntry:   CLIMB   [ altitude: num unit, speed: num unit ];
-     * descendEntry: DESCEND [ altitude: num unit, speed: num unit, rate: signedNumber ];
+     * climbEntry: CLIMB [ altitude: num unit, speed: num unit ];
+     * descendEntry: DESCEND [ altitude: num unit, speed: num unit, rate:
+     * signedNumber ];
      */
     private void buildProfile(final StringBuilder sb) {
         System.out.println();
         System.out.println("  Flight Profile:");
         sb.append("        profile {\n");
         do {
-            final String kind = promptChoice("    Entry type", new String[]{"climb", "descend"}, "climb");
+            final String kind = promptChoice("    Entry type", new String[] { "climb", "descend" }, "climb");
 
             final String alt = promptValidated(
                     "      Altitude value", "1000",
                     "Non-negative number (>= 0), e.g. 1000",
-                    v -> { try { return Double.parseDouble(v) >= 0; } catch (NumberFormatException e) { return false; } },
+                    v -> {
+                        try {
+                            return Double.parseDouble(v) >= 0;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    },
                     "Must be a non-negative number (>= 0).");
-            final String altUnit = promptChoice("      Altitude unit", new String[]{"m", "ft"}, "m");
+            final String altUnit = promptChoice("      Altitude unit", new String[] { "m", "ft" }, "m");
 
             final String spd = promptValidated(
                     "      Speed value", "210",
                     "Positive number > 0 (e.g. 210)",
-                    v -> { try { return Double.parseDouble(v) > 0; } catch (NumberFormatException e) { return false; } },
+                    v -> {
+                        try {
+                            return Double.parseDouble(v) > 0;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    },
                     "Must be a positive number greater than 0.");
-            final String spdUnit = promptChoice("      Speed unit", new String[]{"kts", "m/s"}, "kts");
+            final String spdUnit = promptChoice("      Speed unit", new String[] { "kts", "m/s" }, "kts");
 
             if ("climb".equals(kind)) {
                 sb.append("            climb   [ altitude: ").append(alt).append(" ").append(altUnit)
@@ -339,7 +368,13 @@ public class CreateFlightPlanUI extends AbstractUI {
                 final String rate = promptValidated(
                         "      Rate of descent", "-10",
                         "Negative number < 0 (e.g. -10 or -7.5)",
-                        v -> { try { return Double.parseDouble(v) < 0; } catch (NumberFormatException e) { return false; } },
+                        v -> {
+                            try {
+                                return Double.parseDouble(v) < 0;
+                            } catch (NumberFormatException e) {
+                                return false;
+                            }
+                        },
                         "Must be a negative number (< 0).");
                 sb.append("            descend [ altitude: ").append(alt).append(" ").append(altUnit)
                         .append(", speed: ").append(spd).append(" ").append(spdUnit)
@@ -360,9 +395,9 @@ public class CreateFlightPlanUI extends AbstractUI {
         final String fromLat, fromLon, fromAlt, fromAltUnit;
 
         if (prefilledFrom != null) {
-            fromLat     = prefilledFrom[0];
-            fromLon     = prefilledFrom[1];
-            fromAlt     = prefilledFrom[2];
+            fromLat = prefilledFrom[0];
+            fromLon = prefilledFrom[1];
+            fromAlt = prefilledFrom[2];
             fromAltUnit = prefilledFrom[3];
             System.out.printf("    From coordinate (auto-filled): lat=%-12s lon=%-12s alt=%s %s%n",
                     fromLat, fromLon, fromAlt, fromAltUnit);
@@ -370,20 +405,37 @@ public class CreateFlightPlanUI extends AbstractUI {
             System.out.println("    From coordinate:");
             fromLat = promptValidated("      Latitude", "41.262891",
                     "Decimal degrees, -90 to 90 (e.g. 41.262891)",
-                    v -> { try { double d = Double.parseDouble(v); return d >= -90 && d <= 90; }
-                           catch (NumberFormatException e) { return false; } },
+                    v -> {
+                        try {
+                            double d = Double.parseDouble(v);
+                            return d >= -90 && d <= 90;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    },
                     "Must be a decimal number between -90 and 90.");
             fromLon = promptValidated("      Longitude", "-8.68522",
                     "Decimal degrees, -180 to 180 (e.g. -8.68522)",
-                    v -> { try { double d = Double.parseDouble(v); return d >= -180 && d <= 180; }
-                           catch (NumberFormatException e) { return false; } },
+                    v -> {
+                        try {
+                            double d = Double.parseDouble(v);
+                            return d >= -180 && d <= 180;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    },
                     "Must be a decimal number between -180 and 180.");
             fromAlt = promptValidated("      Altitude value", "100",
                     "Non-negative number >= 0 (e.g. 100)",
-                    v -> { try { return Double.parseDouble(v) >= 0; }
-                           catch (NumberFormatException e) { return false; } },
+                    v -> {
+                        try {
+                            return Double.parseDouble(v) >= 0;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    },
                     "Must be a non-negative number (>= 0).");
-            fromAltUnit = promptChoice("      Altitude unit", new String[]{"m", "ft"}, "m");
+            fromAltUnit = promptChoice("      Altitude unit", new String[] { "m", "ft" }, "m");
         }
 
         final double fromAltNum = parseDouble(fromAlt);
@@ -397,8 +449,8 @@ public class CreateFlightPlanUI extends AbstractUI {
         } else if ("cruise".equals(mode)) {
             defaultToLat = "40.8";
             defaultToLon = "-5.0";
-            defaultToAlt = fromAlt;          // same altitude — level cruise
-        } else {                              // descend
+            defaultToAlt = fromAlt; // same altitude — level cruise
+        } else { // descend
             defaultToLat = "40.4895";
             defaultToLon = "-3.5643";
             defaultToAlt = "100";
@@ -416,28 +468,45 @@ public class CreateFlightPlanUI extends AbstractUI {
         System.out.println("    To coordinate (must differ from From):");
         final String toLat = promptValidated("      Latitude", defaultToLat,
                 "Decimal degrees, -90 to 90",
-                v -> { try { double d = Double.parseDouble(v); return d >= -90 && d <= 90; }
-                       catch (NumberFormatException e) { return false; } },
+                v -> {
+                    try {
+                        double d = Double.parseDouble(v);
+                        return d >= -90 && d <= 90;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                },
                 "Must be a decimal number between -90 and 90.");
         final String toLon = promptValidated("      Longitude", defaultToLon,
                 "Decimal degrees, -180 to 180",
-                v -> { try { double d = Double.parseDouble(v); return d >= -180 && d <= 180; }
-                       catch (NumberFormatException e) { return false; } },
+                v -> {
+                    try {
+                        double d = Double.parseDouble(v);
+                        return d >= -180 && d <= 180;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                },
                 "Must be a decimal number between -180 and 180.");
         final String toAlt = promptValidated("      Altitude value", defaultToAlt, altHint,
                 v -> {
                     try {
                         final double val = Double.parseDouble(v);
-                        if (val < 0) return false;
-                        if ("climb".equals(mode)   && val <= fromAltNum) return false;
-                        if ("descend".equals(mode) && val >= fromAltNum) return false;
+                        if (val < 0)
+                            return false;
+                        if ("climb".equals(mode) && val <= fromAltNum)
+                            return false;
+                        if ("descend".equals(mode) && val >= fromAltNum)
+                            return false;
                         return true;
-                    } catch (NumberFormatException e) { return false; }
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
                 },
-                "climb".equals(mode)   ? "Must be a number > " + fromAlt + " (climb ascends)."
-              : "descend".equals(mode) ? "Must be a number < " + fromAlt + " (descend loses altitude)."
-              : "Must be a non-negative number (>= 0).");
-        final String toAltUnit = promptChoice("      Altitude unit", new String[]{"m", "ft"}, fromAltUnit);
+                "climb".equals(mode) ? "Must be a number > " + fromAlt + " (climb ascends)."
+                        : "descend".equals(mode) ? "Must be a number < " + fromAlt + " (descend loses altitude)."
+                                : "Must be a non-negative number (>= 0).");
+        final String toAltUnit = promptChoice("      Altitude unit", new String[] { "m", "ft" }, fromAltUnit);
 
         sb.append("        segment {\n")
                 .append("            from: (").append(fromLat).append(", ").append(fromLon)
@@ -451,23 +520,38 @@ public class CreateFlightPlanUI extends AbstractUI {
             System.out.println("    Altitude slot " + slotNum + ":");
             final String minAlt = promptValidated("      Min altitude", "0",
                     "Non-negative number >= 0 (e.g. 0)",
-                    v -> { try { return Double.parseDouble(v) >= 0; }
-                           catch (NumberFormatException e) { return false; } },
+                    v -> {
+                        try {
+                            return Double.parseDouble(v) >= 0;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    },
                     "Must be a non-negative number (>= 0).");
-            final String minUnit = promptChoice("      Min unit", new String[]{"m", "ft"}, "m");
+            final String minUnit = promptChoice("      Min unit", new String[] { "m", "ft" }, "m");
             final double minAltNum = parseDouble(minAlt);
             final String maxAlt = promptValidated("      Max altitude", "9249",
                     "Must be greater than min (" + minAlt + ")",
-                    v -> { try { return Double.parseDouble(v) > minAltNum; }
-                           catch (NumberFormatException e) { return false; } },
+                    v -> {
+                        try {
+                            return Double.parseDouble(v) > minAltNum;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    },
                     "Must be greater than the min altitude (" + minAlt + ").");
-            final String maxUnit = promptChoice("      Max unit", new String[]{"m", "ft"}, "m");
+            final String maxUnit = promptChoice("      Max unit", new String[] { "m", "ft" }, "m");
             final String width = promptValidated("      Width", "50",
                     "Positive number > 0 — corridor width (e.g. 50)",
-                    v -> { try { return Double.parseDouble(v) > 0; }
-                           catch (NumberFormatException e) { return false; } },
+                    v -> {
+                        try {
+                            return Double.parseDouble(v) > 0;
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    },
                     "Must be a positive number greater than 0.");
-            final String widthUnit = promptChoice("      Width unit", new String[]{"m", "ft"}, "m");
+            final String widthUnit = promptChoice("      Width unit", new String[] { "m", "ft" }, "m");
             sb.append("            altslot [ min: ").append(minAlt).append(" ").append(minUnit)
                     .append(", max: ").append(maxAlt).append(" ").append(maxUnit)
                     .append(", width: ").append(width).append(" ").append(widthUnit).append(" ];\n");
@@ -477,13 +561,25 @@ public class CreateFlightPlanUI extends AbstractUI {
         System.out.println("    Wind:");
         final String windDir = promptValidated("      Direction (degrees)", "270",
                 "0-359 — angle relative to North (e.g. 270 = West, 90 = East)",
-                v -> { try { double d = Double.parseDouble(v); return d >= 0 && d < 360; }
-                       catch (NumberFormatException e) { return false; } },
+                v -> {
+                    try {
+                        double d = Double.parseDouble(v);
+                        return d >= 0 && d < 360;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                },
                 "Must be a number between 0 and 359.");
         final String windSpd = promptValidated("      Speed (m/s)", "15",
                 "Positive number, 0 < speed <= 25 m/s (operational limit)",
-                v -> { try { double d = Double.parseDouble(v); return d > 0 && d <= 25; }
-                       catch (NumberFormatException e) { return false; } },
+                v -> {
+                    try {
+                        double d = Double.parseDouble(v);
+                        return d > 0 && d <= 25;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                },
                 "Must be > 0 and <= 25 m/s.");
 
         sb.append("            wind { direction: ").append(windDir)
@@ -491,7 +587,7 @@ public class CreateFlightPlanUI extends AbstractUI {
         sb.append("            mode: ").append(mode).append(";\n");
         sb.append("        }\n");
 
-        return new String[]{toLat, toLon, toAlt, toAltUnit};
+        return new String[] { toLat, toLon, toAlt, toAltUnit };
     }
 
     // -------------------------------------------------------------------------
@@ -689,7 +785,7 @@ public class CreateFlightPlanUI extends AbstractUI {
      * Pressing ENTER with no input uses {@code example} (which must be valid).
      */
     private String promptValidated(final String label, final String example, final String hint,
-                                    final Predicate<String> isValid, final String errorMsg) {
+            final Predicate<String> isValid, final String errorMsg) {
         while (true) {
             System.out.println("  Hint: " + hint);
             final String raw = Console.readLine("  " + label + " [" + example + "]");
@@ -727,8 +823,11 @@ public class CreateFlightPlanUI extends AbstractUI {
     }
 
     private double parseDouble(final String s) {
-        try { return Double.parseDouble(s); }
-        catch (NumberFormatException e) { return 0; }
+        try {
+            return Double.parseDouble(s);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     @Override

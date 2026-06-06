@@ -1,9 +1,6 @@
 package customercollaborator.application;
 
-import aircontrolarea.domain.AirControlArea;
-import aircontrolarea.repositories.AirControlAreaRepository;
 import airtransportcompany.domain.AirTransportCompany;
-import airtransportcompany.repositories.AirTransportCompanyRepository;
 import auth.domain.AISafeRoles;
 import auth.infrastructure.AISafePasswordPolicy;
 import customercollaborator.domain.CustomerCollaborator;
@@ -34,8 +31,7 @@ class UpdateCustomerCollaboratorControllerTest {
     private static final String PILOT_EMAIL = "upd.pilot@test.com";
     private static final String PASSWORD = "Password123";
 
-    private static final AirTransportCompany TEST_COMPANY =
-            new AirTransportCompany("Update Airlines", "UA", "UAL");
+    private static final AirTransportCompany TEST_COMPANY = new AirTransportCompany("Update Airlines", "UA", "UAL");
 
     private final StubUserRepository userRepo = new StubUserRepository();
     private final StubCollaboratorRepository collabRepo = new StubCollaboratorRepository();
@@ -44,7 +40,8 @@ class UpdateCustomerCollaboratorControllerTest {
     static void setupAuth() {
         try {
             AuthzRegistry.configure(new InMemoryUserRepository(), new AISafePasswordPolicy(), new PlainTextEncoder());
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
         safeRegister(OPERATOR_EMAIL, PASSWORD, AISafeRoles.BACKOFFICE_OPERATOR);
         safeRegister(PILOT_EMAIL, PASSWORD, AISafeRoles.PILOT);
     }
@@ -119,8 +116,8 @@ class UpdateCustomerCollaboratorControllerTest {
 
     @Test
     void ensureNonExistentCollaboratorIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().updateCollaboratorContactInfo("nonexistent@test.com", "new@test.com", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> controller().updateCollaboratorContactInfo("nonexistent@test.com", "new@test.com", null));
     }
 
     // --- Error: collaborator is disabled ---
@@ -133,8 +130,8 @@ class UpdateCustomerCollaboratorControllerTest {
         collab.disable();
         collabRepo.save(collab);
 
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().updateCollaboratorContactInfo(email, "new@test.com", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> controller().updateCollaboratorContactInfo(email, "new@test.com", null));
     }
 
     // --- Error: user not found (collaborator exists but user not in userRepo) ---
@@ -146,8 +143,8 @@ class UpdateCustomerCollaboratorControllerTest {
         createCollaborator(email);
         // Do NOT create user in userRepo
 
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().updateCollaboratorContactInfo(email, "new@test.com", null));
+        assertThrows(IllegalArgumentException.class,
+                () -> controller().updateCollaboratorContactInfo(email, "new@test.com", null));
     }
 
     // --- Success: update both email and phone ---
@@ -173,26 +170,31 @@ class UpdateCustomerCollaboratorControllerTest {
         createCollaborator(email);
 
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(RuntimeException.class, () ->
-                controller().updateCollaboratorContactInfo(email, "new@test.com", null));
+        assertThrows(RuntimeException.class,
+                () -> controller().updateCollaboratorContactInfo(email, "new@test.com", null));
     }
 
     // --- Helpers ---
 
     private static void safeRegister(final String email, final String password,
-                                     final eapli.framework.infrastructure.authz.domain.model.Role role) {
+            final eapli.framework.infrastructure.authz.domain.model.Role role) {
         try {
             AuthzRegistry.userService().registerNewUser(email, password, "Test", "User", email, Set.of(role));
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
     }
 
     static class StubUserRepository
             extends InMemoryDomainRepository<User, UserId>
             implements UserRepository {
 
-        void clear() { data().clear(); }
+        void clear() {
+            data().clear();
+        }
 
-        void add(final User user) { save(user); }
+        void add(final User user) {
+            save(user);
+        }
 
         @Override
         public Optional<User> findByEmail(final String email) {
@@ -209,7 +211,9 @@ class UpdateCustomerCollaboratorControllerTest {
             extends InMemoryDomainRepository<CustomerCollaborator, CustomerCollaboratorId>
             implements CustomerCollaboratorRepository {
 
-        void clear() { data().clear(); }
+        void clear() {
+            data().clear();
+        }
 
         @Override
         public Optional<CustomerCollaborator> findByUserId(final UserId id) {

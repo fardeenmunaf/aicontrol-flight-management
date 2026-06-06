@@ -7,9 +7,7 @@ import eapli.framework.infrastructure.authz.domain.model.PlainTextEncoder;
 import eapli.framework.infrastructure.authz.repositories.impl.inmemory.InMemoryUserRepository;
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
 import enginemodel.domain.EngineModel;
-import enginemodel.domain.EngineModelMaker;
 import enginemodel.domain.EngineType;
-import enginemodel.domain.FuelProperties;
 import enginemodel.domain.FuelType;
 import enginemodel.repositories.EngineModelRepository;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,7 +37,8 @@ class RegisterEngineModelControllerTest {
                     new InMemoryUserRepository(),
                     new AISafePasswordPolicy(),
                     new PlainTextEncoder());
-        } catch (final Exception ignored) {}
+        } catch (final Exception ignored) {
+        }
         safeRegister(OPERATOR_EMAIL, PASSWORD, AISafeRoles.BACKOFFICE_OPERATOR);
         safeRegister(PILOT_EMAIL, PASSWORD, AISafeRoles.PILOT);
     }
@@ -73,68 +72,60 @@ class RegisterEngineModelControllerTest {
         controller().registerEngineModel(
                 "DUP-ENGINE", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
                 "CFM", "USA", FuelType.JET_A, 0.8, 43.2);
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().registerEngineModel(
-                        "DUP-ENGINE", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
-                        "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> controller().registerEngineModel(
+                "DUP-ENGINE", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
+                "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
     }
 
     // --- Invalid arguments ---
 
     @Test
     void ensureNullNameIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().registerEngineModel(
-                        null, EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
-                        "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> controller().registerEngineModel(
+                null, EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
+                "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
     }
 
     @Test
     void ensureNullTypeIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().registerEngineModel(
-                        "CFM56", null, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
-                        "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> controller().registerEngineModel(
+                "CFM56", null, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
+                "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
     }
 
     @Test
     void ensureZeroPowerIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().registerEngineModel(
-                        "CFM56", EngineType.TURBOFAN, 0.0, 0.35, 130000.0, 90000.0, 0.06,
-                        "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> controller().registerEngineModel(
+                "CFM56", EngineType.TURBOFAN, 0.0, 0.35, 130000.0, 90000.0, 0.06,
+                "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
     }
 
     @Test
     void ensureBlankMakerNameIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().registerEngineModel(
-                        "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
-                        "", "USA", FuelType.JET_A, 0.8, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> controller().registerEngineModel(
+                "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
+                "", "USA", FuelType.JET_A, 0.8, 43.2));
     }
 
     @Test
     void ensureBlankMakerCountryIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().registerEngineModel(
-                        "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
-                        "CFM", "", FuelType.JET_A, 0.8, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> controller().registerEngineModel(
+                "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
+                "CFM", "", FuelType.JET_A, 0.8, 43.2));
     }
 
     @Test
     void ensureNullFuelTypeIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().registerEngineModel(
-                        "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
-                        "CFM", "USA", null, 0.8, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> controller().registerEngineModel(
+                "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
+                "CFM", "USA", null, 0.8, 43.2));
     }
 
     @Test
     void ensureZeroFuelDensityIsRejected() {
-        assertThrows(IllegalArgumentException.class, () ->
-                controller().registerEngineModel(
-                        "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
-                        "CFM", "USA", FuelType.JET_A, 0.0, 43.2));
+        assertThrows(IllegalArgumentException.class, () -> controller().registerEngineModel(
+                "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
+                "CFM", "USA", FuelType.JET_A, 0.0, 43.2));
     }
 
     // --- Authorization ---
@@ -142,24 +133,26 @@ class RegisterEngineModelControllerTest {
     @Test
     void ensureUnauthorizedUserCannotRegisterEngine() {
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
-        assertThrows(RuntimeException.class, () ->
-                controller().registerEngineModel(
-                        "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
-                        "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
+        assertThrows(RuntimeException.class, () -> controller().registerEngineModel(
+                "CFM56", EngineType.TURBOFAN, 100000.0, 0.35, 130000.0, 90000.0, 0.06,
+                "CFM", "USA", FuelType.JET_A, 0.8, 43.2));
     }
 
     private static void safeRegister(final String email, final String password,
-                                     final eapli.framework.infrastructure.authz.domain.model.Role role) {
+            final eapli.framework.infrastructure.authz.domain.model.Role role) {
         try {
             AuthzRegistry.userService().registerNewUser(email, password, "Test", "User", email, Set.of(role));
-        } catch (final Exception ignored) {}
+        } catch (final Exception ignored) {
+        }
     }
 
     static class StubEngineModelRepository
             extends InMemoryDomainRepository<EngineModel, EngineModelId>
             implements EngineModelRepository {
 
-        void clear() { data().clear(); }
+        void clear() {
+            data().clear();
+        }
 
         @Override
         public Optional<EngineModel> findByName(final String name) {

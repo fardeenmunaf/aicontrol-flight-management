@@ -1,6 +1,5 @@
 package javafxui.presentation.pilot;
 
-import customercollaborator.domain.CustomerCollaborator;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import infrastructure.persistence.PersistenceContext;
 import javafx.beans.property.SimpleStringProperty;
@@ -22,13 +21,20 @@ import java.util.stream.Collectors;
 
 public class AvailablePilotsUI {
 
-    @FXML private Label pageTitle;
-    @FXML private Label statusLabel;
-    @FXML private TableView<Pilot> table;
-    @FXML private TableColumn<Pilot, String> colEmail;
-    @FXML private TableColumn<Pilot, String> colStatus;
-    @FXML private TableColumn<Pilot, String> colModels;
-    @FXML private TableColumn<Pilot, String> colAction;
+    @FXML
+    private Label pageTitle;
+    @FXML
+    private Label statusLabel;
+    @FXML
+    private TableView<Pilot> table;
+    @FXML
+    private TableColumn<Pilot, String> colEmail;
+    @FXML
+    private TableColumn<Pilot, String> colStatus;
+    @FXML
+    private TableColumn<Pilot, String> colModels;
+    @FXML
+    private TableColumn<Pilot, String> colAction;
 
     private AirTransportCompanyId myCompanyId;
     private final ObservableList<Pilot> data = FXCollections.observableArrayList();
@@ -52,6 +58,7 @@ public class AvailablePilotsUI {
                 btn.getStyleClass().add("btn-primary");
                 btn.setOnAction(e -> onAssign(getTableView().getItems().get(getIndex())));
             }
+
             @Override
             protected void updateItem(final String item, final boolean empty) {
                 super.updateItem(item, empty);
@@ -71,7 +78,8 @@ public class AvailablePilotsUI {
             final String email = AuthzRegistry.authorizationService().session()
                     .map(s -> s.authenticatedUser().username().toString())
                     .orElse(null);
-            if (email == null) return;
+            if (email == null)
+                return;
 
             PersistenceContext.repositories().customerCollaborators()
                     .findByUserId(UserId.valueOf(email))

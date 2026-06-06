@@ -5,7 +5,6 @@ import weatherData.domain.WeatherData;
 import weatherData.repository.WeatherDataRepository;
 import shared.domain.WeatherDataId;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -65,4 +64,3 @@ public class InMemoryWeatherDataRepository extends InMemoryDomainRepository<Weat
         return result;
     }
 }
-

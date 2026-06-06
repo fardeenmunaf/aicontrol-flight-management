@@ -2,7 +2,6 @@ package customercollaborator.domain;
 
 import eapli.framework.domain.model.AggregateRoot;
 import eapli.framework.domain.model.DomainEntities;
-import eapli.framework.strings.util.StringPredicates;
 import eapli.framework.validations.Preconditions;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -49,10 +48,10 @@ public class CustomerCollaborator implements AggregateRoot<CustomerCollaboratorI
     }
 
     public CustomerCollaborator(final UserId userId,
-                                final CustomerType customerType,
-                                final AirTransportCompanyId airTransportCompanyId,
-                                final AirControlAreaId airControlAreaId,
-                                final String position) {
+            final CustomerType customerType,
+            final AirTransportCompanyId airTransportCompanyId,
+            final AirControlAreaId airControlAreaId,
+            final String position) {
         Preconditions.noneNull(userId, customerType);
         if (position == null || position.trim().isEmpty()) {
             throw new IllegalArgumentException("Position cannot be null or empty");

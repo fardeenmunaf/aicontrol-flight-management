@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import shared.domain.AirportId;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,7 +20,9 @@ class ListAirportsControllerTest {
     private final AirportCoordinates COORDS = new AirportCoordinates(41.24, -8.68);
 
     @BeforeEach
-    void reset() { repo.clear(); }
+    void reset() {
+        repo.clear();
+    }
 
     private ListAirportsController controller() {
         return new ListAirportsController(repo);
@@ -38,7 +39,9 @@ class ListAirportsControllerTest {
         repo.save(new Airport("Lisboa", "Lisboa", "Portugal", "LIS", "LPPT", 114.0, COORDS, AREA));
 
         int count = 0;
-        for (final Airport a : controller().listAirports()) { count++; }
+        for (final Airport a : controller().listAirports()) {
+            count++;
+        }
         assertEquals(2, count);
     }
 
@@ -52,9 +55,18 @@ class ListAirportsControllerTest {
             extends InMemoryDomainRepository<Airport, AirportId>
             implements AirportRepository {
 
-        void clear() { data().clear(); }
+        void clear() {
+            data().clear();
+        }
 
-        @Override public Optional<Airport> findByIataCode(final String c) { return Optional.empty(); }
-        @Override public Optional<Airport> findByIcaoCode(final String c) { return Optional.empty(); }
+        @Override
+        public Optional<Airport> findByIataCode(final String c) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Airport> findByIcaoCode(final String c) {
+            return Optional.empty();
+        }
     }
 }

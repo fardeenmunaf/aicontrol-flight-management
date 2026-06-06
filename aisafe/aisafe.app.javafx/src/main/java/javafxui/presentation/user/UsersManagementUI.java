@@ -25,52 +25,82 @@ import user.domain.Role;
 import user.domain.User;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class UsersManagementUI {
 
-    @FXML private TableView<User> table;
-    @FXML private TableColumn<User, String> colEmail;
-    @FXML private TableColumn<User, String> colName;
-    @FXML private TableColumn<User, String> colPhone;
-    @FXML private TableColumn<User, String> colRoles;
-    @FXML private TableColumn<User, String> colStatus;
-    @FXML private TableColumn<User, String> colActions;
-    @FXML private Label statusLabel;
+    @FXML
+    private TableView<User> table;
+    @FXML
+    private TableColumn<User, String> colEmail;
+    @FXML
+    private TableColumn<User, String> colName;
+    @FXML
+    private TableColumn<User, String> colPhone;
+    @FXML
+    private TableColumn<User, String> colRoles;
+    @FXML
+    private TableColumn<User, String> colStatus;
+    @FXML
+    private TableColumn<User, String> colActions;
+    @FXML
+    private Label statusLabel;
 
-    @FXML private VBox registerForm;
-    @FXML private TextField fName;
-    @FXML private TextField fEmail;
-    @FXML private TextField fPhone;
-    @FXML private PasswordField fPassword;
-    @FXML private FlowPane fRolesPane;
-    @FXML private VBox pilotRegisterRow;
-    @FXML private FlowPane fPilotModelsPane;
-    @FXML private HBox atccRegisterRow;
-    @FXML private ComboBox<AirTransportCompany> fAtccCompany;
-    @FXML private TextField fAtccPosition;
-    @FXML private Label registerError;
+    @FXML
+    private VBox registerForm;
+    @FXML
+    private TextField fName;
+    @FXML
+    private TextField fEmail;
+    @FXML
+    private TextField fPhone;
+    @FXML
+    private PasswordField fPassword;
+    @FXML
+    private FlowPane fRolesPane;
+    @FXML
+    private VBox pilotRegisterRow;
+    @FXML
+    private FlowPane fPilotModelsPane;
+    @FXML
+    private HBox atccRegisterRow;
+    @FXML
+    private ComboBox<AirTransportCompany> fAtccCompany;
+    @FXML
+    private TextField fAtccPosition;
+    @FXML
+    private Label registerError;
 
-    @FXML private VBox editForm;
-    @FXML private Label editEmailLabel;
-    @FXML private TextField fEditPhone;
-    @FXML private FlowPane fEditRolesPane;
-    @FXML private VBox pilotEditRow;
-    @FXML private FlowPane fEditModelsPane;
-    @FXML private HBox atccEditRow;
-    @FXML private ComboBox<AirTransportCompany> fEditAtccCompany;
-    @FXML private TextField fEditAtccPosition;
-    @FXML private Label editAtccInfo;
-    @FXML private Label editError;
+    @FXML
+    private VBox editForm;
+    @FXML
+    private Label editEmailLabel;
+    @FXML
+    private TextField fEditPhone;
+    @FXML
+    private FlowPane fEditRolesPane;
+    @FXML
+    private VBox pilotEditRow;
+    @FXML
+    private FlowPane fEditModelsPane;
+    @FXML
+    private HBox atccEditRow;
+    @FXML
+    private ComboBox<AirTransportCompany> fEditAtccCompany;
+    @FXML
+    private TextField fEditAtccPosition;
+    @FXML
+    private Label editAtccInfo;
+    @FXML
+    private Label editError;
 
     private String editingEmail;
-    private final List<CheckBox> registerRoleBoxes  = new ArrayList<>();
-    private final List<CheckBox> editRoleBoxes      = new ArrayList<>();
+    private final List<CheckBox> registerRoleBoxes = new ArrayList<>();
+    private final List<CheckBox> editRoleBoxes = new ArrayList<>();
     private final List<CheckBox> registerModelBoxes = new ArrayList<>();
-    private final List<CheckBox> editModelBoxes     = new ArrayList<>();
+    private final List<CheckBox> editModelBoxes = new ArrayList<>();
 
     private RegisterUserController registerCtrl() {
         return new RegisterUserController(PersistenceContext.repositories().users());
@@ -100,8 +130,8 @@ public class UsersManagementUI {
 
         colActions.setCellFactory(col -> new TableCell<>() {
             private final Button disableBtn = new Button("Disable");
-            private final Button enableBtn  = new Button("Enable");
-            private final Button editBtn    = new Button("Edit");
+            private final Button enableBtn = new Button("Enable");
+            private final Button editBtn = new Button("Edit");
             private final HBox box = new HBox(6, disableBtn, enableBtn, editBtn);
             {
                 disableBtn.getStyleClass().add("btn-danger");
@@ -132,10 +162,15 @@ public class UsersManagementUI {
         table.setItems(data);
 
         final StringConverter<AirTransportCompany> companyConverter = new StringConverter<>() {
-            @Override public String toString(final AirTransportCompany c) {
+            @Override
+            public String toString(final AirTransportCompany c) {
                 return c == null ? "" : c.name() + " (" + c.iataCode() + ")";
             }
-            @Override public AirTransportCompany fromString(final String s) { return null; }
+
+            @Override
+            public AirTransportCompany fromString(final String s) {
+                return null;
+            }
         };
         fAtccCompany.setConverter(companyConverter);
         fEditAtccCompany.setConverter(companyConverter);
@@ -164,7 +199,7 @@ public class UsersManagementUI {
     }
 
     private void setupPilotListener(final List<CheckBox> roleBoxes, final VBox pilotRow,
-                                    final FlowPane modelsPane, final List<CheckBox> modelBoxes) {
+            final FlowPane modelsPane, final List<CheckBox> modelBoxes) {
         roleBoxes.stream()
                 .filter(cb -> cb.getUserData() == Role.PILOT)
                 .findFirst()
@@ -182,8 +217,8 @@ public class UsersManagementUI {
     }
 
     private void setupAtccListener(final List<CheckBox> roleBoxes, final HBox atccRow,
-                                    final ComboBox<AirTransportCompany> companyCb,
-                                    final TextField positionField) {
+            final ComboBox<AirTransportCompany> companyCb,
+            final TextField positionField) {
         roleBoxes.stream()
                 .filter(cb -> cb.getUserData() == Role.AIR_TRANSPORT_COMPANY_COLLABORATOR)
                 .findFirst()

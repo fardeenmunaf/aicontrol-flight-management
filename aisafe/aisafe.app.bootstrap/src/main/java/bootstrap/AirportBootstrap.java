@@ -13,7 +13,6 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
-import java.util.List;
 import java.util.Optional;
 
 public class AirportBootstrap {
@@ -54,9 +53,11 @@ public class AirportBootstrap {
                 final String country = airportElement.getElementsByTagName("country").item(0).getTextContent();
 
                 final Element locationElement = (Element) airportElement.getElementsByTagName("location").item(0);
-                final double latitude = Double.parseDouble(locationElement.getElementsByTagName("latitude").item(0).getTextContent());
-                final double longitude = Double.parseDouble(locationElement.getElementsByTagName("longitude").item(0).getTextContent());
-                
+                final double latitude = Double
+                        .parseDouble(locationElement.getElementsByTagName("latitude").item(0).getTextContent());
+                final double longitude = Double
+                        .parseDouble(locationElement.getElementsByTagName("longitude").item(0).getTextContent());
+
                 final String altitudeText = locationElement.getElementsByTagName("altitude").item(0).getTextContent();
                 final double elevation = Double.parseDouble(altitudeText.split(" ")[0]);
 
@@ -85,7 +86,8 @@ public class AirportBootstrap {
 
         final Optional<AirControlArea> area = airControlAreaRepository.findContaining(latitude, longitude);
         if (area.isEmpty()) {
-            System.out.println("No air control area found for airport: " + iataCode + " at (" + latitude + ", " + longitude + ")");
+            System.out.println(
+                    "No air control area found for airport: " + iataCode + " at (" + latitude + ", " + longitude + ")");
             return;
         }
 
@@ -94,7 +96,8 @@ public class AirportBootstrap {
                 new AirportCoordinates(latitude, longitude), area.get());
 
         airportRepository.save(airport);
-        System.out.println("Airport bootstrapped from XML: " + iataCode + " (" + icaoCode + ") in area " + area.get().areaCode());
+        System.out.println(
+                "Airport bootstrapped from XML: " + iataCode + " (" + icaoCode + ") in area " + area.get().areaCode());
     }
 
 }

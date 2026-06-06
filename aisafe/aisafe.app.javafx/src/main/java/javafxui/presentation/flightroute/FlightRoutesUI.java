@@ -13,8 +13,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
@@ -32,20 +30,34 @@ import java.util.stream.StreamSupport;
 
 public class FlightRoutesUI {
 
-    @FXML private TableView<FlightRoute> routesTable;
-    @FXML private TableColumn<FlightRoute, String> colDesignation;
-    @FXML private TableColumn<FlightRoute, String> colOrigin;
-    @FXML private TableColumn<FlightRoute, String> colDestination;
-    @FXML private TableColumn<FlightRoute, String> colActiveFrom;
-    @FXML private TableColumn<FlightRoute, String> colStatus;
-    @FXML private TableColumn<FlightRoute, String> colAction;
-    @FXML private Label messageLabel;
-    @FXML private VBox createForm;
-    @FXML private Label lblPrefix;
-    @FXML private TextField fSuffix;
-    @FXML private DatePicker dpActiveFrom;
-    @FXML private ComboBox<Airport> cbOrigin, cbDestination;
-    @FXML private Label formError;
+    @FXML
+    private TableView<FlightRoute> routesTable;
+    @FXML
+    private TableColumn<FlightRoute, String> colDesignation;
+    @FXML
+    private TableColumn<FlightRoute, String> colOrigin;
+    @FXML
+    private TableColumn<FlightRoute, String> colDestination;
+    @FXML
+    private TableColumn<FlightRoute, String> colActiveFrom;
+    @FXML
+    private TableColumn<FlightRoute, String> colStatus;
+    @FXML
+    private TableColumn<FlightRoute, String> colAction;
+    @FXML
+    private Label messageLabel;
+    @FXML
+    private VBox createForm;
+    @FXML
+    private Label lblPrefix;
+    @FXML
+    private TextField fSuffix;
+    @FXML
+    private DatePicker dpActiveFrom;
+    @FXML
+    private ComboBox<Airport> cbOrigin, cbDestination;
+    @FXML
+    private Label formError;
 
     private String companyIataPrefix = "";
     private AirTransportCompanyId companyId = null;
@@ -66,14 +78,10 @@ public class FlightRoutesUI {
 
     @FXML
     public void initialize() {
-        colDesignation.setCellValueFactory(c ->
-                new SimpleStringProperty(c.getValue().designation().value()));
-        colOrigin.setCellValueFactory(c ->
-                new SimpleStringProperty(c.getValue().originAirport().iataCode()));
-        colDestination.setCellValueFactory(c ->
-                new SimpleStringProperty(c.getValue().destinationAirport().iataCode()));
-        colActiveFrom.setCellValueFactory(c ->
-                new SimpleStringProperty(c.getValue().activeFrom().toString()));
+        colDesignation.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().designation().value()));
+        colOrigin.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().originAirport().iataCode()));
+        colDestination.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().destinationAirport().iataCode()));
+        colActiveFrom.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().activeFrom().toString()));
         colStatus.setCellValueFactory(c -> {
             final FlightRoute r = c.getValue();
             final String status = r.activeUntil() == null
@@ -83,10 +91,15 @@ public class FlightRoutesUI {
         });
 
         final StringConverter<Airport> airportConverter = new StringConverter<>() {
-            @Override public String toString(final Airport a) {
+            @Override
+            public String toString(final Airport a) {
                 return a == null ? "" : a.iataCode() + " — " + a.name() + " (" + a.town() + ")";
             }
-            @Override public Airport fromString(final String s) { return null; }
+
+            @Override
+            public Airport fromString(final String s) {
+                return null;
+            }
         };
         cbOrigin.setConverter(airportConverter);
         cbDestination.setConverter(airportConverter);
@@ -110,10 +123,11 @@ public class FlightRoutesUI {
                             .ifPresent(c -> companyIataPrefix = c.iataCode());
                 }
             }
-        } catch (final Exception ignored) {}
+        } catch (final Exception ignored) {
+        }
         colAction.setCellFactory(col -> new TableCell<>() {
-            private final Button deactivateBtn  = new Button("Deactivate");
-            private final Button reactivateBtn  = new Button("Reactivate");
+            private final Button deactivateBtn = new Button("Deactivate");
+            private final Button reactivateBtn = new Button("Reactivate");
             {
                 deactivateBtn.getStyleClass().add("btn-danger");
                 reactivateBtn.getStyleClass().add("btn-success");
@@ -241,11 +255,13 @@ public class FlightRoutesUI {
         final Optional<Instant> latestDeparture = StreamSupport.stream(
                 PersistenceContext.repositories().flightPlans()
                         .findByRouteIdAndDepartureAfter(route.identity().toString(), nowInstant)
-                        .spliterator(), false)
+                        .spliterator(),
+                false)
                 .map(fp -> fp.departureDateTime())
                 .max(Comparator.naturalOrder());
 
-        // Minimum valid deactivation date = day after the latest flight (so no future flights remain after cutoff)
+        // Minimum valid deactivation date = day after the latest flight (so no future
+        // flights remain after cutoff)
         final LocalDate minFromFlights = latestDeparture
                 .map(d -> d.atZone(ZoneOffset.UTC).toLocalDate().plusDays(1))
                 .orElse(LocalDate.now());
@@ -291,8 +307,7 @@ public class FlightRoutesUI {
 
         final Button okBtn = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
         okBtn.setDisable(datePicker.getValue() == null);
-        datePicker.valueProperty().addListener((obs, o, n) ->
-                okBtn.setDisable(n == null || n.isBefore(minDate)));
+        datePicker.valueProperty().addListener((obs, o, n) -> okBtn.setDisable(n == null || n.isBefore(minDate)));
 
         dialog.setResultConverter(btn -> btn == ButtonType.OK ? datePicker.getValue() : null);
 

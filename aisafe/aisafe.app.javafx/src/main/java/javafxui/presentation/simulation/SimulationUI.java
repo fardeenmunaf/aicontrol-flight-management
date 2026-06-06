@@ -300,6 +300,12 @@ public class SimulationUI {
         // Batch violations with the current step so they fire when the step is displayed.
         parser.parseViolation(line).ifPresent(pendingViolations::add);
 
+        // A collision involves two flights — flag both red.
+        parser.parseCollision(line).ifPresent(pair -> {
+            pendingViolations.add(pair[0]);
+            pendingViolations.add(pair[1]);
+        });
+
         parser.parseLanded(line).ifPresent(callsign -> Platform.runLater(() -> {
             final String safe = callsign.replace("\\", "\\\\").replace("'", "\\'");
             mapView.getEngine().executeScript("landFlight('" + safe + "')");

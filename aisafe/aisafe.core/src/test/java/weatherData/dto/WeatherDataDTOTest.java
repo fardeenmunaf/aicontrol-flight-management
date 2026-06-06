@@ -2,8 +2,6 @@ package weatherData.dto;
 
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDateTime;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class WeatherDataDTOTest {
@@ -22,13 +20,13 @@ class WeatherDataDTOTest {
                 () -> assertEquals(90.0, dto.direction()),
                 () -> assertEquals(15.0, dto.windSpeed()),
                 () -> assertEquals(43.840454, dto.latitude1()),
-                () -> assertEquals(-9.795711, dto.longitude1())
-        );
+                () -> assertEquals(-9.795711, dto.longitude1()));
     }
 
     @Test
     void ensureNullValuesAreAccepted() {
-        final WeatherDataDTO dto = new WeatherDataDTO(null, null, null, null, null, null, null, null, null, null, null, null);
+        final WeatherDataDTO dto = new WeatherDataDTO(null, null, null, null, null, null, null, null, null, null, null,
+                null);
         assertNull(dto.acaCode());
         assertNull(dto.date());
         assertNull(dto.direction());
@@ -37,7 +35,8 @@ class WeatherDataDTOTest {
 
     @Test
     void ensureAllAccessorsReturnExpectedValues() {
-        final WeatherDataDTO dto = new WeatherDataDTO("AREA-1", 43.84, -9.79, 40.22, -7.95, 0.0, 1000.0, 180.0, 5.0, DATE, START, END);
+        final WeatherDataDTO dto = new WeatherDataDTO("AREA-1", 43.84, -9.79, 40.22, -7.95, 0.0, 1000.0, 180.0, 5.0,
+                DATE, START, END);
         assertEquals("AREA-1", dto.acaCode());
         assertEquals(DATE, dto.date());
         assertEquals(180.0, dto.direction());

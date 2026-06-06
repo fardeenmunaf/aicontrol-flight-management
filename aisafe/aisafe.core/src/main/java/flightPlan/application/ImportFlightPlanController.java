@@ -15,7 +15,6 @@ import shared.domain.NodeId;
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
 import airport.domain.Airport;
-import shared.domain.AircraftModelId;
 import airtransportcompany.repositories.AirTransportCompanyRepository;
 
 import java.time.Instant;
@@ -38,10 +37,10 @@ public class ImportFlightPlanController {
     private final AirTransportCompanyRepository airTransportCompanyRepository;
 
     public ImportFlightPlanController(final FlightPlanRepository flightPlanRepository,
-                                      final NodeRepository nodeRepository,
-                                      final AircraftModelRepository aircraftModelRepository,
-                                      final AirportRepository airportRepository,
-                                      final AirTransportCompanyRepository airTransportCompanyRepository) {
+            final NodeRepository nodeRepository,
+            final AircraftModelRepository aircraftModelRepository,
+            final AirportRepository airportRepository,
+            final AirTransportCompanyRepository airTransportCompanyRepository) {
         this.flightPlanRepository = Objects.requireNonNull(flightPlanRepository);
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.aircraftModelRepository = Objects.requireNonNull(aircraftModelRepository);
@@ -51,10 +50,11 @@ public class ImportFlightPlanController {
 
     /**
      * Persists a flight plan imported from a validated DSL file.
-     * Segments are anchored to new transient Node entities created from the DSL coordinates.
+     * Segments are anchored to new transient Node entities created from the DSL
+     * coordinates.
      */
     public FlightPlan importFlightPlan(final String designator, final String aircraftId,
-                                        final String pilotRef, final List<LegImportRequest> legs) {
+            final String pilotRef, final List<LegImportRequest> legs) {
         AuthzRegistry.authorizationService().ensureAuthenticatedUserHasAnyOf(
                 AISafeRoles.AIR_TRANSPORT_COMPANY_COLLABORATOR, AISafeRoles.PILOT);
 
@@ -64,7 +64,8 @@ public class ImportFlightPlanController {
 
         if (pilotRef != null && !pilotRef.equalsIgnoreCase(loggedInEmail)) {
             throw new IllegalArgumentException(
-                    "Pilot in the DSL file (" + pilotRef + ") does not match the logged-in user (" + loggedInEmail + ")");
+                    "Pilot in the DSL file (" + pilotRef + ") does not match the logged-in user (" + loggedInEmail
+                            + ")");
         }
 
         Objects.requireNonNull(designator, "designator");
@@ -83,7 +84,8 @@ public class ImportFlightPlanController {
         }
         final String companyIata = designator.substring(0, 2).toUpperCase();
         if (airTransportCompanyRepository.findByIataCode(companyIata).isEmpty()) {
-            throw new IllegalArgumentException("The first 2 letters of the designator ('" + companyIata + "') do not belong to any registered Air Transport Company");
+            throw new IllegalArgumentException("The first 2 letters of the designator ('" + companyIata
+                    + "') do not belong to any registered Air Transport Company");
         }
 
         // Validate aircraft

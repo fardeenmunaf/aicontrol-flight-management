@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import shared.domain.AirControlAreaId;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -36,7 +35,8 @@ class ListAirControlAreasControllerTest {
                     new InMemoryUserRepository(),
                     new AISafePasswordPolicy(),
                     new PlainTextEncoder());
-        } catch (final Exception ignored) {}
+        } catch (final Exception ignored) {
+        }
         safeRegister(OPERATOR_EMAIL, PASSWORD, AISafeRoles.BACKOFFICE_OPERATOR);
         safeRegister(PILOT_EMAIL, PASSWORD, AISafeRoles.PILOT);
     }
@@ -83,25 +83,34 @@ class ListAirControlAreasControllerTest {
     }
 
     private static void safeRegister(final String email, final String password,
-                                     final eapli.framework.infrastructure.authz.domain.model.Role role) {
+            final eapli.framework.infrastructure.authz.domain.model.Role role) {
         try {
             AuthzRegistry.userService().registerNewUser(email, password, "Test", "User", email, Set.of(role));
-        } catch (final Exception ignored) {}
+        } catch (final Exception ignored) {
+        }
     }
 
     static class StubAirControlAreaRepository
             extends InMemoryDomainRepository<AirControlArea, AirControlAreaId>
             implements AirControlAreaRepository {
 
-        void clear() { data().clear(); }
+        void clear() {
+            data().clear();
+        }
 
         @Override
-        public List<AirControlArea> findByAreaCode(final String areaCode) { return List.of(); }
+        public List<AirControlArea> findByAreaCode(final String areaCode) {
+            return List.of();
+        }
 
         @Override
-        public List<AirControlArea> findByMinimumRequiredArrivalFuelGreaterThanEqual(final double minFuel) { return List.of(); }
+        public List<AirControlArea> findByMinimumRequiredArrivalFuelGreaterThanEqual(final double minFuel) {
+            return List.of();
+        }
 
         @Override
-        public List<AirControlArea> findByGeographicBoundaries(final String geographicBoundaries) { return List.of(); }
+        public List<AirControlArea> findByGeographicBoundaries(final String geographicBoundaries) {
+            return List.of();
+        }
     }
 }

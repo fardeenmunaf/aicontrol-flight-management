@@ -1,7 +1,6 @@
 package aircraftmodel.application;
 
 import aircraftmodel.domain.AircraftModel;
-import aircraftmodel.domain.AircraftModelMaker;
 import aircraftmodel.domain.AircraftType;
 import aircraftmodel.dto.AircraftModelDTO;
 import aircraftmodel.repositories.AircraftModelRepository;
@@ -52,7 +51,8 @@ class RegisterAircraftModelControllerTest {
                     new InMemoryUserRepository(),
                     new AISafePasswordPolicy(),
                     new PlainTextEncoder());
-        } catch (final Exception ignored) {}
+        } catch (final Exception ignored) {
+        }
         safeRegister(OPERATOR_EMAIL, PASSWORD, AISafeRoles.BACKOFFICE_OPERATOR);
         safeRegister(PILOT_EMAIL, PASSWORD, AISafeRoles.PILOT);
     }
@@ -151,21 +151,35 @@ class RegisterAircraftModelControllerTest {
     }
 
     private static void safeRegister(final String email, final String password,
-                                     final eapli.framework.infrastructure.authz.domain.model.Role role) {
+            final eapli.framework.infrastructure.authz.domain.model.Role role) {
         try {
             AuthzRegistry.userService().registerNewUser(email, password, "Test", "User", email, Set.of(role));
-        } catch (final Exception ignored) {}
+        } catch (final Exception ignored) {
+        }
     }
 
     static class StubAircraftModelRepository
             extends InMemoryDomainRepository<AircraftModel, AircraftModelId>
             implements AircraftModelRepository {
 
-        void clear() { data().clear(); }
+        void clear() {
+            data().clear();
+        }
 
-        @Override public List<AircraftModel> findByType(final AircraftType t) { return List.of(); }
-        @Override public List<AircraftModel> findByMakerName(final String n) { return List.of(); }
-        @Override public List<AircraftModel> findByModelName(final String n) { return List.of(); }
+        @Override
+        public List<AircraftModel> findByType(final AircraftType t) {
+            return List.of();
+        }
+
+        @Override
+        public List<AircraftModel> findByMakerName(final String n) {
+            return List.of();
+        }
+
+        @Override
+        public List<AircraftModel> findByModelName(final String n) {
+            return List.of();
+        }
 
         @Override
         public List<AircraftModel> findByModelNameAndMaker(final String modelName, final String makerName) {
@@ -186,7 +200,9 @@ class RegisterAircraftModelControllerTest {
             extends InMemoryDomainRepository<EngineModel, EngineModelId>
             implements EngineModelRepository {
 
-        void clear() { data().clear(); }
+        void clear() {
+            data().clear();
+        }
 
         @Override
         public Optional<EngineModel> findByName(final String name) {

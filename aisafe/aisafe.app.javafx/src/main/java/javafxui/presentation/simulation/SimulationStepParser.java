@@ -15,6 +15,9 @@ public class SimulationStepParser {
     private static final Pattern FUEL_EXHAUSTED = Pattern.compile(
             "^\\s*\\*{3}\\s+VIOLATION:\\s+([A-Z0-9]+)\\s+fuel exhausted");
 
+    private static final Pattern COLLISION = Pattern.compile(
+            "^\\s*\\*{3}\\s+COLLISION:\\s+([A-Z0-9]+)\\s+<->\\s+([A-Z0-9]+)\\s+dist=");
+
     private static final Pattern LANDED = Pattern.compile(
             "^\\[([A-Z0-9]+)\\]\\s+Landed\\.");
 
@@ -50,6 +53,13 @@ public class SimulationStepParser {
         final Matcher mf = FUEL_EXHAUSTED.matcher(line.trim());
         if (mf.find()) return Optional.of(mf.group(1));
         return Optional.empty();
+    }
+
+    /** Matches the collision line and returns the two callsigns involved, or empty. */
+    public Optional<String[]> parseCollision(final String line) {
+        final Matcher m = COLLISION.matcher(line.trim());
+        if (!m.find()) return Optional.empty();
+        return Optional.of(new String[] { m.group(1), m.group(2) });
     }
 
     public Optional<String> parseLanded(final String line) {
