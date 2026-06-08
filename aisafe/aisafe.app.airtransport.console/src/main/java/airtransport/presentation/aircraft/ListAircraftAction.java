@@ -1,4 +1,4 @@
-package airtransport.presentation;
+package airtransport.presentation.aircraft;
 
 import eapli.framework.actions.Action;
 

@@ -1,5 +1,7 @@
-package airtransport.presentation;
+package airtransport.presentation.fleet;
 
+import airtransport.presentation.aircraft.DecommissionAircraftAction;
+import airtransport.presentation.aircraft.RegisterAircraftAction;
 import eapli.framework.presentation.console.AbstractUI;
 import eapli.framework.actions.menu.Menu;
 import eapli.framework.presentation.console.menu.MenuItemRenderer;

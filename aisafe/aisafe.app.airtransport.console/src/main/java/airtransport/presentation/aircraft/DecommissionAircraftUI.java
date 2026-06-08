@@ -1,4 +1,4 @@
-package airtransport.presentation;
+package airtransport.presentation.aircraft;
 
 import aircraft.application.DecommissionAircraftController;
 import aircraft.domain.Aircraft;

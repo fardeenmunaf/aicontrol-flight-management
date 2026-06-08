@@ -1,4 +1,4 @@
-package airtransport.presentation;
+package airtransport.presentation.fleet;
 
 import aircraft.domain.Aircraft;
 import airtransportcompany.domain.AirTransportCompany;
