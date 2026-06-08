@@ -6,5 +6,5 @@
   "safety_distance_threshold": 2000.0,
   "collision_distance_threshold": 150.0,
   "max_violations_threshold": 100,
-  "reroute": false
+  "reroute": true
 }

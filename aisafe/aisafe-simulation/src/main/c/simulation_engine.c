@@ -106,13 +106,13 @@ static void check_violations(SimulationData *sim, bool *was_active,
 
     /* Reroute lookahead: project each active pair 500 km along their intent heading
        (bearing to destination, before deviation) and measure the closest they would
-       get. If that is under 2x the safety threshold, both aircraft turn right 15deg
+       get. If that is under the safety threshold, both aircraft turn right 15deg
        (ICAO head-on rule) so they pass on opposite sides. Projecting along intent —
        not the already-deviated heading — keeps the check honest: it always answers
        "would they collide if we stopped deviating now?", so the turn isn't dropped
        prematurely. Stateless: recomputed fresh every step. */
     if (sim->config.reroute) {
-        const double reroute_threshold = 2.0 * sim->config.safety_distance_threshold;
+        const double reroute_threshold = sim->config.safety_distance_threshold;
         for (int i = 0; i < sim->num_flights; i++) {
             if (!was_active[i] || !sim->flights[i].is_active) continue;
 
