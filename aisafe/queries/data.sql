@@ -10,12 +10,12 @@ INSERT INTO T_ROLEASSIGNMENT (pk, assignedOn, expired, roleName, unassignedOn)
 VALUES
     (1, '2026-05-12', FALSE, 'ADMIN',            NULL),
     (2, '2026-05-12', FALSE, 'BACKOFFICE_OPERATOR', NULL),
-    (3, '2026-05-12', FALSE, 'PILOT',            NULL),
     (4, '2026-05-12', FALSE, 'FCO',              NULL),
     (5, '2026-05-12', FALSE, 'WEATHER_PERSON',   NULL),
     (6, '2026-05-12', FALSE, 'ATCC',             NULL),
     (7, '2026-05-12', FALSE, 'ATCC',             NULL),
-    (8, '2026-05-12', FALSE, 'FCO',              NULL);
+    (8, '2026-05-12', FALSE, 'FCO',              NULL),
+    (3, '2026-05-12', FALSE, 'PILOT',            NULL);
 
 INSERT INTO T_ROLESET_T_ROLEASSIGNMENT (RoleSet_pk, assignments_pk)
 VALUES (1,1),(2,2),(3,3),(4,4),(5,5),(6,6),(7,7),(8,8);
@@ -24,7 +24,10 @@ INSERT INTO T_SYSTEMUSER (username, active, createdOn, deactivatedOn, email, fir
 VALUES
     ('admin@aisafe.com',  TRUE, '2026-05-12', NULL, 'admin@aisafe.com',  'System',    'Admin',   'Admin1234!',    NULL, 1, 0),
     ('bo@aisafe.com',     TRUE, '2026-05-12', NULL, 'bo@aisafe.com',     'Backoffice','Ops',     'Operator1234!', NULL, 2, 0),
-    ('pilot@aisafe.com',  TRUE, '2026-05-12', NULL, 'pilot@aisafe.com',  'Default',   'Pilot',   'Pilot1234!',    NULL, 3, 0),
+    ('pilot@tap.com',     TRUE, '2026-05-12', NULL, 'pilot@tap.com',     'TAP',       'Pilot',   'Pilot1234!',    NULL, 3, 0),
+    ('pilot1@tap.com',    TRUE, '2026-05-12', NULL, 'pilot1@tap.com',    'TAP',       'Pilot One',   'Pilot1234!',    NULL, 3, 0),
+    ('pilot2@ryanair.ie',  TRUE, '2026-05-12', NULL, 'pilot2@ryanair.ie',  'RyanAir',   'Pilot Two',   'Pilot1234!',    NULL, 3, 0),
+    ('pilot3@lufthansa.de', TRUE, '2026-05-12', NULL, 'pilot3@lufthansa.de', 'Lufthansa', 'Pilot Three', 'Pilot1234!', NULL, 3, 0),
     ('fco@aisafe.com',    TRUE, '2026-05-12', NULL, 'fco@aisafe.com',    'Default',   'FCO',     'Fco1234!',      NULL, 4, 0),
     ('weather@aisafe.com',TRUE, '2026-05-12', NULL, 'weather@aisafe.com','Weather',   'Person',  'Weather1234!',  NULL, 5, 0),
     ('atcc1@tap.pt',      TRUE, '2026-05-12', NULL, 'atcc1@tap.pt',      'ATCC',      'One',     'Password123',   NULL, 6, 0),
@@ -35,23 +38,31 @@ INSERT INTO AppUser (user_id, email, name, phoneNumber, status)
 VALUES
     ('admin@aisafe.com',   'admin@aisafe.com',   'System Admin',    '+351000000000', 'ACTIVE'),
     ('bo@aisafe.com',      'bo@aisafe.com',       'Backoffice Ops',  '+351000000000', 'ACTIVE'),
-    ('pilot@aisafe.com',   'pilot@aisafe.com',    'Default Pilot',   '+351000000000', 'ACTIVE'),
+
     ('fco@aisafe.com',     'fco@aisafe.com',      'Default FCO',     '+351000000000', 'ACTIVE'),
     ('weather@aisafe.com', 'weather@aisafe.com',  'Weather Person',  '+351000000000', 'ACTIVE'),
+    ('pilot1@tap.com',     'pilot1@tap.com',      'TAP Pilot One',   '+351000000002', 'ACTIVE'),
+    ('pilot2@ryanair.ie',  'pilot2@ryanair.ie',   'RyanAir Pilot Two', '+351000000003', 'ACTIVE'),
+    ('pilot3@lufthansa.de','pilot3@lufthansa.de', 'Lufthansa Pilot Three', '+351000000004', 'ACTIVE'),
     ('atcc1@tap.pt',       'atcc1@tap.pt',        'ATCC One',        '910000001',     'ACTIVE'),
     ('atcc1@ryanair.ie',   'atcc1@ryanair.ie',    'ATCC RyanAir',    '911000001',     'ACTIVE'),
-    ('fco1@aisafe.pt',     'fco1@aisafe.pt',      'FCO One',         '920000001',     'ACTIVE');
+    ('fco1@aisafe.pt',     'fco1@aisafe.pt',      'FCO One',         '920000001',     'ACTIVE'),
+    ('pilot@tap.com',      'pilot@tap.com',       'TAP Pilot',       '+351000000001', 'ACTIVE');
 
 INSERT INTO user_roles (user_id, roles)
 VALUES
     ('admin@aisafe.com',   'ADMIN'),
     ('bo@aisafe.com',      'BACKOFFICE_OPERATOR'),
-    ('pilot@aisafe.com',   'PILOT'),
+
     ('fco@aisafe.com',     'FLIGHT_CONTROL_OPERATOR'),
     ('weather@aisafe.com', 'WEATHER_PERSON'),
+    ('pilot1@tap.com',     'PILOT'),
+    ('pilot2@ryanair.ie',   'PILOT'),
+    ('pilot3@lufthansa.de', 'PILOT'),
     ('atcc1@tap.pt',       'AIR_TRANSPORT_COMPANY_COLLABORATOR'),
     ('atcc1@ryanair.ie',   'AIR_TRANSPORT_COMPANY_COLLABORATOR'),
-    ('fco1@aisafe.pt',     'FLIGHT_CONTROL_OPERATOR');
+    ('fco1@aisafe.pt',     'FLIGHT_CONTROL_OPERATOR'),
+    ('pilot@tap.com',      'PILOT');
 
 -- ============================================================
 -- AIR TRANSPORT COMPANIES
@@ -241,12 +252,37 @@ VALUES
     ('fl-002', 'BA450',  'REGULAR', '2026-05-12 09:30:00', '2026-05-12 12:10:00', 'ac-002', 0),
     ('fl-003', 'LH9991', 'CHARTER', '2026-05-12 13:00:00', '2026-05-12 16:20:00', 'ac-003', 0);
 
-INSERT INTO FlightPlan (flight_plan_id, departureDateTime, fuelQuantity, passengerLoad, cargoLoad, status, aircraftId, flightRouteId, version)
+INSERT INTO Pilot (pilot_id, user_id, status, version)
 VALUES
-    ('fp-001', '2026-05-12 08:00:00', 8200.0, 150, 1200.0, 'DRAFT',    'ac-001', 'fr-001', 0),
-    ('fp-002', '2026-05-12 09:30:00', 7600.0, 140,  800.0, 'TESTED',   'ac-002', 'fr-002', 0),
-    ('fp-003', '2026-05-12 13:00:00', 5400.0,  70,  500.0, 'DRAFT',    'ac-003', 'fr-003', 0),
-    ('fp-004', '2026-05-13 08:00:00', 9000.0, 160, 1400.0, 'APPROVED', 'ac-001', 'fr-001', 0);
+    ('pilot-001', 'pilot@tap.com', 'ACTIVE', 0),
+    ('pilot-002', 'pilot1@tap.com', 'ACTIVE', 0),
+    ('pilot-003', 'pilot2@ryanair.ie', 'ACTIVE', 0),
+    ('pilot-004', 'pilot3@lufthansa.de', 'ACTIVE', 0);
+
+INSERT INTO PilotCompanyAssignment (pilot_user_id, company_id)
+VALUES
+    ('pilot@tap.com', 'atc-001'),
+    ('pilot1@tap.com', 'atc-001'),
+    ('pilot2@ryanair.ie', 'atc-002'),
+    ('pilot3@lufthansa.de', 'atc-004');
+
+INSERT INTO Pilot_AircraftModel (Pilot_pilot_id, certifiedAircraftModels_aircraft_model_id)
+VALUES
+    ('pilot-001', 'am-777'),
+    ('pilot-001', 'am-A380'),
+    ('pilot-002', 'am-777'),
+    ('pilot-002', 'am-A380'),
+    ('pilot-003', 'am-777'),
+    ('pilot-003', 'am-A380'),
+    ('pilot-004', 'am-777'),
+    ('pilot-004', 'am-A380');
+
+INSERT INTO FlightPlan (flight_plan_id, departureDateTime, fuelQuantity, passengerLoad, cargoLoad, status, aircraftId, flightRouteId, pilotId, version)
+VALUES
+    ('fp-001', '2026-05-12 08:00:00', 8200.0, 150, 1200.0, 'DRAFT',    'ac-001', 'fr-001', NULL, 0),
+    ('fp-002', '2026-05-12 09:30:00', 7600.0, 140,  800.0, 'TESTED',   'ac-002', 'fr-002', NULL, 0),
+    ('fp-003', '2026-05-12 13:00:00', 5400.0,  70,  500.0, 'DRAFT',    'ac-003', 'fr-003', NULL, 0),
+    ('fp-004', '2026-05-13 08:00:00', 9000.0, 160, 1400.0, 'APPROVED', 'ac-001', 'fr-001', NULL, 0);
 
 INSERT INTO FlightLeg (id, sequenceNumber, departureTime, arrivalTime, fuelQuantity, departure_airport_id, arrival_airport_id, flight_plan_ref)
 VALUES
@@ -272,84 +308,6 @@ VALUES
     (4, 16000.0, 20000.0, 2000.0, 3),
     (5, 10000.0, 14000.0, 2000.0, 5);
 
--- ============================================================
--- WEATHER
--- ============================================================
-
-INSERT INTO WeatherData (weather_data_id, acaCode, latitude1, longitude1, latitude2, longitude2, altitudeInf, altitudeSup, direction, windSpeed, date, startHour, endHour, version)
-VALUES
-    ('wd-001', 'LPPC', 37.0, -9.5,  42.0,  -6.0,  0.0, 20000.0,  45.0,  8.0, '2026-05-12', '06:00:00', '07:00:00', 0),
-    ('wd-002', 'LPPO', 36.5, -31.5, 40.0, -24.0,  0.0, 20000.0,  90.0,  5.0, '2026-05-12', '07:00:00', '08:00:00', 0),
-    ('wd-003', 'EGTT', 49.0,  -8.0, 61.0,   2.0,  0.0, 20000.0, 120.0, 12.0, '2026-05-12', '08:00:00', '09:00:00', 0),
-    ('wd-004', 'EDGG', 47.5,   6.0, 55.0,  15.0,  0.0, 20000.0, 200.0, 10.0, '2026-05-12', '09:00:00', '10:00:00', 0),
-    ('wd-005', 'LPPC', 37.0,  -9.5, 42.0,  -6.0,  0.0, 20000.0,  50.0,  9.0, '2026-05-13', '06:00:00', '07:00:00', 0),
-    ('wd-006', 'LPPO', 36.5, -31.5, 40.0, -24.0,  0.0, 20000.0, 100.0,  6.0, '2026-05-13', '07:00:00', '08:00:00', 0);
-
--- ============================================================
--- SIMULATION
--- ============================================================
-
-INSERT INTO Simulation (simulation_id, startDateTime, endDateTime, geographicArea, safetyThresholds, performanceSettings, status, airControlArea_id, version)
-VALUES
-    ('sim-001', '2026-05-12 08:00:00', '2026-05-12 10:30:00', 'LPPC', 'STD', 'DEFAULT', 'CREATED',   'aca-LPPC', 0),
-    ('sim-002', '2026-05-12 09:00:00', '2026-05-12 12:30:00', 'EGTT', 'STD', 'DEFAULT', 'RUNNING',   'aca-EGTT', 0),
-    ('sim-003', '2026-05-12 13:00:00', '2026-05-12 16:45:00', 'EDGG', 'STD', 'DEFAULT', 'COMPLETED', 'aca-EDGG', 0),
-    ('sim-004', '2026-05-13 08:00:00', '2026-05-13 11:00:00', 'LFFF', 'STD', 'DEFAULT', 'CREATED',   'aca-LFFF', 0);
-
-INSERT INTO Simulation_Flight (Simulation_simulation_id, trackedFlights_flight_id)
-VALUES
-    ('sim-001', 'fl-001'),
-    ('sim-001', 'fl-002'),
-    ('sim-002', 'fl-003'),
-    ('sim-003', 'fl-001'),
-    ('sim-004', 'fl-002');
-
-INSERT INTO Simulation_WeatherData (Simulation_simulation_id, capturedWeatherData_weather_data_id)
-VALUES
-    ('sim-001', 'wd-001'),
-    ('sim-001', 'wd-002'),
-    ('sim-002', 'wd-003'),
-    ('sim-003', 'wd-004'),
-    ('sim-004', 'wd-005'),
-    ('sim-004', 'wd-006');
-
-INSERT INTO AircraftPosition (id, simulation_simulation_id, timestamp, altitude, speed, direction)
-VALUES
-    (1, 'sim-001', '2026-05-12 08:15:00', 12000.0, 220.0,  45.0),
-    (2, 'sim-001', '2026-05-12 08:45:00', 14000.0, 230.0,  60.0),
-    (3, 'sim-002', '2026-05-12 09:30:00', 11000.0, 210.0,  90.0),
-    (4, 'sim-002', '2026-05-12 10:00:00', 13000.0, 225.0, 100.0),
-    (5, 'sim-003', '2026-05-12 14:00:00', 15000.0, 240.0, 120.0),
-    (6, 'sim-003', '2026-05-12 15:30:00', 16000.0, 250.0, 130.0),
-    (7, 'sim-004', '2026-05-13 08:30:00', 10000.0, 200.0,  55.0);
-
-INSERT INTO SafetyViolation (id, simulation_simulation_id, timestamp, severity)
-VALUES
-    (1, 'sim-001', '2026-05-12 09:05:00', 'MEDIUM'),
-    (2, 'sim-003', '2026-05-12 15:20:00', 'HIGH'),
-    (3, 'sim-002', '2026-05-12 10:10:00', 'LOW');
-
-INSERT INTO SafetyViolation_recordedVectors (SafetyViolation_id, speed, direction)
-VALUES
-    (1, 240.0,  50.0),
-    (1, 245.0,  55.0),
-    (2, 260.0, 110.0),
-    (2, 255.0, 115.0),
-    (3, 215.0,  92.0),
-    (3, 218.0,  95.0);
-
-INSERT INTO SafetyViolation_Aircraft (SafetyViolation_id, involvedAircraft_aircraft_id)
-VALUES
-    (1, 'ac-001'),
-    (1, 'ac-002'),
-    (2, 'ac-003'),
-    (3, 'ac-001');
-
-INSERT INTO SimulationReport (simulation_report_id, totalFlights, validationResult, generatedAt, simulation_id, version)
-VALUES
-    ('sr-001', 2, 'PENDING', '2026-05-12 10:35:00', 'sim-001', 0),
-    ('sr-002', 1, 'PASSED',  '2026-05-12 12:35:00', 'sim-002', 0),
-    ('sr-003', 1, 'FAILED',  '2026-05-12 16:50:00', 'sim-003', 0);
 
 SELECT setval('T_ROLESET_SEQ',        50, true);
 SELECT setval('T_ROLEASSIGNMENT_SEQ', 50, true);
