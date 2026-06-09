@@ -259,9 +259,18 @@ package "Simulation Aggregate" <<Aggregate>> #E6E6FF {
 
 package "WeatherData Aggregate" <<Aggregate>> #EAF2F8 {
   class WeatherData <<Aggregate Root>> {
-    date
-    windSpeed
-    windDirection
+    AcaCode,
+    latitude1,
+    longitude1,
+    latitude2,
+    longitude2,
+    altitudeInf,
+    altitudeSup,
+    direction,
+    windSpeed,
+    date,
+    startHour,
+    endHour
   }
 }
 

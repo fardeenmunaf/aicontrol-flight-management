@@ -58,7 +58,6 @@ static void generate_json_report(const SimulationConfig *config,
     if (!fp) { perror("Failed to open report file"); return; }
 
     bool sim_passed = (report->total_violations_recorded == 0);
-
     char report_time_str[32];
     time_t now = time(NULL);
     struct tm *timeinfo = localtime(&now);
@@ -146,49 +145,39 @@ static void generate_json_report(const SimulationConfig *config,
 }
 
 /**
- * @brief Reads SimulationConfig and SimulationReport from a pipe fd passed as argv[1],
+ * @brief Reads SimulationConfig and SimulationReport from shared memory,
  *        then generates a timestamped JSON report file.
  *
- * The pipe fd is inherited from simulation_engine across execl. simulation_engine writes
- * SimulationConfig first, then SimulationReport, then closes its write end.
- *
  * @param argc Must be 2.
- * @param argv argv[1] is the pipe read-end file descriptor number as a string.
+ * @param argv argv[1] is the shared memory name (e.g., "/aisafe_sim").
  */
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        fprintf(stderr, "Usage: report_generator <pipe_fd>\n");
+        fprintf(stderr, "Usage: report_generator <shm_name>\n");
         return EXIT_FAILURE;
     }
 
     printf("=== AISafe Report Generator ===\n");
 
-    int fd = atoi(argv[1]);
-
-    // Read exactly 'size' bytes, looping over partial reads.
-    #define read_all(fd, buf, size) ({ \
-        size_t _total = 0; char *_p = (char *)(buf); int _ok = 1; \
-        while (_total < (size)) { \
-            ssize_t _n = read((fd), _p + _total, (size) - _total); \
-            if (_n <= 0) { _ok = 0; break; } _total += (size_t)_n; \
-        } _ok; })
-
-    SimulationConfig config;
-    SimulationReport report;
-
-    if (!read_all(fd, &config, sizeof(config))) {
-        fprintf(stderr, "[ReportGen] Failed to read config from pipe\n");
-        close(fd);
+    const char *shm_name = argv[1];
+    int shm_fd = shm_open(shm_name, O_RDONLY, 0600);
+    if (shm_fd < 0) {
+        perror("shm_open failed");
         return EXIT_FAILURE;
     }
 
-    if (!read_all(fd, &report, sizeof(report))) {
-        fprintf(stderr, "[ReportGen] Failed to read report from pipe\n");
-        close(fd);
+    SharedBlock *shm = mmap(NULL, sizeof(SharedBlock), PROT_READ, MAP_SHARED, shm_fd, 0);
+    if (shm == MAP_FAILED) {
+        perror("mmap failed");
+        close(shm_fd);
         return EXIT_FAILURE;
     }
 
-    close(fd);
+    SimulationConfig config = shm->sim.config;
+    SimulationReport report = shm->sim.report;
+
+    munmap(shm, sizeof(SharedBlock));
+    close(shm_fd);
 
     time_t now = time(NULL);
     struct tm *timeinfo = localtime(&now);

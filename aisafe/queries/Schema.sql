@@ -276,8 +276,6 @@ CREATE TABLE FlightPlan (
                             flight_plan_id    VARCHAR(255) PRIMARY KEY,
                             departureDateTime TIMESTAMP,
                             fuelQuantity      DOUBLE PRECISION,
-                            passengerLoad     INT,
-                            cargoLoad         DOUBLE PRECISION,
                             status            VARCHAR(255),
                             aircraftId        VARCHAR(255),
                             flightRouteId     VARCHAR(255),

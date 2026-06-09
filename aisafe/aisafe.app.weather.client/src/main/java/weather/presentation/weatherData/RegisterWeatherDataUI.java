@@ -54,19 +54,11 @@ public class RegisterWeatherDataUI extends AbstractUI {
                 controller.registerWeatherData(dto);
                 System.out.println("Weather data registered successfully (Direct DB).");
             } else {
-                // Create JSON payload manually or with a library (simplified here)
-                String jsonPayload = String.format(
-                        "{\"acaCode\":\"%s\",\"latitude1\":%s,\"longitude1\":%s,\"latitude2\":%s,\"longitude2\":%s," +
-                                "\"altitudeInf\":%s,\"altitudeSup\":%s,\"direction\":%s,\"windSpeed\":%s," +
-                                "\"date\":[%d,%d,%d],\"startHour\":[%d,%d],\"endHour\":[%d,%d]}",
-                        acaCode, latitude1, longitude1, latitude2, longitude2,
-                        altitudeInf, altitudeSup, direction, windSpeed,
-                        date.getYear(), date.getMonthValue(), date.getDayOfMonth(),
-                        startHour.getHour(), startHour.getMinute(),
-                        endHour.getHour(), endHour.getMinute()
-                );
-
                 try {
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+                    String jsonPayload = mapper.writeValueAsString(dto);
+
                     String response = ClientSession.getClient().uploadWeather(jsonPayload);
                     System.out.println("Server response: " + response);
                 } catch (IOException e) {

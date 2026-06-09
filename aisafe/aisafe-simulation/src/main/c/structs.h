@@ -214,12 +214,13 @@ typedef enum {
     THREAD_IDLE,
     THREAD_DISPATCHER,
     THREAD_RESULTS,
-    THREAD_VIOLATIONS
+    THREAD_VIOLATIONS,
+    THREAD_REPORT
 } SimThreadPhase;
 
 /* Parent-process thread coordination context.
    Holds the shared memory pointer, mutex, condition variables, and
-   per-step state shared between the Dispatcher, Results, and Violations threads. */
+   per-step state shared between the parent-process worker threads. */
 typedef struct {
     SharedBlock      *shm;
     pthread_mutex_t   mutex;
@@ -227,6 +228,7 @@ typedef struct {
     pthread_cond_t    cond_results;
     pthread_cond_t    cond_violations;
     pthread_cond_t    cond_step_done;
+    pthread_cond_t    cond_report;
     SimThreadPhase    current_thread;
     bool              was_active[MAX_FLIGHTS];
     int               num_flights;
@@ -237,6 +239,8 @@ typedef struct {
     int               step_num;
     int               total_steps;
     bool              sim_done;
+    int               pending_violations;
+    bool              report_finalize;
 } SimContext;
 
 #endif /* STRUCTS_H */
