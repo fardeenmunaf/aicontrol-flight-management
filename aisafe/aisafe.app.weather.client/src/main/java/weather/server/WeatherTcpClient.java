@@ -30,6 +30,12 @@ public class WeatherTcpClient implements AutoCloseable {
         return ProtocolCodec.read(sIn).dataAsString();
     }
 
+    public String listWeather(String area, String date) throws IOException {
+        String payload = (area == null ? "" : area) + ";" + (date == null ? "" : date);
+        ProtocolCodec.write(sOut, new ProtocolMessage(MessageCode.LIST_WEATHER, payload));
+        return ProtocolCodec.read(sIn).dataAsString();
+    }
+
     @Override
     public void close() throws IOException {
         try { ProtocolCodec.write(sOut, new ProtocolMessage(MessageCode.DISCONN, "")); }

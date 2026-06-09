@@ -6,7 +6,8 @@ public enum MessageCode {
     ACK((byte) 2),
     ERR((byte) 3),
     AUTH((byte) 4),
-    UPLOAD_WEATHER((byte) 10);
+    UPLOAD_WEATHER((byte) 10),
+    LIST_WEATHER((byte) 11);
 
     private final byte code;
 
