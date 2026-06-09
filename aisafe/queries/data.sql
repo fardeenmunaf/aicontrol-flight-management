@@ -284,5 +284,3 @@ SELECT setval('T_ROLEASSIGNMENT_SEQ', 50, true);
 SELECT setval('FlightLeg_SEQ',        50, true);
 SELECT setval('Segment_SEQ',          50, true);
 SELECT setval('AltitudeSlot_SEQ',     50, true);
-SELECT setval('AircraftPosition_SEQ', 50, true);
-SELECT setval('SafetyViolation_SEQ',  50, true);

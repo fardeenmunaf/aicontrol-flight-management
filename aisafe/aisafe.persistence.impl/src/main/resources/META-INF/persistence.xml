@@ -22,9 +22,6 @@
         <class>user.domain.User</class>
         <class>simulationReport.domain.SimulationReport</class>
         <class>weatherData.domain.WeatherData</class>
-        <class>simulation.domain.Simulation</class>
-        <class>simulation.domain.AircraftPosition</class>
-        <class>simulation.domain.SafetyViolation</class>
         <class>aircraftmodel.domain.AircraftModel</class>
         <class>aircontrolarea.domain.AirControlArea</class>
         <class>airtransportcompany.domain.AirTransportCompany</class>
@@ -69,9 +66,6 @@
         <class>user.domain.User</class>
         <class>simulationReport.domain.SimulationReport</class>
         <class>weatherData.domain.WeatherData</class>
-        <class>simulation.domain.Simulation</class>
-        <class>simulation.domain.AircraftPosition</class>
-        <class>simulation.domain.SafetyViolation</class>
         <class>aircraftmodel.domain.AircraftModel</class>
         <class>aircontrolarea.domain.AirControlArea</class>
         <class>airtransportcompany.domain.AirTransportCompany</class>

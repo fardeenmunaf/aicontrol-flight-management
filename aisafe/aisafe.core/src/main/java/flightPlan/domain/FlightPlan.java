@@ -1,23 +1,15 @@
 package flightPlan.domain;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import jakarta.persistence.CascadeType;
+import eapli.framework.domain.model.AggregateRoot;
+import eapli.framework.domain.model.DomainEntities;
+import eapli.framework.validations.Preconditions;
+import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OrderBy;
 import jakarta.persistence.Version;
 import shared.domain.FlightPlanId;
-import eapli.framework.domain.model.AggregateRoot;
-import eapli.framework.domain.model.DomainEntities;
-import eapli.framework.validations.Preconditions;
 
 @Entity
 public class FlightPlan implements AggregateRoot<FlightPlanId> {
@@ -30,38 +22,17 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
     @EmbeddedId
     private FlightPlanId flightPlanId;
 
-    private Instant departureDateTime;
-    private double fuelQuantity;
-    private int passengerLoad;
-    private double cargoLoad;
-
     @Enumerated(EnumType.STRING)
     private FlightPlanStatus status;
 
-    private String aircraftId;
+    @Column(name = "flight_plan_json", columnDefinition = "TEXT")
+    private String flightPlanJson;
 
-    private String flightRouteId;
-
-    private String pilotId;
-
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "flight_plan_ref")
-    @OrderBy("sequenceNumber ASC")
-    private List<FlightLeg> legs = new ArrayList<>();
-
-    public FlightPlan(final FlightPlanId flightPlanId, final String aircraftId, final Instant departureDateTime,
-            final double fuelQuantity, final int passengerLoad, final double cargoLoad) {
-        Preconditions.noneNull(flightPlanId, aircraftId, departureDateTime);
-        Preconditions.ensure(departureDateTime.isAfter(Instant.now()), "Departure date/time must be in the future");
-        Preconditions.ensure(fuelQuantity > 0, "Fuel quantity must be strictly positive");
-        Preconditions.ensure(passengerLoad >= 0, "Passenger load must be non-negative");
-        Preconditions.ensure(cargoLoad >= 0, "Cargo load must be non-negative");
+    public FlightPlan(final FlightPlanId flightPlanId, final String flightPlanJson) {
+        Preconditions.noneNull(flightPlanId, flightPlanJson);
+        Preconditions.nonEmpty(flightPlanJson, "Flight plan JSON must not be empty");
         this.flightPlanId = flightPlanId;
-        this.aircraftId = aircraftId;
-        this.departureDateTime = departureDateTime;
-        this.fuelQuantity = fuelQuantity;
-        this.passengerLoad = passengerLoad;
-        this.cargoLoad = cargoLoad;
+        this.flightPlanJson = flightPlanJson;
         this.status = FlightPlanStatus.DRAFT;
     }
 
@@ -69,46 +40,23 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
         // for ORM
     }
 
-    /**
-     * Adds a flight leg, enforcing the DSL semantic rule:
-     * the arrival airport of leg N must match the departure airport of leg N+1.
-     * Any structural change resets a TESTED plan back to DRAFT.
-     */
-    public void addLeg(final FlightLeg leg) {
-        Preconditions.nonNull(leg, "FlightLeg must not be null");
-        if (!legs.isEmpty()) {
-            final FlightLeg lastLeg = legs.get(legs.size() - 1);
-            if (!lastLeg.arrivalAirportId().equals(leg.departureAirportId())) {
-                throw new IllegalArgumentException(
-                        "Departure airport of leg " + leg.sequenceNumber()
-                                + " must match arrival airport of leg " + lastLeg.sequenceNumber());
-            }
-        }
-        if (this.status == FlightPlanStatus.TESTED) {
-            this.status = FlightPlanStatus.DRAFT;
-        }
-        this.legs.add(leg);
-    }
-
-    /**
-     * Marks the plan as tested after a successful validation run.
-     */
     public void markAsTested() {
-        if (legs.isEmpty()) {
-            throw new IllegalStateException("A FlightPlan must have at least one leg before being tested");
-        }
         this.status = FlightPlanStatus.TESTED;
     }
 
-    /**
-     * Voids a previously tested plan — e.g., when new weather data is inserted
-     * (US082).
-     */
     public void voidTest() {
         if (this.status != FlightPlanStatus.TESTED) {
             throw new IllegalStateException("Only a TESTED FlightPlan can be voided");
         }
         this.status = FlightPlanStatus.VOID;
+    }
+
+    public FlightPlanStatus status() {
+        return status;
+    }
+
+    public String flightPlanJson() {
+        return flightPlanJson;
     }
 
     @Override
@@ -129,51 +77,5 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
     @Override
     public int hashCode() {
         return DomainEntities.hashCode(this);
-    }
-
-    public Instant departureDateTime() {
-        return departureDateTime;
-    }
-
-    public double fuelQuantity() {
-        return fuelQuantity;
-    }
-
-    public int passengerLoad() {
-        return passengerLoad;
-    }
-
-    public double cargoLoad() {
-        return cargoLoad;
-    }
-
-    public FlightPlanStatus status() {
-        return status;
-    }
-
-    public String aircraftId() {
-        return aircraftId;
-    }
-
-    public String flightRouteId() {
-        return flightRouteId;
-    }
-
-    public void assignToRoute(final String routeId) {
-        Preconditions.nonEmpty(routeId, "Route ID must not be null or empty");
-        this.flightRouteId = routeId;
-    }
-
-    public void assignPilot(final String pilotId) {
-        Preconditions.nonEmpty(pilotId, "Pilot ID must not be null or empty");
-        this.pilotId = pilotId;
-    }
-
-    public String pilotId() {
-        return pilotId;
-    }
-
-    public List<FlightLeg> legs() {
-        return Collections.unmodifiableList(legs);
     }
 }

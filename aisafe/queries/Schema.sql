@@ -4,10 +4,6 @@
 -- ============================================================
 
 DROP TABLE IF EXISTS CustomerCollaborator CASCADE;
-DROP TABLE IF EXISTS SafetyViolation_recordedVectors CASCADE;
-DROP TABLE IF EXISTS SafetyViolation_Aircraft CASCADE;
-DROP TABLE IF EXISTS Simulation_WeatherData CASCADE;
-DROP TABLE IF EXISTS Simulation_Flight CASCADE;
 DROP TABLE IF EXISTS PilotCompanyAssignment CASCADE;
 DROP TABLE IF EXISTS Pilot_AircraftModel CASCADE;
 DROP TABLE IF EXISTS aircraftmodel_enginemodel CASCADE;
@@ -17,9 +13,6 @@ DROP TABLE IF EXISTS FlightLeg CASCADE;
 DROP TABLE IF EXISTS FlightPlan CASCADE;
 DROP TABLE IF EXISTS Flight CASCADE;
 DROP TABLE IF EXISTS FlightRoute CASCADE;
-DROP TABLE IF EXISTS AircraftPosition CASCADE;
-DROP TABLE IF EXISTS SafetyViolation CASCADE;
-DROP TABLE IF EXISTS Simulation CASCADE;
 DROP TABLE IF EXISTS SimulationReport CASCADE;
 DROP TABLE IF EXISTS WeatherData CASCADE;
 DROP TABLE IF EXISTS Aircraft CASCADE;
@@ -39,8 +32,6 @@ DROP TABLE IF EXISTS AppUser CASCADE;
 
 DROP SEQUENCE IF EXISTS T_ROLESET_SEQ CASCADE;
 DROP SEQUENCE IF EXISTS T_ROLEASSIGNMENT_SEQ CASCADE;
-DROP SEQUENCE IF EXISTS AircraftPosition_SEQ CASCADE;
-DROP SEQUENCE IF EXISTS SafetyViolation_SEQ CASCADE;
 DROP SEQUENCE IF EXISTS FlightLeg_SEQ CASCADE;
 DROP SEQUENCE IF EXISTS Segment_SEQ CASCADE;
 DROP SEQUENCE IF EXISTS AltitudeSlot_SEQ CASCADE;
@@ -99,8 +90,6 @@ CREATE TABLE T_SYSTEMUSER (
 
 CREATE SEQUENCE T_ROLESET_SEQ START WITH 1 INCREMENT BY 50;
 CREATE SEQUENCE T_ROLEASSIGNMENT_SEQ START WITH 1 INCREMENT BY 50;
-CREATE SEQUENCE AircraftPosition_SEQ START WITH 1 INCREMENT BY 50;
-CREATE SEQUENCE SafetyViolation_SEQ START WITH 1 INCREMENT BY 50;
 CREATE SEQUENCE FlightLeg_SEQ START WITH 1 INCREMENT BY 50;
 CREATE SEQUENCE Segment_SEQ START WITH 1 INCREMENT BY 50;
 CREATE SEQUENCE AltitudeSlot_SEQ START WITH 1 INCREMENT BY 50;
@@ -273,14 +262,10 @@ CREATE TABLE Flight (
 );
 
 CREATE TABLE FlightPlan (
-                            flight_plan_id    VARCHAR(255) PRIMARY KEY,
-                            departureDateTime TIMESTAMP,
-                            fuelQuantity      DOUBLE PRECISION,
-                            status            VARCHAR(255),
-                            aircraftId        VARCHAR(255),
-                            flightRouteId     VARCHAR(255),
-                            pilotId           VARCHAR(255),
-                            version           BIGINT
+                            flight_plan_id   VARCHAR(255) PRIMARY KEY,
+                            status           VARCHAR(255),
+                            flight_plan_json TEXT,
+                            version          BIGINT
 );
 
 CREATE TABLE FlightLeg (
@@ -335,59 +320,6 @@ CREATE TABLE WeatherData (
 -- ============================================================
 -- SIMULATION
 -- ============================================================
-
-CREATE TABLE Simulation (
-                            simulation_id        VARCHAR(255) PRIMARY KEY,
-                            startDateTime        TIMESTAMP,
-                            endDateTime          TIMESTAMP,
-                            geographicArea       TEXT,
-                            safetyThresholds     TEXT,
-                            performanceSettings  TEXT,
-                            status               VARCHAR(255),
-                            airControlArea_id VARCHAR(255) REFERENCES AirControlArea(air_control_area_id),
-                            version              BIGINT
-);
-
-CREATE TABLE Simulation_Flight (
-                                   Simulation_simulation_id VARCHAR(255) NOT NULL REFERENCES Simulation(simulation_id),
-                                   trackedFlights_flight_id VARCHAR(255) NOT NULL REFERENCES Flight(flight_id),
-                                   PRIMARY KEY (Simulation_simulation_id, trackedFlights_flight_id)
-);
-
-CREATE TABLE Simulation_WeatherData (
-                                        Simulation_simulation_id            VARCHAR(255) NOT NULL REFERENCES Simulation(simulation_id),
-                                        capturedWeatherData_weather_data_id VARCHAR(255) NOT NULL REFERENCES WeatherData(weather_data_id),
-                                        PRIMARY KEY (Simulation_simulation_id, capturedWeatherData_weather_data_id)
-);
-
-CREATE TABLE AircraftPosition (
-                                  id BIGINT PRIMARY KEY,
-                                  simulation_simulation_id VARCHAR(255) REFERENCES Simulation(simulation_id),
-                                  timestamp                TIMESTAMP,
-                                  altitude                 DOUBLE PRECISION,
-                                  speed                    DOUBLE PRECISION,
-                                  direction                DOUBLE PRECISION
-);
-
-CREATE TABLE SafetyViolation (
-                                 id BIGINT PRIMARY KEY,
-                                 simulation_simulation_id VARCHAR(255) REFERENCES Simulation(simulation_id),
-                                 timestamp                TIMESTAMP,
-                                 severity                 VARCHAR(255)
-);
-
-CREATE TABLE SafetyViolation_recordedVectors (
-                                                 SafetyViolation_id BIGINT NOT NULL REFERENCES SafetyViolation(id),
-                                                 speed              DOUBLE PRECISION NOT NULL,
-                                                 direction          DOUBLE PRECISION NOT NULL,
-                                                 PRIMARY KEY (SafetyViolation_id, speed, direction)
-);
-
-CREATE TABLE SafetyViolation_Aircraft (
-                                          SafetyViolation_id BIGINT NOT NULL REFERENCES SafetyViolation(id),
-                                          involvedAircraft_aircraft_id VARCHAR(255) NOT NULL REFERENCES Aircraft(aircraft_id),
-                                          PRIMARY KEY (SafetyViolation_id, involvedAircraft_aircraft_id)
-);
 
 CREATE TABLE SimulationReport (
                                   simulation_report_id VARCHAR(255) PRIMARY KEY,
