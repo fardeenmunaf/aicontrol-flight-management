@@ -266,6 +266,17 @@ VALUES
     ('pilot2@ryanair.ie', 'atc-002'),
     ('pilot3@lufthansa.de', 'atc-004');
 
+INSERT INTO Pilot_AircraftModel (Pilot_pilot_id, certifiedAircraftModels_aircraft_model_id)
+VALUES
+    ('pilot-001', 'am-777'),
+    ('pilot-001', 'am-A380'),
+    ('pilot-002', 'am-777'),
+    ('pilot-002', 'am-A380'),
+    ('pilot-003', 'am-777'),
+    ('pilot-003', 'am-A380'),
+    ('pilot-004', 'am-777'),
+    ('pilot-004', 'am-A380');
+
 INSERT INTO FlightPlan (flight_plan_id, departureDateTime, fuelQuantity, passengerLoad, cargoLoad, status, aircraftId, flightRouteId, pilotId, version)
 VALUES
     ('fp-001', '2026-05-12 08:00:00', 8200.0, 150, 1200.0, 'DRAFT',    'ac-001', 'fr-001', NULL, 0),
