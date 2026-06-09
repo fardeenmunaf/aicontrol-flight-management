@@ -187,6 +187,19 @@ public class InMemoryRepositoryFactory implements RepositoryFactory {
     public CustomerCollaboratorRepository customerCollaborators(final TransactionalContext autoTx) {
         return new InMemoryCustomerCollaboratorRepository();
     }
+
     @Override
-    public CustomerCollaboratorRepository customerCollaborators() {return customerCollaborators(null);}
+    public CustomerCollaboratorRepository customerCollaborators() {
+        return customerCollaborators(null);
+    }
+
+    @Override
+    public pilot.repository.PilotCompanyAssignmentRepository pilotCompanyAssignments(final TransactionalContext autoTx) {
+        return new InMemoryPilotCompanyAssignmentRepository();
+    }
+
+    @Override
+    public pilot.repository.PilotCompanyAssignmentRepository pilotCompanyAssignments() {
+        return pilotCompanyAssignments(null);
+    }
 }

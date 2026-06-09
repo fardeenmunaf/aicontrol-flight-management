@@ -22,7 +22,7 @@ public class UsersBootstrap {
     public void execute() {
         registerIfAbsent("admin@aisafe.com",  "Admin1234!",    "System Admin",    AISafeRoles.ADMIN, Role.ADMIN, null);
         registerIfAbsent("bo@aisafe.com",     "Operator1234!", "Backoffice Ops",  AISafeRoles.BACKOFFICE_OPERATOR, Role.BACKOFFICE_OPERATOR, null);
-        registerIfAbsent("pilot@aisafe.com",  "Pilot1234!",    "Default Pilot",   AISafeRoles.PILOT, Role.PILOT, null);
+        registerIfAbsent("pilot@tap.com",     "Pilot1234!",    "TAP Pilot",       AISafeRoles.PILOT, Role.PILOT, null);
         registerIfAbsent("fco@aisafe.com",    "Fco1234!",      "Default FCO",     AISafeRoles.FLIGHT_CONTROL_OPERATOR, Role.FLIGHT_CONTROL_OPERATOR, null);
         registerIfAbsent("weather@aisafe.com","Weather1234!",  "Weather Person",  AISafeRoles.WEATHER_PERSON, Role.WEATHER_PERSON, null);
         

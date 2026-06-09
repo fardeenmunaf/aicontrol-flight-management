@@ -303,15 +303,14 @@ public class FlightPlanUI {
                     PersistenceContext.repositories().flightPlans(),
                     PersistenceContext.repositories().nodes(),
                     PersistenceContext.repositories().aircraftModels(),
-                    PersistenceContext.repositories().airports(),
-                    PersistenceContext.repositories().airTransportCompanies());
+                    PersistenceContext.repositories().airports());
 
             int imported = 0;
             final StringBuilder sb = new StringBuilder();
             for (final FlightPlanAst planAst : result.document().flightPlans()) {
                 try {
-                    importCtrl.importFlightPlan(planAst.flightDesignator(),
-                            planAst.aircraftId(), planAst.pilotRef(), buildLegRequests(planAst));
+                    importCtrl.importFlightPlan(
+                            planAst.aircraftId(), planAst.pilotRef(), planAst.routeReference(), buildLegRequests(planAst));
                     sb.append("✓ Imported: ").append(planAst.flightDesignator()).append("\n");
                     imported++;
                 } catch (final Exception e) {
@@ -602,15 +601,14 @@ public class FlightPlanUI {
                     PersistenceContext.repositories().flightPlans(),
                     PersistenceContext.repositories().nodes(),
                     PersistenceContext.repositories().aircraftModels(),
-                    PersistenceContext.repositories().airports(),
-                    PersistenceContext.repositories().airTransportCompanies());
+                    PersistenceContext.repositories().airports());
 
             int imported = 0;
             final StringBuilder sb = new StringBuilder();
             for (final FlightPlanAst planAst : result.document().flightPlans()) {
                 try {
-                    importCtrl.importFlightPlan(planAst.flightDesignator(),
-                            planAst.aircraftId(), planAst.pilotRef(), buildLegRequests(planAst));
+                    importCtrl.importFlightPlan(
+                            planAst.aircraftId(), planAst.pilotRef(), planAst.routeReference(), buildLegRequests(planAst));
                     sb.append("✓ Imported: ").append(planAst.flightDesignator()).append("\n");
                     imported++;
                 } catch (final Exception e) {

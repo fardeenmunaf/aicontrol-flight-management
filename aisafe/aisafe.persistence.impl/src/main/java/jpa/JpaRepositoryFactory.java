@@ -16,6 +16,7 @@ import flight.repository.FlightRepository;
 import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
 import pilot.repository.PilotRepository;
+import pilot.repository.PilotCompanyAssignmentRepository;
 import simulation.repository.SimulationRepository;
 import aircontrolarea.repositories.AirControlAreaRepository;
 import airtransportcompany.repositories.AirTransportCompanyRepository;
@@ -190,8 +191,19 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     public CustomerCollaboratorRepository customerCollaborators() {
         return new JpaCustomerCollaboratorRepository(PersistenceSettings.getPersistenceUnitName());
     }
+
     @Override
     public CustomerCollaboratorRepository customerCollaborators(final TransactionalContext autoTx) {
         return new JpaCustomerCollaboratorRepository(autoTx);
+    }
+
+    @Override
+    public PilotCompanyAssignmentRepository pilotCompanyAssignments() {
+        return new JpaPilotCompanyAssignmentRepository(PersistenceSettings.getPersistenceUnitName());
+    }
+
+    @Override
+    public PilotCompanyAssignmentRepository pilotCompanyAssignments(final TransactionalContext autoTx) {
+        return new JpaPilotCompanyAssignmentRepository(autoTx);
     }
 }

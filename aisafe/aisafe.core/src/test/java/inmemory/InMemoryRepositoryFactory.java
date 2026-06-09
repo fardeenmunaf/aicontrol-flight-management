@@ -180,6 +180,16 @@ public class InMemoryRepositoryFactory implements infrastructure.persistence.Rep
     public customercollaborator.repositories.CustomerCollaboratorRepository customerCollaborators(final TransactionalContext autoTx) {
         return null;
     }
+
+    @Override
+    public pilot.repository.PilotCompanyAssignmentRepository pilotCompanyAssignments() {
+        return null;
+    }
+
+    @Override
+    public pilot.repository.PilotCompanyAssignmentRepository pilotCompanyAssignments(final TransactionalContext autoTx) {
+        return null;
+    }
 }
 
 

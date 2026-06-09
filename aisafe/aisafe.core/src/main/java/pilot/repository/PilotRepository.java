@@ -5,7 +5,9 @@ import pilot.domain.Pilot;
 import pilot.domain.PilotStatus;
 import aircraftmodel.domain.AircraftModel;
 import shared.domain.PilotId;
+import shared.domain.UserId;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository interface for Pilot aggregate.
@@ -33,4 +35,6 @@ public interface PilotRepository extends DomainRepository<PilotId, Pilot> {
      * @return list of certified pilots, never null
      */
     List<Pilot> findCertifiedFor(AircraftModel aircraftModel);
+
+    Optional<Pilot> findByUserId(UserId userId);
 }

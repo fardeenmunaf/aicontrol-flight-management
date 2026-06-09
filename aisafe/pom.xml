@@ -31,8 +31,7 @@
     </properties>
 
     <modules>
-        <module>aisafe.app.aircontrol.console</module>
-        <module>aisafe.app.airtransport.console</module>
+<module>aisafe.app.airtransport.console</module>
         <module>aisafe.app.backoffice.console</module>
         <module>aisafe.app.bootstrap</module>
         <module>aisafe.app.weather.client</module>

@@ -15,6 +15,7 @@ import flight.repository.FlightRepository;
 import simulationReport.repository.SimulationReportRepository;
 import weatherData.repository.WeatherDataRepository;
 import pilot.repository.PilotRepository;
+import pilot.repository.PilotCompanyAssignmentRepository;
 import simulation.repository.SimulationRepository;
 
 /**
@@ -100,4 +101,8 @@ public interface RepositoryFactory {
     CustomerCollaboratorRepository customerCollaborators();
 
     CustomerCollaboratorRepository customerCollaborators(TransactionalContext autoTx);
+
+    PilotCompanyAssignmentRepository pilotCompanyAssignments();
+
+    PilotCompanyAssignmentRepository pilotCompanyAssignments(TransactionalContext autoTx);
 }

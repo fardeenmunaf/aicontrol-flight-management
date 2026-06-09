@@ -23,9 +23,6 @@ import airport.domain.Airport;
 import airport.repositories.AirportRepository;
 import shared.domain.AircraftModelId;
 import shared.domain.AirportId;
-import airtransportcompany.domain.AirTransportCompany;
-import airtransportcompany.repositories.AirTransportCompanyRepository;
-import shared.domain.AirTransportCompanyId;
 
 import java.time.Instant;
 import java.util.List;
@@ -43,7 +40,6 @@ class ImportFlightPlanControllerTest {
     private final StubNodeRepository nodeRepo = new StubNodeRepository();
     private final StubAircraftModelRepository aircraftRepo = new StubAircraftModelRepository();
     private final StubAirportRepository airportRepo = new StubAirportRepository();
-    private final StubAirTransportCompanyRepository companyRepo = new StubAirTransportCompanyRepository();
 
     @BeforeAll
     static void setupAuth() {
@@ -64,12 +60,11 @@ class ImportFlightPlanControllerTest {
         nodeRepo.clear();
         aircraftRepo.clear();
         airportRepo.clear();
-        companyRepo.clear();
         AuthzRegistry.authenticationService().authenticate(PILOT_EMAIL, PASSWORD);
     }
 
     private ImportFlightPlanController controller() {
-        return new ImportFlightPlanController(planRepo, nodeRepo, aircraftRepo, airportRepo, companyRepo);
+        return new ImportFlightPlanController(planRepo, nodeRepo, aircraftRepo, airportRepo);
     }
 
     private LegImportRequest singleLeg() {
@@ -81,33 +76,27 @@ class ImportFlightPlanControllerTest {
 
     @Test
     void ensureFlightPlanIsImportedSuccessfully() {
-        final FlightPlan plan = controller().importFlightPlan("TP1234", "A380", PILOT_EMAIL, List.of(singleLeg()));
+        final FlightPlan plan = controller().importFlightPlan("A380", PILOT_EMAIL, "TP123", List.of(singleLeg()));
         assertNotNull(plan);
-    }
-
-    @Test
-    void ensureNullDesignatorIsRejected() {
-        assertThrows(NullPointerException.class,
-                () -> controller().importFlightPlan(null, "A380", PILOT_EMAIL, List.of(singleLeg())));
     }
 
     @Test
     void ensureEmptyLegsListIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> controller().importFlightPlan("TP1234", "A380", PILOT_EMAIL, List.of()));
+                () -> controller().importFlightPlan("A380", PILOT_EMAIL, "TP123", List.of()));
     }
 
     @Test
     void ensureNullLegsIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> controller().importFlightPlan("TP1234", "A380", PILOT_EMAIL, null));
+                () -> controller().importFlightPlan("A380", PILOT_EMAIL, "TP123", null));
     }
 
     @Test
-    void ensureDuplicateDesignatorIsRejected() {
-        controller().importFlightPlan("TP-DUPE", "A380", PILOT_EMAIL, List.of(singleLeg()));
-        assertThrows(IllegalArgumentException.class,
-                () -> controller().importFlightPlan("TP-DUPE", "A380", PILOT_EMAIL, List.of(singleLeg())));
+    void ensureEachImportGetsUniqueId() {
+        final FlightPlan plan1 = controller().importFlightPlan("A380", PILOT_EMAIL, "TP123", List.of(singleLeg()));
+        final FlightPlan plan2 = controller().importFlightPlan("A380", PILOT_EMAIL, "TP123", List.of(singleLeg()));
+        assertNotEquals(plan1.identity(), plan2.identity());
     }
 
     @Test
@@ -116,20 +105,14 @@ class ImportFlightPlanControllerTest {
                 "2027-05-05", "11:00", "2027-05-05", "12:30",
                 38000.0, "MAD", "BCN",
                 List.of(new SegmentImportRequest(40.49, -3.56, 41.29, 2.07)));
-        final FlightPlan plan = controller().importFlightPlan("TP5678", "A380", PILOT_EMAIL, List.of(singleLeg(), leg2));
+        final FlightPlan plan = controller().importFlightPlan("A380", PILOT_EMAIL, "TP123", List.of(singleLeg(), leg2));
         assertNotNull(plan);
-    }
-
-    @Test
-    void ensureInvalidCompanyCallsignIsRejected() {
-        assertThrows(IllegalArgumentException.class,
-                () -> controller().importFlightPlan("XX1234", "A380", PILOT_EMAIL, List.of(singleLeg())));
     }
 
     @Test
     void ensurePilotMismatchIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> controller().importFlightPlan("TP9999", "A380", "other.pilot@test.com", List.of(singleLeg())));
+                () -> controller().importFlightPlan("A380", "other.pilot@test.com", "TP123", List.of(singleLeg())));
     }
 
     static class StubFlightPlanRepository
@@ -223,31 +206,6 @@ class ImportFlightPlanControllerTest {
         @Override
         public Optional<Airport> findByIcaoCode(String code) {
             return Optional.empty();
-        }
-    }
-
-    static class StubAirTransportCompanyRepository
-            extends InMemoryDomainRepository<AirTransportCompany, AirTransportCompanyId>
-            implements AirTransportCompanyRepository {
-
-        void clear() { data().clear(); }
-
-        @Override
-        public List<AirTransportCompany> findByName(String name) {
-            return List.of();
-        }
-
-        @Override
-        public List<AirTransportCompany> findByIataCode(String iataCode) {
-            if ("TP".equals(iataCode)) {
-                return List.of(new AirTransportCompany("TAP", "TP", "TAP"));
-            }
-            return List.of();
-        }
-
-        @Override
-        public List<AirTransportCompany> findByIcaoCode(String icaoCode) {
-            return List.of();
         }
     }
 }

@@ -15,7 +15,6 @@ import shared.domain.NodeId;
 import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
 import airport.domain.Airport;
-import airtransportcompany.repositories.AirTransportCompanyRepository;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -34,18 +33,15 @@ public class ImportFlightPlanController {
     private final NodeRepository nodeRepository;
     private final AircraftModelRepository aircraftModelRepository;
     private final AirportRepository airportRepository;
-    private final AirTransportCompanyRepository airTransportCompanyRepository;
 
     public ImportFlightPlanController(final FlightPlanRepository flightPlanRepository,
             final NodeRepository nodeRepository,
             final AircraftModelRepository aircraftModelRepository,
-            final AirportRepository airportRepository,
-            final AirTransportCompanyRepository airTransportCompanyRepository) {
+            final AirportRepository airportRepository) {
         this.flightPlanRepository = Objects.requireNonNull(flightPlanRepository);
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.aircraftModelRepository = Objects.requireNonNull(aircraftModelRepository);
         this.airportRepository = Objects.requireNonNull(airportRepository);
-        this.airTransportCompanyRepository = Objects.requireNonNull(airTransportCompanyRepository);
     }
 
     /**
@@ -53,8 +49,8 @@ public class ImportFlightPlanController {
      * Segments are anchored to new transient Node entities created from the DSL
      * coordinates.
      */
-    public FlightPlan importFlightPlan(final String designator, final String aircraftId,
-            final String pilotRef, final List<LegImportRequest> legs) {
+    public FlightPlan importFlightPlan(final String aircraftId,
+            final String pilotRef, final String routeId, final List<LegImportRequest> legs) {
         AuthzRegistry.authorizationService().ensureAuthenticatedUserHasAnyOf(
                 AISafeRoles.AIR_TRANSPORT_COMPANY_COLLABORATOR, AISafeRoles.PILOT);
 
@@ -68,25 +64,12 @@ public class ImportFlightPlanController {
                             + ")");
         }
 
-        Objects.requireNonNull(designator, "designator");
         Objects.requireNonNull(aircraftId, "aircraftId");
         if (legs == null || legs.isEmpty()) {
             throw new IllegalArgumentException("At least one leg is required");
         }
 
-        final FlightPlanId planId = FlightPlanId.valueOf(designator);
-        if (flightPlanRepository.findByFlightPlanId(planId).isPresent()) {
-            throw new IllegalArgumentException("Flight plan '" + designator + "' already exists in the system");
-        }
-
-        if (designator.length() < 2) {
-            throw new IllegalArgumentException("Designator must be at least 2 characters long");
-        }
-        final String companyIata = designator.substring(0, 2).toUpperCase();
-        if (airTransportCompanyRepository.findByIataCode(companyIata).isEmpty()) {
-            throw new IllegalArgumentException("The first 2 letters of the designator ('" + companyIata
-                    + "') do not belong to any registered Air Transport Company");
-        }
+        final FlightPlanId planId = FlightPlanId.newId();
 
         // Validate aircraft
         if (aircraftModelRepository.findByModelName(aircraftId).isEmpty()) {
@@ -129,6 +112,11 @@ public class ImportFlightPlanController {
             }
 
             plan.addLeg(leg);
+        }
+
+        plan.assignPilot(loggedInEmail);
+        if (routeId != null && !routeId.isEmpty()) {
+            plan.assignToRoute(routeId);
         }
 
         return flightPlanRepository.save(plan);
