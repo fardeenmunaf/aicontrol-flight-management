@@ -472,6 +472,72 @@
         }
         return NULL;
     }
+     // ── Report finalisation ────────────────────────────────────────────────────────
+
+        /**
+         * @brief Populates the SimulationReport with final per-flight data, then forks
+         *        report_generator.
+         *
+         * report_generator reads the data from shared memory and produces the JSON file.
+         *
+         * @param sim          Pointer to the local simulation data block.
+         * @param sim_end_time Final simulation clock value in seconds.
+         */
+        static void finalize_and_write_report(SimulationData *sim, double sim_end_time, pid_t *pids) {
+            sim->report.sim_end_time = sim_end_time;
+
+            int count = 0;
+            for (int i = 0; i < sim->num_flights; i++) {
+                Flight       *f      = &sim->flights[i];
+                if (pids[i] <= 0 && f->process_id <= 0) continue;
+                FlightStatus *status = &sim->report.flight_statuses[count++];
+
+                strncpy(status->callsign, f->callsign, CALLSIGN_LEN - 1);
+                status->callsign[CALLSIGN_LEN - 1] = '\0';
+                status->completed_successfully = !f->is_active &&
+                                                  !f->violation_detected &&
+                                                  f->departure_offset_s < sim->config.end_time;
+                status->had_violation      = f->violation_detected;
+                double fuel_rem = f->current_mass - f-pid>properties.empty_weight - f->payload;
+                status->fuel_remaining     = (fuel_rem > 0) ? fuel_rem : 0.0;
+                status->num_legs_completed = f->current_leg;
+            }
+            sim->report.total_flights = count;
+            sim->report.total_violations_recorded = sim->total_violations_detected;
+
+            pid_t rpid = fork();
+            if (rpid < 0) {
+                perror("fork for report_generator failed");
+                return;
+            }
+
+            if (rpid == 0) {
+                // Child: pass the shm name as argv[1]
+                execl("./report_generator", "report_generator", "/aisafe_sim", NULL);
+                perror("execl report_generator failed");
+                exit(EXIT_FAILURE);
+            }
+
+            waitpid(rpid, NULL, 0);
+        }
+
+        // ── Cleanup ────────────────────────────────────────────────────────────────────
+
+        static void cleanup(SharedBlock *shm, pid_t *pids, int n) {
+            shm->terminate = true;
+            signal(SIGPIPE, SIG_IGN);
+
+            /* Unblock children that are waiting on step_go. */
+            for (int i = 0; i < n; i++)
+                if (pids[i] > 0)
+                    sem_post(&shm->step_go[i]);
+
+            for (int i = 0; i < n; i++)
+                if (pids[i] > 0)
+                    waitpid(pids[i], NULL, 0);
+        }
+
+        // ── Flight selection menu ──────────────────────────────────────────────────────
 /**
      * @brief Report thread — waits for a signal to finalize, then populates the report and forks report_generator.
      *
@@ -519,72 +585,7 @@
         return NULL;
     }
 
-    // ── Report finalisation ────────────────────────────────────────────────────────
 
-    /**
-     * @brief Populates the SimulationReport with final per-flight data, then forks
-     *        report_generator.
-     *
-     * report_generator reads the data from shared memory and produces the JSON file.
-     *
-     * @param sim          Pointer to the local simulation data block.
-     * @param sim_end_time Final simulation clock value in seconds.
-     */
-    static void finalize_and_write_report(SimulationData *sim, double sim_end_time, pid_t *pids) {
-        sim->report.sim_end_time = sim_end_time;
-
-        int count = 0;
-        for (int i = 0; i < sim->num_flights; i++) {
-            Flight       *f      = &sim->flights[i];
-            if (pids[i] <= 0 && f->process_id <= 0) continue;
-            FlightStatus *status = &sim->report.flight_statuses[count++];
-
-            strncpy(status->callsign, f->callsign, CALLSIGN_LEN - 1);
-            status->callsign[CALLSIGN_LEN - 1] = '\0';
-            status->completed_successfully = !f->is_active &&
-                                              !f->violation_detected &&
-                                              f->departure_offset_s < sim->config.end_time;
-            status->had_violation      = f->violation_detected;
-            double fuel_rem = f->current_mass - f->properties.empty_weight - f->payload;
-            status->fuel_remaining     = (fuel_rem > 0) ? fuel_rem : 0.0;
-            status->num_legs_completed = f->current_leg;
-        }
-        sim->report.total_flights = count;
-        sim->report.total_violations_recorded = sim->total_violations_detected;
-
-        pid_t rpid = fork();
-        if (rpid < 0) {
-            perror("fork for report_generator failed");
-            return;
-        }
-
-        if (rpid == 0) {
-            // Child: pass the shm name as argv[1]
-            execl("./report_generator", "report_generator", "/aisafe_sim", NULL);
-            perror("execl report_generator failed");
-            exit(EXIT_FAILURE);
-        }
-
-        waitpid(rpid, NULL, 0);
-    }
-
-    // ── Cleanup ────────────────────────────────────────────────────────────────────
-
-    static void cleanup(SharedBlock *shm, pid_t *pids, int n) {
-        shm->terminate = true;
-        signal(SIGPIPE, SIG_IGN);
-
-        /* Unblock children that are waiting on step_go. */
-        for (int i = 0; i < n; i++)
-            if (pids[i] > 0)
-                sem_post(&shm->step_go[i]);
-
-        for (int i = 0; i < n; i++)
-            if (pids[i] > 0)
-                waitpid(pids[i], NULL, 0);
-    }
-
-    // ── Flight selection menu ──────────────────────────────────────────────────────
 
     /**
      * @brief Displays an interactive menu letting the user choose which flights to simulate.
