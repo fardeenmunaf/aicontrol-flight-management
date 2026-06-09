@@ -227,7 +227,7 @@ CREATE TABLE Pilot (
 
 CREATE TABLE PilotCompanyAssignment (
                                      pilot_user_id VARCHAR(255) PRIMARY KEY,
-                                     company_id    VARCHAR(255) REFERENCES AirTransportCompany(air_transport_company_id)
+                                     company_id    VARCHAR(255) NOT NULL REFERENCES AirTransportCompany(air_transport_company_id)
 );
 
 CREATE TABLE Pilot_AircraftModel (
