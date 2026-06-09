@@ -2,20 +2,19 @@ package weather.presentation.weatherData;
 
 import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
-
+import weather.ClientSession;
 import weatherData.application.RegisterWeatherDataController;
 import weatherData.dto.WeatherDataDTO;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class RegisterWeatherDataUI extends AbstractUI {
-
-    private final RegisterWeatherDataController controller = new RegisterWeatherDataController();
 
     @Override
     public boolean doShow() {
@@ -50,8 +49,31 @@ public class RegisterWeatherDataUI extends AbstractUI {
                     endHour
             );
 
-            controller.registerWeatherData(dto);
-            System.out.println("Weather data registered successfully.");
+            if (ClientSession.getMode() == ClientSession.ConnectionMode.DIRECT_DB) {
+                RegisterWeatherDataController controller = new RegisterWeatherDataController();
+                controller.registerWeatherData(dto);
+                System.out.println("Weather data registered successfully (Direct DB).");
+            } else {
+                // Create JSON payload manually or with a library (simplified here)
+                String jsonPayload = String.format(
+                        "{\"acaCode\":\"%s\",\"latitude1\":%s,\"longitude1\":%s,\"latitude2\":%s,\"longitude2\":%s," +
+                                "\"altitudeInf\":%s,\"altitudeSup\":%s,\"direction\":%s,\"windSpeed\":%s," +
+                                "\"date\":[%d,%d,%d],\"startHour\":[%d,%d],\"endHour\":[%d,%d]}",
+                        acaCode, latitude1, longitude1, latitude2, longitude2,
+                        altitudeInf, altitudeSup, direction, windSpeed,
+                        date.getYear(), date.getMonthValue(), date.getDayOfMonth(),
+                        startHour.getHour(), startHour.getMinute(),
+                        endHour.getHour(), endHour.getMinute()
+                );
+
+                try {
+                    String response = ClientSession.getClient().uploadWeather(jsonPayload);
+                    System.out.println("Server response: " + response);
+                } catch (IOException e) {
+                    System.out.println("Error communicating with server: " + e.getMessage());
+                }
+            }
+
             return true;
         } catch (final IllegalArgumentException ex) {
             System.out.println("Error: " + ex.getMessage());
