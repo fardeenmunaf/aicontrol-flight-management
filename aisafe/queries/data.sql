@@ -277,36 +277,6 @@ VALUES
     ('pilot-004', 'am-777'),
     ('pilot-004', 'am-A380');
 
-INSERT INTO FlightPlan (flight_plan_id, departureDateTime, fuelQuantity, passengerLoad, cargoLoad, status, aircraftId, flightRouteId, pilotId, version)
-VALUES
-    ('fp-001', '2026-05-12 08:00:00', 8200.0, 150, 1200.0, 'DRAFT',    'ac-001', 'fr-001', NULL, 0),
-    ('fp-002', '2026-05-12 09:30:00', 7600.0, 140,  800.0, 'TESTED',   'ac-002', 'fr-002', NULL, 0),
-    ('fp-003', '2026-05-12 13:00:00', 5400.0,  70,  500.0, 'DRAFT',    'ac-003', 'fr-003', NULL, 0),
-    ('fp-004', '2026-05-13 08:00:00', 9000.0, 160, 1400.0, 'APPROVED', 'ac-001', 'fr-001', NULL, 0);
-
-INSERT INTO FlightLeg (id, sequenceNumber, departureTime, arrivalTime, fuelQuantity, departure_airport_id, arrival_airport_id, flight_plan_ref)
-VALUES
-    (1, 1, '2026-05-12 08:00:00', '2026-05-12 09:05:00', 4200.0, 'apt-LIS', 'apt-OPO', 'fp-001'),
-    (2, 2, '2026-05-12 09:30:00', '2026-05-12 10:15:00', 4000.0, 'apt-OPO', 'apt-LHR', 'fp-001'),
-    (3, 1, '2026-05-12 09:30:00', '2026-05-12 12:10:00', 7600.0, 'apt-LHR', 'apt-FRA', 'fp-002'),
-    (4, 1, '2026-05-12 13:00:00', '2026-05-12 16:20:00', 5400.0, 'apt-LIS', 'apt-FRA', 'fp-003'),
-    (5, 1, '2026-05-13 08:00:00', '2026-05-13 09:10:00', 4500.0, 'apt-LIS', 'apt-OPO', 'fp-004');
-
-INSERT INTO Segment (id, windDirection, windSpeed, start_node_id, end_node_id, flight_leg_id)
-VALUES
-    (1,  45.0, 12.0, 'node-001', 'node-002', 1),
-    (2,  90.0, 15.0, 'node-002', 'node-003', 2),
-    (3, 120.0, 18.0, 'node-003', 'node-004', 3),
-    (4, 200.0, 10.0, 'node-004', 'node-001', 4),
-    (5,  60.0, 11.0, 'node-001', 'node-003', 5);
-
-INSERT INTO AltitudeSlot (id, minimumAltitude, maximumAltitude, width, segment_id)
-VALUES
-    (1, 10000.0, 14000.0, 2000.0, 1),
-    (2, 14000.0, 18000.0, 2000.0, 1),
-    (3, 12000.0, 16000.0, 2000.0, 2),
-    (4, 16000.0, 20000.0, 2000.0, 3),
-    (5, 10000.0, 14000.0, 2000.0, 5);
 
 
 SELECT setval('T_ROLESET_SEQ',        50, true);
