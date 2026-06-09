@@ -281,6 +281,7 @@ CREATE TABLE FlightPlan (
                             status            VARCHAR(255),
                             aircraftId        VARCHAR(255),
                             flightRouteId     VARCHAR(255),
+                            pilotId           VARCHAR(255),
                             version           BIGINT
 );
 
