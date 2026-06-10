@@ -8,6 +8,11 @@ flight TP1234 {
         departure { airport: OPO; date: 2027-05-05; time: 08:00; }
         arrival   { airport: MAD; date: 2027-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
+        profile {
+            climb   [ altitude: 0 m,    speed: 210 kts ];
+            cruise  [ speed: 450 kts ];
+            descend [ altitude: 0 m,    speed: 140 kts, rate: -5 m/s ];
+        }
         segment {
             from: (42.0, -8.01, altitude: 9249 m);
             to:   (41.262891, -8.68522, altitude: 69 m);

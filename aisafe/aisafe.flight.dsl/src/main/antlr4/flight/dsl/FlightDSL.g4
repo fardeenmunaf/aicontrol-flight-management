@@ -40,7 +40,7 @@ leg
         departure
         arrival
         fuel
-        profile?
+        profile
         climbSegment
         cruiseSegment
         descendSegment
@@ -77,7 +77,14 @@ profile
 
 profileEntry
     : climbEntry
+    | cruiseEntry
     | descendEntry
+    ;
+
+cruiseEntry
+    : CRUISE LBRACKET
+        SPEED COLON positiveNumber unit
+      RBRACKET SEMI
     ;
 
 climbEntry
@@ -91,7 +98,7 @@ descendEntry
     : DESCEND LBRACKET
         ALTITUDE COLON positiveNumber unit COMMA
         SPEED COLON positiveNumber unit COMMA
-        RATE COLON signedNumber
+        RATE COLON signedNumber unit?
       RBRACKET SEMI
     ;
 

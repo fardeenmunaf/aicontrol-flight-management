@@ -1,9 +1,9 @@
 # Flight DSL – Informal Specification
 
-**User Story:** US083-1  
-**Version:** 1.2  
-**Sprint:** 2  
-**Status:** Draft
+**User Story:** US083-1 / US120  
+**Version:** 1.3  
+**Sprint:** 3  
+**Status:** Final
 
 ---
 
@@ -32,7 +32,7 @@ DSL File → Lexical Analysis → Syntactic Analysis → Semantic Validation →
 
 Each stage is a gate: a file that fails lexical analysis is rejected before syntactic analysis begins, and so on. Only a fully valid file produces an internal flight plan object in the system.
 
-The DSL is **hierarchical and block-based**. The top-level construct is a `flight` block, which contains one or more `leg` blocks. Each leg contains `departure`, `arrival`, `fuel`, one or more `segment` blocks, and an optional `profile` block.
+The DSL is **hierarchical and block-based**. The top-level construct is a `flight` block, which contains one or more `leg` blocks. Each leg contains `departure`, `arrival`, `fuel`, a mandatory `profile` block, and exactly three `segment` blocks.
 
 A DSL file may contain **one or more `flight` blocks**. All flight identifiers within the same file must be unique.
 
@@ -63,9 +63,11 @@ Flight
     ├── Fuel
     │   ├── Quantity      (strictly positive number)
     │   └── Unit          (kg | l)
-    ├── FlightProfile [0..1]
+    ├── FlightProfile [1..1]
     │   ├── Climb [0..*]
     │   │   ├── Altitude
+    │   │   └── Speed
+    │   ├── Cruise [0..*]
     │   │   └── Speed
     │   └── Descend [0..*]
     │       ├── Altitude
@@ -96,7 +98,7 @@ Flight
 | **Departure** | The origin point of a leg: airport code, date, and scheduled time of departure. |
 | **Arrival** | The destination point of a leg: airport code, date, and scheduled time of arrival. |
 | **Fuel** | The fuel load assigned to a leg, expressed as a strictly positive quantity with a unit (kg or l). |
-| **FlightProfile** | Optional climb and descent profiles, describing altitude/speed tables used for simulation. Descent entries also include a rate of descent. |
+| **FlightProfile** | Optional climb, cruise and descent profiles, describing altitude/speed tables used for simulation. Descent entries also include a rate of descent. |
 | **Segment** | A linear path within a leg. Every leg must contain exactly three segments in fixed order: `climb`, `cruise`, `descend`. Each segment has a start/end 3D coordinate pair, one or more altitude slots, and a wind block. The mode is determined by position and enforced syntactically. |
 | **AltitudeSlot** | Defines the usable vertical band for a segment: minimum altitude, maximum altitude, and slot width. Used by the simulation to assign altitude clearances. |
 | **Wind** | Wind conditions at the segment: direction in degrees (0–359) and speed in m/s (strictly positive). |
@@ -110,7 +112,9 @@ Flight
 - Each `segment` must have at least one `altslot` and exactly one `wind` block. The mode (`climb`, `cruise`, `descend`) is fixed per position and enforced syntactically.
 - For each `altslot`: `min >= 0`, `max >= 0`, `min < max`, and `width > 0`.
 - For each `wind`: `direction` in [0, 359] and `speed > 0`.
-- The `FlightProfile` is optional but, if present, must contain at least one `climb` or one `descend` entry.
+- Every `leg` must contain exactly one `profile` block. The profile must contain entries consistent with the segment modes declared in the leg: if the leg has a `climb` segment, the profile must have at least one `climb` entry; same for `cruise` and `descend`.
+- The minimum and maximum altitudes among the profile's `climb` entries must match the climb segment's `from`/`to` altitudes respectively; the maximum and minimum altitudes among the profile's `descend` entries must match the descend segment's `from`/`to` altitudes respectively (profile/segment altitude bounds consistency).
+- The cruise segment's `from` and `to` altitudes must be equal (constant cruise altitude).
 - The arrival airport of leg *n* must equal the departure airport of leg *n+1* (leg sequence coherence).
 - The arrival time of leg *n* must be strictly before the departure time of leg *n+1*.
 - The route origin must match the first leg's departure airport.
@@ -153,7 +157,7 @@ Reserved words that define the structure of the language. They may not be used a
 | `fuel` | Opens a fuel block |
 | `profile` | Opens a flight profile block |
 | `climb` | Opens a climb entry or marks a segment mode |
-| `cruise` | Marks a segment mode |
+| `cruise` | Opens a cruise entry in a profile block, or marks a segment mode |
 | `descend` | Opens a descend entry or marks a segment mode |
 | `regular` | Flight type value |
 | `charter` | Flight type value |
@@ -298,7 +302,7 @@ leg {
     departure { ... }
     arrival   { ... }
     fuel      { ... }
-    profile   { ... }   // optional
+    profile   { ... }   // mandatory
 
     segment { ... altslot ...; wind ...; mode: climb;   }   // mandatory, must be first
     segment { ... altslot ...; wind ...; mode: cruise;  }   // mandatory, must be second
@@ -336,7 +340,8 @@ The quantity must be strictly greater than zero. A value of `0` is syntactically
 
 ```
 profile {
-    climb   [ altitude: <number> <unit>, speed: <number> <unit> ];  // 0 or more
+    climb   [ altitude: <number> <unit>, speed: <number> <unit> ];          // 0 or more
+    cruise  [ speed: <number> <unit> ];                                      // 0 or more
     descend [ altitude: <number> <unit>, speed: <number> <unit>, rate: <signed-number> ];  // 0 or more
 }
 ```
@@ -396,6 +401,7 @@ flight
     │   └── quantity <unit>
     ├── profile [0..1]
     │   ├── climb [0..*]   → altitude, speed
+    │   ├── cruise [0..*]  → speed
     │   └── descend [0..*] → altitude, speed, rate
     ├── segment (climb)   [exactly 1, first]
     │   ├── from  → (lat, lon, altitude)
@@ -434,7 +440,7 @@ A condensed reference of every block and its mandatory vs. optional fields.
 | `departure` | block | Yes | Departure information |
 | `arrival` | block | Yes | Arrival information |
 | `fuel` | block | Yes | Fuel load for this leg |
-| `profile` | block | No | Altitude/speed climb and descent tables |
+| `profile` | block | Yes | Altitude/speed climb, cruise and descent tables |
 | `segment` (climb)   | block | Yes | First segment: climb — aircraft gains altitude from departure |
 | `segment` (cruise)  | block | Yes | Second segment: cruise — aircraft flies level at cruise altitude |
 | `segment` (descend) | block | Yes | Third segment: descend — aircraft loses altitude to destination |
@@ -457,11 +463,17 @@ A condensed reference of every block and its mandatory vs. optional fields.
 
 | Field | Type | Mandatory | Description |
 |---|---|---|---|
-| `climb` | entry list | No | One or more climb profile entries |
-| `descend` | entry list | No | One or more descend profile entries |
+| `climb` | entry list | No | Zero or more climb profile entries |
+| `cruise` | entry list | No | Zero or more cruise profile entries |
+| `descend` | entry list | No | Zero or more descend profile entries |
 
 Each `climb` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0).  
+Each `cruise` entry: `speed` (number + unit, must be > 0).  
 Each `descend` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0), `rate` (must be negative).
+
+> **Semantic consistency rule:** if a `climb` segment exists in the leg, the profile must have at least one `climb` entry; same for `cruise` and `descend`. The validator enforces this when a profile block is present.
+
+> **Semantic bounds-matching rule:** when `climb` entries are present, their minimum and maximum altitudes must match the climb segment's `from`/`to` altitudes; when `descend` entries are present, their maximum and minimum altitudes must match the descend segment's `from`/`to` altitudes. This ensures the profile table actually spans the altitude range flown by the corresponding segment.
 
 ### `segment` block (all three types)
 
@@ -474,6 +486,8 @@ All three segment types share the same field structure. The `mode` value is fixe
 | `altslot` | entry (1 or more) | Yes | Altitude slot: `min`, `max`, `width` (all with units) |
 | `wind` | block | Yes | Wind conditions: `direction` (0–359°) and `speed` (m/s, > 0) |
 | `mode` | fixed keyword | Yes | Determined by position: `climb` (1st), `cruise` (2nd), `descend` (3rd) |
+
+> **Semantic constant-altitude rule:** for the `cruise` segment, `from` and `to` altitudes must be equal — the aircraft flies level during cruise.
 
 ### `altslot` entry
 
@@ -973,9 +987,9 @@ A hierarchical, block-delimited syntax (`{ }`) was chosen because:
 
 The requirements explicitly state that airport codes may be IATA (3-letter) or ICAO (4-letter). The lexer distinguishes them by length; semantic validation will check them against registered airports in the system.
 
-### 8.3 Why is `profile` optional?
+### 8.3 Why is `profile` mandatory?
 
-The requirements describe the flight profile (climb/descent tables) as contextual data for simulation. Not all flight plans will specify it at creation time, and the requirements do not mandate it as a core DSL field. Making it optional keeps the DSL compatible with both simple and detailed flight plans.
+The Core Flight DSL specification in the project requirements does not define a `profile` block. The `profile` is a team extension (per section 3.4.7 of the requirements) that provides climb, cruise and descent speed/altitude tables for use by the simulation engine. It is made mandatory because every flight plan imported into AISafe must be ready for simulation: without a profile, the physics engine has no speed or rate data to work with. The semantic validator additionally enforces consistency between the profile entries and the segment modes in the leg — a leg with a `climb` segment must have at least one `climb` profile entry, and so on.
 
 ### 8.4 Why does `route` declare origin and destination explicitly?
 
@@ -1039,6 +1053,3 @@ All three validation stages must produce clear, actionable errors:
 
 All semantic errors must be **collected and reported together** in a single execution pass — the validator must not abort on the first error.
 
----
-
-*This document reflects the core grammar as of Sprint 2. If the DSL is extended beyond the Core specification, this document must be updated accordingly.*

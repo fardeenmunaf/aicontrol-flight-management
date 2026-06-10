@@ -8,6 +8,13 @@ flight TP1234 {
         departure { airport: OPO; date: 2020-01-01; time: 08:00; }
         arrival   { airport: MAD; date: 2020-01-01; time: 09:30; }
         fuel { quantity: 40200 kg; }
+        profile {
+            climb   [ altitude: 69 m,   speed: 210 kts ];
+            climb   [ altitude: 9249 m, speed: 300 kts ];
+            cruise  [ speed: 460 kts ];
+            descend [ altitude: 9249 m, speed: 300 kts, rate: -10 m/s ];
+            descend [ altitude: 610 m,  speed: 140 kts, rate: -5 m/s  ];
+        }
         segment {
             from: (41.262891, -8.68522, altitude: 69 m);
             to:   (42.0, -8.01, altitude: 9249 m);

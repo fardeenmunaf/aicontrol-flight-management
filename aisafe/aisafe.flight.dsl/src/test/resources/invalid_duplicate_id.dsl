@@ -10,6 +10,13 @@ flight TP1234 {
         departure { airport: OPO; date: 2026-05-05; time: 08:00; }
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
+        profile {
+            climb   [ altitude: 69 m,   speed: 210 kts ];
+            climb   [ altitude: 9249 m, speed: 300 kts ];
+            cruise  [ speed: 460 kts ];
+            descend [ altitude: 9249 m, speed: 300 kts, rate: -10 m/s ];
+            descend [ altitude: 610 m,  speed: 140 kts, rate: -5 m/s  ];
+        }
         segment {
             from: (41.262891, -8.68522, altitude: 69 m);
             to:   (42.0, -8.01, altitude: 9249 m);
@@ -44,6 +51,13 @@ flight TP1234 {
         departure { airport: LIS; date: 2026-05-06; time: 10:00; }
         arrival   { airport: BCN; date: 2026-05-06; time: 12:00; }
         fuel { quantity: 35000 kg; }
+        profile {
+            climb   [ altitude: 114 m,  speed: 210 kts ];
+            climb   [ altitude: 9249 m, speed: 300 kts ];
+            cruise  [ speed: 460 kts ];
+            descend [ altitude: 9249 m, speed: 300 kts, rate: -10 m/s ];
+            descend [ altitude: 4 m,    speed: 140 kts, rate: -5 m/s  ];
+        }
         segment {
             from: (38.7747, -9.1302, altitude: 114 m);
             to:   (39.5, -7.0, altitude: 9249 m);

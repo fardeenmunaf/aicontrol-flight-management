@@ -6,6 +6,7 @@ import flight.dsl.ast.AltitudeSlotAst;
 import flight.dsl.ast.ArrivalAst;
 import flight.dsl.ast.ClimbEntryAst;
 import flight.dsl.ast.CoordinateAst;
+import flight.dsl.ast.CruiseEntryAst;
 import flight.dsl.ast.DepartureAst;
 import flight.dsl.ast.DescendEntryAst;
 import flight.dsl.ast.FlightPlanAst;
@@ -68,7 +69,7 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
         final DepartureAst departure = (DepartureAst) visitDeparture(ctx.departure());
         final ArrivalAst arrival = (ArrivalAst) visitArrival(ctx.arrival());
         final FuelAst fuel = (FuelAst) visitFuel(ctx.fuel());
-        final ProfileAst profile = ctx.profile() == null ? null : (ProfileAst) visitProfile(ctx.profile());
+        final ProfileAst profile = (ProfileAst) visitProfile(ctx.profile());
         final List<SegmentAst> segments = new ArrayList<>();
         segments.add((SegmentAst) visitClimbSegment(ctx.climbSegment()));
         segments.add((SegmentAst) visitCruiseSegment(ctx.cruiseSegment()));
@@ -114,17 +115,20 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
     @Override
     public Object visitProfile(final FlightDSLParser.ProfileContext ctx) {
         final List<ClimbEntryAst> climbEntries = new ArrayList<>();
+        final List<CruiseEntryAst> cruiseEntries = new ArrayList<>();
         final List<DescendEntryAst> descendEntries = new ArrayList<>();
         for (final FlightDSLParser.ProfileEntryContext entryContext : ctx.profileEntry()) {
             final ProfileEntryAst entry = (ProfileEntryAst) visitProfileEntry(entryContext);
             if (entry instanceof ClimbEntryAst climbEntryAst) {
                 climbEntries.add(climbEntryAst);
+            } else if (entry instanceof CruiseEntryAst cruiseEntryAst) {
+                cruiseEntries.add(cruiseEntryAst);
             } else if (entry instanceof DescendEntryAst descendEntryAst) {
                 descendEntries.add(descendEntryAst);
             }
         }
 
-        final ProfileAst profileAst = new ProfileAst(climbEntries, descendEntries);
+        final ProfileAst profileAst = new ProfileAst(climbEntries, cruiseEntries, descendEntries);
         register(profileAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
         return profileAst;
     }
@@ -134,7 +138,20 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
         if (ctx.climbEntry() != null) {
             return visitClimbEntry(ctx.climbEntry());
         }
+        if (ctx.cruiseEntry() != null) {
+            return visitCruiseEntry(ctx.cruiseEntry());
+        }
         return visitDescendEntry(ctx.descendEntry());
+    }
+
+    @Override
+    public Object visitCruiseEntry(final FlightDSLParser.CruiseEntryContext ctx) {
+        final CruiseEntryAst cruiseEntryAst = new CruiseEntryAst(
+                Double.parseDouble(ctx.positiveNumber().getText()),
+                ctx.unit().getText()
+        );
+        register(cruiseEntryAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
+        return cruiseEntryAst;
     }
 
     @Override
