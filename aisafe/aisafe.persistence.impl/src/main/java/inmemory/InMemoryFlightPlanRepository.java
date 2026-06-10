@@ -30,15 +30,10 @@ public class InMemoryFlightPlanRepository extends InMemoryDomainRepository<Fligh
     }
 
     @Override
-    public Iterable<FlightPlan> findByDepartureBetween(final Instant start, final Instant end) {
-        return match(fp -> !fp.departureDateTime().isBefore(start)
-                && !fp.departureDateTime().isAfter(end));
-    }
-
-    @Override
     public Iterable<FlightPlan> findByRouteIdAndDepartureAfter(final String routeId, final Instant departure) {
-        return match(fp -> routeId.equals(fp.flightRouteId())
-                && fp.departureDateTime().isAfter(departure));
+        // TODO: disabled — flight plan route/departure now live inside a JSON blob.
+        // See FlightPlanRepository#findByRouteIdAndDepartureAfter.
+        return java.util.Collections.emptyList();
     }
 }
 

@@ -120,6 +120,13 @@ public class CreateFlightPlanController {
 
         AuthzRegistry.authorizationService().ensureAuthenticatedUserHasAnyOf(AISafeRoles.PILOT);
 
+        if (departureDateTime == null || !departureDateTime.isAfter(Instant.now())) {
+            throw new IllegalArgumentException("Departure date/time must be in the future.");
+        }
+        if (fuelQuantity <= 0) {
+            throw new IllegalArgumentException("Fuel quantity must be strictly positive.");
+        }
+
         final String email = loggedInEmail();
         final UserId pilotUserId = UserId.valueOf(email);
 
@@ -159,16 +166,13 @@ public class CreateFlightPlanController {
             throw new IllegalArgumentException("The assigned aircraft must belong to the route's company.");
         }
 
-        // Create plan
-        final FlightPlan plan = new FlightPlan(
-                FlightPlanId.newId(),
-                aircraft.registrationNumber(),
-                departureDateTime,
-                fuelQuantity,
-                0,
-                0.0);
-        plan.assignToRoute(route.identity().toString());
-        plan.assignPilot(email);
+        // Create plan — store essentials as JSON (full DSL required for complete plans)
+        final String json = String.format(
+                "{\"aircraftId\":\"%s\",\"pilotRef\":\"%s\",\"routeReference\":\"%s\"," +
+                "\"departureDateTime\":\"%s\",\"fuelQuantity\":%.2f}",
+                aircraft.registrationNumber(), email,
+                route.identity().toString(), departureDateTime.toString(), fuelQuantity);
+        final FlightPlan plan = new FlightPlan(FlightPlanId.newId(), json);
 
         return flightPlanRepository.save(plan);
     }

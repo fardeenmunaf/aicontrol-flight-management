@@ -250,15 +250,8 @@ public class FlightRoutesUI {
     }
 
     private void onDeactivate(final FlightRoute route) {
-        // Find the latest future flight departure for this route
-        final Instant nowInstant = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant();
-        final Optional<Instant> latestDeparture = StreamSupport.stream(
-                PersistenceContext.repositories().flightPlans()
-                        .findByRouteIdAndDepartureAfter(route.identity().toString(), nowInstant)
-                        .spliterator(),
-                false)
-                .map(fp -> fp.departureDateTime())
-                .max(Comparator.naturalOrder());
+        // Flight plans now store JSON; departure cannot be queried via JPA — skip the check
+        final Optional<Instant> latestDeparture = Optional.empty();
 
         // Minimum valid deactivation date = day after the latest flight (so no future
         // flights remain after cutoff)

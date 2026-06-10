@@ -2,9 +2,7 @@ package flightPlan.application;
 
 import auth.domain.AISafeRoles;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
-import flightPlan.domain.FlightLeg;
 import flightPlan.domain.FlightPlan;
-import flightPlan.domain.Segment;
 import flightPlan.repository.FlightPlanRepository;
 import node.domain.Coordinates;
 import node.domain.Node;
@@ -16,18 +14,10 @@ import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
 import airport.domain.Airport;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
 public class ImportFlightPlanController {
-
-    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     private final FlightPlanRepository flightPlanRepository;
     private final NodeRepository nodeRepository;
@@ -45,9 +35,9 @@ public class ImportFlightPlanController {
     }
 
     /**
-     * Persists a flight plan imported from a validated DSL file.
-     * Segments are anchored to new transient Node entities created from the DSL
-     * coordinates.
+     * Persists a flight plan imported from a validated DSL file as a JSON document.
+     * Segment coordinates are also anchored to new transient Node entities so the
+     * topology table stays populated.
      */
     public FlightPlan importFlightPlan(final String aircraftId,
             final String pilotRef, final String routeId, final List<LegImportRequest> legs) {
@@ -69,57 +59,73 @@ public class ImportFlightPlanController {
             throw new IllegalArgumentException("At least one leg is required");
         }
 
-        final FlightPlanId planId = FlightPlanId.newId();
-
         // Validate aircraft
         if (aircraftModelRepository.findByModelName(aircraftId).isEmpty()) {
             throw new IllegalArgumentException("Aircraft model '" + aircraftId + "' not found in the system");
         }
 
-        final double totalFuel = legs.stream().mapToDouble(l -> l.fuelQuantity).sum();
-        final LegImportRequest firstLeg = legs.get(0);
-        final Instant departureDateTime = toInstant(firstLeg.departureDate, firstLeg.departureTime);
+        final FlightPlanId planId = FlightPlanId.newId();
+        final String json = buildJson(planId, aircraftId, loggedInEmail, routeId, legs);
 
-        final FlightPlan plan = new FlightPlan(planId, aircraftId, departureDateTime, totalFuel, 0, 0.0);
+        return flightPlanRepository.save(new FlightPlan(planId, json));
+    }
 
-        for (final LegImportRequest legReq : legs) {
-            final Instant legDeparture = toInstant(legReq.departureDate, legReq.departureTime);
-            final Instant legArrival = toInstant(legReq.arrivalDate, legReq.arrivalTime);
-
-            final AirportId departureId = resolveAirportId(legReq.departureAirportCode);
-            final AirportId arrivalId = resolveAirportId(legReq.arrivalAirportCode);
-
-            final FlightLeg leg = new FlightLeg(
-                    legReq.sequenceNumber,
-                    legDeparture,
-                    legArrival,
-                    legReq.fuelQuantity,
-                    departureId,
-                    arrivalId);
-
-            for (final SegmentImportRequest segReq : legReq.segments) {
-                final Node startNode = nodeRepository.save(new Node(
-                        NodeId.newId(),
-                        "DSL-" + segReq.fromLatitude + "," + segReq.fromLongitude,
-                        new Coordinates(segReq.fromLatitude, segReq.fromLongitude)));
-
-                final Node endNode = nodeRepository.save(new Node(
-                        NodeId.newId(),
-                        "DSL-" + segReq.toLatitude + "," + segReq.toLongitude,
-                        new Coordinates(segReq.toLatitude, segReq.toLongitude)));
-
-                leg.addSegment(new Segment(startNode.identity(), endNode.identity(), 0.0, 0.0));
-            }
-
-            plan.addLeg(leg);
+    private String buildJson(final FlightPlanId planId, final String aircraftId, final String pilotRef,
+            final String routeId, final List<LegImportRequest> legs) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append('{');
+        sb.append("\"flightPlanId\":\"").append(esc(planId.toString())).append("\",");
+        sb.append("\"aircraftId\":\"").append(esc(aircraftId)).append("\",");
+        sb.append("\"pilotRef\":\"").append(esc(pilotRef)).append("\",");
+        sb.append("\"routeReference\":").append(routeId == null ? "null" : "\"" + esc(routeId) + "\"").append(',');
+        sb.append("\"legs\":[");
+        for (int i = 0; i < legs.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append(buildLegJson(legs.get(i)));
         }
+        sb.append("]}");
+        return sb.toString();
+    }
 
-        plan.assignPilot(loggedInEmail);
-        if (routeId != null && !routeId.isEmpty()) {
-            plan.assignToRoute(routeId);
+    private String buildLegJson(final LegImportRequest leg) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append('{');
+        sb.append("\"sequenceNumber\":").append(leg.sequenceNumber).append(',');
+        sb.append("\"departure\":{\"airport\":\"").append(esc(leg.departureAirportCode)).append("\",")
+          .append("\"date\":\"").append(esc(leg.departureDate)).append("\",")
+          .append("\"time\":\"").append(esc(leg.departureTime)).append("\"},");
+        sb.append("\"arrival\":{\"airport\":\"").append(esc(leg.arrivalAirportCode)).append("\",")
+          .append("\"date\":\"").append(esc(leg.arrivalDate)).append("\",")
+          .append("\"time\":\"").append(esc(leg.arrivalTime)).append("\"},");
+        sb.append("\"fuel\":{\"quantity\":").append(leg.fuelQuantity).append(",\"unit\":\"kg\"},");
+
+        // Validate airports exist; anchor segment coordinates to new nodes.
+        resolveAirportId(leg.departureAirportCode);
+        resolveAirportId(leg.arrivalAirportCode);
+
+        sb.append("\"segments\":[");
+        for (int i = 0; i < leg.segments.size(); i++) {
+            if (i > 0) sb.append(',');
+            final SegmentImportRequest seg = leg.segments.get(i);
+
+            final Node startNode = nodeRepository.save(new Node(
+                    NodeId.newId(),
+                    "DSL-" + seg.fromLatitude + "," + seg.fromLongitude,
+                    new Coordinates(seg.fromLatitude, seg.fromLongitude)));
+            final Node endNode = nodeRepository.save(new Node(
+                    NodeId.newId(),
+                    "DSL-" + seg.toLatitude + "," + seg.toLongitude,
+                    new Coordinates(seg.toLatitude, seg.toLongitude)));
+
+            sb.append("{\"from\":{\"nodeId\":\"").append(esc(startNode.identity().toString())).append("\",")
+              .append("\"latitude\":").append(seg.fromLatitude).append(',')
+              .append("\"longitude\":").append(seg.fromLongitude).append("},")
+              .append("\"to\":{\"nodeId\":\"").append(esc(endNode.identity().toString())).append("\",")
+              .append("\"latitude\":").append(seg.toLatitude).append(',')
+              .append("\"longitude\":").append(seg.toLongitude).append("}}");
         }
-
-        return flightPlanRepository.save(plan);
+        sb.append("]}");
+        return sb.toString();
     }
 
     private AirportId resolveAirportId(final String code) {
@@ -129,9 +135,7 @@ public class ImportFlightPlanController {
                 .orElseThrow(() -> new IllegalArgumentException("Airport not found: " + code));
     }
 
-    private static Instant toInstant(final String date, final String time) {
-        final LocalDate localDate = LocalDate.parse(date, DATE_FMT);
-        final LocalTime localTime = LocalTime.parse(time, TIME_FMT);
-        return localDate.atTime(localTime).toInstant(ZoneOffset.UTC);
+    private static String esc(final String s) {
+        return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

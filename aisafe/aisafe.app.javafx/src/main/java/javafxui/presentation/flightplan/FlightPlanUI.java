@@ -11,7 +11,6 @@ import flight.dsl.processing.FlightDslProcessor;
 import flightPlan.application.ImportFlightPlanController;
 import flightPlan.application.LegImportRequest;
 import flightPlan.application.SegmentImportRequest;
-import flightPlan.domain.FlightLeg;
 import flightPlan.domain.FlightPlan;
 import aircraft.domain.Aircraft;
 import aircraft.domain.AircraftOperationStatus;
@@ -413,20 +412,33 @@ public class FlightPlanUI {
     private void buildDbDetail(final FlightPlanRow row) {
         final FlightPlan fp = row.dbPlan();
         addDetailSection("Flight Information");
-        addDetailField("Designator", fp.identity().toString());
-        addDetailField("Aircraft", fp.aircraftId());
+        addDetailField("ID", fp.identity().toString());
         addDetailField("Status", fp.status().name());
-        addDetailField("Departure", DEPARTURE_FMT.format(fp.departureDateTime()));
-        addDetailField("Fuel (total)", String.valueOf(fp.fuelQuantity()) + " kg");
-        addDetailField("Passengers", String.valueOf(fp.passengerLoad()));
-        int n = 1;
-        for (final FlightLeg leg : fp.legs()) {
-            addDetailSection("Leg " + n++);
-            addDetailField("Departure", leg.departureAirportId().toString()
-                    + "  " + DEPARTURE_FMT.format(leg.departureTime()));
-            addDetailField("Arrival", leg.arrivalAirportId().toString()
-                    + "  " + DEPARTURE_FMT.format(leg.arrivalTime()));
-            addDetailField("Fuel", String.valueOf(leg.fuelQuantity()) + " kg");
+        try {
+            final JsonNode plan = mapper.readTree(fp.flightPlanJson());
+            addDetailField("Aircraft", plan.path("aircraftId").asText("?"));
+            addDetailField("Pilot", plan.path("pilotRef").asText("?"));
+            addDetailField("Route", plan.path("routeReference").asText("?"));
+            final JsonNode legs = plan.path("legs");
+            if (legs.isArray()) {
+                int n = 1;
+                for (final JsonNode leg : legs) {
+                    addDetailSection("Leg " + n++);
+                    final JsonNode dep = leg.path("departure");
+                    addDetailField("Departure", dep.path("airport").asText()
+                            + "  " + dep.path("date").asText()
+                            + " " + dep.path("time").asText());
+                    final JsonNode arr = leg.path("arrival");
+                    addDetailField("Arrival", arr.path("airport").asText()
+                            + "  " + arr.path("date").asText()
+                            + " " + arr.path("time").asText());
+                    final JsonNode fuel = leg.path("fuel");
+                    addDetailField("Fuel", fuel.path("quantity").asText()
+                            + " " + fuel.path("unit").asText());
+                }
+            }
+        } catch (final IOException e) {
+            addDetailField("Error", "Could not parse JSON: " + e.getMessage());
         }
     }
 
@@ -783,12 +795,21 @@ public class FlightPlanUI {
         }
 
         static FlightPlanRow fromDb(final FlightPlan fp, final DateTimeFormatter fmt) {
-            return new FlightPlanRow(
-                    fp.identity().toString(),
-                    fp.aircraftId(),
-                    fp.status().name(),
-                    fmt.format(fp.departureDateTime()),
-                    null, fp);
+            String aircraft = "?";
+            String departure = "?";
+            try {
+                final JsonNode plan = new ObjectMapper().readTree(fp.flightPlanJson());
+                aircraft = plan.path("aircraftId").asText("?");
+                departure = plan.path("departureDateTime").asText("?");
+                if ("?".equals(departure)) {
+                    final JsonNode legs = plan.path("legs");
+                    if (legs.isArray() && legs.size() > 0) {
+                        final JsonNode dep = legs.get(0).path("departure");
+                        departure = dep.path("date").asText("?") + " " + dep.path("time").asText("");
+                    }
+                }
+            } catch (final IOException ignored) { }
+            return new FlightPlanRow(fp.identity().toString(), aircraft, fp.status().name(), departure, null, fp);
         }
 
         static FlightPlanRow fromFile(final String designator, final String aircraft,

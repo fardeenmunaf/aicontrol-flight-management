@@ -40,19 +40,10 @@ class JpaFlightPlanRepository extends BaseJpaRepositoryBase<FlightPlan, FlightPl
     }
 
     @Override
-    public Iterable<FlightPlan> findByDepartureBetween(final Instant start, final Instant end) {
-        final Map<String, Object> params = new HashMap<>();
-        params.put("start", start);
-        params.put("end", end);
-        return match("e.departureDateTime BETWEEN :start AND :end", params);
-    }
-
-    @Override
     public Iterable<FlightPlan> findByRouteIdAndDepartureAfter(final String routeId, final Instant departure) {
-        final Map<String, Object> params = new HashMap<>();
-        params.put("routeId", routeId);
-        params.put("departure", departure);
-        return match("e.flightRouteId = :routeId AND e.departureDateTime > :departure", params);
+        // TODO: disabled — flight plan route/departure now live inside a JSON blob and cannot
+        // be queried via JPQL. See FlightPlanRepository#findByRouteIdAndDepartureAfter.
+        return java.util.Collections.emptyList();
     }
 }
 

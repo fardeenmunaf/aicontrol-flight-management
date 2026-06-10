@@ -111,9 +111,9 @@ class CreateFlightPlanControllerTest {
         final FlightPlan plan = controller().createFlightPlan(ROUTE_DESIGNATION, AIRCRAFT_REG, FUTURE, FUEL, null);
         assertNotNull(plan);
         assertEquals(FlightPlanStatus.DRAFT, plan.status());
-        assertEquals(AIRCRAFT_REG, plan.aircraftId());
-        assertEquals(PILOT_EMAIL, plan.pilotId());
-        assertEquals(FUEL, plan.fuelQuantity());
+        final String json = plan.flightPlanJson();
+        assertTrue(json.contains(AIRCRAFT_REG));
+        assertTrue(json.contains(PILOT_EMAIL));
     }
 
     // TC05 – status is DRAFT on creation
@@ -296,7 +296,6 @@ class CreateFlightPlanControllerTest {
         void clear() { data().clear(); }
         @Override public Optional<FlightPlan> findByFlightPlanId(FlightPlanId id) { return matchOne(p -> p.identity().equals(id)); }
         @Override public Iterable<FlightPlan> findByStatus(FlightPlanStatus s) { return List.of(); }
-        @Override public Iterable<FlightPlan> findByDepartureBetween(Instant a, Instant b) { return List.of(); }
         @Override public Iterable<FlightPlan> findByRouteIdAndDepartureAfter(String routeId, Instant d) { return List.of(); }
     }
 

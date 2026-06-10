@@ -17,8 +17,11 @@ public interface FlightPlanRepository extends DomainRepository<FlightPlanId, Fli
 
     Iterable<FlightPlan> findByStatus(FlightPlanStatus status);
 
-    Iterable<FlightPlan> findByDepartureBetween(Instant start, Instant end);
-
+    // TODO: flight plan data is now stored as a single JSON blob, so route reference and
+    // departure time are no longer queryable columns. This method currently returns nothing,
+    // which DISABLES the "block route deactivation if future flights exist" safety check in
+    // DeleteFlightRouteController. Re-implement once the DSL-based flight plan rework defines
+    // the final JSON shape (or promote routeId/departure back to dedicated columns).
     Iterable<FlightPlan> findByRouteIdAndDepartureAfter(String routeId, Instant departure);
 }
 
