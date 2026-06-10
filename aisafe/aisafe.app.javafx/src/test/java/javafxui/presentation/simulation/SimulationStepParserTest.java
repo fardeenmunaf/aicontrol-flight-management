@@ -54,7 +54,7 @@ class SimulationStepParserTest {
 
     @Test
     void parse_step_banner_extracts_step_number_active_violations() {
-        final String line = "║  t=    900 s  [06:15]  |  step   1 / 38   |  active= 1  pending=18  |  violations=  0                                                      ║";
+        final String line = "║  t=    900 s  [05/06/2026 06:15]  |  step   1 / 38   |  active= 1  pending=18  |  violations=  0                                                      ║";
         final Optional<SimulationStepParser.StepBanner> result = parser.parseStepBanner(line);
         assertTrue(result.isPresent());
         assertEquals(1,   result.get().step());
