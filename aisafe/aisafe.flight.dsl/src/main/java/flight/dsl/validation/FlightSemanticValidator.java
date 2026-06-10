@@ -8,6 +8,7 @@ import flight.dsl.ast.FlightPlanAst;
 import flight.dsl.ast.LegAst;
 import flight.dsl.ast.ProfileAst;
 import flight.dsl.ast.SegmentAst;
+import flight.dsl.ast.SegmentModeAst;
 import flight.dsl.model.FlightDslDocument;
 import flight.dsl.model.SourceLocation;
 
@@ -126,6 +127,7 @@ public class FlightSemanticValidator {
         validateDepartureDate(leg, document, errors, legNumber);
         validateFuel(leg, document, errors, legNumber);
         validateProfile(leg.profile(), document, errors, legNumber);
+        validateProfileSegmentConsistency(leg, document, errors, legNumber);
 
         for (final SegmentAst segment : leg.segments()) {
             validateSegment(segment, document, errors, legNumber);
@@ -330,8 +332,78 @@ public class FlightSemanticValidator {
                                     + " must have decreasing altitude (from " + fromAlt + " to " + toAlt + ")"));
                 }
                 break;
+            case CRUISE:
+                if (Math.abs(toAlt - fromAlt) > 0.001) {
+                    errors.add(error(document, segment, SemanticErrorType.SEMANTIC,
+                            "Cruise segment in leg " + legNumber
+                                    + " must maintain constant altitude (from " + fromAlt + " to " + toAlt + ")"));
+                }
+                break;
             default:
                 break;
+        }
+    }
+
+    private void validateProfileSegmentConsistency(final LegAst leg, final FlightDslDocument document,
+                                                    final List<SemanticError> errors, final int legNumber) {
+        final ProfileAst profile = leg.profile();
+        if (profile == null) {
+            return;
+        }
+
+        final boolean hasClimbSegment = leg.segments().stream().anyMatch(s -> s.mode() == SegmentModeAst.CLIMB);
+        final boolean hasCruiseSegment = leg.segments().stream().anyMatch(s -> s.mode() == SegmentModeAst.CRUISE);
+        final boolean hasDescendSegment = leg.segments().stream().anyMatch(s -> s.mode() == SegmentModeAst.DESCEND);
+
+        if (hasClimbSegment && profile.climbEntries().isEmpty()) {
+            errors.add(error(document, profile, SemanticErrorType.SEMANTIC,
+                    "Leg " + legNumber + " has a climb segment but no climb profile entries"));
+        }
+        if (hasCruiseSegment && profile.cruiseEntries().isEmpty()) {
+            errors.add(error(document, profile, SemanticErrorType.SEMANTIC,
+                    "Leg " + legNumber + " has a cruise segment but no cruise profile entries"));
+        }
+        if (hasDescendSegment && profile.descendEntries().isEmpty()) {
+            errors.add(error(document, profile, SemanticErrorType.SEMANTIC,
+                    "Leg " + legNumber + " has a descend segment but no descend profile entries"));
+        }
+
+        if (hasClimbSegment && !profile.climbEntries().isEmpty()) {
+            final SegmentAst climbSeg = leg.segments().stream()
+                    .filter(s -> s.mode() == SegmentModeAst.CLIMB).findFirst().get();
+            final double segFrom = climbSeg.from().altitude();
+            final double segTo   = climbSeg.to().altitude();
+            final double profMin = profile.climbEntries().stream().mapToDouble(ClimbEntryAst::altitude).min().getAsDouble();
+            final double profMax = profile.climbEntries().stream().mapToDouble(ClimbEntryAst::altitude).max().getAsDouble();
+            if (Math.abs(profMin - segFrom) > 0.001) {
+                errors.add(error(document, profile, SemanticErrorType.SEMANTIC,
+                        "Leg " + legNumber + " climb profile minimum altitude (" + profMin
+                                + " m) must match climb segment departure altitude (" + segFrom + " m)"));
+            }
+            if (Math.abs(profMax - segTo) > 0.001) {
+                errors.add(error(document, profile, SemanticErrorType.SEMANTIC,
+                        "Leg " + legNumber + " climb profile maximum altitude (" + profMax
+                                + " m) must match climb segment cruise altitude (" + segTo + " m)"));
+            }
+        }
+
+        if (hasDescendSegment && !profile.descendEntries().isEmpty()) {
+            final SegmentAst descendSeg = leg.segments().stream()
+                    .filter(s -> s.mode() == SegmentModeAst.DESCEND).findFirst().get();
+            final double segFrom = descendSeg.from().altitude();
+            final double segTo   = descendSeg.to().altitude();
+            final double profMax = profile.descendEntries().stream().mapToDouble(DescendEntryAst::altitude).max().getAsDouble();
+            final double profMin = profile.descendEntries().stream().mapToDouble(DescendEntryAst::altitude).min().getAsDouble();
+            if (Math.abs(profMax - segFrom) > 0.001) {
+                errors.add(error(document, profile, SemanticErrorType.SEMANTIC,
+                        "Leg " + legNumber + " descend profile maximum altitude (" + profMax
+                                + " m) must match descend segment departure altitude (" + segFrom + " m)"));
+            }
+            if (Math.abs(profMin - segTo) > 0.001) {
+                errors.add(error(document, profile, SemanticErrorType.SEMANTIC,
+                        "Leg " + legNumber + " descend profile minimum altitude (" + profMin
+                                + " m) must match descend segment arrival altitude (" + segTo + " m)"));
+            }
         }
     }
 

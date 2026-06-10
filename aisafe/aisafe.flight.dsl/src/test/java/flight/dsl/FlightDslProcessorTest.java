@@ -170,11 +170,19 @@ public class FlightDslProcessorTest {
         final String seg3 =
                 "segment { from: (41.0, -4.3, altitude: 9249 m); to: (40.4895, -3.5643, altitude: 610 m); " +
                 "altslot [ min: 0 m, max: 9249 m, width: 50 m ]; wind { direction: 270; speed: 10 m/s; } mode: descend; } ";
+        final String profile =
+                "profile { " +
+                "climb [ altitude: 69 m, speed: 210 kts ]; " +
+                "climb [ altitude: 9249 m, speed: 300 kts ]; " +
+                "cruise [ speed: 460 kts ]; " +
+                "descend [ altitude: 9249 m, speed: 300 kts, rate: -10 m/s ]; " +
+                "descend [ altitude: 610 m, speed: 140 kts, rate: -5 m/s ]; " +
+                "} ";
         final String dsl =
                 "flight TP0001 { type: regular; aircraft: A320; pilot: atcc1@tap.pt; route: ZZ001 from OPO to MAD; " +
                 "leg { departure { airport: OPO; date: 2027-01-01; time: 06:00; } " +
                 "arrival { airport: MAD; date: 2027-01-01; time: 08:00; } " +
-                "fuel { quantity: 1 kg; } " + seg1 + seg2 + seg3 + "} }";
+                "fuel { quantity: 1 kg; } " + profile + seg1 + seg2 + seg3 + "} }";
 
         final FlightDslProcessingResult result = processor.process(dsl);
 
@@ -221,6 +229,42 @@ public class FlightDslProcessorTest {
         assertFalse(result.semanticErrors().isEmpty());
         assertTrue(result.semanticErrors().stream()
                 .anyMatch(e -> e.message().contains("Descend segment") && e.message().contains("decreasing altitude")));
+    }
+
+    @Test
+    void shouldRejectMissingClimbProfileEntries() throws Exception {
+        final FlightDslProcessingResult result = processor.process(resourcePath("invalid_profile_climb_missing.dsl"));
+
+        assertFalse(result.semanticErrors().isEmpty());
+        assertTrue(result.semanticErrors().stream()
+                .anyMatch(e -> e.message().contains("no climb profile entries")));
+    }
+
+    @Test
+    void shouldRejectMissingCruiseProfileEntries() throws Exception {
+        final FlightDslProcessingResult result = processor.process(resourcePath("invalid_profile_cruise_missing.dsl"));
+
+        assertFalse(result.semanticErrors().isEmpty());
+        assertTrue(result.semanticErrors().stream()
+                .anyMatch(e -> e.message().contains("no cruise profile entries")));
+    }
+
+    @Test
+    void shouldRejectMissingDescendProfileEntries() throws Exception {
+        final FlightDslProcessingResult result = processor.process(resourcePath("invalid_profile_descend_missing.dsl"));
+
+        assertFalse(result.semanticErrors().isEmpty());
+        assertTrue(result.semanticErrors().stream()
+                .anyMatch(e -> e.message().contains("no descend profile entries")));
+    }
+
+    @Test
+    void shouldRejectCruiseSegmentWithChangingAltitude() throws Exception {
+        final FlightDslProcessingResult result = processor.process(resourcePath("invalid_cruise_altitude_not_constant.dsl"));
+
+        assertFalse(result.semanticErrors().isEmpty());
+        assertTrue(result.semanticErrors().stream()
+                .anyMatch(e -> e.message().contains("Cruise segment") && e.message().contains("constant altitude")));
     }
 
     @Test

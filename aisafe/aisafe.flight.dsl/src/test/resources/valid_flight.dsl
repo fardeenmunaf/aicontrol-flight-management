@@ -23,10 +23,30 @@ flight TP1234 {
         }
 
         profile {
-            climb   [ altitude: 0 m,     speed: 210 kts ];
-            climb   [ altitude: 1000 m,  speed: 210 kts ];
-            descend [ altitude: 12000 m, speed: 300 kts, rate: -10 ];
-            descend [ altitude: 0 m,     speed: 140 kts, rate: -5 ];
+            climb   [ altitude: 69 m,   speed: 210 kts ];
+            climb   [ altitude: 1000 m, speed: 210 kts ];
+            climb   [ altitude: 2000 m, speed: 220 kts ];
+            climb   [ altitude: 3000 m, speed: 230 kts ];
+            climb   [ altitude: 4000 m, speed: 250 kts ];
+            climb   [ altitude: 5000 m, speed: 260 kts ];
+            climb   [ altitude: 6000 m, speed: 290 kts ];
+            climb   [ altitude: 7000 m, speed: 290 kts ];
+            climb   [ altitude: 8000 m, speed: 290 kts ];
+            climb   [ altitude: 9000 m, speed: 290 kts ];
+            climb   [ altitude: 9249 m, speed: 300 kts ];
+
+            cruise  [ speed: 460 kts ];
+
+            descend [ altitude: 9249 m, speed: 300 kts, rate: -10 m/s ];
+            descend [ altitude: 8000 m, speed: 300 kts, rate: -10 m/s ];
+            descend [ altitude: 7000 m, speed: 300 kts, rate: -10 m/s ];
+            descend [ altitude: 6000 m, speed: 300 kts, rate: -10 m/s ];
+            descend [ altitude: 5000 m, speed: 290 kts, rate: -10 m/s ];
+            descend [ altitude: 4000 m, speed: 270 kts, rate: -8 m/s  ];
+            descend [ altitude: 3000 m, speed: 250 kts, rate: -8 m/s  ];
+            descend [ altitude: 2000 m, speed: 250 kts, rate: -7 m/s  ];
+            descend [ altitude: 1000 m, speed: 180 kts, rate: -7 m/s  ];
+            descend [ altitude: 610 m,  speed: 140 kts, rate: -5 m/s  ];
         }
 
         segment {

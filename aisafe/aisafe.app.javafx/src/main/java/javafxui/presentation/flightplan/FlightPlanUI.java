@@ -699,6 +699,30 @@ public class FlightPlanUI {
             sb.append("        fuel {\n");
             sb.append("            quantity: ").append(fuelQty).append(" ").append(fuelUnit).append(";\n");
             sb.append("        }\n");
+            sb.append("        profile {\n");
+            for (int p = 0; p < 2; p++) {
+                final String pAlt = require(leg.profileClimbAlt[p],
+                        "Leg " + (i + 1) + " Climb Profile " + (p + 1) + " Altitude");
+                final String pSpd = require(leg.profileClimbSpeed[p],
+                        "Leg " + (i + 1) + " Climb Profile " + (p + 1) + " Speed");
+                sb.append("            climb [ altitude: ").append(pAlt)
+                        .append(" m, speed: ").append(pSpd).append(" kts ];\n");
+            }
+            final String cruiseSpd = require(leg.profileCruiseSpeed,
+                    "Leg " + (i + 1) + " Cruise Profile Speed");
+            sb.append("            cruise [ speed: ").append(cruiseSpd).append(" kts ];\n");
+            for (int p = 0; p < 2; p++) {
+                final String pAlt = require(leg.profileDescendAlt[p],
+                        "Leg " + (i + 1) + " Descend Profile " + (p + 1) + " Altitude");
+                final String pSpd = require(leg.profileDescendSpeed[p],
+                        "Leg " + (i + 1) + " Descend Profile " + (p + 1) + " Speed");
+                final String pRate = require(leg.profileDescendRate[p],
+                        "Leg " + (i + 1) + " Descend Profile " + (p + 1) + " Rate");
+                sb.append("            descend [ altitude: ").append(pAlt)
+                        .append(" m, speed: ").append(pSpd)
+                        .append(" kts, rate: ").append(pRate).append(" m/s ];\n");
+            }
+            sb.append("        }\n");
 
             for (int s = 0; s < SEGMENT_MODES.length; s++) {
                 final String fLat = require(leg.fromLat[s],
@@ -860,6 +884,12 @@ public class FlightPlanUI {
         final ComboBox<String>[] slotWidthUnit = new ComboBox[3];
         final TextField[] windDir = new TextField[3];
         final TextField[] windSpeed = new TextField[3];
+        final TextField[] profileClimbAlt = new TextField[2];
+        final TextField[] profileClimbSpeed = new TextField[2];
+        TextField profileCruiseSpeed;
+        final TextField[] profileDescendAlt = new TextField[2];
+        final TextField[] profileDescendSpeed = new TextField[2];
+        final TextField[] profileDescendRate = new TextField[2];
 
         LegEntry(final int num) {
             panel = new VBox(8);
@@ -891,6 +921,34 @@ public class FlightPlanUI {
             fuelUnit.setValue("kg");
             fuelUnit.setMaxWidth(80);
             final HBox fuelRow = new HBox(12, labeled("Quantity", fuelQty), labeled("Unit", fuelUnit));
+
+            final Label profileTitle = sectionLabel("Flight Profile (climb · cruise · descend)");
+            final VBox profilePanel = new VBox(6);
+            profilePanel.setStyle("-fx-background-color:#0a2540;-fx-padding:8;-fx-border-radius:4;-fx-background-radius:4;");
+            for (int p = 0; p < 2; p++) {
+                profileClimbAlt[p] = fieldWithDefault("m", p == 0 ? "69" : "9249");
+                profileClimbSpeed[p] = fieldWithDefault("kts", p == 0 ? "210" : "300");
+                final HBox climbProfileRow = new HBox(8,
+                        labeled("Climb " + (p + 1) + " Alt (m)", profileClimbAlt[p]),
+                        labeled("Speed (kts)", profileClimbSpeed[p]));
+                setHGrow(climbProfileRow);
+                profilePanel.getChildren().add(climbProfileRow);
+            }
+            profileCruiseSpeed = fieldWithDefault("kts", "460");
+            final HBox cruiseProfileRow = new HBox(8, labeled("Cruise Speed (kts)", profileCruiseSpeed));
+            setHGrow(cruiseProfileRow);
+            profilePanel.getChildren().add(cruiseProfileRow);
+            for (int p = 0; p < 2; p++) {
+                profileDescendAlt[p] = fieldWithDefault("m", p == 0 ? "9249" : "69");
+                profileDescendSpeed[p] = fieldWithDefault("kts", p == 0 ? "300" : "140");
+                profileDescendRate[p] = fieldWithDefault("m/s", p == 0 ? "-10" : "-5");
+                final HBox descProfileRow = new HBox(8,
+                        labeled("Descend " + (p + 1) + " Alt (m)", profileDescendAlt[p]),
+                        labeled("Speed (kts)", profileDescendSpeed[p]),
+                        labeled("Rate (m/s)", profileDescendRate[p]));
+                setHGrow(descProfileRow);
+                profilePanel.getChildren().add(descProfileRow);
+            }
 
             final Label segsTitle = sectionLabel("Flight Segments (climb · cruise · descend)");
             final VBox segmentsPanel = new VBox(8);
@@ -944,10 +1002,10 @@ public class FlightPlanUI {
                     legs.remove(this);
                 });
                 panel.getChildren().addAll(title, depTitle, depRow, arrTitle, arrRow,
-                        fuelTitle, fuelRow, segsTitle, segmentsPanel, removeBtn);
+                        fuelTitle, fuelRow, profileTitle, profilePanel, segsTitle, segmentsPanel, removeBtn);
             } else {
                 panel.getChildren().addAll(title, depTitle, depRow, arrTitle, arrRow,
-                        fuelTitle, fuelRow, segsTitle, segmentsPanel);
+                        fuelTitle, fuelRow, profileTitle, profilePanel, segsTitle, segmentsPanel);
             }
         }
 
