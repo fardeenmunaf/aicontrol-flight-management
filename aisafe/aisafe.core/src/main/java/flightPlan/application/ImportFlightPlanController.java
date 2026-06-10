@@ -14,10 +14,18 @@ import aircraftmodel.repositories.AircraftModelRepository;
 import airport.repositories.AirportRepository;
 import airport.domain.Airport;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
 public class ImportFlightPlanController {
+
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     private final FlightPlanRepository flightPlanRepository;
     private final NodeRepository nodeRepository;
@@ -67,7 +75,17 @@ public class ImportFlightPlanController {
         final FlightPlanId planId = FlightPlanId.newId();
         final String json = buildJson(planId, aircraftId, loggedInEmail, routeId, legs);
 
-        return flightPlanRepository.save(new FlightPlan(planId, json));
+        final LegImportRequest firstLeg = legs.get(0);
+        final Instant departureTime = toInstant(firstLeg.departureDate, firstLeg.departureTime);
+
+        return flightPlanRepository.save(
+                new FlightPlan(planId, json, aircraftId, loggedInEmail, routeId, departureTime));
+    }
+
+    private static Instant toInstant(final String date, final String time) {
+        final LocalDate localDate = LocalDate.parse(date, DATE_FMT);
+        final LocalTime localTime = LocalTime.parse(time, TIME_FMT);
+        return localDate.atTime(localTime).toInstant(ZoneOffset.UTC);
     }
 
     private String buildJson(final FlightPlanId planId, final String aircraftId, final String pilotRef,

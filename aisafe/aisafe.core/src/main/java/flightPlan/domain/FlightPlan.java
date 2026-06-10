@@ -11,6 +11,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Version;
 import shared.domain.FlightPlanId;
 
+import java.time.Instant;
+
 @Entity
 public class FlightPlan implements AggregateRoot<FlightPlanId> {
 
@@ -25,14 +27,35 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
     @Enumerated(EnumType.STRING)
     private FlightPlanStatus status;
 
+    // --- Promoted columns: duplicated from the JSON document so they can be queried/constrained
+    //     in SQL. The flight_plan_json blob remains the source of truth. ---
+
+    @Column(name = "aircraft_id")
+    private String aircraftId;
+
+    @Column(name = "pilot_ref")
+    private String pilotRef;
+
+    @Column(name = "route_reference")
+    private String routeReference;
+
+    @Column(name = "departure_time")
+    private Instant departureTime;
+
     @Column(name = "flight_plan_json", columnDefinition = "TEXT")
     private String flightPlanJson;
 
-    public FlightPlan(final FlightPlanId flightPlanId, final String flightPlanJson) {
+    public FlightPlan(final FlightPlanId flightPlanId, final String flightPlanJson,
+            final String aircraftId, final String pilotRef,
+            final String routeReference, final Instant departureTime) {
         Preconditions.noneNull(flightPlanId, flightPlanJson);
         Preconditions.nonEmpty(flightPlanJson, "Flight plan JSON must not be empty");
         this.flightPlanId = flightPlanId;
         this.flightPlanJson = flightPlanJson;
+        this.aircraftId = aircraftId;
+        this.pilotRef = pilotRef;
+        this.routeReference = routeReference;
+        this.departureTime = departureTime;
         this.status = FlightPlanStatus.DRAFT;
     }
 
@@ -57,6 +80,22 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
 
     public String flightPlanJson() {
         return flightPlanJson;
+    }
+
+    public String aircraftId() {
+        return aircraftId;
+    }
+
+    public String pilotRef() {
+        return pilotRef;
+    }
+
+    public String routeReference() {
+        return routeReference;
+    }
+
+    public Instant departureTime() {
+        return departureTime;
     }
 
     @Override

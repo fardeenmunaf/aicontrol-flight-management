@@ -264,6 +264,10 @@ CREATE TABLE Flight (
 CREATE TABLE FlightPlan (
                             flight_plan_id   VARCHAR(255) PRIMARY KEY,
                             status           VARCHAR(255),
+                            aircraft_id      VARCHAR(255),
+                            pilot_ref        VARCHAR(255),
+                            route_reference  VARCHAR(255),
+                            departure_time   TIMESTAMP,
                             flight_plan_json TEXT,
                             version          BIGINT
 );

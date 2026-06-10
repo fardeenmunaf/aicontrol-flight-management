@@ -795,20 +795,8 @@ public class FlightPlanUI {
         }
 
         static FlightPlanRow fromDb(final FlightPlan fp, final DateTimeFormatter fmt) {
-            String aircraft = "?";
-            String departure = "?";
-            try {
-                final JsonNode plan = new ObjectMapper().readTree(fp.flightPlanJson());
-                aircraft = plan.path("aircraftId").asText("?");
-                departure = plan.path("departureDateTime").asText("?");
-                if ("?".equals(departure)) {
-                    final JsonNode legs = plan.path("legs");
-                    if (legs.isArray() && legs.size() > 0) {
-                        final JsonNode dep = legs.get(0).path("departure");
-                        departure = dep.path("date").asText("?") + " " + dep.path("time").asText("");
-                    }
-                }
-            } catch (final IOException ignored) { }
+            final String aircraft = fp.aircraftId() != null ? fp.aircraftId() : "?";
+            final String departure = fp.departureTime() != null ? fmt.format(fp.departureTime()) : "?";
             return new FlightPlanRow(fp.identity().toString(), aircraft, fp.status().name(), departure, null, fp);
         }
 

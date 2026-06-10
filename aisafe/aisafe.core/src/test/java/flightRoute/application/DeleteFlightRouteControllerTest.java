@@ -130,10 +130,20 @@ class DeleteFlightRouteControllerTest {
                 () -> controller().deleteFlightRoute(otherRoute.identity().toString(), LocalDate.now().plusDays(1)));
     }
 
-    // NOTE: the "block deactivation when future flights exist on the route" check is currently
-    // disabled — flight plan route/departure now live inside a JSON blob and cannot be queried.
-    // See FlightPlanRepository#findByRouteIdAndDepartureAfter. Re-add a blocking test once that
-    // check is restored.
+    @Test
+    void ensurePlannedFlightsAfterDateBlockDeactivation() {
+        final FlightRoute route = savedRoute();
+        final LocalDate deactivation = LocalDate.of(2027, 1, 1);
+
+        final FlightPlan plan = new FlightPlan(
+                FlightPlanId.newId(), "{\"aircraftId\":\"AC-REG\"}",
+                "AC-REG", PILOT_EMAIL, route.identity().toString(),
+                Instant.parse("2027-06-01T10:00:00Z"));
+        planRepo.save(plan);
+
+        assertThrows(IllegalStateException.class,
+                () -> controller().deleteFlightRoute(route.identity().toString(), deactivation));
+    }
 
     @Test
     void ensureNoPlannedFlightsAfterDateAllowsDeactivation() {
@@ -141,7 +151,9 @@ class DeleteFlightRouteControllerTest {
         final LocalDate deactivation = LocalDate.of(2027, 1, 1);
 
         final FlightPlan plan = new FlightPlan(
-                FlightPlanId.newId(), "{\"aircraftId\":\"AC-REG\",\"routeReference\":\"" + route.identity() + "\"}");
+                FlightPlanId.newId(), "{\"aircraftId\":\"AC-REG\"}",
+                "AC-REG", PILOT_EMAIL, route.identity().toString(),
+                Instant.parse("2026-12-01T10:00:00Z"));
         planRepo.save(plan);
 
         assertDoesNotThrow(() -> controller().deleteFlightRoute(route.identity().toString(), deactivation));
@@ -220,7 +232,9 @@ class DeleteFlightRouteControllerTest {
 
         @Override
         public Iterable<FlightPlan> findByRouteIdAndDepartureAfter(final String routeId, final Instant departure) {
-            return List.of();
+            return match(fp -> routeId.equals(fp.routeReference())
+                    && fp.departureTime() != null
+                    && fp.departureTime().isAfter(departure));
         }
     }
 

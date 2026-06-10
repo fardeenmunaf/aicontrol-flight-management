@@ -277,6 +277,14 @@ VALUES
     ('pilot-004', 'am-777'),
     ('pilot-004', 'am-A380');
 
+-- Flight plan: full document lives in flight_plan_json; the other columns are promoted
+-- copies so plans can be queried by aircraft / pilot / route / departure.
+INSERT INTO FlightPlan (flight_plan_id, status, aircraft_id, pilot_ref, route_reference, departure_time, flight_plan_json, version)
+VALUES
+    ('fp-001', 'DRAFT', 'CS-TUA', 'pilot@tap.com', 'fr-001', '2027-05-05 08:00:00',
+     '{"flightPlanId":"fp-001","aircraftId":"CS-TUA","pilotRef":"pilot@tap.com","routeReference":"fr-001","legs":[{"sequenceNumber":1,"departure":{"airport":"OPO","date":"2027-05-05","time":"08:00"},"arrival":{"airport":"MAD","date":"2027-05-05","time":"09:30"},"fuel":{"quantity":4200,"unit":"kg"},"segments":[]}]}',
+     0);
+
 
 
 SELECT setval('T_ROLESET_SEQ',        50, true);

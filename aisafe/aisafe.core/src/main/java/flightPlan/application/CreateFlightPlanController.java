@@ -167,12 +167,14 @@ public class CreateFlightPlanController {
         }
 
         // Create plan — store essentials as JSON (full DSL required for complete plans)
+        final String aircraftReg = aircraft.registrationNumber();
+        final String routeRef = route.identity().toString();
         final String json = String.format(
                 "{\"aircraftId\":\"%s\",\"pilotRef\":\"%s\",\"routeReference\":\"%s\"," +
                 "\"departureDateTime\":\"%s\",\"fuelQuantity\":%.2f}",
-                aircraft.registrationNumber(), email,
-                route.identity().toString(), departureDateTime.toString(), fuelQuantity);
-        final FlightPlan plan = new FlightPlan(FlightPlanId.newId(), json);
+                aircraftReg, email, routeRef, departureDateTime.toString(), fuelQuantity);
+        final FlightPlan plan = new FlightPlan(
+                FlightPlanId.newId(), json, aircraftReg, email, routeRef, departureDateTime);
 
         return flightPlanRepository.save(plan);
     }
