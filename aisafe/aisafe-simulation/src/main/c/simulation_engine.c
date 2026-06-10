@@ -498,7 +498,7 @@
                                                   !f->violation_detected &&
                                                   f->departure_offset_s < sim->config.end_time;
                 status->had_violation      = f->violation_detected;
-                double fuel_rem = f->current_mass - f-pid>properties.empty_weight - f->payload;
+                double fuel_rem = f->current_mass - f->properties.empty_weight - f->payload;
                 status->fuel_remaining     = (fuel_rem > 0) ? fuel_rem : 0.0;
                 status->num_legs_completed = f->current_leg;
             }
