@@ -247,6 +247,9 @@ class DeleteFlightRouteControllerTest {
         public Iterable<FlightPlan> findByPilotRef(final String pilotRef) {
             return match(fp -> pilotRef.equals(fp.pilotRef()));
         }
+        @Override public Iterable<FlightPlan> findByFlightDesignator(final String flightDesignator) {
+            return match(fp -> flightDesignator.equals(fp.flightDesignator()));
+        }
     }
 
     static class StubCollaboratorRepository

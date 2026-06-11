@@ -86,5 +86,8 @@ class CreateFlightPlanControllerTest {
         @Override public Iterable<FlightPlan> findByPilotRef(final String pilotRef) {
             return match(p -> pilotRef.equals(p.pilotRef()));
         }
+        @Override public Iterable<FlightPlan> findByFlightDesignator(final String flightDesignator) {
+            return match(p -> flightDesignator.equals(p.flightDesignator()));
+        }
     }
 }

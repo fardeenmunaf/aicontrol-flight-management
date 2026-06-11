@@ -137,6 +137,7 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
     public String routeOrigin() { return routeOrigin; }
     public String routeDestination() { return routeDestination; }
     public Instant departureTime() { return departureTime; }
+    public Instant arrivalTime() { return legs.get(legs.size() - 1).arrivalTime(); }
     public List<FlightLeg> legs() { return Collections.unmodifiableList(legs); }
 
     @Override

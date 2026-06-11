@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 public class ExportSimulationFlightPlanService {
 
@@ -45,17 +46,26 @@ public class ExportSimulationFlightPlanService {
     }
 
     public void export(FlightPlanAst ast) throws IOException {
+        // 1. Try by registration number (e.g. "CS-TNA")
         Optional<Aircraft> optAircraft = aircraftRepository.findByRegistrationNumber(ast.aircraftId());
+
+        // 2. Try by UUID identity
         if (optAircraft.isEmpty()) {
             try {
                 optAircraft = aircraftRepository.ofIdentity(AircraftId.valueOf(ast.aircraftId()));
-            } catch (Exception e) {
-                // Ignore UUID parsing errors etc.
+            } catch (final Exception ignored) {
             }
         }
 
+        // 3. Try by model name (JavaFX form puts aircraftModel().modelName() in the DSL aircraft: field)
         if (optAircraft.isEmpty()) {
-            throw new IllegalArgumentException("Aircraft not found for ID or Registration Number: " + ast.aircraftId());
+            optAircraft = StreamSupport.stream(aircraftRepository.findAll().spliterator(), false)
+                    .filter(a -> ast.aircraftId().equalsIgnoreCase(a.aircraftModel().modelName()))
+                    .findFirst();
+        }
+
+        if (optAircraft.isEmpty()) {
+            throw new IllegalArgumentException("Aircraft not found: " + ast.aircraftId());
         }
 
         Aircraft aircraft = optAircraft.get();
@@ -145,8 +155,10 @@ public class ExportSimulationFlightPlanService {
         );
 
         // Export as an array with a single item to match TB0001.json
+        // Use an incrementing suffix so multiple flights with the same designator never overwrite each other:
+        // TAP02A_1.json, TAP02A_2.json, ...
         List<SimulationFlightPlanDTO> outList = List.of(dto);
-        File outFile = new File(outputDirectory, ast.flightDesignator() + ".json");
+        File outFile = nextAvailableFile(outputDirectory, ast.flightDesignator());
         String json = objectMapper.writeValueAsString(outList);
         java.nio.file.Files.writeString(outFile.toPath(), json, java.nio.charset.StandardCharsets.UTF_8);
     }
@@ -211,5 +223,15 @@ public class ExportSimulationFlightPlanService {
             return null;
         }
         return new WindDTO(wind.direction(), new MeasureDTO(wind.speed(), "m/s"));
+    }
+
+    private static File nextAvailableFile(final String directory, final String designator) {
+        int counter = 1;
+        File candidate;
+        do {
+            candidate = new File(directory, designator + "_" + counter + ".json");
+            counter++;
+        } while (candidate.exists());
+        return candidate;
     }
 }

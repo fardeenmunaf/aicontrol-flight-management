@@ -21,5 +21,7 @@ public interface FlightPlanRepository extends DomainRepository<FlightPlanId, Fli
     Iterable<FlightPlan> findByRouteIdAndDepartureAfter(String routeId, Instant departure);
 
     Iterable<FlightPlan> findByPilotRef(String pilotRef);
+
+    Iterable<FlightPlan> findByFlightDesignator(String flightDesignator);
 }
 
