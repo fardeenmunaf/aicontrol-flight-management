@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS PilotCompanyAssignment CASCADE;
 DROP TABLE IF EXISTS Pilot_AircraftModel CASCADE;
 DROP TABLE IF EXISTS aircraftmodel_enginemodel CASCADE;
 DROP TABLE IF EXISTS ProfileEntry CASCADE;
+DROP TABLE IF EXISTS SegmentWeatherData CASCADE;
 DROP TABLE IF EXISTS AltitudeSlot CASCADE;
 DROP TABLE IF EXISTS Segment CASCADE;
 DROP TABLE IF EXISTS FlightLeg CASCADE;
@@ -277,6 +278,12 @@ CREATE TABLE FlightPlan (
                             departure_time    TIMESTAMP,
                             dsl_text          TEXT,
                             version           BIGINT
+);
+
+CREATE TABLE SegmentWeatherData (
+    segment_id      BIGINT       NOT NULL REFERENCES Segment(id),
+    weather_data_id VARCHAR(255) NOT NULL,
+    PRIMARY KEY (segment_id, weather_data_id)
 );
 
 CREATE TABLE FlightLeg (

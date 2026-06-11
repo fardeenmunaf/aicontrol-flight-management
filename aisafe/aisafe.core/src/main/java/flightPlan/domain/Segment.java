@@ -1,12 +1,18 @@
 package flightPlan.domain;
 
+import shared.domain.WeatherDataId;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -46,6 +52,11 @@ public class Segment implements DomainEntity<Long> {
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "segment_id")
     private List<AltitudeSlot> altitudeSlots = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "SegmentWeatherData", joinColumns = @JoinColumn(name = "segment_id"))
+    @Column(name = "weather_data_id")
+    private Set<String> weatherDataIds = new LinkedHashSet<>();
 
     public Segment(final NodeId startNodeId, final NodeId endNodeId,
                    final double windDirection, final double windSpeed) {
@@ -109,5 +120,13 @@ public class Segment implements DomainEntity<Long> {
 
     public List<AltitudeSlot> altitudeSlots() {
         return Collections.unmodifiableList(altitudeSlots);
+    }
+
+    public void addWeatherData(final WeatherDataId weatherDataId) {
+        this.weatherDataIds.add(weatherDataId.toString());
+    }
+
+    public Set<String> weatherDataIds() {
+        return Collections.unmodifiableSet(weatherDataIds);
     }
 }

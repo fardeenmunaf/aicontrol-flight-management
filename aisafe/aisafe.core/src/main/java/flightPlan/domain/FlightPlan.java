@@ -14,6 +14,7 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Version;
 import shared.domain.FlightPlanId;
+import shared.domain.WeatherDataId;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -105,6 +106,26 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
             throw new IllegalStateException("Only a TESTED FlightPlan can be voided");
         }
         this.status = FlightPlanStatus.VOID;
+    }
+
+    /**
+     * Associates a weather data record with a specific segment of this flight plan.
+     * Weather is stored at segment level (SegmentWeatherData) so each segment carries
+     * the actual wind conditions at its position and altitude.
+     * If the plan was TESTED, reverts status to DRAFT (voids the previous test).
+     *
+     * @return true if the previous test was voided
+     */
+    public boolean addWeatherDataToSegment(final Segment segment, final WeatherDataId weatherDataId) {
+        if (this.status == FlightPlanStatus.VOID) {
+            throw new IllegalStateException("Cannot add weather data to a VOID flight plan.");
+        }
+        final boolean wasVoided = this.status == FlightPlanStatus.TESTED;
+        if (wasVoided) {
+            this.status = FlightPlanStatus.DRAFT;
+        }
+        segment.addWeatherData(weatherDataId);
+        return wasVoided;
     }
 
     public FlightPlanStatus status() { return status; }

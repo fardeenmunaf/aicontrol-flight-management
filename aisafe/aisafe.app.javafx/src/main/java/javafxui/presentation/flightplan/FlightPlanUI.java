@@ -12,6 +12,8 @@ import flight.dsl.mapping.CreationResult;
 import flight.dsl.mapping.FlightPlanCreationService;
 import flight.dsl.mapping.ValidateFlightPlanService;
 
+import flightPlan.application.AddWeatherDataToFlightPlanController;
+import flightPlan.application.AddWeatherResult;
 import flightPlan.application.FlightPlanValidationResult;
 import flightPlan.application.ValidateFlightPlanController;
 import flightPlan.domain.FlightPlan;
@@ -116,6 +118,11 @@ public class FlightPlanUI {
     private final ValidateFlightPlanService validateService = new ValidateFlightPlanService(
             new ValidateFlightPlanController(PersistenceContext.repositories().flightPlans()),
             PersistenceContext.repositories().airports());
+    private final AddWeatherDataToFlightPlanController weatherController = new AddWeatherDataToFlightPlanController(
+            PersistenceContext.repositories().flightPlans(),
+            PersistenceContext.repositories().weatherData(),
+            PersistenceContext.repositories().airports(),
+            PersistenceContext.repositories().nodes());
     private boolean canCreatePlans = true;
     private String companyIcaoCode = null;
     private AirTransportCompanyId companyId = null;
@@ -486,13 +493,15 @@ public class FlightPlanUI {
 
     private TableColumn<FlightPlanRow, Void> buildActionColumn() {
         final TableColumn<FlightPlanRow, Void> col = new TableColumn<>("Action");
-        col.setPrefWidth(160);
+        col.setPrefWidth(240);
         col.setCellFactory(c -> new TableCell<>() {
             private final Button validateBtn = new Button("Validate");
-            private final Button deleteBtn = new Button("Delete");
-            private final HBox box = new HBox(4, validateBtn, deleteBtn);
+            private final Button weatherBtn  = new Button("Weather");
+            private final Button deleteBtn   = new Button("Delete");
+            private final HBox box = new HBox(4, validateBtn, weatherBtn, deleteBtn);
             {
                 validateBtn.getStyleClass().add("btn-primary");
+                weatherBtn.getStyleClass().add("btn-primary");
                 deleteBtn.getStyleClass().add("btn-danger");
             }
 
@@ -504,10 +513,15 @@ public class FlightPlanUI {
                     return;
                 }
                 final FlightPlanRow row = getTableView().getItems().get(getIndex());
-                final boolean isDraftDbPlan = row.dbPlan() != null && "DRAFT".equals(row.status());
-                validateBtn.setVisible(isDraftDbPlan);
-                validateBtn.setManaged(isDraftDbPlan);
+                final boolean isDraftDb    = row.dbPlan() != null && "DRAFT".equals(row.status());
+                final boolean isEditableDb = row.dbPlan() != null
+                        && ("DRAFT".equals(row.status()) || "TESTED".equals(row.status()));
+                validateBtn.setVisible(isDraftDb);
+                validateBtn.setManaged(isDraftDb);
+                weatherBtn.setVisible(isEditableDb);
+                weatherBtn.setManaged(isEditableDb);
                 validateBtn.setOnAction(e -> onValidateRow(row));
+                weatherBtn.setOnAction(e -> onAddWeatherRow(row));
                 deleteBtn.setOnAction(e -> onDeleteRow(row));
                 setGraphic(box);
             }
@@ -553,6 +567,43 @@ public class FlightPlanUI {
         alert.setContentText(content.toString());
         alert.getDialogPane().setPrefWidth(500);
         alert.showAndWait();
+    }
+
+    private void onAddWeatherRow(final FlightPlanRow row) {
+        final FlightPlan plan = row.dbPlan();
+        if (plan == null) return;
+        try {
+            final FlightPlan current = weatherController.findForWeatherUpdate(plan.identity());
+            final AddWeatherResult result = weatherController.addAllRelevantWeatherData(current);
+
+            final Alert ok = new Alert(result.addedCount() == 0
+                    ? Alert.AlertType.INFORMATION : Alert.AlertType.INFORMATION);
+            ok.setTitle("Weather Data");
+
+            if (result.addedCount() == 0) {
+                ok.setHeaderText("No weather data found");
+                ok.setContentText("No weather records match the time, position and altitude of this flight plan.");
+            } else if (result.testWasVoided()) {
+                ok.setHeaderText(result.addedCount() + " record(s) added — previous test voided");
+                ok.setContentText(result.addedCount() + " weather record(s) were automatically associated "
+                        + "with flight plan " + current.flightDesignator() + ".\n\n"
+                        + "WARNING: The previous test result has been voided. "
+                        + "The flight plan must be re-validated.");
+            } else {
+                ok.setHeaderText(result.addedCount() + " weather record(s) added");
+                ok.setContentText(result.addedCount() + " weather record(s) were automatically associated "
+                        + "with flight plan " + current.flightDesignator()
+                        + " based on temporal, spatial and altitude matching.");
+            }
+            ok.showAndWait();
+            refreshTable();
+        } catch (final Exception e) {
+            final Alert err = new Alert(Alert.AlertType.ERROR);
+            err.setTitle("Error");
+            err.setHeaderText("Could not add weather data");
+            err.setContentText(e.getMessage());
+            err.showAndWait();
+        }
     }
 
     private void onDeleteRow(final FlightPlanRow row) {

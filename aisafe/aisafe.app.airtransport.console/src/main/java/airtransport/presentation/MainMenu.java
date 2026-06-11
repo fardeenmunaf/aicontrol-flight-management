@@ -1,6 +1,7 @@
 package airtransport.presentation;
 
 import airtransport.presentation.fleet.FleetMenuAction;
+import airtransport.presentation.flightplan.AddWeatherDataAction;
 import airtransport.presentation.flightplan.CreateFlightPlanAction;
 import airtransport.presentation.flightplan.ValidateFlightPlanAction;
 import airtransport.presentation.flightroute.FlightRouteMenuAction;
@@ -19,6 +20,7 @@ public class MainMenu extends AbstractUI {
     private static final int VALIDATE_PLAN_OPTION     = 3;
     private static final int FLIGHT_ROUTE_OPTION      = 4;
     private static final int PILOT_MGMT_OPTION        = 5;
+    private static final int ADD_WEATHER_OPTION       = 6;
 
     @Override
     protected boolean doShow() {
@@ -28,6 +30,7 @@ public class MainMenu extends AbstractUI {
         menu.addItem(VALIDATE_PLAN_OPTION, "Test/Validate Flight Plan", new ValidateFlightPlanAction());
         menu.addItem(FLIGHT_ROUTE_OPTION, "Flight Route Management", new FlightRouteMenuAction());
         menu.addItem(PILOT_MGMT_OPTION, "Pilot Management", new PilotManagementMenuAction());
+        menu.addItem(ADD_WEATHER_OPTION, "Add Weather Data to Flight Plan", new AddWeatherDataAction());
         menu.addItem(EXIT_OPTION, "Exit", () -> true);
         final MenuRenderer renderer = new VerticalMenuRenderer(menu, MenuItemRenderer.DEFAULT);
         return renderer.render();
