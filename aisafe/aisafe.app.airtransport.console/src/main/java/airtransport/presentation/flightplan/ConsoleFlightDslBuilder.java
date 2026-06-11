@@ -153,17 +153,22 @@ class ConsoleFlightDslBuilder {
         final StringBuilder sb = new StringBuilder("    profile {\n");
         if (promptEverything) {
             System.out.println("  Enter profile lines. Climb altitudes must ascend, descend must descend.");
-            final int climbs = (int) num("Number of climb entries");
+            final int climbs = (int) numWithDef("Number of climb entries", 2);
             for (int i = 0; i < climbs; i++) {
-                sb.append("      climb [ altitude: ").append(req("  climb " + (i + 1) + " altitude (m)"))
-                        .append(" m, speed: ").append(req("  climb " + (i + 1) + " speed (kts)")).append(" kts ];\n");
+                final String altDef = i == 0 ? fmt(depAlt) : fmt(cruiseAlt);
+                final String spdDef = i == 0 ? "210" : "300";
+                sb.append("      climb [ altitude: ").append(reqWithDef("  climb " + (i + 1) + " altitude (m)", altDef))
+                        .append(" m, speed: ").append(reqWithDef("  climb " + (i + 1) + " speed (kts)", spdDef)).append(" kts ];\n");
             }
-            sb.append("      cruise [ speed: ").append(req("  cruise speed (kts)")).append(" kts ];\n");
-            final int descs = (int) num("Number of descend entries");
+            sb.append("      cruise [ speed: ").append(reqWithDef("  cruise speed (kts)", "460")).append(" kts ];\n");
+            final int descs = (int) numWithDef("Number of descend entries", 2);
             for (int i = 0; i < descs; i++) {
-                sb.append("      descend [ altitude: ").append(req("  descend " + (i + 1) + " altitude (m)"))
-                        .append(" m, speed: ").append(req("  descend " + (i + 1) + " speed (kts)"))
-                        .append(" kts, rate: ").append(req("  descend " + (i + 1) + " rate (m/s, negative)")).append(" m/s ];\n");
+                final String altDef = i == 0 ? fmt(cruiseAlt) : fmt(arrAlt);
+                final String spdDef = i == 0 ? "300" : "150";
+                final String rateDef = i == 0 ? "-10" : "-5";
+                sb.append("      descend [ altitude: ").append(reqWithDef("  descend " + (i + 1) + " altitude (m)", altDef))
+                        .append(" m, speed: ").append(reqWithDef("  descend " + (i + 1) + " speed (kts)", spdDef))
+                        .append(" kts, rate: ").append(reqWithDef("  descend " + (i + 1) + " rate (m/s, negative)", rateDef)).append(" m/s ];\n");
             }
         } else {
             // Template: a minimal valid ascending climb / cruise / descending descend.
@@ -180,11 +185,13 @@ class ConsoleFlightDslBuilder {
         final String slot;
         final String wind;
         if (promptEverything) {
+            final double maxAlt = Math.max(from[2], to[2]);
+            final String maxAltDef = fmt(maxAlt <= 0 ? 1 : maxAlt);
             System.out.println("  " + mode + " segment altitude slot + wind:");
-            slot = "altslot [ min: " + req("  slot min (m)") + " m, max: " + req("  slot max (m)")
-                    + " m, width: " + req("  slot width (m)") + " m ];";
-            wind = "wind { direction: " + req("  wind direction (deg 0-359)")
-                    + "; speed: " + req("  wind speed (m/s)") + " m/s; }";
+            slot = "altslot [ min: " + reqWithDef("  slot min (m)", "0") + " m, max: " + reqWithDef("  slot max (m)", maxAltDef)
+                    + " m, width: " + reqWithDef("  slot width (m)", "50") + " m ];";
+            wind = "wind { direction: " + reqWithDef("  wind direction (deg 0-359)", "270")
+                    + "; speed: " + reqWithDef("  wind speed (m/s)", "10") + " m/s; }";
         } else {
             final double maxAlt = Math.max(from[2], to[2]);
             slot = "altslot [ min: 0 m, max: " + fmt(maxAlt <= 0 ? 1 : maxAlt) + " m, width: 50 m ];";
