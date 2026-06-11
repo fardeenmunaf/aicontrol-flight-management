@@ -5,8 +5,8 @@ import java.net.Socket;
 
 public class WeatherTcpClient {
 
-    private static final String SERVER_HOST = "localhost"; // ip do servidor (ajustar conforme necessário)
-    private static final int SERVER_PORT = 12345; // porta do servidor (ajustar conforme necessário)
+    private static final String SERVER_HOST = "localhost"; // ip do
+    private static final int SERVER_PORT = 12345; // porta do servidor
 
     public String sendWeatherData(String payload) {
         try (Socket socket = new Socket(SERVER_HOST, SERVER_PORT);

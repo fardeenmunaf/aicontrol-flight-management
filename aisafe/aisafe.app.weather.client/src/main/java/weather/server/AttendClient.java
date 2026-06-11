@@ -1,8 +1,6 @@
 package weather.server;
 
 import auth.domain.AISafeRoles;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import eapli.framework.infrastructure.authz.application.UserSession;
 import eapli.framework.infrastructure.authz.domain.model.SystemUser;
@@ -18,18 +16,16 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Optional;
+import java.util.StringJoiner;
 
 public class AttendClient implements Runnable {
-
     private final Socket cliSock;
     private SystemUser authenticatedUser;   // sessão da ligação
-    private final ObjectMapper objectMapper;
 
     public AttendClient(Socket s) {
         this.cliSock = s;
-        this.objectMapper = new ObjectMapper();
-        this.objectMapper.registerModule(new JavaTimeModule());
     }
 
     @Override
@@ -102,24 +98,26 @@ public class AttendClient implements Runnable {
             return;
         }
         try {
-            String json = msg.dataAsString();
-            // Se o JSON começar com '[', é um bulk import (lista de DTOs)
-            if (json.trim().startsWith("[")) {
-                WeatherDataDTO[] dtos = objectMapper.readValue(json, WeatherDataDTO[].class);
-                RegisterWeatherDataController controller = new RegisterWeatherDataController();
+            String payload = msg.dataAsString();
+            RegisterWeatherDataController controller = new RegisterWeatherDataController();
+            
+            // Se o payload contiver '\n', é um bulk import (múltiplas linhas)
+            if (payload.contains("\n")) {
+                String[] lines = payload.split("\n");
                 int successCount = 0;
-                for (WeatherDataDTO dto : dtos) {
+                for (String line : lines) {
+                    if (line.trim().isEmpty()) continue;
                     try {
+                        WeatherDataDTO dto = deserializeWeatherDataDTO(line);
                         controller.registerWeatherData(dto);
                         successCount++;
                     } catch (Exception ex) {
                         System.err.println("Error in bulk item: " + ex.getMessage());
                     }
                 }
-                ProtocolCodec.write(sOut, ack("Bulk import completed. Imported: " + successCount + "/" + dtos.length));
+                ProtocolCodec.write(sOut, ack("Bulk import completed. Imported: " + successCount + "/" + lines.length));
             } else {
-                WeatherDataDTO dto = objectMapper.readValue(json, WeatherDataDTO.class);
-                RegisterWeatherDataController controller = new RegisterWeatherDataController();
+                WeatherDataDTO dto = deserializeWeatherDataDTO(payload);
                 controller.registerWeatherData(dto);
                 ProtocolCodec.write(sOut, ack("Data registered successfully"));
             }
@@ -151,11 +149,49 @@ public class AttendClient implements Runnable {
                 results = controller.listByDateAndArea(area, date);
             }
 
-            String jsonResponse = objectMapper.writeValueAsString(results);
-            ProtocolCodec.write(sOut, ack(jsonResponse));
+            StringJoiner response = new StringJoiner("\n");
+            for (WeatherDataDTO dto : results) {
+                response.add(serializeWeatherDataDTO(dto));
+            }
+            ProtocolCodec.write(sOut, ack(response.toString()));
         } catch (Exception e) {
             ProtocolCodec.write(sOut, err("Error listing weather data: " + e.getMessage()));
         }
+    }
+
+    private String serializeWeatherDataDTO(WeatherDataDTO dto) {
+        return new StringJoiner(";")
+                .add(dto.acaCode())
+                .add(String.valueOf(dto.latitude1()))
+                .add(String.valueOf(dto.longitude1()))
+                .add(String.valueOf(dto.latitude2()))
+                .add(String.valueOf(dto.longitude2()))
+                .add(String.valueOf(dto.altitudeInf()))
+                .add(String.valueOf(dto.altitudeSup()))
+                .add(String.valueOf(dto.direction()))
+                .add(String.valueOf(dto.windSpeed()))
+                .add(dto.date().toString())
+                .add(dto.startHour().toString())
+                .add(dto.endHour().toString())
+                .toString();
+    }
+
+    private WeatherDataDTO deserializeWeatherDataDTO(String line) {
+        String[] p = line.split(";", -1);
+        return new WeatherDataDTO(
+                p[0],
+                Double.parseDouble(p[1]),
+                Double.parseDouble(p[2]),
+                Double.parseDouble(p[3]),
+                Double.parseDouble(p[4]),
+                Double.parseDouble(p[5]),
+                Double.parseDouble(p[6]),
+                Double.parseDouble(p[7]),
+                Double.parseDouble(p[8]),
+                LocalDate.parse(p[9]),
+                LocalTime.parse(p[10]),
+                LocalTime.parse(p[11])
+        );
     }
 
     private ProtocolMessage ack(String text) {

@@ -7,6 +7,7 @@ import weatherData.application.BulkImportWeatherDataController;
 import weatherData.application.importer.CSVWeatherDataImporter;
 import weatherData.application.importer.WeatherDataImporter;
 import weatherData.dto.WeatherDataDTO;
+import java.util.StringJoiner;
 
 /**
  * UI for bulk importing weather data from CSV files.
@@ -41,13 +42,14 @@ public class BulkImportWeatherUI extends AbstractUI {
                 System.out.println("\n" + result.toString());
                 return result.isCompleted();
             } else {
-                // TCP Mode - Enviar lista como JSON
+                // TCP Mode - Enviar lista como CSV (uma linha por DTO)
                 final Iterable<WeatherDataDTO> dtos = importer.importData();
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-                String jsonPayload = mapper.writeValueAsString(dtos);
+                StringJoiner payload = new StringJoiner("\n");
+                for (WeatherDataDTO dto : dtos) {
+                    payload.add(serializeWeatherDataDTO(dto));
+                }
 
-                String response = weather.ClientSession.getClient().uploadWeather(jsonPayload);
+                String response = weather.ClientSession.getClient().uploadWeather(payload.toString());
                 System.out.println("\nServer response: " + response);
                 return true;
             }
@@ -56,6 +58,23 @@ public class BulkImportWeatherUI extends AbstractUI {
             System.out.println("Unexpected error during import: " + ex.getMessage());
             return false;
         }
+    }
+
+    private String serializeWeatherDataDTO(WeatherDataDTO dto) {
+        return new StringJoiner(";")
+                .add(dto.acaCode())
+                .add(String.valueOf(dto.latitude1()))
+                .add(String.valueOf(dto.longitude1()))
+                .add(String.valueOf(dto.latitude2()))
+                .add(String.valueOf(dto.longitude2()))
+                .add(String.valueOf(dto.altitudeInf()))
+                .add(String.valueOf(dto.altitudeSup()))
+                .add(String.valueOf(dto.direction()))
+                .add(String.valueOf(dto.windSpeed()))
+                .add(dto.date().toString())
+                .add(dto.startHour().toString())
+                .add(dto.endHour().toString())
+                .toString();
     }
 
     @Override
