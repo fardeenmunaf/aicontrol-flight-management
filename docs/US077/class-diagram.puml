@@ -1,0 +1,136 @@
+@startuml class-diagram
+title US077 — Remove a Pilot (Deactivate): Class Diagram
+
+skinparam classAttributeIconSize 0
+skinparam groupInheritance 2
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 70
+
+' ─── Presentation Layer — Console ───────────────────────────────────────────
+package "airtransport.presentation.pilot" #DDEEFF {
+    class DeactivateCompanyPilotUI {
+        +doShow() : boolean
+        +headline() : String
+        -resolveCompanyId() : AirTransportCompanyId
+        -assignments() : JpaPilotCompanyAssignmentRepository
+    }
+}
+
+' ─── Presentation Layer — JavaFX ────────────────────────────────────────────
+package "javafxui.presentation.pilot" #DDEEFF {
+    class CompanyPilotsUI {
+        -myCompanyId : AirTransportCompanyId
+        +initialize() : void
+        -detectCompany() : void
+        -refresh() : void
+        -onToggleStatus(Pilot) : void
+        -onRemove(Pilot) : void
+        -assignments() : JpaPilotCompanyAssignmentRepository
+    }
+}
+
+' ─── Domain Layer ───────────────────────────────────────────────────────────
+package "pilot.domain" #DDFFD8 {
+    class Pilot <<Aggregate Root>> {
+        -userId : UserId
+        -status : PilotStatus
+        -certifiedAircraftModels : Set<AircraftModel>
+        +userId() : UserId
+        +status() : PilotStatus
+        +certifiedAircraftModels() : Set<AircraftModel>
+        +deactivate() : void
+        +activate() : void
+    }
+
+    enum PilotStatus {
+        ACTIVE
+        INACTIVE
+    }
+
+    class PilotCompanyAssignment <<Aggregate Root>> {
+        -pilotUserId : UserId
+        -companyId : AirTransportCompanyId
+        +identity() : UserId
+        +pilotUserId() : UserId
+        +companyId() : AirTransportCompanyId
+    }
+}
+
+package "pilot.repository" #DDFFD8 {
+    interface PilotRepository {
+        +findAll() : Iterable<Pilot>
+        +save(pilot : Pilot) : Pilot
+        +findByStatus(status) : List<Pilot>
+    }
+}
+
+package "flightPlan.repository" #DDFFD8 {
+    interface FlightPlanRepository {
+        +findByPilotRef(pilotRef : String) : Iterable<FlightPlan>
+    }
+}
+
+' ─── Supporting Domain ───────────────────────────────────────────────────────
+package "customercollaborator.domain" #FFF5CC {
+    class CustomerCollaborator {
+        +airTransportCompanyId() : AirTransportCompanyId
+        +customerType() : CustomerType
+    }
+}
+
+package "shared.domain" #FFF5CC {
+    class UserId <<Value Object>> {
+        -value : String
+        {static} +valueOf(email) : UserId
+        +toString() : String
+    }
+
+    class AirTransportCompanyId <<Value Object>> {
+        -value : Long
+    }
+}
+
+' ─── Infrastructure Layer ────────────────────────────────────────────────────
+package "jpa" #FFE8E8 {
+    class JpaPilotCompanyAssignmentRepository {
+        +findAll() : Iterable<PilotCompanyAssignment>
+        +findByCompanyId(companyId) : List<PilotCompanyAssignment>
+    }
+}
+
+' ─── eapli Auth Framework ────────────────────────────────────────────────────
+package "eapli.framework.infrastructure.authz" #EEEEEE {
+    class AuthzRegistry <<utility>> {
+        {static} +authorizationService() : AuthorizationService
+    }
+    interface AuthorizationService {
+        +session() : Optional<UserSession>
+    }
+}
+
+' ─── Relationships ───────────────────────────────────────────────────────────
+
+DeactivateCompanyPilotUI ..> PilotRepository : findAll() / save()
+DeactivateCompanyPilotUI ..> JpaPilotCompanyAssignmentRepository : findByCompanyId()
+DeactivateCompanyPilotUI ..> FlightPlanRepository : findByPilotRef()
+DeactivateCompanyPilotUI ..> AuthzRegistry : session()
+DeactivateCompanyPilotUI ..> CustomerCollaborator : resolves company
+DeactivateCompanyPilotUI ..> Pilot : deactivate()
+
+CompanyPilotsUI ..> PilotRepository : findAll() / save()
+CompanyPilotsUI ..> JpaPilotCompanyAssignmentRepository : findByCompanyId()
+CompanyPilotsUI ..> FlightPlanRepository : findByPilotRef()
+CompanyPilotsUI ..> AuthzRegistry : session()
+CompanyPilotsUI ..> CustomerCollaborator : resolves company
+CompanyPilotsUI ..> Pilot : deactivate() / activate()
+
+Pilot --> PilotStatus : has status >
+Pilot "0..*" --> "1" UserId : identified by >
+
+PilotCompanyAssignment --> UserId : keyed by >
+PilotCompanyAssignment --> AirTransportCompanyId : scoped to >
+
+AuthzRegistry --> AuthorizationService : provides
+
+@enduml

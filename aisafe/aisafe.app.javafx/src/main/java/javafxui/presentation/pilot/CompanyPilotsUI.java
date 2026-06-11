@@ -114,6 +114,18 @@ public class CompanyPilotsUI {
                 ButtonType.YES, ButtonType.NO);
         confirm.showAndWait().filter(b -> b == ButtonType.YES).ifPresent(b -> {
             try {
+                if (isActive) {
+                    final boolean hasFlightPlans = PersistenceContext.repositories()
+                            .flightPlans()
+                            .findByPilotRef(pilot.userId().toString())
+                            .iterator().hasNext();
+                    if (hasFlightPlans) {
+                        new Alert(Alert.AlertType.WARNING,
+                                "Cannot deactivate: pilot has flight plans assigned.")
+                                .showAndWait();
+                        return;
+                    }
+                }
                 final var repo = PersistenceContext.repositories().pilots();
                 final var fresh = repo.ofIdentity(pilot.identity())
                         .orElseThrow(() -> new IllegalStateException("Pilot not found"));
