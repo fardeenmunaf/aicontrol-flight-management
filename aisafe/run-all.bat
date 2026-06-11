@@ -3,10 +3,6 @@ echo Starting H2...
 call "%~dp0start-h2-server.bat"
 timeout /t 2 /nobreak >nul
 
-echo Running Bootstrap...
-call "%~dp0run-bootstrap.bat"
-pause
-
 :menu
 cls
 echo ================================
