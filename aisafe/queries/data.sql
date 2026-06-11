@@ -181,14 +181,14 @@ VALUES
 
 INSERT INTO EngineModel (engine_model_id, name, type, power, efficiency, thrustSeaLevelStopped, thrustSeaLevelCruise, thrustSpecificFuelConsumption, maker_name, maker_country, fuel_type, density, specificEnergy, version)
 VALUES
-    ('eng-001', 'CFM56-7B',    'TURBOFAN',  121.0, 0.38, 121000.0,  98000.0, 0.62, 'CFM International',     'France', 'JET_A', 0.80, 43.0, 0),
-    ('eng-002', 'CFM56-7B27',  'TURBOFAN',  121.0, 0.38, 121000.0,  98000.0, 0.62, 'CFM International',     'France', 'JET_A', 0.80, 43.0, 0),
-    ('eng-003', 'PW127M',      'TURBOPROP',   2.05, 0.35,  20500.0,  16200.0, 0.58, 'Pratt & Whitney Canada','Canada', 'JET_A', 0.80, 43.0, 0),
-    ('eng-004', 'PW127F',      'TURBOPROP',   2.05, 0.35,  20500.0,  16200.0, 0.58, 'Pratt & Whitney Canada','Canada', 'JET_A', 0.80, 43.0, 0),
-    ('eng-005', 'GE90-115B',   'TURBOFAN',  513.0, 0.40, 513000.0, 430000.0, 0.60, 'General Electric',      'USA',    'JET_A', 0.80, 43.0, 0),
-    ('eng-006', 'GE90-110B',   'TURBOFAN',  513.0, 0.40, 513000.0, 430000.0, 0.60, 'General Electric',      'USA',    'JET_A', 0.80, 43.0, 0),
-    ('eng-007', 'GE 90B',      'TURBOFAN',  513.0, 0.40, 513000.0, 430000.0, 0.60, 'General Electric',      'USA',    'JET_A', 0.80, 43.0, 0),
-    ('eng-008', 'RR Trent 970','TURBOFAN',  340.0, 0.39, 340000.0, 285000.0, 0.61, 'Rolls-Royce',           'UK',     'JET_A', 0.80, 43.0, 0);
+    ('eng-001', 'CFM56-7B',    'TURBOFAN',  121.0, 0.38, 121000.0,  98000.0, 0.000172, 'CFM International',     'France', 'JET_A', 0.80, 43.0, 0),
+    ('eng-002', 'CFM56-7B27',  'TURBOFAN',  121.0, 0.38, 121000.0,  98000.0, 0.000172, 'CFM International',     'France', 'JET_A', 0.80, 43.0, 0),
+    ('eng-003', 'PW127M',      'TURBOPROP',   2.05, 0.35,  20500.0,  16200.0, 0.000161, 'Pratt & Whitney Canada','Canada', 'JET_A', 0.80, 43.0, 0),
+    ('eng-004', 'PW127F',      'TURBOPROP',   2.05, 0.35,  20500.0,  16200.0, 0.000161, 'Pratt & Whitney Canada','Canada', 'JET_A', 0.80, 43.0, 0),
+    ('eng-005', 'GE90-115B',   'TURBOFAN',  513.0, 0.40, 513000.0, 430000.0, 0.000167, 'General Electric',      'USA',    'JET_A', 0.80, 43.0, 0),
+    ('eng-006', 'GE90-110B',   'TURBOFAN',  513.0, 0.40, 513000.0, 430000.0, 0.000167, 'General Electric',      'USA',    'JET_A', 0.80, 43.0, 0),
+    ('eng-007', 'GE 90B',      'TURBOFAN',  513.0, 0.40, 513000.0, 430000.0, 0.000167, 'General Electric',      'USA',    'JET_A', 0.80, 43.0, 0),
+    ('eng-008', 'RR Trent 970','TURBOFAN',  340.0, 0.39, 340000.0, 285000.0, 0.000169, 'Rolls-Royce',           'UK',     'JET_A', 0.80, 43.0, 0);
 
 -- ============================================================
 -- AIRCRAFT MODELS (TestSet00_AircraftModels.xml)
