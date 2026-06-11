@@ -11,6 +11,9 @@
 #postgres
 .env
 
+#
+Project_Requirements_V3b.pdf
+Project_Requirements_V3b.txt
 
 # MAVEN (NFR05) - CRÍTICO
 target/

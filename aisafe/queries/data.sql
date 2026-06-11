@@ -246,12 +246,6 @@ VALUES
     ('fr-003', 'LH999', '2026-05-01', NULL,         'apt-FRA', 'apt-LIS', 'atc-004', 0),
     ('fr-004', 'AF77',  '2026-05-01', '2026-05-20', 'apt-CDG', 'apt-LIS', 'atc-005', 0);
 
-INSERT INTO Flight (flight_id, flightDesignator, type, scheduledDepartureTime, scheduledArrivalTime, aircraft_aircraft_id, version)
-VALUES
-    ('fl-001', 'TP1234', 'REGULAR', '2026-05-12 08:00:00', '2026-05-12 10:15:00', 'ac-001', 0),
-    ('fl-002', 'BA450',  'REGULAR', '2026-05-12 09:30:00', '2026-05-12 12:10:00', 'ac-002', 0),
-    ('fl-003', 'LH9991', 'CHARTER', '2026-05-12 13:00:00', '2026-05-12 16:20:00', 'ac-003', 0);
-
 INSERT INTO Pilot (pilot_id, user_id, status, version)
 VALUES
     ('pilot-001', 'pilot@tap.com', 'ACTIVE', 0),
@@ -276,10 +270,3 @@ VALUES
     ('pilot-003', 'am-A380'),
     ('pilot-004', 'am-777'),
     ('pilot-004', 'am-A380');
-
-
-SELECT setval('T_ROLESET_SEQ',        50, true);
-SELECT setval('T_ROLEASSIGNMENT_SEQ', 50, true);
-SELECT setval('FlightLeg_SEQ',        50, true);
-SELECT setval('Segment_SEQ',          50, true);
-SELECT setval('AltitudeSlot_SEQ',     50, true);

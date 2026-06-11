@@ -14,6 +14,7 @@
         <class>flightPlan.domain.FlightLeg</class>
         <class>flightPlan.domain.Segment</class>
         <class>flightPlan.domain.AltitudeSlot</class>
+        <class>flightPlan.domain.ProfileEntry</class>
         <class>flightRoute.domain.FlightRoute</class>
         <class>node.domain.Node</class>
         <class>aircraft.domain.Aircraft</class>
@@ -58,6 +59,7 @@
         <class>flightPlan.domain.FlightLeg</class>
         <class>flightPlan.domain.Segment</class>
         <class>flightPlan.domain.AltitudeSlot</class>
+        <class>flightPlan.domain.ProfileEntry</class>
         <class>flightRoute.domain.FlightRoute</class>
         <class>node.domain.Node</class>
         <class>aircraft.domain.Aircraft</class>

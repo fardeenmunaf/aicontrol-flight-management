@@ -48,6 +48,10 @@ public class FlightLeg implements DomainEntity<Long> {
     @JoinColumn(name = "flight_leg_id")
     private List<Segment> segments = new ArrayList<>();
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "flight_leg_id")
+    private List<ProfileEntry> profileEntries = new ArrayList<>();
+
     public FlightLeg(final int sequenceNumber, final Instant departureTime, final Instant arrivalTime,
                      final double fuelQuantity, final AirportId departureAirportId,
                      final AirportId arrivalAirportId) {
@@ -72,6 +76,15 @@ public class FlightLeg implements DomainEntity<Long> {
     public void addSegment(final Segment segment) {
         Preconditions.nonNull(segment, "Segment must not be null");
         this.segments.add(segment);
+    }
+
+    public void addProfileEntry(final ProfileEntry entry) {
+        Preconditions.nonNull(entry, "ProfileEntry must not be null");
+        this.profileEntries.add(entry);
+    }
+
+    public List<ProfileEntry> profileEntries() {
+        return Collections.unmodifiableList(profileEntries);
     }
 
     @Override

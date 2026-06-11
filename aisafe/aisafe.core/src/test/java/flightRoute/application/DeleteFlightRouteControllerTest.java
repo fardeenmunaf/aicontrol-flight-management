@@ -14,9 +14,12 @@ import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import eapli.framework.infrastructure.authz.domain.model.PlainTextEncoder;
 import eapli.framework.infrastructure.authz.repositories.impl.inmemory.InMemoryUserRepository;
 import eapli.framework.infrastructure.repositories.impl.inmemory.InMemoryDomainRepository;
+import flightPlan.domain.FlightLeg;
 import flightPlan.domain.FlightPlan;
 import flightPlan.domain.FlightPlanStatus;
+import flightPlan.domain.FlightType;
 import flightPlan.repository.FlightPlanRepository;
+import shared.domain.AirportId;
 import flightRoute.domain.FlightRoute;
 import flightRoute.domain.RouteDesignation;
 import flightRoute.repository.FlightRouteRepository;
@@ -135,9 +138,7 @@ class DeleteFlightRouteControllerTest {
         final FlightRoute route = savedRoute();
         final LocalDate deactivation = LocalDate.of(2027, 1, 1);
 
-        final FlightPlan plan = new FlightPlan(
-                FlightPlanId.newId(), "{\"aircraftId\":\"AC-REG\"}",
-                "AC-REG", PILOT_EMAIL, route.identity().toString(),
+        final FlightPlan plan = planOnRoute(route.identity().toString(),
                 Instant.parse("2027-06-01T10:00:00Z"));
         planRepo.save(plan);
 
@@ -150,13 +151,18 @@ class DeleteFlightRouteControllerTest {
         final FlightRoute route = savedRoute();
         final LocalDate deactivation = LocalDate.of(2027, 1, 1);
 
-        final FlightPlan plan = new FlightPlan(
-                FlightPlanId.newId(), "{\"aircraftId\":\"AC-REG\"}",
-                "AC-REG", PILOT_EMAIL, route.identity().toString(),
+        final FlightPlan plan = planOnRoute(route.identity().toString(),
                 Instant.parse("2026-12-01T10:00:00Z"));
         planRepo.save(plan);
 
         assertDoesNotThrow(() -> controller().deleteFlightRoute(route.identity().toString(), deactivation));
+    }
+
+    private static FlightPlan planOnRoute(final String routeReference, final Instant departure) {
+        final FlightLeg leg = new FlightLeg(1, departure, departure.plusSeconds(5400), 4200.0,
+                AirportId.valueOf("apt-OPO"), AirportId.valueOf("apt-MAD"));
+        return new FlightPlan(FlightPlanId.newId(), "TP1234", FlightType.REGULAR,
+                "AC-REG", PILOT_EMAIL, routeReference, "OPO", "MAD", List.of(leg));
     }
 
     @Test

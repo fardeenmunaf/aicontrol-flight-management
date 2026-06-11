@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS CustomerCollaborator CASCADE;
 DROP TABLE IF EXISTS PilotCompanyAssignment CASCADE;
 DROP TABLE IF EXISTS Pilot_AircraftModel CASCADE;
 DROP TABLE IF EXISTS aircraftmodel_enginemodel CASCADE;
+DROP TABLE IF EXISTS ProfileEntry CASCADE;
 DROP TABLE IF EXISTS AltitudeSlot CASCADE;
 DROP TABLE IF EXISTS Segment CASCADE;
 DROP TABLE IF EXISTS FlightLeg CASCADE;
@@ -35,6 +36,7 @@ DROP SEQUENCE IF EXISTS T_ROLEASSIGNMENT_SEQ CASCADE;
 DROP SEQUENCE IF EXISTS FlightLeg_SEQ CASCADE;
 DROP SEQUENCE IF EXISTS Segment_SEQ CASCADE;
 DROP SEQUENCE IF EXISTS AltitudeSlot_SEQ CASCADE;
+DROP SEQUENCE IF EXISTS ProfileEntry_SEQ CASCADE;
 
 -- ============================================================
 -- IDENTITY & ACCESS
@@ -93,6 +95,7 @@ CREATE SEQUENCE T_ROLEASSIGNMENT_SEQ START WITH 1 INCREMENT BY 50;
 CREATE SEQUENCE FlightLeg_SEQ START WITH 1 INCREMENT BY 50;
 CREATE SEQUENCE Segment_SEQ START WITH 1 INCREMENT BY 50;
 CREATE SEQUENCE AltitudeSlot_SEQ START WITH 1 INCREMENT BY 50;
+CREATE SEQUENCE ProfileEntry_SEQ START WITH 1 INCREMENT BY 50;
 
 -- ============================================================
 -- TOPOGRAPHY
@@ -262,14 +265,17 @@ CREATE TABLE Flight (
 );
 
 CREATE TABLE FlightPlan (
-                            flight_plan_id   VARCHAR(255) PRIMARY KEY,
-                            status           VARCHAR(255),
-                            aircraft_id      VARCHAR(255),
-                            pilot_ref        VARCHAR(255),
-                            route_reference  VARCHAR(255),
-                            departure_time   TIMESTAMP,
-                            flight_plan_json TEXT,
-                            version          BIGINT
+                            flight_plan_id    VARCHAR(255) PRIMARY KEY,
+                            status            VARCHAR(255),
+                            flightDesignator  VARCHAR(255),
+                            type              VARCHAR(255),
+                            aircraftId        VARCHAR(255),
+                            pilotRef          VARCHAR(255),
+                            route_reference   VARCHAR(255),
+                            route_origin      VARCHAR(255),
+                            route_destination VARCHAR(255),
+                            departure_time    TIMESTAMP,
+                            version           BIGINT
 );
 
 CREATE TABLE FlightLeg (
@@ -280,7 +286,7 @@ CREATE TABLE FlightLeg (
                            fuelQuantity         DOUBLE PRECISION,
                            departure_airport_id VARCHAR(255),
                            arrival_airport_id   VARCHAR(255),
-                           flight_plan_ref      VARCHAR(255) REFERENCES FlightPlan(flight_plan_id)
+                           flight_plan_id       VARCHAR(255) REFERENCES FlightPlan(flight_plan_id)
 );
 
 CREATE TABLE Segment (
@@ -298,6 +304,18 @@ CREATE TABLE AltitudeSlot (
                               maximumAltitude DOUBLE PRECISION,
                               width           DOUBLE PRECISION,
                               segment_id      BIGINT REFERENCES Segment(id)
+);
+
+CREATE TABLE ProfileEntry (
+                              id            BIGINT PRIMARY KEY,
+                              phase         VARCHAR(255),
+                              altitude      DOUBLE PRECISION,
+                              altitudeUnit  VARCHAR(255),
+                              speed         DOUBLE PRECISION,
+                              speedUnit     VARCHAR(255),
+                              rate          DOUBLE PRECISION,
+                              rateUnit      VARCHAR(255),
+                              flight_leg_id BIGINT REFERENCES FlightLeg(id)
 );
 
 -- ============================================================

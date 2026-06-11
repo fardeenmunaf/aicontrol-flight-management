@@ -22,7 +22,7 @@ pilotRef
     ;
 
 aircraftId
-    : ID
+    : (ID | INT | MINUS)+
     ;
 
 routeRef
@@ -219,9 +219,9 @@ FT  : 'ft' ;
 MS  : 'm/s' ;
 KTS : 'kts' ;
 
-// Flight designator: 2 uppercase letters + 1-4 digits + optional 1 uppercase letter suffix
-// e.g. TP1234, BA100A, FR23
-FLIGHT_DESIGNATOR : [A-Z][A-Z][0-9][0-9]?[0-9]?[0-9]?[A-Z]? ;
+// Flight designator: 2-3 uppercase letters + 1-4 digits + optional 1 uppercase letter suffix
+// e.g. TP1234, BA100A, FR23, TAP123A
+FLIGHT_DESIGNATOR : [A-Z][A-Z][A-Z]?[0-9][0-9]?[0-9]?[0-9]?[A-Z]? ;
 
 // Airport codes and identifiers
 ICAO_CODE : [A-Z][A-Z][A-Z][A-Z] ;

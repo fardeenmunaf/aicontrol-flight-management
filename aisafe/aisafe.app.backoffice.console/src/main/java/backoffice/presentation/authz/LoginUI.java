@@ -13,9 +13,18 @@ public class LoginUI extends AbstractUI {
             final String email = Console.readLine("Email");
             final String password = Console.readLine("Password");
 
-            authenticated = AuthzRegistry.authenticationService()
-                    .authenticate(email, password)
-                    .isPresent();
+            if (email == null || email.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+                System.out.println("Email and password cannot be empty. Please try again.");
+                continue;
+            }
+
+            try {
+                authenticated = AuthzRegistry.authenticationService()
+                        .authenticate(email, password)
+                        .isPresent();
+            } catch (IllegalArgumentException e) {
+                authenticated = false;
+            }
 
             if (!authenticated) {
                 System.out.println("Invalid credentials. Please try again.");

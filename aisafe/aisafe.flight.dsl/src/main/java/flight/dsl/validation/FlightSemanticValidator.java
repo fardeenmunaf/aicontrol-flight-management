@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 public class FlightSemanticValidator {
 
     private static final Pattern FLIGHT_DESIGNATOR_PATTERN =
-            Pattern.compile("[A-Z]{2}[0-9]{1,4}[A-Z]?");
+            Pattern.compile("[A-Z]{2,3}[0-9]{1,4}[A-Z]?");
 
     private static final Pattern EMAIL_PATTERN =
             Pattern.compile("^[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}$");
@@ -48,7 +48,7 @@ public class FlightSemanticValidator {
             if (!FLIGHT_DESIGNATOR_PATTERN.matcher(flight.flightDesignator()).matches()) {
                 errors.add(error(document, flight, SemanticErrorType.SEMANTIC,
                         "Invalid flight designator format: " + flight.flightDesignator()
-                                + " (expected: 2 uppercase letters + 1-4 digits + optional letter)"));
+                                + " (expected: 2-3 uppercase letters + 1-4 digits + optional letter)"));
             }
             if (!EMAIL_PATTERN.matcher(flight.pilotRef()).matches()) {
                 errors.add(error(document, flight, SemanticErrorType.SEMANTIC,

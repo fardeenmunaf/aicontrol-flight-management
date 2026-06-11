@@ -18,9 +18,8 @@ public class ListAirportsUI extends AbstractListUI<Airport> {
 
     @Override
     protected Visitor<Airport> elementPrinter() {
-        return airport -> System.out.printf("%-4s | %-4s | %-40s | %-20s | %s\n",
+        return airport -> System.out.printf("%-4s | %-40s | %-20s | %s\n",
                 airport.iataCode(),
-                airport.icaoCode(),
                 airport.name(),
                 airport.town(),
                 airport.country());
@@ -33,7 +32,7 @@ public class ListAirportsUI extends AbstractListUI<Airport> {
 
     @Override
     protected String listHeader() {
-        return String.format("%-4s | %-4s | %-40s | %-20s | %s", "IATA", "ICAO", "NAME", "TOWN", "COUNTRY");
+        return String.format("%-4s | %-40s | %-20s | %s", "IATA", "NAME", "TOWN", "COUNTRY");
     }
 
     @Override

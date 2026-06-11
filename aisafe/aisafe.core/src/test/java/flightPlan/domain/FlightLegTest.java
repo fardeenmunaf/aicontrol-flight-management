@@ -142,4 +142,18 @@ class FlightLegTest {
         final FlightLeg leg = validLeg();
         assertThrows(IllegalArgumentException.class, () -> leg.addSegment(null));
     }
+
+    @Test
+    void ensureProfileEntriesCanBeAdded() {
+        final FlightLeg leg = validLeg();
+        leg.addProfileEntry(ProfileEntry.climb(1000.0, "m", 210.0, "kts"));
+        leg.addProfileEntry(ProfileEntry.cruise(460.0, "kts"));
+        assertEquals(2, leg.profileEntries().size());
+    }
+
+    @Test
+    void ensureNullProfileEntryIsRejected() {
+        final FlightLeg leg = validLeg();
+        assertThrows(IllegalArgumentException.class, () -> leg.addProfileEntry(null));
+    }
 }

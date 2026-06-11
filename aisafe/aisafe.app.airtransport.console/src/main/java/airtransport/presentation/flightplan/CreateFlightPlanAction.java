@@ -6,7 +6,6 @@ public class CreateFlightPlanAction implements Action {
 
     @Override
     public boolean execute() {
-        new CreateFlightPlanUI().show();
-        return false;
+        return new CreateFlightPlanUI().show();
     }
 }
