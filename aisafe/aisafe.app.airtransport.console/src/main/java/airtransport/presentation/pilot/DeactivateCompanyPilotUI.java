@@ -84,6 +84,15 @@ public class DeactivateCompanyPilotUI extends AbstractUI {
 
             final Pilot selected = activePilots.get(choice - 1);
 
+            final boolean hasFlightPlans = PersistenceContext.repositories()
+                    .flightPlans()
+                    .findByPilotRef(selected.userId().toString())
+                    .iterator().hasNext();
+            if (hasFlightPlans) {
+                System.out.println("Cannot deactivate: pilot has flight plans assigned.");
+                return true;
+            }
+
             final String confirm = Console.readLine(
                     "Deactivate pilot " + selected.userId() + "? (Y/N)");
             if (!"Y".equalsIgnoreCase(confirm.trim())) {

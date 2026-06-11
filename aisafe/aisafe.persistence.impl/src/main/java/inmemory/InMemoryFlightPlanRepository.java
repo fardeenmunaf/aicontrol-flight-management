@@ -35,5 +35,10 @@ public class InMemoryFlightPlanRepository extends InMemoryDomainRepository<Fligh
                 && fp.departureTime() != null
                 && fp.departureTime().isAfter(departure));
     }
+
+    @Override
+    public Iterable<FlightPlan> findByPilotRef(final String pilotRef) {
+        return match(fp -> pilotRef.equals(fp.pilotRef()));
+    }
 }
 
