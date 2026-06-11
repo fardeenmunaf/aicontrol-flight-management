@@ -33,15 +33,21 @@ public class FlightPlanCreationService {
 
     public CreationResult createFromText(final String dslText) {
         try {
-            return persist(processor.process(dslText));
+            return persist(processor.process(dslText), dslText);
         } catch (final RuntimeException e) {
             return errorResult("DSL parse error: " + e.getMessage());
         }
     }
 
     public CreationResult createFromFile(final Path dslFile) throws IOException {
+        final String dslText;
         try {
-            return persist(processor.process(dslFile));
+            dslText = java.nio.file.Files.readString(dslFile);
+        } catch (final IOException e) {
+            throw e;
+        }
+        try {
+            return persist(processor.process(dslFile), dslText);
         } catch (final RuntimeException e) {
             return errorResult("DSL parse error: " + e.getMessage());
         }
@@ -53,7 +59,7 @@ public class FlightPlanCreationService {
         return result;
     }
 
-    private CreationResult persist(final FlightDslProcessingResult parseResult) {
+    private CreationResult persist(final FlightDslProcessingResult parseResult, final String dslText) {
         final CreationResult result = new CreationResult();
         if (!parseResult.isValid()) {
             parseResult.semanticErrors().forEach(e -> result.addError(e.toString()));
@@ -63,11 +69,13 @@ public class FlightPlanCreationService {
 
         for (final FlightPlanAst ast : parseResult.document().flightPlans()) {
             try {
-                result.addCreated(controller.create(mapper.map(ast)));
+                final flightPlan.domain.FlightPlan plan = mapper.map(ast);
+                plan.storeDslText(dslText);
+                result.addCreated(controller.create(plan));
                 try {
                     exporter.export(ast);
                 } catch (Exception e) {
-                    result.addError("JSON Export Failed for " + ast.flightDesignator() + ": " + e.getMessage());
+                    result.addWarning("JSON Export Failed for " + ast.flightDesignator() + ": " + e.getMessage());
                 }
             } catch (final Exception e) {
                 result.addError(ast.flightDesignator() + ": " + e.getMessage());

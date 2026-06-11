@@ -2,13 +2,16 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g -Isrc/main/c -Isrc/main/c/libs -pthread
 LDFLAGS = -lm -pthread -lrt
 
-all: simulation_engine report_generator
+all: simulation_engine report_generator flight_plan_validator
 
 simulation_engine: simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o
 	$(CC) $(CFLAGS) simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o -o simulation_engine $(LDFLAGS)
 
 report_generator: report_generator.o
 	$(CC) $(CFLAGS) report_generator.o -o report_generator $(LDFLAGS)
+
+flight_plan_validator: src/main/c/flight_plan_validator.c src/main/c/libs/cJSON.c
+	$(CC) $(CFLAGS) src/main/c/flight_plan_validator.c src/main/c/libs/cJSON.c -o flight_plan_validator -lm
 
 simulation_engine.o: src/main/c/simulation_engine.c
 	$(CC) $(CFLAGS) -c src/main/c/simulation_engine.c
@@ -49,6 +52,6 @@ test: test_physics test_position_tracker
 	./test_position_tracker
 
 clean:
-	rm -f *.o simulation_engine report_generator test_physics test_position_tracker simulation_report_*.json
+	rm -f *.o simulation_engine report_generator flight_plan_validator test_physics test_position_tracker simulation_report_*.json
 
 .PHONY: all run test clean

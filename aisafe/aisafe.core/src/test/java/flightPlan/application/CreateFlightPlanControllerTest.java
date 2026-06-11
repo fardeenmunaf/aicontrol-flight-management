@@ -83,5 +83,8 @@ class CreateFlightPlanControllerTest {
             return match(p -> routeId.equals(p.routeReference())
                     && p.departureTime() != null && p.departureTime().isAfter(departure));
         }
+        @Override public Iterable<FlightPlan> findByPilotRef(final String pilotRef) {
+            return match(p -> pilotRef.equals(p.pilotRef()));
+        }
     }
 }

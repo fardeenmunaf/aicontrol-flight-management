@@ -10,7 +10,10 @@ import flight.dsl.model.FlightDslProcessingResult;
 import flight.dsl.processing.FlightDslProcessor;
 import flight.dsl.mapping.CreationResult;
 import flight.dsl.mapping.FlightPlanCreationService;
+import flight.dsl.mapping.ValidateFlightPlanService;
 
+import flightPlan.application.FlightPlanValidationResult;
+import flightPlan.application.ValidateFlightPlanController;
 import flightPlan.domain.FlightPlan;
 import aircraft.domain.Aircraft;
 import aircraft.domain.AircraftOperationStatus;
@@ -110,6 +113,9 @@ public class FlightPlanUI {
             PersistenceContext.repositories().airports(),
             PersistenceContext.repositories().nodes(),
             PersistenceContext.repositories().aircraft());
+    private final ValidateFlightPlanService validateService = new ValidateFlightPlanService(
+            new ValidateFlightPlanController(PersistenceContext.repositories().flightPlans()),
+            PersistenceContext.repositories().airports());
     private boolean canCreatePlans = true;
     private String companyIcaoCode = null;
     private AirTransportCompanyId companyId = null;
@@ -306,6 +312,15 @@ public class FlightPlanUI {
     // ── Right-panel switching ──────────────────────────────────────────────────
 
     @FXML
+    private void onRefreshTable() {
+        try {
+            refreshTable();
+        } catch (final Exception e) {
+            tableStatus.setText("Refresh failed: " + e.getMessage());
+        }
+    }
+
+    @FXML
     private void onShowNewForm() {
         if (!canCreatePlans)
             return;
@@ -332,7 +347,9 @@ public class FlightPlanUI {
             if (result.hasErrors()) {
                 showFileImportResult(String.join("\n", result.errors()), false);
             } else {
-                showFileImportResult("Imported " + result.created().size() + " flight plan(s).", true);
+                final String msg = "Imported " + result.created().size() + " flight plan(s)."
+                        + (result.hasWarnings() ? "\nWarnings:\n" + String.join("\n", result.warnings()) : "");
+                showFileImportResult(msg, true);
             }
             refreshTable();
         } catch (final Exception e) {
@@ -469,10 +486,13 @@ public class FlightPlanUI {
 
     private TableColumn<FlightPlanRow, Void> buildActionColumn() {
         final TableColumn<FlightPlanRow, Void> col = new TableColumn<>("Action");
-        col.setPrefWidth(80);
+        col.setPrefWidth(160);
         col.setCellFactory(c -> new TableCell<>() {
+            private final Button validateBtn = new Button("Validate");
             private final Button deleteBtn = new Button("Delete");
+            private final HBox box = new HBox(4, validateBtn, deleteBtn);
             {
+                validateBtn.getStyleClass().add("btn-primary");
                 deleteBtn.getStyleClass().add("btn-danger");
             }
 
@@ -483,11 +503,56 @@ public class FlightPlanUI {
                     setGraphic(null);
                     return;
                 }
-                deleteBtn.setOnAction(e -> onDeleteRow(getTableView().getItems().get(getIndex())));
-                setGraphic(deleteBtn);
+                final FlightPlanRow row = getTableView().getItems().get(getIndex());
+                final boolean isDraftDbPlan = row.dbPlan() != null && "DRAFT".equals(row.status());
+                validateBtn.setVisible(isDraftDbPlan);
+                validateBtn.setManaged(isDraftDbPlan);
+                validateBtn.setOnAction(e -> onValidateRow(row));
+                deleteBtn.setOnAction(e -> onDeleteRow(row));
+                setGraphic(box);
             }
         });
         return col;
+    }
+
+    private void onValidateRow(final FlightPlanRow row) {
+        final FlightPlan plan = row.dbPlan();
+        if (plan == null) return;
+        try {
+            final FlightPlanValidationResult result = validateService.validate(plan.identity());
+            showValidationResult(plan.flightDesignator(), result);
+            refreshTable();
+        } catch (final Exception e) {
+            final Alert errAlert = new Alert(Alert.AlertType.ERROR);
+            errAlert.setTitle("Validation Error");
+            errAlert.setHeaderText("Could not validate flight plan");
+            errAlert.setContentText(e.getMessage());
+            errAlert.showAndWait();
+        }
+    }
+
+    private void showValidationResult(final String designator, final FlightPlanValidationResult result) {
+        final Alert alert = new Alert(result.passed() ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING);
+        alert.setTitle("Flight Plan Validation");
+        alert.setHeaderText(result.passed()
+                ? "\"" + designator + "\" passed — status is now TESTED."
+                : "\"" + designator + "\" failed validation.");
+        final StringBuilder content = new StringBuilder();
+        if (!result.dslErrors().isEmpty()) {
+            content.append("DSL Errors:\n");
+            result.dslErrors().forEach(e -> content.append("  • ").append(e).append("\n"));
+        }
+        if (!result.physicalFailures().isEmpty()) {
+            if (content.length() > 0) content.append("\n");
+            content.append("Physical Check Failures:\n");
+            result.physicalFailures().forEach(f -> content.append("  • ").append(f).append("\n"));
+        }
+        if (result.passed()) {
+            content.append("All checks passed.");
+        }
+        alert.setContentText(content.toString());
+        alert.getDialogPane().setPrefWidth(500);
+        alert.showAndWait();
     }
 
     private void onDeleteRow(final FlightPlanRow row) {
@@ -614,7 +679,9 @@ public class FlightPlanUI {
                 formResult.setText(String.join("\n", result.errors()));
                 return;
             }
-            formResult.setText("✓ Created " + result.created().size() + " flight plan(s).");
+            final String msg = "✓ Created " + result.created().size() + " flight plan(s)."
+                    + (result.hasWarnings() ? "\nWarnings:\n" + String.join("\n", result.warnings()) : "");
+            formResult.setText(msg);
             refreshTable();
             onClearForm();
         } catch (final IllegalArgumentException e) {

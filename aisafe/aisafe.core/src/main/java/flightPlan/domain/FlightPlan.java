@@ -10,6 +10,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Version;
 import shared.domain.FlightPlanId;
@@ -52,6 +53,10 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
     @Column(name = "departure_time")
     private Instant departureTime;
 
+    @Lob
+    @Column(name = "dsl_text", columnDefinition = "TEXT")
+    private String dslText;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "flight_plan_id")
     private List<FlightLeg> legs = new ArrayList<>();
@@ -80,7 +85,18 @@ public class FlightPlan implements AggregateRoot<FlightPlanId> {
         // for ORM
     }
 
+    public void storeDslText(final String text) {
+        this.dslText = text;
+    }
+
+    public String dslText() {
+        return dslText;
+    }
+
     public void markAsTested() {
+        if (this.status != FlightPlanStatus.DRAFT) {
+            throw new IllegalStateException("Only a DRAFT FlightPlan can be marked as tested");
+        }
         this.status = FlightPlanStatus.TESTED;
     }
 

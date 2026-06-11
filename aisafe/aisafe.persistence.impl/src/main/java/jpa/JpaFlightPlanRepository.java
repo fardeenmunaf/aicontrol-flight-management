@@ -46,5 +46,12 @@ class JpaFlightPlanRepository extends BaseJpaRepositoryBase<FlightPlan, FlightPl
         params.put("departure", departure);
         return match("e.routeReference = :routeId AND e.departureTime > :departure", params);
     }
+
+    @Override
+    public Iterable<FlightPlan> findByPilotRef(final String pilotRef) {
+        final Map<String, Object> params = new HashMap<>();
+        params.put("pilotRef", pilotRef);
+        return match("e.pilotRef = :pilotRef", params);
+    }
 }
 

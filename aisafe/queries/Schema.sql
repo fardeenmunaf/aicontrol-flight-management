@@ -275,6 +275,7 @@ CREATE TABLE FlightPlan (
                             route_origin      VARCHAR(255),
                             route_destination VARCHAR(255),
                             departure_time    TIMESTAMP,
+                            dsl_text          TEXT,
                             version           BIGINT
 );
 
