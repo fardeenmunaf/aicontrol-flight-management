@@ -1,0 +1,105 @@
+@startuml sequence-deactivate-pilot
+title US077 — Remove a Pilot (Deactivate): Sequence Diagram
+
+skinparam sequenceMessageAlign left
+skinparam responseMessageBelowArrow true
+skinparam maxMessageSize 200
+
+actor "ATCC" as User
+participant "DeactivateCompanyPilotUI" as UI #DDEEFF
+participant "AuthzRegistry\n(eapli)" as Registry #EEEEEE
+participant "CustomerCollaborator\nRepository" as CollabRepo #FFF5CC
+participant "JpaPilotCompanyAssignment\nRepository" as AssignRepo #FFE8E8
+participant "PilotRepository" as PilotRepo #DDFFD8
+participant "FlightPlanRepository" as FPRepo #DDFFD8
+participant "Pilot\n(domain)" as PilotDomain #DDFFD8
+database "Database\n(JPA)" as DB #EEEEEE
+
+== Company Resolution ==
+
+User -> UI ++ : select "Deactivate Pilot from Roster"
+
+UI -> Registry ++ : authorizationService().session()
+Registry --> UI -- : Optional<UserSession>
+UI -> UI : extract username (email) from session
+
+UI -> CollabRepo ++ : findByUserId(UserId.valueOf(email))
+CollabRepo -> DB ++ : SELECT CustomerCollaborator WHERE user_id = ?
+DB --> CollabRepo -- : CustomerCollaborator
+CollabRepo --> UI -- : Optional<CustomerCollaborator>
+
+alt not linked to an Air Transport Company
+    UI --> User : "Your account is not linked to an air transport company."
+    deactivate UI
+else company resolved
+    UI -> UI : companyId = collab.airTransportCompanyId()
+end
+
+== Load Active Pilots ==
+
+UI -> AssignRepo ++ : findByCompanyId(companyId)
+AssignRepo -> DB ++ : SELECT * FROM PilotCompanyAssignment\n  WHERE company_id = ?
+DB --> AssignRepo -- : List<PilotCompanyAssignment>
+AssignRepo --> UI -- : List<PilotCompanyAssignment>
+UI -> UI : myPilotIds = { pilotUserId.toString() }
+
+UI -> PilotRepo ++ : findAll()
+PilotRepo -> DB ++ : SELECT * FROM Pilot (with certifiedAircraftModels)
+DB --> PilotRepo -- : List<Pilot>
+PilotRepo --> UI -- : Iterable<Pilot>
+
+UI -> UI : activePilots = pilots\n  .filter(p → myPilotIds.contains(p.userId()))\n  .filter(p → p.status() == ACTIVE)
+
+alt no active pilots
+    UI --> User : "No active pilots in your roster to deactivate."
+    deactivate UI
+else active pilots found
+    UI --> User : display numbered list\n(No. | EMAIL | CERTIFIED MODELS)
+end
+
+== Pilot Selection ==
+
+User -> UI : enter pilot number (or 0 to cancel)
+
+alt cancelled (0) or invalid input
+    UI --> User : "Cancelled." / "Invalid input."
+    deactivate UI
+else valid selection
+    UI -> UI : selected = activePilots.get(choice - 1)
+end
+
+== Flight-Plan Guard ==
+
+UI -> FPRepo ++ : findByPilotRef(selected.userId().toString())
+FPRepo -> DB ++ : SELECT * FROM FlightPlan WHERE pilot_ref = ?
+DB --> FPRepo -- : Iterable<FlightPlan>
+FPRepo --> UI -- : Iterable<FlightPlan>
+
+alt flight plans found
+    UI --> User : "Cannot deactivate: pilot has flight plans assigned."
+    deactivate UI
+else no flight plans
+    UI --> User : "Deactivate pilot <email>? (Y/N)"
+end
+
+== Confirmation ==
+
+User -> UI : enter confirmation (Y/N)
+
+alt not confirmed
+    UI --> User : "Cancelled."
+    deactivate UI
+else confirmed
+    UI -> PilotDomain ++ : deactivate()
+    PilotDomain -> PilotDomain : status = INACTIVE
+    PilotDomain --> UI -- : (status changed)
+
+    UI -> PilotRepo ++ : save(selected)
+    PilotRepo -> DB ++ : UPDATE Pilot SET status = 'INACTIVE'\n  WHERE pilot_id = ?
+    DB --> PilotRepo -- : ok
+    PilotRepo --> UI -- : Pilot
+
+    UI --> User -- : "Pilot <email> has been deactivated."
+end
+
+@enduml
