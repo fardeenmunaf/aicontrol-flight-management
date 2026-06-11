@@ -108,7 +108,8 @@ public class FlightPlanUI {
     private final FlightPlanCreationService creationService = new FlightPlanCreationService(
             PersistenceContext.repositories().flightPlans(),
             PersistenceContext.repositories().airports(),
-            PersistenceContext.repositories().nodes());
+            PersistenceContext.repositories().nodes(),
+            PersistenceContext.repositories().aircraft());
     private boolean canCreatePlans = true;
     private String companyIcaoCode = null;
     private AirTransportCompanyId companyId = null;

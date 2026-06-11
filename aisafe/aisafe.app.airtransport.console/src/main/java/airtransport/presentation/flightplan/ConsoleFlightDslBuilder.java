@@ -42,7 +42,7 @@ class ConsoleFlightDslBuilder {
         if (selectedAircraft == null) {
             throw new IllegalArgumentException("Aircraft selection is required.");
         }
-        final String aircraft = selectedAircraft.aircraftModel().modelName();
+        final String aircraft = selectedAircraft.registrationNumber();
 
         final int numLegs = (int) numWithDef("Number of legs", 1);
         if (numLegs < 1) {

@@ -20,12 +20,15 @@ public class FlightPlanCreationService {
     private final FlightDslProcessor processor = new FlightDslProcessor();
     private final FlightPlanAstMapper mapper;
     private final CreateFlightPlanController controller;
+    private final aircraft.repositories.AircraftRepository aircraftRepository;
 
     public FlightPlanCreationService(final FlightPlanRepository flightPlanRepository,
                                      final AirportRepository airportRepository,
-                                     final NodeRepository nodeRepository) {
+                                     final NodeRepository nodeRepository,
+                                     final aircraft.repositories.AircraftRepository aircraftRepository) {
         this.mapper = new FlightPlanAstMapper(airportRepository, nodeRepository);
         this.controller = new CreateFlightPlanController(flightPlanRepository);
+        this.aircraftRepository = aircraftRepository;
     }
 
     public CreationResult createFromText(final String dslText) {
@@ -56,9 +59,16 @@ public class FlightPlanCreationService {
             parseResult.semanticErrors().forEach(e -> result.addError(e.toString()));
             return result;
         }
+        ExportSimulationFlightPlanService exporter = new ExportSimulationFlightPlanService(this.aircraftRepository, "aisafe/aisafe-simulation/flightplansSim");
+
         for (final FlightPlanAst ast : parseResult.document().flightPlans()) {
             try {
                 result.addCreated(controller.create(mapper.map(ast)));
+                try {
+                    exporter.export(ast);
+                } catch (Exception e) {
+                    result.addError("JSON Export Failed for " + ast.flightDesignator() + ": " + e.getMessage());
+                }
             } catch (final Exception e) {
                 result.addError(ast.flightDesignator() + ": " + e.getMessage());
             }

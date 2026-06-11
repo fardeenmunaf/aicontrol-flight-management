@@ -22,7 +22,7 @@ pilotRef
     ;
 
 aircraftId
-    : (ID | INT | MINUS)+
+    : (ID | INT | MINUS | IATA_CODE | ICAO_CODE | FLIGHT_DESIGNATOR)+
     ;
 
 routeRef

@@ -1,0 +1,86 @@
+[ {
+  "flightDesignator" : "TAP123A",
+  "type" : "regular",
+  "route" : {
+    "reference" : "TP123",
+    "origin" : "LIS",
+    "destination" : "OPO"
+  },
+  "aircraft" : {
+    "emptyWeight" : 19504.4719,
+    "wingArea" : 845.0,
+    "aspectRatio" : 10.24,
+    "oswaldEfficiency" : 0.85,
+    "cd0" : 0.0265,
+    "numberOfEngines" : 4
+  },
+  "engine" : {
+    "thrustSeaLevelStopped" : 340000.0,
+    "thrustSeaLevelCruise" : 285000.0,
+    "thrustLapseRate" : 0.9,
+    "thrustSpecificFuelConsumption" : 0.61
+  },
+  "legs" : [ {
+    "departure" : {
+      "airport" : "LIS",
+      "date" : "2026-06-12",
+      "time" : "09:00"
+    },
+    "arrival" : {
+      "airport" : "OPO",
+      "date" : "2026-06-12",
+      "time" : "11:00"
+    },
+    "fuel" : {
+      "quantity" : 4200.0,
+      "unit" : "kg"
+    },
+    "payload" : {
+      "quantity" : 13000.0,
+      "unit" : "kg"
+    },
+    "segments" : [ {
+      "mode" : "climb",
+      "from" : {
+        "latitude" : 38.7812996,
+        "longitude" : -9.1359196,
+        "altitude" : 114.0,
+        "altitudeUnit" : "m"
+      },
+      "to" : {
+        "latitude" : 40.0,
+        "longitude" : -8.0,
+        "altitude" : 10000.0,
+        "altitudeUnit" : "m"
+      }
+    }, {
+      "mode" : "cruise",
+      "from" : {
+        "latitude" : 40.0,
+        "longitude" : -8.0,
+        "altitude" : 10000.0,
+        "altitudeUnit" : "m"
+      },
+      "to" : {
+        "latitude" : 41.0,
+        "longitude" : -7.0,
+        "altitude" : 10000.0,
+        "altitudeUnit" : "m"
+      }
+    }, {
+      "mode" : "descend",
+      "from" : {
+        "latitude" : 41.0,
+        "longitude" : -7.0,
+        "altitude" : 10000.0,
+        "altitudeUnit" : "m"
+      },
+      "to" : {
+        "latitude" : 41.2481003,
+        "longitude" : -8.6813898,
+        "altitude" : 69.0,
+        "altitudeUnit" : "m"
+      }
+    } ]
+  } ]
+} ]

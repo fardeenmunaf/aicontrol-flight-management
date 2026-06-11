@@ -22,7 +22,8 @@ public class CreateFlightPlanUI extends AbstractUI {
     private final FlightPlanCreationService creationService = new FlightPlanCreationService(
             PersistenceContext.repositories().flightPlans(),
             PersistenceContext.repositories().airports(),
-            PersistenceContext.repositories().nodes());
+            PersistenceContext.repositories().nodes(),
+            PersistenceContext.repositories().aircraft());
 
     @Override
     protected boolean doShow() {

@@ -50,7 +50,7 @@ class FlightPlanCreationServiceTest {
     }
 
     private FlightPlanCreationService service() {
-        return new FlightPlanCreationService(planRepo, new StubAirportRepository(), new StubNodeRepository());
+        return new FlightPlanCreationService(planRepo, new StubAirportRepository(), new StubNodeRepository(), new StubAircraftRepository());
     }
 
     @Test
@@ -144,5 +144,16 @@ class FlightPlanCreationServiceTest {
             return match(p -> routeId.equals(p.routeReference())
                     && p.departureTime() != null && p.departureTime().isAfter(departure));
         }
+    }
+
+    static class StubAircraftRepository
+            extends InMemoryDomainRepository<aircraft.domain.Aircraft, shared.domain.AircraftId> implements aircraft.repositories.AircraftRepository {
+        public Iterable<aircraft.domain.Aircraft> activeAircraft() { return java.util.Collections.emptyList(); }
+        @Override public boolean existsByAircraftModel(shared.domain.AircraftModelId id) { return false; }
+        @Override public java.util.List<aircraft.domain.Aircraft> findByCabinConfiguration(aircraft.domain.CabinConfiguration cc) { return java.util.Collections.emptyList(); }
+        @Override public java.util.List<aircraft.domain.Aircraft> findByOperationStatus(String status) { return java.util.Collections.emptyList(); }
+        @Override public java.util.List<aircraft.domain.Aircraft> findByRegistrationCountry(String country) { return java.util.Collections.emptyList(); }
+        @Override public java.util.Optional<aircraft.domain.Aircraft> findByRegistrationNumber(String number) { return java.util.Optional.empty(); }
+        @Override public java.util.List<aircraft.domain.Aircraft> findByAirTransportCompanyId(shared.domain.AirTransportCompanyId id) { return java.util.Collections.emptyList(); }
     }
 }

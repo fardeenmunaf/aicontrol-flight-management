@@ -28,10 +28,6 @@ public class Simulation implements AggregateRoot<SimulationId> {
     private Instant startDateTime;
     private Instant endDateTime;
 
-    private String geographicArea;
-    private String safetyThresholds;
-    private String performanceSettings;
-
     @Enumerated(EnumType.STRING)
     private SimulationStatus status;
 
