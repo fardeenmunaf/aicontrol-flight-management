@@ -200,9 +200,18 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
     double rho      = isa_air_density(alt_m);
     double a_sound  = isa_speed_of_sound(alt_m);
 
-    double ias_kts = ias_schedule_knots(alt_m, phase);
-    double mach    = calculate_mach(ias_kts, rho);
-    double tas     = calculate_tas(mach, alt_m);
+    double wp_speed = f->flight_plan.waypoints[wi].target_speed;
+    double ias_kts, mach, tas;
+    if (wp_speed > 0.0 && phase == PHASE_CRUISE) {
+        /* Cruise profile speed is TAS (kts); derive Mach directly. */
+        tas    = wp_speed * 0.514444;
+        mach   = tas / a_sound;
+        ias_kts = wp_speed;
+    } else {
+        ias_kts = (wp_speed > 0.0) ? wp_speed : ias_schedule_knots(alt_m, phase);
+        mach   = calculate_mach(ias_kts, rho);
+        tas    = calculate_tas(mach, alt_m);
+    }
 
     double cl = calculate_lift_coefficient(f->current_mass, f->properties.wing_area, rho, tas);
     double cd = calculate_drag_coefficient(f->properties.cd0, cl, f->properties.aspect_ratio, f->properties.oswald_efficiency);

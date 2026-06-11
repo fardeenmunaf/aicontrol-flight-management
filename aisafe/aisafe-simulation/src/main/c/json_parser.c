@@ -181,6 +181,35 @@ int load_simulation_settings(const char* filename, SimulationConfig* config) {
     return 1;
 }
 
+/* ── FlightProfile helpers ────────────────────────────────────────────────── */
+
+#define MAX_PROFILE_ENTRIES 10
+
+typedef struct { double alt_m; double spd_kts; } ProfileEntry;
+
+/* Returns the speed (kts) from the profile for the given phase and altitude.
+ * Returns 0.0 when no profile data is available for that phase so the caller
+ * can fall back to the hardcoded ATC speed schedule. */
+static double profile_speed_kts(FlightPhase phase, double alt_m,
+                                 const ProfileEntry *climb, int n_climb,
+                                 double cruise_kts,
+                                 const ProfileEntry *desc,  int n_desc) {
+    if (phase == PHASE_CRUISE)
+        return cruise_kts;
+
+    const ProfileEntry *arr = (phase == PHASE_CLIMB) ? climb : desc;
+    int n                   = (phase == PHASE_CLIMB) ? n_climb : n_desc;
+    if (n == 0) return 0.0;
+
+    int best = 0;
+    double best_diff = fabs(arr[0].alt_m - alt_m);
+    for (int i = 1; i < n; i++) {
+        double diff = fabs(arr[i].alt_m - alt_m);
+        if (diff < best_diff) { best_diff = diff; best = i; }
+    }
+    return arr[best].spd_kts;
+}
+
 /**
  * @brief Parses a single flight plan JSON file and appends the flight to shared memory.
  *
@@ -427,6 +456,55 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
                 }
             }
 
+            // ── FlightProfile: speed schedule per phase ────────────────────────
+            ProfileEntry climb_prof[MAX_PROFILE_ENTRIES];
+            int n_climb    = 0;
+            double cruise_kts = 0.0;
+            ProfileEntry desc_prof[MAX_PROFILE_ENTRIES];
+            int n_desc     = 0;
+
+            cJSON *profile_json = cJSON_GetObjectItemCaseSensitive(leg, "flightProfile");
+            if (cJSON_IsObject(profile_json)) {
+                cJSON *e;
+                cJSON *climb_arr = cJSON_GetObjectItemCaseSensitive(profile_json, "climb");
+                if (cJSON_IsArray(climb_arr)) {
+                    cJSON_ArrayForEach(e, climb_arr) {
+                        if (n_climb >= MAX_PROFILE_ENTRIES) break;
+                        cJSON *a  = cJSON_GetObjectItemCaseSensitive(e, "altitude");
+                        cJSON *s  = cJSON_GetObjectItemCaseSensitive(e, "speed");
+                        cJSON *av = a ? cJSON_GetObjectItemCaseSensitive(a, "value") : NULL;
+                        cJSON *sv = s ? cJSON_GetObjectItemCaseSensitive(s, "value") : NULL;
+                        if (cJSON_IsNumber(av) && cJSON_IsNumber(sv)) {
+                            climb_prof[n_climb].alt_m   = av->valuedouble;
+                            climb_prof[n_climb].spd_kts = sv->valuedouble;
+                            n_climb++;
+                        }
+                    }
+                }
+                cJSON *cruise_obj = cJSON_GetObjectItemCaseSensitive(profile_json, "cruise");
+                if (cJSON_IsObject(cruise_obj)) {
+                    cJSON *s  = cJSON_GetObjectItemCaseSensitive(cruise_obj, "speed");
+                    cJSON *sv = s ? cJSON_GetObjectItemCaseSensitive(s, "value") : NULL;
+                    if (cJSON_IsNumber(sv))
+                        cruise_kts = sv->valuedouble;
+                }
+                cJSON *desc_arr = cJSON_GetObjectItemCaseSensitive(profile_json, "descend");
+                if (cJSON_IsArray(desc_arr)) {
+                    cJSON_ArrayForEach(e, desc_arr) {
+                        if (n_desc >= MAX_PROFILE_ENTRIES) break;
+                        cJSON *a  = cJSON_GetObjectItemCaseSensitive(e, "altitude");
+                        cJSON *s  = cJSON_GetObjectItemCaseSensitive(e, "speed");
+                        cJSON *av = a ? cJSON_GetObjectItemCaseSensitive(a, "value") : NULL;
+                        cJSON *sv = s ? cJSON_GetObjectItemCaseSensitive(s, "value") : NULL;
+                        if (cJSON_IsNumber(av) && cJSON_IsNumber(sv)) {
+                            desc_prof[n_desc].alt_m   = av->valuedouble;
+                            desc_prof[n_desc].spd_kts = sv->valuedouble;
+                            n_desc++;
+                        }
+                    }
+                }
+            }
+
             // waypoint_start_index for leg 0 is 1: skip the ground departure waypoint at index 0.
             int leg_wp_start_before = wp_index;
 
@@ -443,6 +521,17 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
                             seg_phase = PHASE_CRUISE;
                         else if (strcmp(mode_json->valuestring, "descend") == 0)
                             seg_phase = PHASE_DESCEND;
+                    }
+
+                    // Parse wind for this segment (stored on every waypoint it produces).
+                    double seg_wind_dir = 0.0, seg_wind_spd = 0.0;
+                    cJSON *wind_json = cJSON_GetObjectItemCaseSensitive(segment, "wind");
+                    if (cJSON_IsObject(wind_json)) {
+                        cJSON *dir     = cJSON_GetObjectItemCaseSensitive(wind_json, "direction");
+                        cJSON *spd_obj = cJSON_GetObjectItemCaseSensitive(wind_json, "speed");
+                        cJSON *spd_val = spd_obj ? cJSON_GetObjectItemCaseSensitive(spd_obj, "value") : NULL;
+                        if (cJSON_IsNumber(dir))     seg_wind_dir = dir->valuedouble;
+                        if (cJSON_IsNumber(spd_val)) seg_wind_spd = spd_val->valuedouble;
                     }
 
                     // Add the "from" position only for the very first segment: seeds waypoint[0].
@@ -462,7 +551,10 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
                             flight->current_pos.latitude  = lat;
                             flight->current_pos.longitude = lon;
                             flight->current_pos.altitude  = alt;
-                            flight->flight_plan.waypoints[wp_index].target_speed = 250.0;
+                            flight->flight_plan.waypoints[wp_index].target_speed      =
+                                profile_speed_kts(PHASE_CLIMB, alt, climb_prof, n_climb, cruise_kts, desc_prof, n_desc);
+                            flight->flight_plan.waypoints[wp_index].wind_direction_deg = seg_wind_dir;
+                            flight->flight_plan.waypoints[wp_index].wind_speed_ms      = seg_wind_spd;
                             flight->flight_plan.waypoints[wp_index].segment_phase = PHASE_CLIMB;
                             wp_index++;
                         }
@@ -482,7 +574,10 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
                         flight->flight_plan.waypoints[wp_index].pos.latitude  = lat;
                         flight->flight_plan.waypoints[wp_index].pos.longitude = lon;
                         flight->flight_plan.waypoints[wp_index].pos.altitude  = alt;
-                        flight->flight_plan.waypoints[wp_index].target_speed  = 250.0;
+                        flight->flight_plan.waypoints[wp_index].target_speed  =
+                            profile_speed_kts(seg_phase, alt, climb_prof, n_climb, cruise_kts, desc_prof, n_desc);
+                        flight->flight_plan.waypoints[wp_index].wind_direction_deg = seg_wind_dir;
+                        flight->flight_plan.waypoints[wp_index].wind_speed_ms      = seg_wind_spd;
                         flight->flight_plan.waypoints[wp_index].segment_phase = seg_phase;
                         wp_index++;
                     }

@@ -55,6 +55,8 @@ typedef enum {
 typedef struct {
     Position pos;
     double target_speed;
+    double wind_direction_deg;
+    double wind_speed_ms;
     FlightPhase segment_phase;
 } Waypoint;
 

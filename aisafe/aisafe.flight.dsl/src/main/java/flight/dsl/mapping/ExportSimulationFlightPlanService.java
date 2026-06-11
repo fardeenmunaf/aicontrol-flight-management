@@ -107,20 +107,27 @@ public class ExportSimulationFlightPlanService {
 
                 segmentDTOs.add(new SimulationSegmentDTO(
                         segAst.mode() != null ? segAst.mode().name().toLowerCase() : "cruise",
-                        start,
-                        end,
+                        start,  // mapped to "from"
+                        end,    // mapped to "to"
                         altSlot,
                         wind
                 ));
             }
 
-            legDTOs.add(new SimulationLegDTO(
+            LegEndpointDTO departure = new LegEndpointDTO(
                     legAst.departure().airportCode(),
                     legAst.departure().date(),
-                    legAst.departure().time(),
+                    legAst.departure().time()
+            );
+            LegEndpointDTO arrival = new LegEndpointDTO(
                     legAst.arrival().airportCode(),
                     legAst.arrival().date(),
-                    legAst.arrival().time(),
+                    legAst.arrival().time()
+            );
+
+            legDTOs.add(new SimulationLegDTO(
+                    departure,
+                    arrival,
                     fuel,
                     payload,
                     profile,
@@ -146,7 +153,7 @@ public class ExportSimulationFlightPlanService {
 
     private CoordinateDTO toCoordinate(CoordinateAst c) {
         String unit = c.altitudeUnit() != null ? c.altitudeUnit() : "m";
-        return new CoordinateDTO(c.latitude(), c.longitude(), new MeasureDTO(c.altitude(), unit));
+        return new CoordinateDTO(c.latitude(), c.longitude(), c.altitude(), unit);
     }
 
     private ProfileDTO buildProfile(ProfileAst profile) {

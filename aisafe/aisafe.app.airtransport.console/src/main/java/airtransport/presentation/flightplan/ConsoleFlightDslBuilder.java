@@ -68,7 +68,7 @@ class ConsoleFlightDslBuilder {
             leg.depTime = reqWithDef("Leg departure time (HH:mm)", "09:00");
             leg.arrDate = reqWithDef("Leg arrival date (yyyy-MM-dd)", "2026-06-12");
             leg.arrTime = reqWithDef("Leg arrival time (HH:mm)", "11:00");
-            leg.fuel = reqWithDef("Fuel quantity (kg)", "4200");
+            leg.fuel = reqWithDef("Fuel quantity (kg)", "42000");
             
             leg.a = new double[] {
                 selectedRoute.originAirport().coordinates().latitude(),

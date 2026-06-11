@@ -5,104 +5,107 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public record SimulationFlightPlanDTO(
-    @JsonProperty("FlightDesignator") String flightDesignator,
-    @JsonProperty("Type") String type,
-    @JsonProperty("Route") RouteReferenceDTO route,
-    @JsonProperty("Aircraft") AircraftSpecsDTO aircraft,
-    @JsonProperty("Engine") EngineSpecsDTO engine,
-    @JsonProperty("Legs") List<SimulationLegDTO> legs
+    @JsonProperty("flightDesignator") String flightDesignator,
+    @JsonProperty("type") String type,
+    @JsonProperty("route") RouteReferenceDTO route,
+    @JsonProperty("aircraft") AircraftSpecsDTO aircraft,
+    @JsonProperty("engine") EngineSpecsDTO engine,
+    @JsonProperty("legs") List<SimulationLegDTO> legs
 ) {
 
     public record RouteReferenceDTO(
-        @JsonProperty("Reference") String reference,
-        @JsonProperty("Origin") String origin,
-        @JsonProperty("Destination") String destination
+        @JsonProperty("reference") String reference,
+        @JsonProperty("origin") String origin,
+        @JsonProperty("destination") String destination
     ) {}
 
     public record AircraftSpecsDTO(
-        @JsonProperty("EmptyWeight") double emptyWeight,
-        @JsonProperty("WingArea") double wingArea,
-        @JsonProperty("AspectRatio") double aspectRatio,
-        @JsonProperty("OswaldEfficiency") double oswaldEfficiency,
-        @JsonProperty("Cd0") double cd0,
-        @JsonProperty("NumberOfEngines") int numberOfEngines
+        @JsonProperty("emptyWeight") double emptyWeight,
+        @JsonProperty("wingArea") double wingArea,
+        @JsonProperty("aspectRatio") double aspectRatio,
+        @JsonProperty("oswaldEfficiency") double oswaldEfficiency,
+        @JsonProperty("cd0") double cd0,
+        @JsonProperty("numberOfEngines") int numberOfEngines
     ) {}
 
     public record EngineSpecsDTO(
-        @JsonProperty("ThrustSeaLevelStopped") double thrustSeaLevelStopped,
-        @JsonProperty("ThrustSeaLevelCruise") double thrustSeaLevelCruise,
-        @JsonProperty("ThrustLapseRate") double thrustLapseRate,
-        @JsonProperty("ThrustSpecificFuelConsumption") double thrustSpecificFuelConsumption
+        @JsonProperty("thrustSeaLevelStopped") double thrustSeaLevelStopped,
+        @JsonProperty("thrustSeaLevelCruise") double thrustSeaLevelCruise,
+        @JsonProperty("thrustLapseRate") double thrustLapseRate,
+        @JsonProperty("thrustSpecificFuelConsumption") double thrustSpecificFuelConsumption
+    ) {}
+
+    public record LegEndpointDTO(
+        @JsonProperty("airport") String airport,
+        @JsonProperty("date") String date,
+        @JsonProperty("time") String time
     ) {}
 
     public record SimulationLegDTO(
-        @JsonProperty("Departure") String departure,
-        @JsonProperty("DepartureDate") String departureDate,
-        @JsonProperty("DepartureTime") String departureTime,
-        @JsonProperty("Arrival") String arrival,
-        @JsonProperty("ArrivalDate") String arrivalDate,
-        @JsonProperty("ArrivalTime") String arrivalTime,
-        @JsonProperty("Fuel") QuantityDTO fuel,
-        @JsonProperty("Payload") QuantityDTO payload,
-        @JsonProperty("FlightProfile") ProfileDTO flightProfile,
-        @JsonProperty("Segments") List<SimulationSegmentDTO> segments
+        @JsonProperty("departure") LegEndpointDTO departure,
+        @JsonProperty("arrival") LegEndpointDTO arrival,
+        @JsonProperty("fuel") QuantityDTO fuel,
+        @JsonProperty("payload") QuantityDTO payload,
+        @JsonProperty("flightProfile") ProfileDTO flightProfile,
+        @JsonProperty("segments") List<SimulationSegmentDTO> segments
     ) {}
 
-    /** Used for fuel and payload: {"Quantity": ..., "Unit": ...} */
+    /** Used for fuel and payload: {"quantity": ..., "unit": ...} */
     public record QuantityDTO(
-        @JsonProperty("Quantity") double quantity,
-        @JsonProperty("Unit") String unit
+        @JsonProperty("quantity") double quantity,
+        @JsonProperty("unit") String unit
     ) {}
 
-    /** Used for all other measurements: {"Value": ..., "Unit": ...} */
+    /** Used for speed/altitude measurements: {"value": ..., "unit": ...} */
     public record MeasureDTO(
-        @JsonProperty("Value") double value,
-        @JsonProperty("Unit") String unit
+        @JsonProperty("value") double value,
+        @JsonProperty("unit") String unit
     ) {}
 
     public record ProfileDTO(
-        @JsonProperty("Climb") List<ClimbEntryDTO> climb,
-        @JsonProperty("Cruise") CruiseEntryDTO cruise,
-        @JsonProperty("Descend") List<DescendEntryDTO> descend
+        @JsonProperty("climb") List<ClimbEntryDTO> climb,
+        @JsonProperty("cruise") CruiseEntryDTO cruise,
+        @JsonProperty("descend") List<DescendEntryDTO> descend
     ) {}
 
     public record ClimbEntryDTO(
-        @JsonProperty("Altitude") MeasureDTO altitude,
-        @JsonProperty("Speed") MeasureDTO speed
+        @JsonProperty("altitude") MeasureDTO altitude,
+        @JsonProperty("speed") MeasureDTO speed
     ) {}
 
     public record CruiseEntryDTO(
-        @JsonProperty("Speed") MeasureDTO speed
+        @JsonProperty("speed") MeasureDTO speed
     ) {}
 
     public record DescendEntryDTO(
-        @JsonProperty("Altitude") MeasureDTO altitude,
-        @JsonProperty("Speed") MeasureDTO speed,
-        @JsonProperty("RateDescent") MeasureDTO rateDescent
+        @JsonProperty("altitude") MeasureDTO altitude,
+        @JsonProperty("speed") MeasureDTO speed,
+        @JsonProperty("rateDescent") MeasureDTO rateDescent
     ) {}
 
     public record SimulationSegmentDTO(
-        @JsonProperty("Mode") String mode,
-        @JsonProperty("Start") CoordinateDTO start,
-        @JsonProperty("End") CoordinateDTO end,
-        @JsonProperty("AltitudeSlot") AltitudeSlotDTO altitudeSlot,
-        @JsonProperty("Wind") WindDTO wind
+        @JsonProperty("mode") String mode,
+        @JsonProperty("from") CoordinateDTO from,
+        @JsonProperty("to") CoordinateDTO to,
+        @JsonProperty("altitudeSlot") AltitudeSlotDTO altitudeSlot,
+        @JsonProperty("wind") WindDTO wind
     ) {}
 
     public record CoordinateDTO(
-        @JsonProperty("Latitude") double latitude,
-        @JsonProperty("Longitude") double longitude,
-        @JsonProperty("Altitude") MeasureDTO altitude
+        @JsonProperty("latitude") double latitude,
+        @JsonProperty("longitude") double longitude,
+        @JsonProperty("altitude") double altitude,
+        @JsonProperty("altitudeUnit") String altitudeUnit
     ) {}
 
     public record AltitudeSlotDTO(
-        @JsonProperty("Min") MeasureDTO min,
-        @JsonProperty("Max") MeasureDTO max,
-        @JsonProperty("Width") MeasureDTO width
+        @JsonProperty("min") MeasureDTO min,
+        @JsonProperty("max") MeasureDTO max,
+        @JsonProperty("width") MeasureDTO width
     ) {}
 
     public record WindDTO(
-        @JsonProperty("Direction") double direction,
-        @JsonProperty("Speed") MeasureDTO speed
+        @JsonProperty("direction") double direction,
+        @JsonProperty("speed") MeasureDTO speed
     ) {}
 }
