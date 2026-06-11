@@ -29,10 +29,11 @@ public class WeatherTcpServer {
         }
 
         try (ServerSocket sock = new ServerSocket(9000)) {
-            System.out.println("Weather TCP Server listening on 9000");
+            System.out.println("Weather TCP Server listening on 0.0.0.0:9000");
 
             while (true) {
                 Socket nSock = sock.accept();
+                System.out.println("New connection from " + nSock.getRemoteSocketAddress());
                 Thread cliConn = new Thread(new AttendClient(nSock));
                 cliConn.start();
             }

@@ -12,6 +12,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 
 public class RegisterWeatherDataUI extends AbstractUI {
@@ -55,11 +56,9 @@ public class RegisterWeatherDataUI extends AbstractUI {
                 System.out.println("Weather data registered successfully (Direct DB).");
             } else {
                 try {
-                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                    mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-                    String jsonPayload = mapper.writeValueAsString(dto);
+                    String csvPayload = serializeWeatherDataDTO(dto);
 
-                    String response = ClientSession.getClient().uploadWeather(jsonPayload);
+                    String response = ClientSession.getClient().uploadWeather(csvPayload);
                     System.out.println("Server response: " + response);
                 } catch (IOException e) {
                     System.out.println("Error communicating with server: " + e.getMessage());
@@ -138,6 +137,23 @@ public class RegisterWeatherDataUI extends AbstractUI {
                 System.out.println(ex.getMessage());
             }
         }
+    }
+
+    private String serializeWeatherDataDTO(WeatherDataDTO dto) {
+        return new StringJoiner(";")
+                .add(dto.acaCode())
+                .add(String.valueOf(dto.latitude1()))
+                .add(String.valueOf(dto.longitude1()))
+                .add(String.valueOf(dto.latitude2()))
+                .add(String.valueOf(dto.longitude2()))
+                .add(String.valueOf(dto.altitudeInf()))
+                .add(String.valueOf(dto.altitudeSup()))
+                .add(String.valueOf(dto.direction()))
+                .add(String.valueOf(dto.windSpeed()))
+                .add(dto.date().toString())
+                .add(dto.startHour().toString())
+                .add(dto.endHour().toString())
+                .toString();
     }
 
     private <T> List<T> toList(final Iterable<T> iterable) {

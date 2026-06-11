@@ -7,8 +7,11 @@ import weatherData.application.ListWeatherDataController;
 import weatherData.dto.WeatherDataDTO;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ViewWeatherDataUI extends AbstractUI {
 
@@ -50,10 +53,17 @@ public class ViewWeatherDataUI extends AbstractUI {
                     isoDate = LocalDate.parse(dateStr.trim(), fmt).toString(); // YYYY-MM-DD
                 }
                 String response = ClientSession.getClient().listWeather(area, isoDate);
-                // O servidor responde com JSON do Iterable<WeatherDataDTO>
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                mapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
-                records = java.util.Arrays.asList(mapper.readValue(response, WeatherDataDTO[].class));
+                
+                List<WeatherDataDTO> list = new ArrayList<>();
+                if (response != null && !response.trim().isEmpty()) {
+                    String[] lines = response.split("\n");
+                    for (String line : lines) {
+                        if (!line.trim().isEmpty()) {
+                            list.add(deserializeWeatherDataDTO(line));
+                        }
+                    }
+                }
+                records = list;
             } catch (Exception e) {
                 System.out.println("Error fetching data from server: " + e.getMessage());
                 return false;
@@ -89,6 +99,24 @@ public class ViewWeatherDataUI extends AbstractUI {
         }
 
         return true;
+    }
+
+    private WeatherDataDTO deserializeWeatherDataDTO(String line) {
+        String[] p = line.split(";", -1);
+        return new WeatherDataDTO(
+                p[0],
+                Double.parseDouble(p[1]),
+                Double.parseDouble(p[2]),
+                Double.parseDouble(p[3]),
+                Double.parseDouble(p[4]),
+                Double.parseDouble(p[5]),
+                Double.parseDouble(p[6]),
+                Double.parseDouble(p[7]),
+                Double.parseDouble(p[8]),
+                LocalDate.parse(p[9]),
+                LocalTime.parse(p[10]),
+                LocalTime.parse(p[11])
+        );
     }
 
     @Override
