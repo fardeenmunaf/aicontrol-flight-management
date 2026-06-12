@@ -35,16 +35,14 @@
 
 ### Domain-Driven Design (DDD)
 
-- Use a ubiquitous language for domain concepts (`Collaborator`, `Customer`, `SystemUser`).
-- `Collaborator` is an aggregate that coordinates `SystemUser` creation as a side-effect in the application layer.
+- Use a ubiquitous language for domain concepts (`Collaborator`, `Customer`, `User`).
+- `Collaborator` is an aggregate that coordinates `User` creation in the application layer.
 
 ### Gang of Four (GoF) Patterns
 
 | Pattern | Location | Purpose |
 |--------|---------|--------|
-| **Factory** | `CollaboratorFactory` | Creates `Collaborator` and associated `SystemUser` in a validated state.
-| **Repository** | `CollaboratorRepository` | Abstracts persistence and uniqueness checks.
-| **DTO** | `RegisterCollaboratorRequest` | Carries input from console to controller.
+| **Repository** | `CustomerCollaboratorRepository` | Abstracts persistence and uniqueness checks.
 
 ### SOLID Principles
 
@@ -99,15 +97,15 @@
 | `RegisterCollaboratorUI` | `backoffice.presentation.collaborator` | UI to collect collaborator details |
 | `RegisterCollaboratorController` | `collaborator.application` | Authorization, validation, association to customer, user creation |
 | `Collaborator` | `collaborator.domain` | Domain entity: name, email, position, associated customer, active/disabled flag |
-| `SystemUser` | `identity.domain` | Represents authentication user with roles; created alongside collaborator |
-| `CollaboratorRepository` | `collaborator.repositories` | Persistence operations; queries by customer and email |
+| `User` | `user.domain` | Represents authentication user with roles; created alongside collaborator |
+| `CustomerCollaboratorRepository` | `customercollaborator.repositories` | Persistence operations; queries by customer and email |
 
 ---
 
 ## Domain Notes
 
-- Email uniqueness must be enforced across all system users — repository-level unique constraint recommended.
-- Collaborator creation must also create a `SystemUser` entry with proper role (e.g., `CUSTOMER_COLLABORATOR`).
+- Email uniqueness must be enforced across all users — repository-level unique constraint recommended.
+- Collaborator creation must also create a `User` entry with proper role (e.g., `AIR_TRANSPORT_COMPANY_COLLABORATOR`).
 - Bootstrap process must be idempotent and safe to re-run.
 
 

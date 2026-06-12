@@ -23,8 +23,8 @@
 
 | Module | Role |
 |--------|------|
-| `aisafe.app.backoffice.console` | UI for disabling collaborators (`DisableCollaboratorUI`) |
-| `aisafe.core` | Controller (`DisableCollaboratorController`), domain (`Collaborator`) |
+| `aisafe.app.backoffice.console` | UI for disabling collaborators (`DisableCustomerCollaboratorUI`) |
+| `aisafe.core` | Controller (`DisableCustomerCollaboratorController`), domain (`CustomerCollaborator`) |
 
 ---
 
@@ -38,13 +38,13 @@
 
 | Pattern | Location | Purpose |
 |--------|---------|--------|
-| **Repository** | `CollaboratorRepository` | Persists `active` state and provides queries filtering active collaborators.
+| **Repository** | `CustomerCollaboratorRepository` | Persists `active` state and provides queries filtering active collaborators.
 | **Adapter** | Authentication component | Reads `active` flag to deny login for disabled users.
 
 ### SOLID Principles
 
 1. **Single Responsibility Principle (SRP)**
-   - Separate disable logic from other update operations; `DisableCollaboratorController` and `Collaborator` each have one responsibility.
+   - Separate disable logic from other update operations; `DisableCustomerCollaboratorController` and `CustomerCollaborator` each have one responsibility.
 
 2. **Open/Closed Principle (OCP)**
    - New policies for disabling collaborators (e.g., additional business rules) should be added via extension without modifying existing tested code.
@@ -85,9 +85,9 @@
 
 | Class | Location | Responsibility |
 |-------|----------|----------------|
-| `DisableCollaboratorUI` | `backoffice.presentation.collaborator` | Prompts for collaborator id to disable |
-| `DisableCollaboratorController` | `collaborator.application` | Authorization and disabling logic |
-| `CollaboratorRepository` | `collaborator.repositories` | `findById`, `save` |
+| `DisableCustomerCollaboratorUI` | `backoffice.presentation.customercollaborator` | Prompts for collaborator id to disable |
+| `DisableCustomerCollaboratorController` | `customercollaborator.application` | Authorization and disabling logic |
+| `CustomerCollaboratorRepository` | `customercollaborator.repositories` | `findById`, `save` |
 
 ---
 

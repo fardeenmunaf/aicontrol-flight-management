@@ -141,7 +141,6 @@ Remote access applications (Weather Client — US044, Air Transport App — US07
 | **Strategy** | `PasswordPolicy` interface; `AISafePasswordPolicy` enforces 8-character minimum | Allows plugging in different password policies without changing core framework |
 | **Repository** | `UserRepository` provides collection-like abstraction over persistence | Decouples domain logic from JPA/SQL implementation |
 | **Adapter** | `AuthzConfigurator` adapts the eapli `AuthzRegistry` to AISafe domain model | Integration without polluting domain code |
-| **DTO** | `UserDTO`, `RoleDTO` carry data across layer boundaries | Safe field exposure; enables filtering |
 
 ### SOLID Principles
 
@@ -150,15 +149,6 @@ Remote access applications (Weather Client — US044, Air Transport App — US07
 - **Liskov Substitution Principle (LSP)**: Any `PasswordPolicy` subclass can replace `AISafePasswordPolicy` without breaking expectations.
 - **Interface Segregation Principle (ISP)**: `UserRepository` exposes only needed methods (`save()`, `findByEmail()`, `findAll()`).
 - **Dependency Inversion Principle (DIP)**: Controllers depend on abstractions (`UserRepository`, `AuthzRegistry`) rather than concrete implementations.
-
-### Data Transfer Objects (DTOs)
-
-- **UserDTO**: Email, name, phone, roles, status — prevents exposure of mutable domain state.
-- **RoleDTO**: Role token and display name — presentation layer never directly manipulates domain roles.
-
-### Factory Pattern
-
-`UserFactory` constructs new `User` instances with validated parameters, ensuring email follows `@aisafe.com` constraint and at least one role is assigned.
 
 ````
 This is the description of what the code block changes:

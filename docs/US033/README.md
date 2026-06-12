@@ -75,7 +75,7 @@ bo@aisafe.com                  | Backoffice Ops       | +351000000000        | D
 - **Ubiquitous Language**: "User," "Status," "Roles" form the shared vocabulary of user management.
 - **Bounded Context**: User querying and display is isolated from user registration/modification logic.
 - **Aggregate Root**: `User` exposes read-only accessors (`email()`, `name()`, `status()`) to ensure consistency.
-- **Value Objects**: `Email`, `PhoneNumber`, `UserStatus` are immutable value objects with validation.
+- **Value Objects**: `Email`, `PhoneNumber` are immutable value objects with validation.
 - **Repository Pattern**: `UserRepository.findAll()` abstracts persistence, allowing queries without SQL knowledge.
 
 ### Gang of Four Design Patterns
@@ -84,7 +84,6 @@ bo@aisafe.com                  | Backoffice Ops       | +351000000000        | D
 |---------|------------|---------|
 | **Repository** | `UserRepository.findAll()` provides collection-like query abstraction | Decouples domain from JPA/SQL queries |
 | **Iterator** | `ListUsersUI` iterates over collection returned by repository | Separates traversal from entity structure |
-| **DTO** | `UserDTO` carries user data for display without exposing mutable state | Safe field exposure |
 | **Visitor** | `UserPrinter` formats user data for consistent table rendering | Separates display formatting from entity |
 
 ### SOLID Principles
@@ -94,11 +93,6 @@ bo@aisafe.com                  | Backoffice Ops       | +351000000000        | D
 - **Liskov Substitution Principle (LSP)**: Any `UserRepository` implementation can replace another without breaking queries.
 - **Interface Segregation Principle (ISP)**: `UserRepository` exposes only the queries needed (`findAll()`); other methods are not forced.
 - **Dependency Inversion Principle (DIP)**: `ListUsersController` depends on `UserRepository` abstraction, not concrete implementations.
-
-### Data Transfer Objects (DTOs)
-
-- **UserDTO**: Carries email, name, phone, roles, status for display — never exposes internal mutable state.
-- **Benefit**: Internal changes to `User` (e.g., adding password history) do not affect presentation layer.
 
 ### Repository Query Pattern
 

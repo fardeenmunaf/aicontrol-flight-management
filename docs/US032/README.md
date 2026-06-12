@@ -79,7 +79,7 @@
 - **Ubiquitous Language**: "User," "Status," "Enable/Disable" are core concepts in the user lifecycle management subdomain.
 - **Bounded Context**: User lifecycle management (registration, activation, deactivation) is isolated from other domains.
 - **Aggregate Root**: `User` is the aggregate root with status control — `enable()` and `disable()` enforce domain invariants.
-- **Value Objects**: `UserStatus` (enum: ACTIVE, DISABLED) encapsulates status logic.
+- **Value Objects**: Status constants (`ACTIVE`, `DISABLED`) encapsulate valid states.
 - **Repository Pattern**: `UserRepository` abstracts persistence, allowing status changes to be persisted atomically with auth framework updates.
 
 ### Gang of Four Design Patterns
@@ -88,46 +88,12 @@
 |---------|------------|---------|
 | **State** | `User.status` represents state (ACTIVE/DISABLED); `enable()` and `disable()` transition state | Encapsulates valid state transitions |
 | **Repository** | `UserRepository` provides persistence abstraction | Decouples domain from JPA/SQL |
-| **DTO** | `UserDTO` carries user data across presentation layer | Safe field exposure |
 | **Visitor** | `UserPrinter` visitor formats user data for display in selection widget | Separates display logic from entity |
 
 ### SOLID Principles
 
 - **Single Responsibility Principle (SRP)**: `User` manages state transitions; `UserRepository` handles persistence; `DisableEnableUserController` orchestrates operations.
-- **Open/Closed Principle (OCP)**: Adding new user statuses can extend `UserStatus` without changing existing code.
+- **Open/Closed Principle (OCP)**: Adding new user statuses can be done by adding constants to `User` without changing logic that doesn't depend on them.
 - **Liskov Substitution Principle (LSP)**: Any `UserRepository` implementation (JPA, in-memory) can replace another without breaking contracts.
 - **Interface Segregation Principle (ISP)**: `UserRepository` exposes only essential methods (`save()`, `findAll()`, `findByEmail()`).
 - **Dependency Inversion Principle (DIP)**: Controller depends on `UserRepository` abstraction, not concrete implementations.
-
-### Data Transfer Objects (DTOs)
-
-- **UserDTO**: Email, name, phone, roles, status — prevents exposure of mutable domain state.
-- **Benefit**: Status changes internal representation remains hidden from presentation layer.
-
-### Factory Pattern
-
-Status transitions go through controlled factory methods on `User`:
-```java
-user.enable();   // Validates state transition and updates status
-user.disable();  // Validates state transition and updates status
-```
-
-This ensures invalid state transitions are prevented at the domain level.
-
-````
-This is the description of what the code block changes:
-<changeDescription>
-Expand SOLID principle names in US032 README to full forms with acronyms
-</changeDescription>
-
-This is the code block that represents the suggested code change:
-```markdown
-### SOLID Principles
-
-- **Single Responsibility Principle (SRP)**: `User` manages state transitions; `UserRepository` handles persistence; `DisableEnableUserController` orchestrates operations.
-- **Open/Closed Principle (OCP)**: Adding new user statuses can extend `UserStatus` without changing existing code.
-- **Liskov Substitution Principle (LSP)**: Any `UserRepository` implementation (JPA, in-memory) can replace another without breaking contracts.
-- **Interface Segregation Principle (ISP)**: `UserRepository` exposes only essential methods (`save()`, `findAll()`, `findByEmail()`).
-- **Dependency Inversion Principle (DIP)**: Controller depends on `UserRepository` abstraction, not concrete implementations.
-// ...existing code...
-```

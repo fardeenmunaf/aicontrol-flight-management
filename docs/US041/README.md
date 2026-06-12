@@ -12,10 +12,10 @@
 |---|-----------|
 | AC01 | Only an authenticated **Weather Person** can register weather data |
 | AC02 | Weather data must be associated with an existing air control area |
-| AC03 | Required fields include: air control area, date/time, wind direction, wind speed, temperature, and pressure |
-| AC04 | All numeric values (wind speed, temperature, pressure) must be valid |
+| AC03 | Required fields include: air control area code, date, start hour, end hour, latitude 1 & 2, longitude 1 & 2, altitude inferior & superior, wind direction and wind speed |
+| AC04 | All numeric values (wind speed, coordinates, altitudes, direction) must be valid |
 | AC05 | Date and time values must represent valid calendar values |
-| AC06 | Registering weather data for a non-existent air control area must be rejected with a meaningful error |
+| AC06 | Registering weather data for an empty air control area code must be rejected with a meaningful error |
 
 ---
 
@@ -47,10 +47,10 @@
 
 The design of US041 follows core DDD principles:
 
-- **Ubiquitous Language**: Domain terms are used consistently (`WeatherData`, `AirControlArea`, `WindDirection`, `Temperature`, `Pressure`).
+- **Ubiquitous Language**: Domain terms are used consistently (`WeatherData`, `AirControlArea`, `WindDirection`, `WindSpeed`, `Altitude`).
 - **Bounded Context**: This feature is part of the Weather Management bounded context and is kept separate from other subdomains (Air Control, etc.).
 - **Aggregate Root**: `WeatherData` acts as the aggregate root that encapsulates coherent meteorological information.
-- **Value Objects**: Attributes such as `Temperature`, `Pressure`, `WindSpeed` and `WeatherDataId` are modeled as immutable value objects to ensure consistency and clear semantics.
+- **Value Objects**: Attributes such as `WindSpeed`, `Altitude` and `WeatherDataId` are modeled as immutable value objects to ensure consistency and clear semantics.
 - **Repository Pattern**: `WeatherDataRepository` provides an abstraction over persistence, hiding implementation details.
 - **Domain Events**: Events may be emitted when new weather data is registered (e.g., `WeatherDataRegisteredEvent`).
 
@@ -60,10 +60,10 @@ Several classic design patterns are applied:
 
 | Pattern | Location | Purpose |
 |--------|-------|----------|
-| **Factory** | `WeatherDataFactory` (or in the Controller) | Builds `WeatherData` aggregates with encapsulated validation |
+| **Factory** | `WeatherData` constructor | Builds `WeatherData` aggregates with encapsulated validation |
 | **Repository** | `WeatherDataRepository` | Persistence abstraction; eases unit testing and DB changes |
 | **Strategy** | `AuthorizationService` | Different authorization strategies per role (WEATHER_PERSON, etc.) |
-| **Data Transfer Object (DTO)** | `RegisterWeatherDataRequest` | Carries data between UI and Application Layer, decoupling presentation from logic |
+| **Data Transfer Object (DTO)** | `WeatherDataDTO` | Carries data between UI and Application Layer, decoupling presentation from logic |
 | **Adapter** | Console UI → Controller | Adapts user input into application commands |
 
 ### SOLID Principles
@@ -92,32 +92,31 @@ The architecture in US041 respects the five SOLID principles:
 
 DTOs isolate the presentation layer from domain logic:
 
-- **`RegisterWeatherDataRequest`** (input DTO)
+- **`WeatherDataDTO`**
   - Contains raw user input (strings, primitive numbers)
-  - Does not include business validation (only structural validation)
   - Transfers data from the UI to the Controller
-
-- **`WeatherDataDTO`** (output DTO, optional)
-  - Represents `WeatherData` in a client-friendly form
-  - Omits internal technical fields (aggregate IDs, etc.)
-  - Facilitates future migration to REST/GraphQL APIs
 
 **Benefit**: The presentation layer never manipulates domain entities directly, reducing coupling and making testing easier.
 
 ### Factory Pattern
 
-The Factory pattern encapsulates complex aggregate creation:
+The Factory pattern (implemented via domain constructor) encapsulates complex aggregate creation:
 
 ```java
-// Factory implicit in controller logic or an explicit factory method
-WeatherData weatherData = WeatherDataFactory.create(
-    airControlAreaId,
-    timestamp,
-    windDirection,
-    windSpeed,
-    temperature,
-    pressure
-);
+// WeatherData constructor validates all parameters
+WeatherData data = new WeatherData(
+        dto.acaCode(),
+        dto.latitude1(),
+        dto.longitude1(),
+        dto.latitude2(),
+        dto.longitude2(),
+        dto.altitudeInf(),
+        dto.altitudeSup(),
+        dto.direction(),
+        dto.windSpeed(),
+        dto.date(),
+        dto.startHour(),
+        dto.endHour());
 ```
 
 Factory responsibilities:
@@ -130,17 +129,18 @@ Factory responsibilities:
 
 1. Weather Person logs in and navigates to **Register Weather Data** from the Weather menu.
 2. The console prompts for:
-   - Air Control Area (select from existing list or enter identifier)
-   - Date and Time (YYYY-MM-DD HH:MM:SS format)
+   - Air Control Area Code
+   - Coordinates (Latitude 1 & 2, Longitude 1 & 2)
+   - Altitudes (Inferior & Superior)
+   - Date (YYYY-MM-DD)
+   - Start and End Hour (HH:MM:SS format)
    - Wind Direction (0-360 degrees)
    - Wind Speed (m/s, non-negative)
-   - Temperature (Celsius)
-   - Pressure (hPa, positive value)
 3. `RegisterWeatherDataController` verifies the caller has the `WEATHER_PERSON` role via `AuthorizationService`.
 4. The controller validates:
-   - Air Control Area exists in the system
+   - Air Control Area code is not empty
    - All numeric fields are within valid ranges
-   - Date/time values are valid calendar dates
+   - Date and hours are valid
 5. A domain `WeatherData` entity is created and saved via `WeatherDataRepository`.
 6. The console prints `Weather data registered successfully.`
 
@@ -152,11 +152,11 @@ Factory responsibilities:
 |-------|----------|----------------|
 | `RegisterWeatherDataUI` | `backoffice.presentation.weather` | Console form — collects input, delegates to controller |
 | `RegisterWeatherDataAction` | `backoffice.presentation.weather` | Menu action wiring — instantiates and shows `RegisterWeatherDataUI` |
-| `RegisterWeatherDataController` | `weather.application` | Enforces WEATHER_PERSON authorization, validates air control area, persists weather data |
-| `WeatherData` | `weather.domain` | Aggregate root — holds air control area, timestamp, wind data, temperature, pressure |
+| `RegisterWeatherDataController` | `weatherData.application` | Enforces WEATHER_PERSON authorization, validates weather data, persists it |
+| `WeatherData` | `weatherData.domain` | Aggregate root — holds air control area, timestamp, wind data, etc. |
 | `WeatherDataId` | `shared.domain` | Value object used as the aggregate identity |
-| `AirControlArea` | `aircontrol.domain` | Referenced entity — must exist in system for weather data association |
-| `WeatherDataRepository` | `weather.repository` | Domain repository interface for persisting and querying weather data |
+| `WeatherDataDTO` | `weatherData.dto` | DTO used to transfer data from UI to Controller |
+| `WeatherDataRepository` | `weatherData.repository` | Domain repository interface for persisting and querying weather data |
 
 ---
 
