@@ -231,6 +231,10 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
     }
 
     double climb_rate  = calculate_climb_rate(total_thrust, drag, tas, f->current_mass);
+    if (phase == PHASE_CLIMB && f->max_climb_rate_mps > 0.0 && climb_rate > f->max_climb_rate_mps)
+        climb_rate = f->max_climb_rate_mps;
+    if (phase == PHASE_DESCEND && f->max_descent_rate_mps < 0.0 && climb_rate < f->max_descent_rate_mps)
+        climb_rate = f->max_descent_rate_mps;
     double fuel_burned = calculate_fuel_burn(total_thrust, f->properties.tsfc, dt);
     double horiz_dist  = calculate_step_distance(tas, climb_rate, dt);
 
@@ -276,8 +280,10 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
 
     double new_dist = haversine_m(f->current_pos.latitude, f->current_pos.longitude,
                                    dest_lat, dest_lon);
-    if (new_dist < ARRIVAL_THRESHOLD_M)
+    if (new_dist < ARRIVAL_THRESHOLD_M) {
         f->is_active = false;
+        f->current_pos.altitude = f->flight_plan.waypoints[last_wp].pos.altitude;
+    }
 
     out->dist_to_dest      = dist_to_dest;
     out->cruise_alt        = cruise_alt;

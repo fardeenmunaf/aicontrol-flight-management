@@ -819,12 +819,15 @@ public class FlightPlanUI {
             sb.append("        }\n");
             sb.append("        profile {\n");
             for (int p = 0; p < 2; p++) {
-                final String pAlt = require(leg.profileClimbAlt[p],
+                final String pAlt  = require(leg.profileClimbAlt[p],
                         "Leg " + (i + 1) + " Climb Profile " + (p + 1) + " Altitude");
-                final String pSpd = require(leg.profileClimbSpeed[p],
+                final String pSpd  = require(leg.profileClimbSpeed[p],
                         "Leg " + (i + 1) + " Climb Profile " + (p + 1) + " Speed");
+                final String pRate = require(leg.profileClimbRate[p],
+                        "Leg " + (i + 1) + " Climb Profile " + (p + 1) + " Rate");
                 sb.append("            climb [ altitude: ").append(pAlt)
-                        .append(" m, speed: ").append(pSpd).append(" kts ];\n");
+                        .append(" m, speed: ").append(pSpd)
+                        .append(" kts, rate: ").append(pRate).append(" m/s ];\n");
             }
             final String cruiseSpd = require(leg.profileCruiseSpeed,
                     "Leg " + (i + 1) + " Cruise Profile Speed");
@@ -984,6 +987,7 @@ public class FlightPlanUI {
         final TextField[] windSpeed = new TextField[3];
         final TextField[] profileClimbAlt = new TextField[2];
         final TextField[] profileClimbSpeed = new TextField[2];
+        final TextField[] profileClimbRate = new TextField[2];
         TextField profileCruiseSpeed;
         final TextField[] profileDescendAlt = new TextField[2];
         final TextField[] profileDescendSpeed = new TextField[2];
@@ -1025,11 +1029,13 @@ public class FlightPlanUI {
             profilePanel.setStyle(
                     "-fx-background-color:#0a2540;-fx-padding:8;-fx-border-radius:4;-fx-background-radius:4;");
             for (int p = 0; p < 2; p++) {
-                profileClimbAlt[p] = fieldWithDefault("m", p == 0 ? "69" : "10000");
+                profileClimbAlt[p]   = fieldWithDefault("m", p == 0 ? "69" : "10000");
                 profileClimbSpeed[p] = fieldWithDefault("kts", p == 0 ? "210" : "300");
+                profileClimbRate[p]  = fieldWithDefault("m/s", p == 0 ? "10" : "8");
                 final HBox climbProfileRow = new HBox(8,
                         labeled("Climb " + (p + 1) + " Alt (m)", profileClimbAlt[p]),
-                        labeled("Speed (kts)", profileClimbSpeed[p]));
+                        labeled("Speed (kts)", profileClimbSpeed[p]),
+                        labeled("Rate (m/s)", profileClimbRate[p]));
                 setHGrow(climbProfileRow);
                 profilePanel.getChildren().add(climbProfileRow);
             }

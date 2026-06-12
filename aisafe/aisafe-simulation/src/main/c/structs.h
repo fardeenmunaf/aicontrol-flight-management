@@ -112,6 +112,8 @@ typedef struct {
     double initial_fuel_mass;
     double initial_mass;
     double current_mass;
+    double max_climb_rate_mps;    /* from flightProfile rateClimb; 0 = uncapped  */
+    double max_descent_rate_mps;  /* from flightProfile rateDescent; 0 = uncapped */
 
     FlightPhase current_phase;
 

@@ -185,7 +185,7 @@ int load_simulation_settings(const char* filename, SimulationConfig* config) {
 
 #define MAX_PROFILE_ENTRIES 10
 
-typedef struct { double alt_m; double spd_kts; } ProfileEntry;
+typedef struct { double alt_m; double spd_kts; double rate_mps; } ProfileEntry;
 
 /* Returns the speed (kts) from the profile for the given phase and altitude.
  * Returns 0.0 when no profile data is available for that phase so the caller
@@ -477,6 +477,9 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
                         if (cJSON_IsNumber(av) && cJSON_IsNumber(sv)) {
                             climb_prof[n_climb].alt_m   = av->valuedouble;
                             climb_prof[n_climb].spd_kts = sv->valuedouble;
+                            cJSON *rc  = cJSON_GetObjectItemCaseSensitive(e, "rateClimb");
+                            cJSON *rcv = rc ? cJSON_GetObjectItemCaseSensitive(rc, "value") : NULL;
+                            climb_prof[n_climb].rate_mps = cJSON_IsNumber(rcv) ? rcv->valuedouble : 0.0;
                             n_climb++;
                         }
                     }
@@ -499,11 +502,25 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
                         if (cJSON_IsNumber(av) && cJSON_IsNumber(sv)) {
                             desc_prof[n_desc].alt_m   = av->valuedouble;
                             desc_prof[n_desc].spd_kts = sv->valuedouble;
+                            cJSON *rd  = cJSON_GetObjectItemCaseSensitive(e, "rateDescent");
+                            cJSON *rdv = rd ? cJSON_GetObjectItemCaseSensitive(rd, "value") : NULL;
+                            desc_prof[n_desc].rate_mps = cJSON_IsNumber(rdv) ? rdv->valuedouble : 0.0;
                             n_desc++;
                         }
                     }
                 }
             }
+
+            /* Aggregate climb/descent rate caps and store on Flight. */
+            double max_climb = 0.0, min_desc = 0.0;
+            for (int pi = 0; pi < n_climb; pi++)
+                if (climb_prof[pi].rate_mps > max_climb)
+                    max_climb = climb_prof[pi].rate_mps;
+            for (int pi = 0; pi < n_desc; pi++)
+                if (desc_prof[pi].rate_mps < 0.0 && desc_prof[pi].rate_mps < min_desc)
+                    min_desc = desc_prof[pi].rate_mps;
+            flight->max_climb_rate_mps   = max_climb;
+            flight->max_descent_rate_mps = min_desc;
 
             // waypoint_start_index for leg 0 is 1: skip the ground departure waypoint at index 0.
             int leg_wp_start_before = wp_index;
