@@ -27,7 +27,7 @@ public class PilotLoginUI extends AbstractUI {
             try {
                 final PilotTcpClient client = new PilotTcpClient(host, port);
                 if (client.login(email, password)) {
-                    PilotClientSession.setClient(client);
+                    PilotClientSession.setClient(client, email);
                     authenticated = true;
                     System.out.println("Login successful. Welcome, Pilot!");
                 } else {
