@@ -66,7 +66,7 @@ public class DeleteFlightRouteController {
 
         final Instant cutoff = deactivationDate.atStartOfDay(ZoneOffset.UTC).toInstant();
         final Iterable<flightPlan.domain.FlightPlan> plannedFlights =
-                flightPlanRepository.findByRouteIdAndDepartureAfter(routeId, cutoff);
+                flightPlanRepository.findByRouteIdAndDepartureAfter(route.designation().value(), cutoff);
         if (plannedFlights.iterator().hasNext()) {
             throw new IllegalStateException(
                     "Cannot deactivate route: there are planned flights after " + deactivationDate);
