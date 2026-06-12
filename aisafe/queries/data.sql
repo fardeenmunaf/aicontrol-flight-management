@@ -197,7 +197,7 @@ VALUES
 INSERT INTO AircraftModel (aircraft_model_id, type, emptyWeight, maximumTakeOffWeight, maximumZeroFuelWeight, maximumFuelCapacity, serviceCeiling, cruiseSpeed, wingArea, wingSpan, dragCoefficient, liftCoefficient, numberOfEngines, modelName, name, country, version)
 VALUES
     ('am-777',  'PASSENGER', 19549.8311, 347451.7554,  79877.6163, 145149.5584, 262.55, 247.8,  440.0, 60.93, 0.017, 1.2, 2, '777-200ER', 'Boeing', 'Unknown', 0),
-    ('am-A380', 'PASSENGER', 19504.4719, 260815.6128,  48534.3836, 276800.0,    262.55, 250.75, 845.0, 79.75, 0.020, 1.2, 4, 'A380',      'Airbus', 'Unknown', 0);
+    ('am-A380', 'PASSENGER', 276800.0,   575000.0,     340800.0,    320000.0,   13106.4, 250.75, 845.0, 79.75, 0.020, 1.2, 4, 'A380',      'Airbus', 'Unknown', 0);
 
 INSERT INTO aircraftmodel_enginemodel (aircraft_model_id, engine_model_id)
 VALUES
