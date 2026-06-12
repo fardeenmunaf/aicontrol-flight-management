@@ -353,6 +353,12 @@ public class AttendPilotClient implements Runnable {
                     .findByPilotUserId(pilot.userId())
                     .orElseThrow(() -> new IllegalStateException("Pilot is not assigned to a company"));
 
+            final airtransportcompany.domain.AirTransportCompany company =
+                    PersistenceContext.repositories().airTransportCompanies()
+                            .ofIdentity(assignment.companyId())
+                            .orElseThrow(() -> new IllegalStateException("Company not found"));
+            final String companyIcao = company.icaoCode();
+
             final StringJoiner response = new StringJoiner("\n");
             PersistenceContext.repositories().flightRoutes()
                     .findByCompanyId(assignment.companyId())
@@ -360,7 +366,14 @@ public class AttendPilotClient implements Runnable {
                             r.designation() + ";"
                             + r.originAirport().iataCode() + ";"
                             + r.destinationAirport().iataCode() + ";"
-                            + r.activeFrom()));
+                            + r.activeFrom() + ";"
+                            + r.originAirport().coordinates().latitude() + ";"
+                            + r.originAirport().coordinates().longitude() + ";"
+                            + r.originAirport().elevation() + ";"
+                            + r.destinationAirport().coordinates().latitude() + ";"
+                            + r.destinationAirport().coordinates().longitude() + ";"
+                            + r.destinationAirport().elevation() + ";"
+                            + companyIcao));
             PilotProtocolCodec.write(sOut, ack(response.toString()));
         } catch (final Throwable t) {
             System.err.println("[PilotServer] handleListRoutes error: " + t);
