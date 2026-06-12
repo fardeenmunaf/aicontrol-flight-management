@@ -616,7 +616,19 @@ public class FlightPlanUI {
                 if (row.sourceFile() != null) {
                     Files.deleteIfExists(row.sourceFile());
                 } else if (row.dbPlan() != null) {
-                    PersistenceContext.repositories().flightPlans().delete(row.dbPlan());
+                    final flightPlan.domain.FlightPlan plan = row.dbPlan();
+                    final java.util.Set<shared.domain.NodeId> nodeIds = new java.util.LinkedHashSet<>();
+                    for (final flightPlan.domain.FlightLeg leg : plan.legs()) {
+                        for (final flightPlan.domain.Segment seg : leg.segments()) {
+                            nodeIds.add(seg.startNodeId());
+                            nodeIds.add(seg.endNodeId());
+                        }
+                    }
+                    PersistenceContext.repositories().flightPlans().delete(plan);
+                    for (final shared.domain.NodeId nodeId : nodeIds) {
+                        PersistenceContext.repositories().nodes().ofIdentity(nodeId)
+                                .ifPresent(PersistenceContext.repositories().nodes()::delete);
+                    }
                 }
                 refreshTable();
             } catch (final Exception e) {
