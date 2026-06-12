@@ -15,6 +15,7 @@
     #include "flight_simulation.h"
     #include "position_tracker.h"
     #include "physics.h"
+    #include "environment.h"
 
     static const double LOOKAHEAD_M = 500000.0;
 
@@ -710,6 +711,8 @@
             sem_init(&shm->step_go[i],   1, 0);
             sem_init(&shm->step_done[i], 1, 0);
         }
+        sem_init(&shm->env_sem, 1, 1); /* pshared binary semaphore, initial value 1 */
+        memset(shm->env_wind, 0, sizeof(shm->env_wind));
 
         SimulationData *sim = &shm->sim;
 
@@ -735,6 +738,46 @@
         sim->report.wall_clock_start          = (double)wall_start;
 
         int num_forked = run_flight_selection_menu(sim);
+
+        /* Pre-fork wind feasibility check: load the weather DB and reject any
+         * selected flight whose route passes through an area with wind > 25 m/s. */
+        WeatherEntry pre_weather[MAX_WEATHER_DB];
+        int pre_weather_count = 0;
+        load_weather_db("weather_db.json", pre_weather, MAX_WEATHER_DB, &pre_weather_count);
+
+        if (pre_weather_count > 0) {
+            for (int i = 0; i < sim->num_flights; i++) {
+                Flight *f = &sim->flights[i];
+                if (!f->is_active) continue;
+
+                bool blocked = false;
+                for (int j = 0; j < f->flight_plan.num_waypoints && !blocked; j++) {
+                    Position *pos = &f->flight_plan.waypoints[j].pos;
+                    for (int k = 0; k < pre_weather_count && !blocked; k++) {
+                        WeatherEntry *e = &pre_weather[k];
+                        double min_lat = e->lat1 < e->lat2 ? e->lat1 : e->lat2;
+                        double max_lat = e->lat1 > e->lat2 ? e->lat1 : e->lat2;
+                        double min_lon = e->lon1 < e->lon2 ? e->lon1 : e->lon2;
+                        double max_lon = e->lon1 > e->lon2 ? e->lon1 : e->lon2;
+
+                        if (pos->latitude  >= min_lat && pos->latitude  <= max_lat &&
+                            pos->longitude >= min_lon && pos->longitude <= max_lon &&
+                            pos->altitude  >= e->alt_inf && pos->altitude <= e->alt_sup &&
+                            e->wind_speed_ms > 150.0) {
+
+                            printf("\n  [BLOCKED] Flight %s cannot fly: waypoint %d (%.4f°, %.4f°, %.0f m)\n"
+                                   "            is inside a weather area with wind %.1f m/s (%.0f kt) > 150 m/s.\n",
+                                   f->callsign, j,
+                                   pos->latitude, pos->longitude, pos->altitude,
+                                   e->wind_speed_ms, e->wind_speed_ms / 0.514444);
+                            f->is_active = false;
+                            num_forked--;
+                            blocked = true;
+                        }
+                    }
+                }
+            }
+        }
 
         printf("\n%d flight(s) selected — forking %d child processes.\n",
                num_forked, num_forked);
@@ -799,6 +842,7 @@
         ctx.sim_done    = false;
         memcpy(ctx.pids, pids, sizeof(pids));
         pthread_mutex_init(&ctx.mutex, NULL);
+        pthread_cond_init(&ctx.cond_environment, NULL);
         pthread_cond_init(&ctx.cond_dispatch,   NULL);
         pthread_cond_init(&ctx.cond_results,    NULL);
         pthread_cond_init(&ctx.cond_violations, NULL);
@@ -811,9 +855,12 @@
         for (int i = 0; i < MAX_FLIGHTS; i++)
             ctx.prev_phase[i] = PHASE_GATE;
 
+        pthread_t thr_environment;
         pthread_t thr_dispatcher, thr_results, thr_violations;
         pthread_t thr_report;
 
+        /* AC1: environment thread is spawned before the first time step. */
+        pthread_create(&thr_environment, NULL, environment_thread, &ctx);
         pthread_create(&thr_dispatcher,  NULL, dispatcher_thread,  &ctx);
         pthread_create(&thr_results,     NULL, results_thread,     &ctx);
         pthread_create(&thr_violations,  NULL, violations_thread,  &ctx);
@@ -903,8 +950,9 @@
             memcpy(ctx.was_active, was_active, sizeof(was_active));
             ctx.step_time      = step_time;
             ctx.step_num       = step_num;
-            ctx.current_thread = THREAD_DISPATCHER;
-            pthread_cond_signal(&ctx.cond_dispatch);
+            /* AC5: env thread writes wind before dispatcher wakes children. */
+            ctx.current_thread = THREAD_ENVIRONMENT;
+            pthread_cond_signal(&ctx.cond_environment);
             while (ctx.current_thread != THREAD_IDLE)
                 pthread_cond_wait(&ctx.cond_step_done, &ctx.mutex);
             pthread_mutex_unlock(&ctx.mutex);
@@ -918,11 +966,14 @@
         /* ── Shutdown threads ────────────────────────────────────────────────── */
         pthread_mutex_lock(&ctx.mutex);
         ctx.sim_done = true;
+        pthread_cond_broadcast(&ctx.cond_environment);
         pthread_cond_broadcast(&ctx.cond_dispatch);
         pthread_cond_broadcast(&ctx.cond_results);
         pthread_cond_broadcast(&ctx.cond_violations);
         pthread_mutex_unlock(&ctx.mutex);
 
+        /* AC1: environment thread is properly joined before the parent exits. */
+        pthread_join(thr_environment, NULL);
         pthread_join(thr_dispatcher, NULL);
         pthread_join(thr_results,    NULL);
         pthread_join(thr_violations, NULL);
@@ -935,6 +986,7 @@
         pthread_join(thr_report, NULL);
 
         pthread_mutex_destroy(&ctx.mutex);
+        pthread_cond_destroy(&ctx.cond_environment);
         pthread_cond_destroy(&ctx.cond_dispatch);
         pthread_cond_destroy(&ctx.cond_results);
         pthread_cond_destroy(&ctx.cond_violations);
@@ -978,6 +1030,7 @@
             sem_destroy(&shm->step_go[i]);
             sem_destroy(&shm->step_done[i]);
         }
+        sem_destroy(&shm->env_sem);
         munmap(shm, sizeof(SharedBlock));
         shm_unlink("/aisafe_sim");
 

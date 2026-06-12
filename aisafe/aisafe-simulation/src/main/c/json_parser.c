@@ -682,3 +682,52 @@ int load_all_flight_plans(const char* directory_path, SimulationData* shm) {
 
     return all_valid;
 }
+
+int load_weather_db(const char *path, WeatherEntry *db, int max_entries, int *count) {
+    *count = 0;
+
+    char *buf = read_file(path);
+    if (!buf) {
+        printf("[ENV] weather_db.json not found at '%s' — using flight-plan defaults.\n", path);
+        return 1;
+    }
+
+    cJSON *root = cJSON_Parse(buf);
+    free(buf);
+    if (!root || !cJSON_IsArray(root)) {
+        printf("[ENV] weather_db.json parse error — using flight-plan defaults.\n");
+        cJSON_Delete(root);
+        return 1;
+    }
+
+    int n = cJSON_GetArraySize(root);
+    for (int i = 0; i < n && *count < max_entries; i++) {
+        cJSON *e      = cJSON_GetArrayItem(root, i);
+        cJSON *lat1   = cJSON_GetObjectItemCaseSensitive(e, "lat1");
+        cJSON *lon1   = cJSON_GetObjectItemCaseSensitive(e, "lon1");
+        cJSON *lat2   = cJSON_GetObjectItemCaseSensitive(e, "lat2");
+        cJSON *lon2   = cJSON_GetObjectItemCaseSensitive(e, "lon2");
+        cJSON *altInf = cJSON_GetObjectItemCaseSensitive(e, "altitudeInf");
+        cJSON *altSup = cJSON_GetObjectItemCaseSensitive(e, "altitudeSup");
+        cJSON *dir    = cJSON_GetObjectItemCaseSensitive(e, "windDirection");
+        cJSON *spd    = cJSON_GetObjectItemCaseSensitive(e, "windSpeed");
+
+        if (!cJSON_IsNumber(lat1) || !cJSON_IsNumber(lon1) ||
+            !cJSON_IsNumber(lat2) || !cJSON_IsNumber(lon2) ||
+            !cJSON_IsNumber(dir)  || !cJSON_IsNumber(spd))
+            continue;
+
+        WeatherEntry *we       = &db[(*count)++];
+        we->lat1               = lat1->valuedouble;
+        we->lon1               = lon1->valuedouble;
+        we->lat2               = lat2->valuedouble;
+        we->lon2               = lon2->valuedouble;
+        we->alt_inf            = cJSON_IsNumber(altInf) ? altInf->valuedouble : 0.0;
+        we->alt_sup            = cJSON_IsNumber(altSup) ? altSup->valuedouble : 20000.0;
+        we->wind_direction_deg = dir->valuedouble;
+        we->wind_speed_ms      = spd->valuedouble;
+    }
+    cJSON_Delete(root);
+    printf("[ENV] Loaded %d weather record(s) from weather_db.json.\n", *count);
+    return 1;
+}

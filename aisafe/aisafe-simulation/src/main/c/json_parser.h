@@ -26,4 +26,18 @@ int load_simulation_settings(const char* filename, SimulationConfig* config);
  */
 int load_all_flight_plans(const char* directory_path, SimulationData* shm);
 
+/**
+ * @brief Loads weather bounding-box records from a JSON file into a caller-supplied array.
+ *
+ * Missing or unparseable file is not fatal — returns 1 with *count == 0 so the
+ * simulation falls back to flight-plan wind values.
+ *
+ * @param path       Path to the weather DB JSON file.
+ * @param db         Caller-allocated array of WeatherEntry to fill.
+ * @param max_entries Capacity of db[].
+ * @param count      Out: number of records written.
+ * @return Always 1 (errors are non-fatal and logged to stdout).
+ */
+int load_weather_db(const char *path, WeatherEntry *db, int max_entries, int *count);
+
 #endif /* JSON_PARSER_H */

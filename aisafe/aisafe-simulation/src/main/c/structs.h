@@ -204,6 +204,21 @@ typedef struct {
     Position prev_pos[MAX_FLIGHTS];
 } SimulationData;
 
+/* Per-flight wind data written by the environment thread each step. */
+typedef struct {
+    double wind_speed_ms;
+    double wind_direction_deg;
+} WindData;
+
+#define MAX_WEATHER_DB 200
+
+typedef struct {
+    double lat1, lon1, lat2, lon2;
+    double alt_inf, alt_sup;
+    double wind_direction_deg;
+    double wind_speed_ms;
+} WeatherEntry;
+
 /* Inter-process shared memory block.
    Placed in POSIX shared memory so parent and child processes share it. */
 typedef struct {
@@ -211,11 +226,14 @@ typedef struct {
     sem_t          step_go[MAX_FLIGHTS];    /* parent posts → child wakes  */
     sem_t          step_done[MAX_FLIGHTS];  /* child posts  → Results wakes */
     bool           terminate;               /* set by cleanup to unblock children */
+    WindData       env_wind[MAX_FLIGHTS];   /* written by env thread, read by flight processes */
+    sem_t          env_sem;                 /* process-shared binary semaphore protecting env_wind */
 } SharedBlock;
 
 /* Parent thread phase — guards condition variable waits against spurious wakeups. */
 typedef enum {
     THREAD_IDLE,
+    THREAD_ENVIRONMENT,  /* first: env thread writes wind before children start */
     THREAD_DISPATCHER,
     THREAD_RESULTS,
     THREAD_VIOLATIONS,
@@ -228,6 +246,7 @@ typedef enum {
 typedef struct {
     SharedBlock      *shm;
     pthread_mutex_t   mutex;
+    pthread_cond_t    cond_environment;
     pthread_cond_t    cond_dispatch;
     pthread_cond_t    cond_results;
     pthread_cond_t    cond_violations;

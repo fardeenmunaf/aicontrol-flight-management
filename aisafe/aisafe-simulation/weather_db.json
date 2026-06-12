@@ -1,0 +1,406 @@
+[ {
+  "lat1" : 43.840454,
+  "lon1" : -9.795711,
+  "lat2" : 40.225,
+  "lon2" : -7.9501,
+  "altitudeInf" : 0.0,
+  "altitudeSup" : 1000.0,
+  "windDirection" : 90.0,
+  "windSpeed" : 28.75
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -9.795711,
+  "lat2" : 37.052988,
+  "lon2" : -7.9501,
+  "altitudeInf" : 0.0,
+  "altitudeSup" : 1000.0,
+  "windDirection" : 105.0,
+  "windSpeed" : 20.7
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -7.950101,
+  "lat2" : 41.123456,
+  "lon2" : -2.34,
+  "altitudeInf" : 0.0,
+  "altitudeSup" : 1000.0,
+  "windDirection" : 45.0,
+  "windSpeed" : 13.8
+}, {
+  "lat1" : 41.123457,
+  "lon1" : -7.950101,
+  "lat2" : 37.052988,
+  "lon2" : -2.34,
+  "altitudeInf" : 0.0,
+  "altitudeSup" : 1000.0,
+  "windDirection" : 45.0,
+  "windSpeed" : 17.25
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -2.340001,
+  "lat2" : 40.225,
+  "lon2" : 0.5,
+  "altitudeInf" : 0.0,
+  "altitudeSup" : 1500.0,
+  "windDirection" : 35.0,
+  "windSpeed" : 23.0
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -2.340001,
+  "lat2" : 37.052988,
+  "lon2" : 0.5,
+  "altitudeInf" : 0.0,
+  "altitudeSup" : 1500.0,
+  "windDirection" : 35.0,
+  "windSpeed" : 34.5
+}, {
+  "lat1" : 43.840454,
+  "lon1" : 0.500001,
+  "lat2" : 40.225,
+  "lon2" : 4.936039,
+  "altitudeInf" : 0.0,
+  "altitudeSup" : 1000.0,
+  "windDirection" : 15.0,
+  "windSpeed" : 23.0
+}, {
+  "lat1" : 40.225001,
+  "lon1" : 0.500001,
+  "lat2" : 37.052988,
+  "lon2" : 4.936039,
+  "altitudeInf" : 0.0,
+  "altitudeSup" : 1000.0,
+  "windDirection" : 15.0,
+  "windSpeed" : 34.5
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -9.795711,
+  "lat2" : 40.225,
+  "lon2" : -7.9501,
+  "altitudeInf" : 1001.0,
+  "altitudeSup" : 2000.0,
+  "windDirection" : 105.0,
+  "windSpeed" : 40.25
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -9.795711,
+  "lat2" : 37.052988,
+  "lon2" : -7.9501,
+  "altitudeInf" : 1001.0,
+  "altitudeSup" : 2000.0,
+  "windDirection" : 110.0,
+  "windSpeed" : 34.5
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -7.950101,
+  "lat2" : 41.123456,
+  "lon2" : -2.34,
+  "altitudeInf" : 1001.0,
+  "altitudeSup" : 2000.0,
+  "windDirection" : 50.0,
+  "windSpeed" : 24.15
+}, {
+  "lat1" : 41.123457,
+  "lon1" : -7.950101,
+  "lat2" : 37.052988,
+  "lon2" : -2.34,
+  "altitudeInf" : 1001.0,
+  "altitudeSup" : 2000.0,
+  "windDirection" : 45.0,
+  "windSpeed" : 28.75
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -2.340001,
+  "lat2" : 40.225,
+  "lon2" : 0.5,
+  "altitudeInf" : 1501.0,
+  "altitudeSup" : 2000.0,
+  "windDirection" : 35.0,
+  "windSpeed" : 28.75
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -2.340001,
+  "lat2" : 37.052988,
+  "lon2" : 0.5,
+  "altitudeInf" : 1501.0,
+  "altitudeSup" : 2000.0,
+  "windDirection" : 30.0,
+  "windSpeed" : 34.5
+}, {
+  "lat1" : 43.840454,
+  "lon1" : 0.500001,
+  "lat2" : 40.225,
+  "lon2" : 4.936039,
+  "altitudeInf" : 1001.0,
+  "altitudeSup" : 2000.0,
+  "windDirection" : 20.0,
+  "windSpeed" : 28.75
+}, {
+  "lat1" : 40.225001,
+  "lon1" : 0.500001,
+  "lat2" : 37.052988,
+  "lon2" : 4.936039,
+  "altitudeInf" : 1001.0,
+  "altitudeSup" : 2000.0,
+  "windDirection" : 15.0,
+  "windSpeed" : 23.0
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -9.795711,
+  "lat2" : 40.225,
+  "lon2" : -7.9501,
+  "altitudeInf" : 2001.0,
+  "altitudeSup" : 3450.0,
+  "windDirection" : 120.0,
+  "windSpeed" : 46.0
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -9.795711,
+  "lat2" : 37.052988,
+  "lon2" : -7.9501,
+  "altitudeInf" : 2001.0,
+  "altitudeSup" : 3450.0,
+  "windDirection" : 120.0,
+  "windSpeed" : 46.0
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -7.950101,
+  "lat2" : 41.123456,
+  "lon2" : -2.34,
+  "altitudeInf" : 2001.0,
+  "altitudeSup" : 3450.0,
+  "windDirection" : 115.0,
+  "windSpeed" : 51.75
+}, {
+  "lat1" : 41.123457,
+  "lon1" : -7.950101,
+  "lat2" : 37.052988,
+  "lon2" : -2.34,
+  "altitudeInf" : 2001.0,
+  "altitudeSup" : 3450.0,
+  "windDirection" : 115.0,
+  "windSpeed" : 57.5
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -2.340001,
+  "lat2" : 40.225,
+  "lon2" : 0.5,
+  "altitudeInf" : 2001.0,
+  "altitudeSup" : 3450.0,
+  "windDirection" : 120.0,
+  "windSpeed" : 46.0
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -2.340001,
+  "lat2" : 37.052988,
+  "lon2" : 0.5,
+  "altitudeInf" : 2001.0,
+  "altitudeSup" : 3450.0,
+  "windDirection" : 120.0,
+  "windSpeed" : 51.75
+}, {
+  "lat1" : 43.840454,
+  "lon1" : 0.500001,
+  "lat2" : 40.225,
+  "lon2" : 4.936039,
+  "altitudeInf" : 2001.0,
+  "altitudeSup" : 3750.0,
+  "windDirection" : 120.0,
+  "windSpeed" : 46.0
+}, {
+  "lat1" : 40.225001,
+  "lon1" : 0.500001,
+  "lat2" : 37.052988,
+  "lon2" : 4.936039,
+  "altitudeInf" : 2001.0,
+  "altitudeSup" : 3750.0,
+  "windDirection" : 120.0,
+  "windSpeed" : 46.0
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -9.795711,
+  "lat2" : 40.225,
+  "lon2" : -7.9501,
+  "altitudeInf" : 3451.0,
+  "altitudeSup" : 4500.0,
+  "windDirection" : 150.0,
+  "windSpeed" : 69.0
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -9.795711,
+  "lat2" : 37.052988,
+  "lon2" : -7.9501,
+  "altitudeInf" : 3451.0,
+  "altitudeSup" : 4500.0,
+  "windDirection" : 150.0,
+  "windSpeed" : 69.0
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -7.950101,
+  "lat2" : 41.123456,
+  "lon2" : -2.34,
+  "altitudeInf" : 3451.0,
+  "altitudeSup" : 4500.0,
+  "windDirection" : 150.0,
+  "windSpeed" : 69.0
+}, {
+  "lat1" : 41.123457,
+  "lon1" : -7.950101,
+  "lat2" : 37.052988,
+  "lon2" : -2.34,
+  "altitudeInf" : 3451.0,
+  "altitudeSup" : 4500.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 69.0
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -2.340001,
+  "lat2" : 40.225,
+  "lon2" : 0.5,
+  "altitudeInf" : 3451.0,
+  "altitudeSup" : 4500.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 69.0
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -2.340001,
+  "lat2" : 37.052988,
+  "lon2" : 0.5,
+  "altitudeInf" : 3451.0,
+  "altitudeSup" : 4500.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 69.0
+}, {
+  "lat1" : 43.840454,
+  "lon1" : 0.500001,
+  "lat2" : 40.225,
+  "lon2" : 4.936039,
+  "altitudeInf" : 3751.0,
+  "altitudeSup" : 4500.0,
+  "windDirection" : 150.0,
+  "windSpeed" : 69.0
+}, {
+  "lat1" : 40.225001,
+  "lon1" : 0.500001,
+  "lat2" : 37.052988,
+  "lon2" : 4.936039,
+  "altitudeInf" : 3751.0,
+  "altitudeSup" : 4500.0,
+  "windDirection" : 150.0,
+  "windSpeed" : 69.0
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -9.795711,
+  "lat2" : 40.225,
+  "lon2" : -7.9501,
+  "altitudeInf" : 4501.0,
+  "altitudeSup" : 7000.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 80.5
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -9.795711,
+  "lat2" : 37.052988,
+  "lon2" : -7.9501,
+  "altitudeInf" : 4501.0,
+  "altitudeSup" : 7000.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 80.5
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -7.950101,
+  "lat2" : 41.123456,
+  "lon2" : -2.34,
+  "altitudeInf" : 4501.0,
+  "altitudeSup" : 7000.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 80.5
+}, {
+  "lat1" : 41.123457,
+  "lon1" : -7.950101,
+  "lat2" : 37.052988,
+  "lon2" : -2.34,
+  "altitudeInf" : 4501.0,
+  "altitudeSup" : 7000.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 80.5
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -2.340001,
+  "lat2" : 40.225,
+  "lon2" : 0.5,
+  "altitudeInf" : 4501.0,
+  "altitudeSup" : 7000.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 80.5
+}, {
+  "lat1" : 40.225001,
+  "lon1" : -2.340001,
+  "lat2" : 37.052988,
+  "lon2" : 0.5,
+  "altitudeInf" : 4501.0,
+  "altitudeSup" : 7000.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 80.5
+}, {
+  "lat1" : 43.840454,
+  "lon1" : 0.500001,
+  "lat2" : 40.225,
+  "lon2" : 4.936039,
+  "altitudeInf" : 4501.0,
+  "altitudeSup" : 7000.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 80.5
+}, {
+  "lat1" : 40.225001,
+  "lon1" : 0.500001,
+  "lat2" : 37.052988,
+  "lon2" : 4.936039,
+  "altitudeInf" : 4501.0,
+  "altitudeSup" : 7000.0,
+  "windDirection" : 160.0,
+  "windSpeed" : 80.5
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -9.795711,
+  "lat2" : 37.052988,
+  "lon2" : -7.9501,
+  "altitudeInf" : 7001.0,
+  "altitudeSup" : 12000.0,
+  "windDirection" : 170.0,
+  "windSpeed" : 97.75
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -7.950101,
+  "lat2" : 41.123456,
+  "lon2" : -2.34,
+  "altitudeInf" : 7001.0,
+  "altitudeSup" : 12000.0,
+  "windDirection" : 170.0,
+  "windSpeed" : 103.5
+}, {
+  "lat1" : 41.123457,
+  "lon1" : -7.950101,
+  "lat2" : 37.052988,
+  "lon2" : -2.34,
+  "altitudeInf" : 7001.0,
+  "altitudeSup" : 12000.0,
+  "windDirection" : 170.0,
+  "windSpeed" : 97.75
+}, {
+  "lat1" : 43.840454,
+  "lon1" : -2.340001,
+  "lat2" : 37.052988,
+  "lon2" : 0.5,
+  "altitudeInf" : 7001.0,
+  "altitudeSup" : 12000.0,
+  "windDirection" : 170.0,
+  "windSpeed" : 97.75
+}, {
+  "lat1" : 43.840454,
+  "lon1" : 0.500001,
+  "lat2" : 37.052988,
+  "lon2" : 4.936039,
+  "altitudeInf" : 7001.0,
+  "altitudeSup" : 12000.0,
+  "windDirection" : 170.0,
+  "windSpeed" : 97.75
+} ]

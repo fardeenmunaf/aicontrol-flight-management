@@ -1,5 +1,5 @@
 {
-  "sim_start": "2026-06-22T05:00:00",
+  "sim_start": "2026-06-22T00:00:00",
   "start_time": 0.0,
   "end_time": 2.0,
   "time_step": 15,

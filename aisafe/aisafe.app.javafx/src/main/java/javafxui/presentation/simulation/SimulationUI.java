@@ -3,6 +3,7 @@ package javafxui.presentation.simulation;
 import airport.application.ListAirportsController;
 import airport.domain.Airport;
 import infrastructure.persistence.PersistenceContext;
+import weatherData.application.ExportWeatherDataService;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
@@ -227,6 +228,16 @@ public class SimulationUI {
         final Thread readerThread = new Thread(() -> {
             try {
                 final File simDir = Paths.get("aisafe-simulation").toAbsolutePath().toFile();
+
+                // Export WeatherData from DB to weather_db.json before the simulation reads it.
+                try {
+                    final ExportWeatherDataService weatherExport = new ExportWeatherDataService(
+                            PersistenceContext.repositories().weatherData());
+                    final int exported = weatherExport.exportToJson(simDir.getPath() + "/weather_db.json");
+                    System.out.println("[SIM] Exported " + exported + " weather record(s) to weather_db.json");
+                } catch (final Exception e) {
+                    System.err.println("[SIM] Weather export skipped: " + e.getMessage());
+                }
 
                 // Compile the simulation binary (make is a no-op if nothing changed).
                 final Process make = new ProcessBuilder("make")

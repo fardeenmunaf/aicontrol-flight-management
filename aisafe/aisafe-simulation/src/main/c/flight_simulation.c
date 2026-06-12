@@ -177,7 +177,8 @@ static double ias_schedule_knots(double altitude_m, FlightPhase phase) {
  * @param idx Index of the flight to advance.
  * @param out Output struct filled with all 25 intermediate physics values.
  */
-static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
+static void compute_physics_step(SimulationData *shm, int idx, StepData *out,
+                                  double wind_speed_ms, double wind_dir_deg) {
     Flight *f  = &shm->flights[idx];
     double dt  = shm->config.time_step;
 
@@ -231,10 +232,6 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
     }
 
     double climb_rate  = calculate_climb_rate(total_thrust, drag, tas, f->current_mass);
-    if (phase == PHASE_CLIMB && f->max_climb_rate_mps > 0.0 && climb_rate > f->max_climb_rate_mps)
-        climb_rate = f->max_climb_rate_mps;
-    if (phase == PHASE_DESCEND && f->max_descent_rate_mps < 0.0 && climb_rate < f->max_descent_rate_mps)
-        climb_rate = f->max_descent_rate_mps;
     double fuel_burned = calculate_fuel_burn(total_thrust, f->properties.tsfc, dt);
     double horiz_dist  = calculate_step_distance(tas, climb_rate, dt);
 
@@ -246,6 +243,14 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
     // Actual flown heading = intent plus the reroute deviation set by check_violations.
     double heading_angle = intent_angle + shm->deviation_rad[idx];
 
+    // Ground velocity: TAS + wind vector. heading_angle is the aircraft heading;
+    // ground_track is where it actually goes; horiz_dist is distance over the ground.
+    double h_tas = dt > 0.0 ? horiz_dist / dt : 0.0;
+    double ground_speed, ground_track;
+    calculate_ground_velocity(h_tas, heading_angle, wind_speed_ms, wind_dir_deg,
+                              &ground_speed, &ground_track);
+    horiz_dist = ground_speed * dt;
+
     // Snap to destination to avoid oscillating past it every step.
     if (dist_to_dest <= horiz_dist) {
         fuel_burned *= dist_to_dest / horiz_dist;
@@ -255,7 +260,7 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
         phase = PHASE_DESCEND;
         f->current_phase = phase;
     } else {
-        advance_position(&f->current_pos.latitude, &f->current_pos.longitude, horiz_dist, heading_angle);
+        advance_position(&f->current_pos.latitude, &f->current_pos.longitude, horiz_dist, ground_track);
     }
 
     f->current_pos.altitude += climb_rate * dt;
@@ -280,10 +285,8 @@ static void compute_physics_step(SimulationData *shm, int idx, StepData *out) {
 
     double new_dist = haversine_m(f->current_pos.latitude, f->current_pos.longitude,
                                    dest_lat, dest_lon);
-    if (new_dist < ARRIVAL_THRESHOLD_M) {
+    if (new_dist < ARRIVAL_THRESHOLD_M)
         f->is_active = false;
-        f->current_pos.altitude = f->flight_plan.waypoints[last_wp].pos.altitude;
-    }
 
     out->dist_to_dest      = dist_to_dest;
     out->cruise_alt        = cruise_alt;
@@ -343,7 +346,9 @@ void run_flight_process(SharedBlock *shm, int flight_index) {
             break;
 
         StepData step;
-        compute_physics_step(&shm->sim, flight_index, &step);
+        double wind_spd = shm->env_wind[flight_index].wind_speed_ms;
+        double wind_dir = shm->env_wind[flight_index].wind_direction_deg;
+        compute_physics_step(&shm->sim, flight_index, &step, wind_spd, wind_dir);
 
         /* Store step data so the parent Violations thread can read it for display. */
         shm->sim.last_step[flight_index] = step;

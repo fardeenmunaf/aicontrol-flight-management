@@ -153,6 +153,23 @@ double min_separation_m(const Position *a0, const Position *a1,
  * @param dist_m      Distance to project in metres.
  * @return Projected position.
  */
+/**
+ * @brief Computes ground speed (m/s) and ground track (radians) from TAS, heading, and wind.
+ *
+ * Ground velocity = TAS vector (along heading_rad) + wind vector.
+ * Wind speed is capped at 150 m/s internally.
+ *
+ * @param h_tas         Horizontal true air speed in m/s.
+ * @param heading_rad   Aircraft heading in radians (north = 0, east = π/2).
+ * @param wind_speed_ms Wind speed in m/s.
+ * @param wind_dir_deg  Direction wind blows FROM in degrees (meteorological convention).
+ * @param gs_out        Output: ground speed in m/s.
+ * @param track_out     Output: ground track in radians (north = 0, east = π/2).
+ */
+void calculate_ground_velocity(double h_tas, double heading_rad,
+                                double wind_speed_ms, double wind_dir_deg,
+                                double *gs_out, double *track_out);
+
 Position advance_pos(Position p, double heading_deg, double dist_m);
 
 #endif /* PHYSICS_H */
