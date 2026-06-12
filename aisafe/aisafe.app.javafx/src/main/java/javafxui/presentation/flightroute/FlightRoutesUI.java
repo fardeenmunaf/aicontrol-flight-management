@@ -254,7 +254,7 @@ public class FlightRoutesUI {
         final Instant nowInstant = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant();
         final Optional<Instant> latestDeparture = StreamSupport.stream(
                 PersistenceContext.repositories().flightPlans()
-                        .findByRouteIdAndDepartureAfter(route.identity().toString(), nowInstant)
+                        .findByRouteIdAndDepartureAfter(route.designation().value(), nowInstant)
                         .spliterator(),
                 false)
                 .map(fp -> fp.departureTime())

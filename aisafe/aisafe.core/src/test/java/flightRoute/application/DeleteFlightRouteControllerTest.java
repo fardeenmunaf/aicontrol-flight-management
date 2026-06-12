@@ -138,7 +138,7 @@ class DeleteFlightRouteControllerTest {
         final FlightRoute route = savedRoute();
         final LocalDate deactivation = LocalDate.of(2027, 1, 1);
 
-        final FlightPlan plan = planOnRoute(route.identity().toString(),
+        final FlightPlan plan = planOnRoute(route.designation().value(),
                 Instant.parse("2027-06-01T10:00:00Z"));
         planRepo.save(plan);
 
@@ -151,7 +151,7 @@ class DeleteFlightRouteControllerTest {
         final FlightRoute route = savedRoute();
         final LocalDate deactivation = LocalDate.of(2027, 1, 1);
 
-        final FlightPlan plan = planOnRoute(route.identity().toString(),
+        final FlightPlan plan = planOnRoute(route.designation().value(),
                 Instant.parse("2026-12-01T10:00:00Z"));
         planRepo.save(plan);
 
