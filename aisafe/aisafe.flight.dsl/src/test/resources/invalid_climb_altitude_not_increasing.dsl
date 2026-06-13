@@ -9,7 +9,7 @@ flight TP1234 {
         arrival   { airport: MAD; date: 2027-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
         profile {
-            climb   [ altitude: 0 m,    speed: 210 kts ];
+            climb   [ altitude: 0 m,    speed: 210 kts, rate: 10 m/s ];
             cruise  [ speed: 450 kts ];
             descend [ altitude: 0 m,    speed: 140 kts, rate: -5 m/s ];
         }

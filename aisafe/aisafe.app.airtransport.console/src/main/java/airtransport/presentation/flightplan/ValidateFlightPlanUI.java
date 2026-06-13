@@ -1,114 +1,68 @@
 package airtransport.presentation.flightplan;
 
+import airtransport.AirTransportContext;
+import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
-import flight.dsl.mapping.ValidateFlightPlanService;
-import flightPlan.application.FlightPlanValidationResult;
-import flightPlan.application.ValidateFlightPlanController;
-import flightPlan.domain.FlightPlan;
-import infrastructure.persistence.PersistenceContext;
-import shared.domain.FlightPlanId;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ValidateFlightPlanUI extends AbstractUI {
 
-    private final ValidateFlightPlanService service = new ValidateFlightPlanService(
-            new ValidateFlightPlanController(PersistenceContext.repositories().flightPlans()),
-            PersistenceContext.repositories().airports());
-
     @Override
     protected boolean doShow() {
-        final List<FlightPlan> drafts = new ArrayList<>();
-        service.draftPlansForPilot().forEach(drafts::add);
-
-        if (drafts.isEmpty()) {
-            System.out.println("  You have no flight plans in DRAFT status.");
-            return false;
-        }
-
-        System.out.println();
-        System.out.println("  Your DRAFT flight plans:");
-        for (int i = 0; i < drafts.size(); i++) {
-            final FlightPlan p = drafts.get(i);
-            System.out.printf("  %d. %s  [%s → %s, departure: %s]%n",
-                    i + 1,
-                    p.flightDesignator(),
-                    p.routeOrigin(),
-                    p.routeDestination(),
-                    p.departureTime());
-        }
-
-        final String input = eapli.framework.io.util.Console.readLine("  Select flight plan number (0 to cancel)");
-        if (input == null || input.trim().equals("0")) {
-            System.out.println("  Cancelled.");
-            return false;
-        }
-
-        final int choice;
         try {
-            choice = Integer.parseInt(input.trim());
-        } catch (final NumberFormatException e) {
-            System.out.println("  Invalid selection.");
-            return false;
-        }
+            final String raw = AirTransportContext.service().listFlightPlans();
+            if (raw.isBlank()) {
+                System.out.println("  No flight plans found for your company.");
+                return false;
+            }
 
-        if (choice < 1 || choice > drafts.size()) {
-            System.out.println("  Invalid selection.");
-            return false;
-        }
+            // plans CSV: id;designator;status;origin;dest;departure
+            final List<String[]> drafts = new ArrayList<>();
+            for (final String line : raw.split("\n")) {
+                final String[] f = line.split(";", -1);
+                if ("DRAFT".equals(f[2])) drafts.add(f);
+            }
 
-        final FlightPlan selected = drafts.get(choice - 1);
-        System.out.println("  Running validation for: " + selected.flightDesignator() + " ...");
+            if (drafts.isEmpty()) {
+                System.out.println("  No flight plans in DRAFT status.");
+                return false;
+            }
 
-        final FlightPlanValidationResult result;
-        try {
-            result = service.validate(selected.identity());
-        } catch (final SecurityException e) {
-            System.out.println("  ERROR: " + e.getMessage());
-            return false;
-        } catch (final IllegalStateException e) {
-            System.out.println("  ERROR: " + e.getMessage());
-            return false;
+            System.out.println();
+            System.out.println("  DRAFT flight plans:");
+            for (int i = 0; i < drafts.size(); i++) {
+                final String[] f = drafts.get(i);
+                System.out.printf("  %d. %s  [%s -> %s, departure: %s]%n",
+                        i + 1, f[1], f[3], f[4], f[5]);
+            }
+
+            final String input = Console.readLine("  Select flight plan number (0 to cancel)");
+            if (input == null || "0".equals(input.trim())) {
+                System.out.println("  Cancelled.");
+                return false;
+            }
+
+            final int choice;
+            try { choice = Integer.parseInt(input.trim()); }
+            catch (final NumberFormatException e) { System.out.println("  Invalid selection."); return false; }
+
+            if (choice < 1 || choice > drafts.size()) {
+                System.out.println("  Invalid selection.");
+                return false;
+            }
+
+            final String planId = drafts.get(choice - 1)[0];
+            System.out.println("  Running validation for: " + drafts.get(choice - 1)[1] + " ...");
+            System.out.println();
+            System.out.println(AirTransportContext.service().validateFlightPlan(planId));
         } catch (final Exception e) {
             System.out.println("  ERROR: " + e.getMessage());
-            return false;
         }
-
-        printResult(result, selected.flightDesignator());
         return false;
     }
 
-    private static void printResult(final FlightPlanValidationResult result, final String designator) {
-        System.out.println();
-        if (!result.dslErrors().isEmpty()) {
-            System.out.println("  DSL Validation FAILED:");
-            result.dslErrors().forEach(e -> System.out.println("    [DSL] " + e));
-        } else {
-            System.out.println("  DSL Validation: PASSED");
-        }
-
-        if (result.physicalCheckRan()) {
-            if (!result.physicalFailures().isEmpty()) {
-                System.out.println("  Physical Validation FAILED:");
-                result.physicalFailures().forEach(f -> System.out.println("    [PHYSICAL] " + f));
-            } else {
-                System.out.println("  Physical Validation: PASSED");
-            }
-        } else {
-            System.out.println("  Physical Validation: NOT RUN (DSL errors must be fixed first)");
-        }
-
-        System.out.println();
-        if (result.passed()) {
-            System.out.println("  ✓ Flight plan " + designator + " has been TESTED successfully. Status updated to TESTED.");
-        } else {
-            System.out.println("  ✗ Flight plan " + designator + " validation FAILED. Status remains DRAFT.");
-        }
-    }
-
     @Override
-    public String headline() {
-        return "Test/Validate Flight Plan";
-    }
+    public String headline() { return "Test/Validate Flight Plan"; }
 }

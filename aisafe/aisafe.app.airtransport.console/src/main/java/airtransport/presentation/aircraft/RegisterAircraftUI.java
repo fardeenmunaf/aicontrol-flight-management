@@ -1,117 +1,92 @@
 package airtransport.presentation.aircraft;
 
-import aircraft.application.RegisterAircraftController;
-import airtransportcompany.domain.AirTransportCompany;
-import customercollaborator.domain.CustomerCollaborator;
-import customercollaborator.domain.CustomerType;
-import infrastructure.persistence.PersistenceContext;
-import eapli.framework.presentation.console.AbstractUI;
-import eapli.framework.infrastructure.authz.application.AuthzRegistry;
+import airtransport.AirTransportContext;
 import aircraft.domain.AircraftOperationStatus;
-import aircraftmodel.domain.AircraftModel;
-import enginemodel.domain.EngineModel;
 import eapli.framework.io.util.Console;
-import shared.domain.UserId;
+import eapli.framework.presentation.console.AbstractUI;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class RegisterAircraftUI extends AbstractUI {
 
-    private final RegisterAircraftController controller = new RegisterAircraftController(
-            PersistenceContext.repositories().aircraft(),
-            PersistenceContext.repositories().aircraftModels(),
-            PersistenceContext.repositories().customerCollaborators(),
-            PersistenceContext.repositories().airTransportCompanies(),
-            PersistenceContext.repositories().engineModels());
-
     @Override
     protected boolean doShow() {
         try {
-            final var session = AuthzRegistry.authorizationService().session().orElseThrow(IllegalStateException::new);
-            final var userId = UserId.valueOf(session.authenticatedUser().identity().toString());
-            final CustomerCollaborator collaborator = PersistenceContext.repositories().customerCollaborators()
-                    .findByUserId(userId)
-                    .orElseThrow(() -> new IllegalStateException("Current user is not a customer collaborator"));
-
-            if (collaborator.customerType() != CustomerType.AIR_TRANSPORT_COMPANY) {
-                System.out.println("You are not assigned to an air transport company.");
+            final String raw = AirTransportContext.service().listAircraftModels();
+            if (raw.isBlank()) {
+                System.out.println("No aircraft models available. Create aircraft models first.");
                 return true;
             }
 
-            final AirTransportCompany company = PersistenceContext.repositories().airTransportCompanies()
-                    .ofIdentity(collaborator.airTransportCompanyId())
-                    .orElseThrow(() -> new IllegalStateException("Air transport company not found"));
-
-            System.out.println("Registering aircraft for: " + company.name());
-            System.out.println();
-            
-            final java.util.List<AircraftModel> models = new java.util.ArrayList<>();
-            PersistenceContext.repositories().aircraftModels().findAll().forEach(models::add);
-
-            if (models.isEmpty()) {
-                System.out.println("No aircraft models available. Please create aircraft models first.");
-                return true;
-            }
-
+            final String[] lines = raw.split("\n");
             System.out.println("Available aircraft models:");
-            for (int i = 0; i < models.size(); i++) {
-                final AircraftModel m = models.get(i);
-                System.out.printf("%d) %s (%s) - Engines: %d\n", i + 1, m.modelName(), m.maker().name(), m.numberOfEngines());
+            for (int i = 0; i < lines.length; i++) {
+                final String[] f = lines[i].split(";", -1);
+                // f: modelId;name;maker;engines;mzfw;emptyWeight;engId1:engName1|...
+                System.out.printf("%d) %s (%s) - Engines: %s%n", i + 1, f[1], f[2], f[3]);
             }
 
             final int modelChoice = readInt("Select aircraft model number");
-            if (modelChoice < 1 || modelChoice > models.size()) {
-                throw new IllegalArgumentException("Invalid aircraft model option");
-            }
-
-            final AircraftModel selectedModel = models.get(modelChoice - 1);
-            final String aircraftModelId = selectedModel.aircraftModelId().toString();
-
-            final List<EngineModel> supportedEngines = new java.util.ArrayList<>(selectedModel.supportedEngineModels());
-            if (supportedEngines.isEmpty()) {
-                System.out.println("No certified engines found for this model. Contact admin.");
+            if (modelChoice < 1 || modelChoice > lines.length) {
+                System.out.println("Invalid selection.");
                 return true;
             }
 
-            System.out.println("Certified engines for " + selectedModel.modelName() + ":");
-            for (int i = 0; i < supportedEngines.size(); i++) {
-                System.out.printf("%d) %s\n", i + 1, supportedEngines.get(i).name());
+            final String[] mf = lines[modelChoice - 1].split(";", -1);
+            final String modelId  = mf[0];
+            final double mzfw     = Double.parseDouble(mf[4]);
+            final double empty    = Double.parseDouble(mf[5]);
+            final String engPart  = mf.length > 6 ? mf[6] : "";
+
+            final List<String[]> engines = new ArrayList<>();
+            if (!engPart.isBlank()) {
+                for (final String pair : engPart.split("\\|")) {
+                    if (!pair.isBlank()) engines.add(pair.split(":", 2));
+                }
             }
 
-            final int engineChoice = readInt("Select installed engine number");
-            if (engineChoice < 1 || engineChoice > supportedEngines.size()) {
-                throw new IllegalArgumentException("Invalid engine option");
+            if (engines.isEmpty()) {
+                System.out.println("No certified engines for this model. Contact admin.");
+                return true;
             }
-            final EngineModel selectedEngine = supportedEngines.get(engineChoice - 1);
-            final String engineModelId = selectedEngine.identity().toString();
 
-            final double payloadBudgetKg = selectedModel.maximumZeroFuelWeight() - selectedModel.emptyWeight() - 500.0;
-            final int estimatedMaxPeople = (int) Math.floor(Math.max(0.0, payloadBudgetKg) / 100.0);
+            System.out.println("Certified engines for " + mf[1] + ":");
+            for (int i = 0; i < engines.size(); i++) {
+                System.out.printf("%d) %s%n", i + 1, engines.get(i)[1]);
+            }
 
-            System.out.printf("Estimated max onboard people for %s: %d\n", selectedModel.modelName(), estimatedMaxPeople);
-            System.out.println("(calculated with MZFW, empty weight, 500kg safety margin, 100kg/person)");
+            final int engChoice = readInt("Select installed engine number");
+            if (engChoice < 1 || engChoice > engines.size()) {
+                System.out.println("Invalid selection.");
+                return true;
+            }
+            final String engineId = engines.get(engChoice - 1)[0];
 
-            final String registrationNumber = readLine("Registration number");
-            final String registrationCountry = readLine("Registration country");
-            final AircraftOperationStatus operationStatus = chooseOperationStatus();
-            final int flightCrew = readInt("Flight crew count");
+            final double payloadBudget = mzfw - empty - 500.0;
+            final int estimatedMaxPeople = (int) Math.floor(Math.max(0.0, payloadBudget) / 100.0);
+            System.out.printf("Estimated max onboard people: %d%n", estimatedMaxPeople);
 
-            final int estimatedMaxSeats = Math.max(0, estimatedMaxPeople - flightCrew);
-            System.out.printf("Estimated max passenger seats with crew %d: %d\n", flightCrew, estimatedMaxSeats);
+            final String reg     = readLine("Registration number");
+            final String country = readLine("Registration country");
+            final AircraftOperationStatus status = chooseOperationStatus();
+            final int crew = readInt("Flight crew count");
 
-            final int econ = readInt("Economy seats");
-            final int bus = readInt("Business seats");
+            final int estimatedMaxSeats = Math.max(0, estimatedMaxPeople - crew);
+            System.out.printf("Estimated max passenger seats with crew %d: %d%n", crew, estimatedMaxSeats);
+
+            final int econ  = readInt("Economy seats");
+            final int bus   = readInt("Business seats");
             final int first = readInt("First class seats");
 
-            final int totalSeats = econ + bus + first;
-            if (totalSeats > estimatedMaxSeats) {
-                throw new IllegalArgumentException(
-                        "Total seats (" + totalSeats + ") exceed estimated seat limit (" + estimatedMaxSeats + ") for this model and crew"
-                );
+            if ((econ + bus + first) > estimatedMaxSeats) {
+                System.out.printf("Total seats (%d) exceed estimated limit (%d).%n", econ + bus + first, estimatedMaxSeats);
+                return true;
             }
 
-            controller.registerAircraft(registrationNumber, registrationCountry, operationStatus, flightCrew, aircraftModelId, engineModelId, econ, bus, first);
-            System.out.println("Aircraft registered successfully for " + company.name() + ".");
+            final String result = AirTransportContext.service()
+                    .registerAircraft(reg, country, status.name(), crew, modelId, engineId, econ, bus, first);
+            System.out.println(result);
         } catch (final Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -119,42 +94,29 @@ public class RegisterAircraftUI extends AbstractUI {
     }
 
     @Override
-    public String headline() {
-        return "Register Aircraft";
-    }
+    public String headline() { return "Register Aircraft"; }
 
     private String readLine(final String prompt) {
         final String raw = Console.readLine(prompt);
-        if (raw == null) {
-            throw new IllegalArgumentException("Input was interrupted or no value provided");
-        }
+        if (raw == null) throw new IllegalArgumentException("No input provided");
         return raw.trim();
     }
 
     private int readInt(final String prompt) {
         final String raw = Console.readLine(prompt);
-        if (raw == null) {
-            throw new IllegalArgumentException("Input was interrupted or no value provided");
-        }
-        try {
-            return Integer.parseInt(raw.trim());
-        } catch (final NumberFormatException ex) {
-            throw new IllegalArgumentException("Invalid number: " + raw);
-        }
+        if (raw == null) throw new IllegalArgumentException("No input provided");
+        try { return Integer.parseInt(raw.trim()); }
+        catch (final NumberFormatException e) { throw new IllegalArgumentException("Invalid number: " + raw); }
     }
 
     private AircraftOperationStatus chooseOperationStatus() {
         final AircraftOperationStatus[] statuses = AircraftOperationStatus.values();
         System.out.println("Available operation statuses:");
         for (int i = 0; i < statuses.length; i++) {
-            System.out.printf("%d) %s\n", i + 1, statuses[i].name());
+            System.out.printf("%d) %s%n", i + 1, statuses[i].name());
         }
-
         final int choice = readInt("Select operation status number");
-        if (choice < 1 || choice > statuses.length) {
-            throw new IllegalArgumentException("Invalid operation status option");
-        }
-
+        if (choice < 1 || choice > statuses.length) throw new IllegalArgumentException("Invalid status selection");
         return statuses[choice - 1];
     }
 }

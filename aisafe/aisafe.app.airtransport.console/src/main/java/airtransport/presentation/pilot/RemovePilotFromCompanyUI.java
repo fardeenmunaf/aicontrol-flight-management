@@ -1,122 +1,55 @@
 package airtransport.presentation.pilot;
 
-import customercollaborator.domain.CustomerCollaborator;
-import customercollaborator.domain.CustomerType;
-import eapli.framework.infrastructure.authz.application.AuthzRegistry;
+import airtransport.AirTransportContext;
 import eapli.framework.io.util.Console;
 import eapli.framework.presentation.console.AbstractUI;
-import infrastructure.persistence.PersistenceContext;
-import jpa.JpaPilotCompanyAssignmentRepository;
-import jpa.PersistenceSettings;
-import pilot.domain.Pilot;
-import shared.domain.AirTransportCompanyId;
-import shared.domain.UserId;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class RemovePilotFromCompanyUI extends AbstractUI {
-
-    private JpaPilotCompanyAssignmentRepository assignments() {
-        return new JpaPilotCompanyAssignmentRepository(PersistenceSettings.getPersistenceUnitName());
-    }
 
     @Override
     protected boolean doShow() {
         try {
-            final AirTransportCompanyId companyId = resolveCompanyId();
-            if (companyId == null) return true;
+            final String raw = AirTransportContext.service().listCompanyPilots();
+            if (raw.isBlank()) { System.out.println("No pilots in your roster."); return true; }
 
-            final var assignmentRepo = assignments();
-            final Set<String> myPilotIds = assignmentRepo.findByCompanyId(companyId).stream()
-                    .map(a -> a.pilotUserId().toString())
-                    .collect(Collectors.toSet());
-
-            final List<Pilot> companyPilots = new ArrayList<>();
-            PersistenceContext.repositories().pilots().findAll()
-                    .forEach(p -> {
-                        if (myPilotIds.contains(p.userId().toString())) {
-                            companyPilots.add(p);
-                        }
-                    });
-
-            if (companyPilots.isEmpty()) {
-                System.out.println("No pilots in your roster.");
-                return true;
-            }
+            final List<String[]> pilots = new ArrayList<>();
+            for (final String line : raw.split("\n")) pilots.add(line.split(";", 3));
 
             System.out.println();
             System.out.printf("%-4s %-35s %-10s %-30s%n", "No.", "EMAIL", "STATUS", "CERTIFIED MODELS");
             System.out.println("-".repeat(82));
-            for (int i = 0; i < companyPilots.size(); i++) {
-                final Pilot p = companyPilots.get(i);
-                final String models = p.certifiedAircraftModels().stream()
-                        .map(m -> m.modelName()).sorted().collect(Collectors.joining(", "));
+            for (int i = 0; i < pilots.size(); i++) {
+                final String[] f = pilots.get(i);
                 System.out.printf("%-4d %-35s %-10s %-30s%n",
-                        i + 1, p.userId().toString(), p.status().name(),
-                        models.isEmpty() ? "—" : models);
+                        i + 1, f[0], f[1], f.length > 2 && !f[2].isBlank() ? f[2] : "—");
             }
             System.out.println();
 
-            final String raw = Console.readLine("Select pilot number to remove from company (0 to cancel)");
+            final String raw2 = Console.readLine("Select pilot number to remove (0 to cancel)");
+            if (raw2 == null) return true;
             final int choice;
-            try {
-                choice = Integer.parseInt(raw.trim());
-            } catch (final NumberFormatException e) {
-                System.out.println("Invalid input.");
-                return true;
-            }
+            try { choice = Integer.parseInt(raw2.trim()); }
+            catch (final NumberFormatException e) { System.out.println("Invalid input."); return true; }
 
-            if (choice == 0) {
+            if (choice == 0) { System.out.println("Cancelled."); return true; }
+            if (choice < 1 || choice > pilots.size()) { System.out.println("Invalid selection."); return true; }
+
+            final String userId = pilots.get(choice - 1)[0];
+            final String confirm = Console.readLine("Remove pilot " + userId + " from your company? (Y/N)");
+            if (!"Y".equalsIgnoreCase(confirm == null ? "" : confirm.trim())) {
                 System.out.println("Cancelled.");
                 return true;
             }
-            if (choice < 1 || choice > companyPilots.size()) {
-                System.out.println("Invalid selection.");
-                return true;
-            }
-
-            final Pilot selected = companyPilots.get(choice - 1);
-
-            final String confirm = Console.readLine(
-                    "Remove pilot " + selected.userId() + " from your company? (Y/N)");
-            if (!"Y".equalsIgnoreCase(confirm.trim())) {
-                System.out.println("Cancelled.");
-                return true;
-            }
-
-            assignmentRepo.ofIdentity(selected.userId()).ifPresent(assignmentRepo::delete);
-
-            System.out.println("Pilot " + selected.userId() + " removed from your company's roster.");
-
+            System.out.println(AirTransportContext.service().removePilotFromCompany(userId));
         } catch (final Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
         return true;
     }
 
-    private AirTransportCompanyId resolveCompanyId() {
-        final String email = AuthzRegistry.authorizationService().session()
-                .map(s -> s.authenticatedUser().username().toString())
-                .orElse(null);
-        if (email == null) {
-            System.out.println("No active session.");
-            return null;
-        }
-        final CustomerCollaborator collab = PersistenceContext.repositories()
-                .customerCollaborators().findByUserId(UserId.valueOf(email))
-                .orElse(null);
-        if (collab == null || collab.customerType() != CustomerType.AIR_TRANSPORT_COMPANY) {
-            System.out.println("Your account is not linked to an air transport company.");
-            return null;
-        }
-        return collab.airTransportCompanyId();
-    }
-
     @Override
-    public String headline() {
-        return "Remove Pilot from Company";
-    }
+    public String headline() { return "Remove Pilot from Company"; }
 }

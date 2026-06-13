@@ -1,65 +1,32 @@
 package airtransport.presentation.fleet;
 
-import aircraft.application.ListCompanyFleetController;
-import aircraft.dto.AircraftDTO;
-import airtransportcompany.domain.AirTransportCompany;
-import customercollaborator.domain.CustomerCollaborator;
-import customercollaborator.domain.CustomerType;
-import eapli.framework.infrastructure.authz.application.AuthzRegistry;
+import airtransport.AirTransportContext;
 import eapli.framework.presentation.console.AbstractUI;
-import infrastructure.persistence.PersistenceContext;
-import shared.domain.UserId;
-
-import java.util.List;
 
 public class ListFleetATCUI extends AbstractUI {
-
-    private final ListCompanyFleetController controller = new ListCompanyFleetController(
-            PersistenceContext.repositories().aircraft(),
-            PersistenceContext.repositories().customerCollaborators());
 
     @Override
     protected boolean doShow() {
         try {
-            final var session = AuthzRegistry.authorizationService().session().orElseThrow(IllegalStateException::new);
-            final var userId = UserId.valueOf(session.authenticatedUser().identity().toString());
-            final CustomerCollaborator collaborator = PersistenceContext.repositories().customerCollaborators()
-                    .findByUserId(userId)
-                    .orElseThrow(() -> new IllegalStateException("Current user is not a customer collaborator"));
-
-            if (collaborator.customerType() != CustomerType.AIR_TRANSPORT_COMPANY) {
-                System.out.println("You are not assigned to an air transport company.");
+            final String raw = AirTransportContext.service().listFleet();
+            if (raw.isBlank()) {
+                System.out.println("No aircraft registered for your company.");
                 return true;
             }
-
-            final AirTransportCompany company = PersistenceContext.repositories().airTransportCompanies()
-                    .ofIdentity(collaborator.airTransportCompanyId())
-                    .orElseThrow(() -> new IllegalStateException("Air transport company not found"));
-
-            final List<AircraftDTO> fleet = controller.listCompanyFleet();
-
-            System.out.println("\n=== Fleet for: " + company.name() + " ===\n");
-
-            if (fleet.isEmpty()) {
-                System.out.println("No aircraft registered for this company.");
-                return true;
+            System.out.println();
+            // fleet CSV: reg;model;maker;status;econ;bus;first;country;aircraftId
+            System.out.printf("%-12s | %-25s | %-12s | %-30s | %-10s%n",
+                    "REGISTRATION", "MODEL", "STATUS", "CABIN (eco/bus/first)", "COUNTRY");
+            System.out.println("-".repeat(100));
+            final String[] lines = raw.split("\n");
+            for (final String line : lines) {
+                final String[] f = line.split(";", -1);
+                final String cabin = "eco:" + f[4] + " bus:" + f[5] + " first:" + f[6];
+                System.out.printf("%-12s | %-25s | %-12s | %-30s | %-10s%n",
+                        f[0], f[1], f[3], cabin, f[7]);
             }
-
-            System.out.printf("%-12s | %-25s | %-12s | %-45s | %-10s%n",
-                    "REGISTRATION", "MODEL", "STATUS", "CABIN CONFIGURATION", "COUNTRY");
-            System.out.println("-".repeat(120));
-
-            for (final AircraftDTO aircraft : fleet) {
-                System.out.printf("%-12s | %-25s | %-12s | %-45s | %-10s%n",
-                        aircraft.registrationNumber,
-                        aircraft.model,
-                        aircraft.operationalStatus,
-                        aircraft.cabinConfig,
-                        aircraft.registrationCountry);
-            }
-
-            System.out.println("-".repeat(120));
-            System.out.printf("Total Aircraft: %d%n", fleet.size());
+            System.out.println("-".repeat(100));
+            System.out.printf("Total Aircraft: %d%n", lines.length);
         } catch (final Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -67,10 +34,5 @@ public class ListFleetATCUI extends AbstractUI {
     }
 
     @Override
-    public String headline() {
-        return "List Fleet";
-    }
+    public String headline() { return "List Fleet"; }
 }
-
-
-
