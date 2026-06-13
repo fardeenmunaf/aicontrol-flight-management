@@ -220,15 +220,37 @@ typedef struct {
 } WeatherEntry;
 
 /* Inter-process shared memory block.
-   Placed in POSIX shared memory so parent and child processes share it. */
+   Placed in POSIX shared memory so parent and child processes share it.
+   On macOS, sem_init(pshared=1) is not supported between processes, so we
+   store named-semaphore pointers (inherited across fork) instead. */
 typedef struct {
     SimulationData sim;
+#ifdef __APPLE__
+    sem_t         *step_go[MAX_FLIGHTS];
+    sem_t         *step_done[MAX_FLIGHTS];
+#else
     sem_t          step_go[MAX_FLIGHTS];    /* parent posts → child wakes  */
     sem_t          step_done[MAX_FLIGHTS];  /* child posts  → Results wakes */
+#endif
     bool           terminate;               /* set by cleanup to unblock children */
     WindData       env_wind[MAX_FLIGHTS];   /* written by env thread, read by flight processes */
+#ifdef __APPLE__
+    sem_t         *env_sem;
+#else
     sem_t          env_sem;                 /* process-shared binary semaphore protecting env_wind */
+#endif
 } SharedBlock;
+
+/* Semaphore accessor macros — resolve to sem_t* regardless of platform. */
+#ifdef __APPLE__
+#define SEM_GO(shm, i)   ((shm)->step_go[i])
+#define SEM_DONE(shm, i) ((shm)->step_done[i])
+#define SEM_ENV(shm)     ((shm)->env_sem)
+#else
+#define SEM_GO(shm, i)   (&(shm)->step_go[i])
+#define SEM_DONE(shm, i) (&(shm)->step_done[i])
+#define SEM_ENV(shm)     (&(shm)->env_sem)
+#endif
 
 /* Parent thread phase — guards condition variable waits against spurious wakeups. */
 typedef enum {
@@ -263,6 +285,7 @@ typedef struct {
     int               total_steps;
     bool              sim_done;
     int               pending_violations;
+    int               logged_violation_idx; /* next violations[] index to log in report_thread */
     bool              report_finalize;
 } SimContext;
 

@@ -1,6 +1,11 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -Isrc/main/c -Isrc/main/c/libs -pthread
-LDFLAGS = -lm -pthread -lrt
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    LDFLAGS = -lm -pthread
+else
+    LDFLAGS = -lm -pthread -lrt
+endif
 
 all: simulation_engine report_generator flight_plan_validator
 

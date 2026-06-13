@@ -86,7 +86,7 @@ void *environment_thread(void *arg) {
         pthread_mutex_unlock(&ctx->mutex);
 
         /* Update per-flight wind in shared memory. */
-        sem_wait(&ctx->shm->env_sem);
+        sem_wait(SEM_ENV(ctx->shm));
         for (int i = 0; i < ctx->num_flights; i++) {
             if (!active[i]) continue;
 
@@ -112,7 +112,7 @@ void *environment_thread(void *arg) {
                    (g_weather_count > 0 && lookup_db_wind(&f->current_pos, &db))
                        ? " (DB)" : " (plan)");
         }
-        sem_post(&ctx->shm->env_sem);
+        sem_post(SEM_ENV(ctx->shm));
 
         /* Hand control to the Dispatcher thread. */
         pthread_mutex_lock(&ctx->mutex);
