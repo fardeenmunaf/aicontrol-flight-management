@@ -19,7 +19,7 @@ Um problema secundário era o flag de linker `-lrt` (biblioteca POSIX real-time)
 
 ---
 
-### Correcção 1 — Makefile: flag `-lrt` condicional
+### Correção 1 — Makefile: flag `-lrt` condicional
 
 **Ficheiro:** `Makefile`
 
@@ -42,7 +42,7 @@ No macOS, `-lrt` não existe e provoca um erro de linker. No Linux, o flag conti
 
 ---
 
-### Correcção 2 — `structs.h`: tipos condicionais dos campos de semáforo em `SharedBlock`
+### Correção 2 — `structs.h`: tipos condicionais dos campos de semáforo em `SharedBlock`
 
 **Ficheiro:** `src/main/c/structs.h`
 
@@ -101,7 +101,7 @@ A struct `SharedBlock` tem tamanhos diferentes consoante o sistema operativo: no
 
 ---
 
-### Correcção 3 — `simulation_engine.c`: inicialização dos semáforos
+### Correção 3 — `simulation_engine.c`: inicialização dos semáforos
 
 **Ficheiro:** `src/main/c/simulation_engine.c`
 
@@ -139,7 +139,7 @@ sem_init(&shm->env_sem, 1, 1);
 
 ---
 
-### Correcção 4 — `simulation_engine.c`: limpeza dos semáforos
+### Correção 4 — `simulation_engine.c`: limpeza dos semáforos
 
 **Ficheiro:** `src/main/c/simulation_engine.c`
 
@@ -177,7 +177,7 @@ sem_destroy(&shm->env_sem);
 
 ---
 
-### Correcção 5 — `simulation_engine.c`: substituição de todos os pontos de utilização de semáforos pelas macros
+### Correção 5 — `simulation_engine.c`: substituição de todos os pontos de utilização de semáforos pelas macros
 
 **Ficheiro:** `src/main/c/simulation_engine.c`
 
@@ -192,7 +192,7 @@ Os quatro pontos de utilização que anteriormente usavam `&shm->step_go[i]` / `
 
 ---
 
-### Correcção 6 — `environment.c`: substituição dos pontos de utilização de `env_sem` pelo macro
+### Correção 6 — `environment.c`: substituição dos pontos de utilização de `env_sem` pelo macro
 
 **Ficheiro:** `src/main/c/environment.c`
 
@@ -210,7 +210,7 @@ sem_post(SEM_ENV(ctx->shm));
 
 ---
 
-### Correcção 7 — `flight_simulation.c`: substituição dos pontos de utilização de `step_go` / `step_done` pelos macros
+### Correção 7 — `flight_simulation.c`: substituição dos pontos de utilização de `step_go` / `step_done` pelos macros
 
 **Ficheiro:** `src/main/c/flight_simulation.c`
 
@@ -404,7 +404,7 @@ O array `violations[]` e `total_violations_recorded` são escritos exclusivament
 
 **Problema:** `check_violations` incrementava `total_violations_detected` quando detectava exaustão de combustível, mas não adicionava nenhuma entrada ao array `violations[]`. Como `report_thread` itera de `logged_violation_idx` até `total_violations_recorded` (que só conta entradas no array), estas violações nunca eram registadas em detalhe — falhando o AC3.
 
-**Correcção:** Ao detectar exaustão de combustível, é agora criada uma `ViolationEvent` em `violations[]`, usando `flight_b_id == flight_a_id` para distinguir este caso de uma colisão entre dois voos.
+**Correção:** Ao detectar exaustão de combustível, é agora criada uma `ViolationEvent` em `violations[]`, usando `flight_b_id == flight_a_id` para distinguir este caso de uma colisão entre dois voos.
 
 ```c
 /* Adicionado dentro do bloco de exaustão de combustível */
@@ -448,7 +448,7 @@ sim->report.total_violations_recorded = sim->total_violations_detected;
 
 substituía a contagem correcta de entradas no array `violations[]` pelo total geral de violações detectadas (que incluía exaustões de combustível mesmo quando estas não tinham entradas no array). O `report_generator` usaria então `total_violations_recorded` como contagem de entradas válidas, podendo ler dados não inicializados.
 
-**Correcção:** A linha foi removida. Com o Bug 1 corrigido, `total_violations_recorded` é incrementado para todos os tipos de violação directamente em `check_violations`, pelo que o valor já está correcto quando `finalize_and_write_report` é chamada.
+**Correção:** A linha foi removida. Com o Bug 1 corrigido, `total_violations_recorded` é incrementado para todos os tipos de violação directamente em `check_violations`, pelo que o valor já está correcto quando `finalize_and_write_report` é chamada.
 
 ---
 
