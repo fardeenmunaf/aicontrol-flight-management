@@ -111,4 +111,34 @@ class PilotTest {
         final Pilot pilot = new Pilot() { };
         assertNotNull(pilot);
     }
+
+    // --- US077: deactivate() ---
+
+    @Test
+    void ensureDeactivateTransitionsActivePilotToInactive() {
+        final Pilot pilot = validPilot();
+        pilot.deactivate();
+        assertEquals(PilotStatus.INACTIVE, pilot.status());
+    }
+
+    @Test
+    void ensureDeactivateAlreadyInactivePilotThrows() {
+        final Pilot pilot = new Pilot(USER_ID, PilotStatus.INACTIVE, Set.of(MODEL));
+        assertThrows(IllegalStateException.class, pilot::deactivate);
+    }
+
+    // --- US077: activate() ---
+
+    @Test
+    void ensureActivateTransitionsInactivePilotToActive() {
+        final Pilot pilot = new Pilot(USER_ID, PilotStatus.INACTIVE, Set.of(MODEL));
+        pilot.activate();
+        assertEquals(PilotStatus.ACTIVE, pilot.status());
+    }
+
+    @Test
+    void ensureActivateAlreadyActivePilotThrows() {
+        final Pilot pilot = validPilot();
+        assertThrows(IllegalStateException.class, pilot::activate);
+    }
 }
