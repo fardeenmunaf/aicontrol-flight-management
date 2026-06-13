@@ -97,6 +97,20 @@
                 f->violation_detected       = true;
                 sim->total_violations_detected++;
                 printf("  *** VIOLATION: %s fuel exhausted — flight destroyed ***\n", f->callsign);
+
+                if (sim->report.total_violations_recorded < MAX_RECORDED_VIOLATIONS) {
+                    ViolationEvent *evt = &sim->report.violations[sim->report.total_violations_recorded];
+                    evt->timestamp   = sim->current_time;
+                    evt->flight_a_id = i;
+                    evt->flight_b_id = i; /* same index signals fuel exhaustion (single-flight event) */
+                    evt->pos_a       = f->current_pos;
+                    evt->pos_b       = f->current_pos;
+                    evt->vel_a       = f->velocity;
+                    evt->vel_b       = f->velocity;
+                    evt->distance    = 0.0;
+                    sim->report.total_violations_recorded++;
+                }
+
                 if (pids[i] > 0) {
                     kill(pids[i], SIGTERM);
                     f->is_active = false;
@@ -292,7 +306,7 @@
             {
                 if (active[i])
                 {
-                    sem_post(&ctx->shm->step_go[i]);
+                    sem_post(SEM_GO(ctx->shm, i));
                 }
             }
 
@@ -334,7 +348,7 @@
             {
                 if (active[i])
                 {
-                    sem_wait(&ctx->shm->step_done[i]); // block until child posts step_done
+                    sem_wait(SEM_DONE(ctx->shm, i)); // block until child posts step_done
                 }
             }
 
@@ -466,9 +480,14 @@
                     sim->prev_pos[i] = sim->flights[i].current_pos;
 
             pthread_mutex_lock(&ctx->mutex);
-            ctx->pending_violations += new_violations;
-            ctx->current_thread = THREAD_REPORT;
-            pthread_cond_signal(&ctx->cond_report);
+            if (new_violations > 0) {
+                ctx->pending_violations += new_violations;
+                ctx->current_thread = THREAD_REPORT;
+                pthread_cond_signal(&ctx->cond_report);
+            } else {
+                ctx->current_thread = THREAD_IDLE;
+                pthread_cond_signal(&ctx->cond_step_done);
+            }
             pthread_mutex_unlock(&ctx->mutex);
         }
         return NULL;
@@ -504,7 +523,6 @@
                 status->num_legs_completed = f->current_leg + (f->is_active ? 0 : 1);
             }
             sim->report.total_flights = count;
-            sim->report.total_violations_recorded = sim->total_violations_detected;
 
             pid_t rpid = fork();
             if (rpid < 0) {
@@ -531,7 +549,7 @@
             /* Unblock children that are waiting on step_go. */
             for (int i = 0; i < n; i++)
                 if (pids[i] > 0)
-                    sem_post(&shm->step_go[i]);
+                    sem_post(SEM_GO(shm, i));
 
             for (int i = 0; i < n; i++)
                 if (pids[i] > 0)
@@ -565,9 +583,33 @@
 
             // Process violation events
             if (to_process > 0) {
-                printf("[REPORT] Processed %d new violation event(s). "
-                       "Total recorded: %d\n",
-                       to_process, sim->report.total_violations_recorded);
+                int total_recorded = sim->report.total_violations_recorded;
+                for (int k = ctx->logged_violation_idx; k < total_recorded; k++) {
+                    ViolationEvent *evt = &sim->report.violations[k];
+                    double abs_time = sim->config.sim_start_seconds + evt->timestamp;
+                    int h = (int)(abs_time / 3600) % 24;
+                    int m = (int)(fmod(abs_time, 3600.0) / 60.0);
+                    if (evt->flight_b_id == evt->flight_a_id) {
+                        printf("[REPORT] Violation #%d  t=%.0fs [%02d:%02d]  "
+                               "%s fuel exhaustion at (%.4f°,%.4f°,%.0fm)\n",
+                               k + 1, evt->timestamp, h, m,
+                               sim->flights[evt->flight_a_id].callsign,
+                               evt->pos_a.latitude, evt->pos_a.longitude, evt->pos_a.altitude);
+                    } else {
+                        printf("[REPORT] Violation #%d  t=%.0fs [%02d:%02d]  "
+                               "%s (%.4f°,%.4f°,%.0fm) <-> %s (%.4f°,%.4f°,%.0fm)  "
+                               "dist=%.1fm\n",
+                               k + 1, evt->timestamp, h, m,
+                               sim->flights[evt->flight_a_id].callsign,
+                               evt->pos_a.latitude, evt->pos_a.longitude, evt->pos_a.altitude,
+                               sim->flights[evt->flight_b_id].callsign,
+                               evt->pos_b.latitude, evt->pos_b.longitude, evt->pos_b.altitude,
+                               evt->distance);
+                    }
+                }
+                ctx->logged_violation_idx = total_recorded;
+                printf("[REPORT] %d new violation(s) processed. Total recorded: %d\n",
+                       to_process, total_recorded);
                 fflush(stdout);
             }
 
@@ -707,11 +749,25 @@
 
         memset(shm, 0, sizeof(SharedBlock));
 
+#ifdef __APPLE__
+        for (int i = 0; i < MAX_FLIGHTS; i++) {
+            char name[40];
+            snprintf(name, sizeof(name), "/aisafe_go_%d", i);
+            sem_unlink(name);
+            shm->step_go[i] = sem_open(name, O_CREAT | O_EXCL, 0600, 0);
+            snprintf(name, sizeof(name), "/aisafe_done_%d", i);
+            sem_unlink(name);
+            shm->step_done[i] = sem_open(name, O_CREAT | O_EXCL, 0600, 0);
+        }
+        sem_unlink("/aisafe_env");
+        shm->env_sem = sem_open("/aisafe_env", O_CREAT | O_EXCL, 0600, 1);
+#else
         for (int i = 0; i < MAX_FLIGHTS; i++) {
             sem_init(&shm->step_go[i],   1, 0);
             sem_init(&shm->step_done[i], 1, 0);
         }
         sem_init(&shm->env_sem, 1, 1); /* pshared binary semaphore, initial value 1 */
+#endif
         memset(shm->env_wind, 0, sizeof(shm->env_wind));
 
         SimulationData *sim = &shm->sim;
@@ -815,7 +871,7 @@
         /* ── Startup barrier: wait for all children to post step_done once ───── */
         for (int i = 0; i < sim->num_flights; i++)
             if (pids[i] > 0)
-                sem_wait(&shm->step_done[i]);
+                sem_wait(SEM_DONE(shm, i));
 
         /* Initialise prev_pos to each flight's departure position. */
         for (int i = 0; i < sim->num_flights; i++)
@@ -848,8 +904,9 @@
         pthread_cond_init(&ctx.cond_violations, NULL);
         pthread_cond_init(&ctx.cond_step_done,  NULL);
         pthread_cond_init(&ctx.cond_report, NULL);
-        ctx.pending_violations  = 0;
-        ctx.report_finalize     = false;
+        ctx.pending_violations      = 0;
+        ctx.logged_violation_idx    = 0;
+        ctx.report_finalize         = false;
         ctx.current_thread = THREAD_IDLE;
 
         for (int i = 0; i < MAX_FLIGHTS; i++)
@@ -1026,11 +1083,25 @@
         printf("\n");
 
         /* ── Release shared memory ───────────────────────────────────────────── */
+#ifdef __APPLE__
+        for (int i = 0; i < MAX_FLIGHTS; i++) {
+            char name[40];
+            sem_close(shm->step_go[i]);
+            snprintf(name, sizeof(name), "/aisafe_go_%d", i);
+            sem_unlink(name);
+            sem_close(shm->step_done[i]);
+            snprintf(name, sizeof(name), "/aisafe_done_%d", i);
+            sem_unlink(name);
+        }
+        sem_close(shm->env_sem);
+        sem_unlink("/aisafe_env");
+#else
         for (int i = 0; i < MAX_FLIGHTS; i++) {
             sem_destroy(&shm->step_go[i]);
             sem_destroy(&shm->step_done[i]);
         }
         sem_destroy(&shm->env_sem);
+#endif
         munmap(shm, sizeof(SharedBlock));
         shm_unlink("/aisafe_sim");
 
