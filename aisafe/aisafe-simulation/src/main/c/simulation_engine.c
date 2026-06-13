@@ -749,7 +749,6 @@
 
         memset(shm, 0, sizeof(SharedBlock));
 
-#ifdef __APPLE__
         for (int i = 0; i < MAX_FLIGHTS; i++) {
             char name[40];
             snprintf(name, sizeof(name), "/aisafe_go_%d", i);
@@ -761,13 +760,6 @@
         }
         sem_unlink("/aisafe_env");
         shm->env_sem = sem_open("/aisafe_env", O_CREAT | O_EXCL, 0600, 1);
-#else
-        for (int i = 0; i < MAX_FLIGHTS; i++) {
-            sem_init(&shm->step_go[i],   1, 0);
-            sem_init(&shm->step_done[i], 1, 0);
-        }
-        sem_init(&shm->env_sem, 1, 1); /* pshared binary semaphore, initial value 1 */
-#endif
         memset(shm->env_wind, 0, sizeof(shm->env_wind));
 
         SimulationData *sim = &shm->sim;
@@ -1083,7 +1075,6 @@
         printf("\n");
 
         /* ── Release shared memory ───────────────────────────────────────────── */
-#ifdef __APPLE__
         for (int i = 0; i < MAX_FLIGHTS; i++) {
             char name[40];
             sem_close(shm->step_go[i]);
@@ -1095,13 +1086,6 @@
         }
         sem_close(shm->env_sem);
         sem_unlink("/aisafe_env");
-#else
-        for (int i = 0; i < MAX_FLIGHTS; i++) {
-            sem_destroy(&shm->step_go[i]);
-            sem_destroy(&shm->step_done[i]);
-        }
-        sem_destroy(&shm->env_sem);
-#endif
         munmap(shm, sizeof(SharedBlock));
         shm_unlink("/aisafe_sim");
 
