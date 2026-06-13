@@ -105,4 +105,13 @@ public interface RepositoryFactory {
     PilotCompanyAssignmentRepository pilotCompanyAssignments();
 
     PilotCompanyAssignmentRepository pilotCompanyAssignments(TransactionalContext autoTx);
+
+    /**
+     * Releases any resources held by this factory (e.g. the shared
+     * {@code EntityManagerFactory} and its database connection pool).
+     * Implementations that hold no such resources may leave this as a no-op.
+     */
+    default void close() {
+        // no-op by default
+    }
 }

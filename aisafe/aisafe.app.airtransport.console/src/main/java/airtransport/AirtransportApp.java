@@ -27,7 +27,7 @@ public final class AirtransportApp {
             System.out.println("=== AISafe Air Transport Company Console (US078 Remote) ===");
             System.out.println("Connecting to " + host + ":" + port + " ...");
             if (new TcpLoginUI(host, port).show()) {
-                new MainMenu().mainLoop();
+                new MainMenu(true).mainLoop();
             } else {
                 System.out.println("Login failed. Exiting.");
             }

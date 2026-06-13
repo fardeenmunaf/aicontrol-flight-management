@@ -206,4 +206,9 @@ public class JpaRepositoryFactory implements RepositoryFactory {
     public PilotCompanyAssignmentRepository pilotCompanyAssignments(final TransactionalContext autoTx) {
         return new JpaPilotCompanyAssignmentRepository(autoTx);
     }
+
+    @Override
+    public void close() {
+        SharedEntityManagerFactoryAccess.closeSharedFactory();
+    }
 }
