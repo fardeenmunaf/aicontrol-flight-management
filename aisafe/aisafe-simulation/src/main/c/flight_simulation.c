@@ -336,11 +336,11 @@ void run_flight_process(SharedBlock *shm, int flight_index) {
     fflush(stdout);
 
     /* Signal parent that this child is ready (reuses step_done — no separate semaphore needed). */
-    sem_post(&shm->step_done[flight_index]);
+    sem_post(SEM_DONE(shm, flight_index));
 
     while (1) {
         int r;
-        do { r = sem_wait(&shm->step_go[flight_index]); } while (r < 0 && errno == EINTR && !g_terminate);
+        do { r = sem_wait(SEM_GO(shm, flight_index)); } while (r < 0 && errno == EINTR && !g_terminate);
 
         if (r < 0 || g_terminate || shm->terminate || !f->is_active)
             break;
@@ -369,7 +369,7 @@ void run_flight_process(SharedBlock *shm, int flight_index) {
             f->fuel_exhaustion_reported           = false;
         }
 
-        sem_post(&shm->step_done[flight_index]);
+        sem_post(SEM_DONE(shm, flight_index));
 
         if (!f->is_active)
             break;
