@@ -10,13 +10,15 @@ import auth.domain.AISafeRoles;
 import enginemodel.domain.EngineModel;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import infrastructure.persistence.PersistenceContext;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,19 +28,7 @@ import java.util.stream.Collectors;
 public class AircraftModelsUI {
 
     @FXML
-    private TableView<AircraftModelDTO> table;
-    @FXML
-    private TableColumn<AircraftModelDTO, String> colModel;
-    @FXML
-    private TableColumn<AircraftModelDTO, String> colMaker;
-    @FXML
-    private TableColumn<AircraftModelDTO, String> colType;
-    @FXML
-    private TableColumn<AircraftModelDTO, String> colEngines;
-    @FXML
-    private TableColumn<AircraftModelDTO, String> colCruise;
-    @FXML
-    private TableColumn<AircraftModelDTO, String> colAction;
+    private ListView<AircraftModelDTO> table;
     @FXML
     private Label statusLabel;
 
@@ -116,29 +106,22 @@ public class AircraftModelsUI {
 
     @FXML
     public void initialize() {
-        colModel.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().modelName));
-        colMaker.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().makerName + " (" + c.getValue().makerCountry + ")"));
-        colType.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().type != null ? c.getValue().type.name() : "—"));
-        colEngines.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().numberOfEngines + "× " + String.join(", ", c.getValue().engineModelNames)));
-        colCruise.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().cruiseSpeed != null ? String.format("%.0f m/s", c.getValue().cruiseSpeed) : "—"));
-        colAction.setCellFactory(col -> new TableCell<>() {
-            private final Button btn = new Button("Delete");
-            {
-                btn.getStyleClass().add("btn-danger");
-                btn.setOnAction(e -> onDelete(getTableView().getItems().get(getIndex())));
-            }
+        table.setCellFactory(lv -> new CardListCell<>(dto -> {
+            final HBox header = Cards.row(8,
+                    Cards.title(dto.modelName),
+                    Cards.grow(),
+                    Cards.chip(dto.type != null ? dto.type.name() : "—"));
 
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setGraphic(empty ? null : btn);
-            }
-        });
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+            final String specs = dto.makerName + " (" + dto.makerCountry + ")"
+                    + "  ·  " + dto.numberOfEngines + "× " + String.join(", ", dto.engineModelNames)
+                    + (dto.cruiseSpeed != null ? String.format("  ·  %.0f m/s", dto.cruiseSpeed) : "");
+
+            final Button delete = new Button("Delete");
+            delete.getStyleClass().add("btn-danger");
+            delete.setOnAction(e -> onDelete(dto));
+
+            return Cards.card(header, Cards.meta(specs), Cards.row(8, Cards.grow(), delete));
+        }));
         table.setItems(data);
 
         fAircraftType.setItems(FXCollections.observableArrayList(AircraftType.values()));

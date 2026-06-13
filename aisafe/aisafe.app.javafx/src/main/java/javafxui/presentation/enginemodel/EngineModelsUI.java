@@ -7,12 +7,14 @@ import enginemodel.domain.EngineModel;
 import enginemodel.domain.EngineType;
 import enginemodel.domain.FuelType;
 import infrastructure.persistence.PersistenceContext;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,17 +22,7 @@ import java.util.List;
 public class EngineModelsUI {
 
     @FXML
-    private TableView<EngineModel> table;
-    @FXML
-    private TableColumn<EngineModel, String> colName;
-    @FXML
-    private TableColumn<EngineModel, String> colType;
-    @FXML
-    private TableColumn<EngineModel, String> colMaker;
-    @FXML
-    private TableColumn<EngineModel, String> colPower;
-    @FXML
-    private TableColumn<EngineModel, String> colAction;
+    private ListView<EngineModel> table;
     @FXML
     private Label statusLabel;
 
@@ -57,26 +49,21 @@ public class EngineModelsUI {
 
     @FXML
     public void initialize() {
-        colName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().name()));
-        colType.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().type().name()));
-        colMaker.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().maker().name() + " (" + c.getValue().maker().country() + ")"));
-        colPower.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().power() != null ? String.format("%.0f kW", c.getValue().power()) : "—"));
-        colAction.setCellFactory(col -> new TableCell<>() {
-            private final Button btn = new Button("Delete");
-            {
-                btn.getStyleClass().add("btn-danger");
-                btn.setOnAction(e -> onDelete(getTableView().getItems().get(getIndex())));
-            }
+        table.setCellFactory(lv -> new CardListCell<>(model -> {
+            final HBox header = Cards.row(8,
+                    Cards.title(model.name()),
+                    Cards.grow(),
+                    Cards.chip(model.type().name()));
 
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setGraphic(empty ? null : btn);
-            }
-        });
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+            final String specs = model.maker().name() + " (" + model.maker().country() + ")"
+                    + (model.power() != null ? String.format("  ·  %.0f kW", model.power()) : "");
+
+            final Button delete = new Button("Delete");
+            delete.getStyleClass().add("btn-danger");
+            delete.setOnAction(e -> onDelete(model));
+
+            return Cards.card(header, Cards.meta(specs), Cards.row(8, Cards.grow(), delete));
+        }));
         table.setItems(data);
         fType.setItems(FXCollections.observableArrayList(EngineType.values()));
         fFuelType.setItems(FXCollections.observableArrayList(FuelType.values()));

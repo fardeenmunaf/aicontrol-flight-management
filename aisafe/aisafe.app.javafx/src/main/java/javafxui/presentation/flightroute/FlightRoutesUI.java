@@ -8,14 +8,16 @@ import flightRoute.application.CreateFlightRouteController;
 import flightRoute.application.DeleteFlightRouteController;
 import flightRoute.domain.FlightRoute;
 import infrastructure.persistence.PersistenceContext;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 import shared.domain.AirTransportCompanyId;
 import shared.domain.UserId;
 
@@ -31,19 +33,7 @@ import java.util.stream.StreamSupport;
 public class FlightRoutesUI {
 
     @FXML
-    private TableView<FlightRoute> routesTable;
-    @FXML
-    private TableColumn<FlightRoute, String> colDesignation;
-    @FXML
-    private TableColumn<FlightRoute, String> colOrigin;
-    @FXML
-    private TableColumn<FlightRoute, String> colDestination;
-    @FXML
-    private TableColumn<FlightRoute, String> colActiveFrom;
-    @FXML
-    private TableColumn<FlightRoute, String> colStatus;
-    @FXML
-    private TableColumn<FlightRoute, String> colAction;
+    private ListView<FlightRoute> routesTable;
     @FXML
     private Label messageLabel;
     @FXML
@@ -78,18 +68,6 @@ public class FlightRoutesUI {
 
     @FXML
     public void initialize() {
-        colDesignation.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().designation().value()));
-        colOrigin.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().originAirport().iataCode()));
-        colDestination.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().destinationAirport().iataCode()));
-        colActiveFrom.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().activeFrom().toString()));
-        colStatus.setCellValueFactory(c -> {
-            final FlightRoute r = c.getValue();
-            final String status = r.activeUntil() == null
-                    ? "Active"
-                    : "Inactive from " + r.activeUntil();
-            return new SimpleStringProperty(status);
-        });
-
         final StringConverter<Airport> airportConverter = new StringConverter<>() {
             @Override
             public String toString(final Airport a) {
@@ -125,33 +103,31 @@ public class FlightRoutesUI {
             }
         } catch (final Exception ignored) {
         }
-        colAction.setCellFactory(col -> new TableCell<>() {
-            private final Button deactivateBtn = new Button("Deactivate");
-            private final Button reactivateBtn = new Button("Reactivate");
-            {
-                deactivateBtn.getStyleClass().add("btn-danger");
-                reactivateBtn.getStyleClass().add("btn-success");
+        routesTable.setCellFactory(lv -> new CardListCell<>(route -> {
+            final boolean active = route.activeUntil() == null;
+            final HBox header = Cards.row(8,
+                    Cards.title(route.designation().value()),
+                    Cards.chip(route.originAirport().iataCode() + " → "
+                            + route.destinationAirport().iataCode(), "chip-neutral"),
+                    Cards.grow(),
+                    Cards.chip(active ? "Active" : "Inactive from " + route.activeUntil(),
+                            active ? "chip-success" : "chip-danger"));
+
+            final Button actionBtn;
+            if (active) {
+                actionBtn = new Button("Deactivate");
+                actionBtn.getStyleClass().add("btn-danger");
+                actionBtn.setOnAction(e -> onDeactivate(route));
+            } else {
+                actionBtn = new Button("Reactivate");
+                actionBtn.getStyleClass().add("btn-success");
+                actionBtn.setOnAction(e -> onReactivate(route));
             }
 
-            @Override
-            protected void updateItem(final String item, final boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                    return;
-                }
-                final FlightRoute route = getTableView().getItems().get(getIndex());
-                if (route.activeUntil() == null) {
-                    deactivateBtn.setOnAction(e -> onDeactivate(route));
-                    setGraphic(deactivateBtn);
-                } else {
-                    reactivateBtn.setOnAction(e -> onReactivate(route));
-                    setGraphic(reactivateBtn);
-                }
-            }
-        });
-
-        routesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+            return Cards.card(header,
+                    Cards.meta("Active from " + route.activeFrom()),
+                    Cards.row(8, Cards.grow(), actionBtn));
+        }));
         routesTable.setItems(data);
         refreshTable();
     }
@@ -279,7 +255,7 @@ public class FlightRoutesUI {
                 super.updateItem(item, empty);
                 if (item.isBefore(minDate)) {
                     setDisable(true);
-                    setStyle("-fx-background-color:#3b1c1c;-fx-text-fill:#888;");
+                    setStyle("-fx-background-color:#0f1520;-fx-text-fill:#5b6573;");
                 }
             }
         };
@@ -291,7 +267,7 @@ public class FlightRoutesUI {
                 : "Earliest selectable date: " + minDate;
         final Label hint = new Label(hintText);
         hint.setWrapText(true);
-        hint.setStyle("-fx-text-fill:#90caf9;-fx-font-size:11px;");
+        hint.setStyle("-fx-text-fill:#7dd3fc;-fx-font-size:11px;");
 
         final VBox content = new VBox(8, datePicker, hint);
         content.setPrefWidth(280);

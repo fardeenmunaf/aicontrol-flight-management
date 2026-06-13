@@ -14,16 +14,7 @@
 
     <Label fx:id="statusLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
 
-    <TableView fx:id="table" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
-        <columns>
-            <TableColumn fx:id="colEmail"   text="Email"   prefWidth="200"/>
-            <TableColumn fx:id="colName"    text="Name"    prefWidth="150"/>
-            <TableColumn fx:id="colPhone"   text="Phone"   prefWidth="130"/>
-            <TableColumn fx:id="colRoles"   text="Roles"   prefWidth="180"/>
-            <TableColumn fx:id="colStatus"  text="Status"  prefWidth="80"/>
-            <TableColumn fx:id="colActions" text="Actions" prefWidth="190"/>
-        </columns>
-    </TableView>
+    <ListView fx:id="table" VBox.vgrow="ALWAYS" styleClass="card-list"/>
 
     <!-- Register Form -->
     <VBox fx:id="registerForm" managed="false" visible="false" styleClass="form-panel">

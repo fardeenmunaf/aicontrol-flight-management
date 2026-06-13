@@ -6,12 +6,14 @@ import aircraft.application.RegisterAircraftController;
 import aircraft.domain.Aircraft;
 import aircraft.domain.AircraftOperationStatus;
 import infrastructure.persistence.PersistenceContext;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,19 +21,7 @@ import java.util.List;
 public class FleetUI {
 
     @FXML
-    private TableView<Aircraft> fleetTable;
-    @FXML
-    private TableColumn<Aircraft, String> colReg;
-    @FXML
-    private TableColumn<Aircraft, String> colModel;
-    @FXML
-    private TableColumn<Aircraft, String> colStatus;
-    @FXML
-    private TableColumn<Aircraft, String> colCabin;
-    @FXML
-    private TableColumn<Aircraft, String> colCountry;
-    @FXML
-    private TableColumn<Aircraft, String> colAction;
+    private ListView<Aircraft> fleetTable;
     @FXML
     private Label messageLabel;
     @FXML
@@ -59,47 +49,41 @@ public class FleetUI {
 
     @FXML
     public void initialize() {
-        colReg.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().registrationNumber()));
-        colModel.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().aircraftModel() != null ? c.getValue().aircraftModel().modelName() : "—"));
-        colStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().operationStatus().name()));
-        colCabin.setCellValueFactory(c -> {
-            final var cab = c.getValue().cabinConfiguration();
-            return new SimpleStringProperty(cab != null
-                    ? cab.economyClassSeats() + "E / " + cab.businessClassSeats() + "B / " + cab.firstClassSeats() + "F"
-                    : "—");
-        });
-        colCountry.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().registrationCountry()));
-        colAction.setCellFactory(col -> new TableCell<>() {
-            private final Button statusBtn = new Button();
-            private final Button deleteBtn = new Button("Delete");
-            private final javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(6, statusBtn, deleteBtn);
-            {
-                deleteBtn.getStyleClass().add("btn-danger");
-            }
+        fleetTable.setCellFactory(lv -> new CardListCell<>(aircraft -> {
+            final AircraftOperationStatus status = aircraft.operationStatus();
+            final String statusChipClass = status == AircraftOperationStatus.IN_SERVICE
+                    ? "chip-success"
+                    : status == AircraftOperationStatus.MAINTENANCE ? "chip-warning" : "chip-danger";
+            final HBox header = Cards.row(8,
+                    Cards.title(aircraft.registrationNumber()),
+                    Cards.grow(),
+                    Cards.chip(status.name(), statusChipClass));
 
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                    return;
+            final String model = aircraft.aircraftModel() != null
+                    ? aircraft.aircraftModel().modelName() : "—";
+            final var cab = aircraft.cabinConfiguration();
+            final String cabin = cab != null
+                    ? cab.economyClassSeats() + "E / " + cab.businessClassSeats() + "B / " + cab.firstClassSeats() + "F"
+                    : "—";
+            final String details = model + "  ·  " + cabin + "  ·  " + aircraft.registrationCountry();
+
+            final boolean decomm = status == AircraftOperationStatus.DECOMISSIONED;
+            final Button statusBtn = new Button(decomm ? "Reactivate" : "Decommission");
+            statusBtn.getStyleClass().add(decomm ? "btn-success" : "btn-danger");
+            statusBtn.setOnAction(e -> {
+                if (decomm) {
+                    onReactivate(aircraft);
+                } else {
+                    onDecommission(aircraft);
                 }
-                final Aircraft aircraft = getTableView().getItems().get(getIndex());
-                final boolean decomm = aircraft.operationStatus() == AircraftOperationStatus.DECOMISSIONED;
-                statusBtn.setText(decomm ? "Reactivate" : "Decommission");
-                statusBtn.getStyleClass().setAll(decomm ? "btn-success" : "btn-danger");
-                statusBtn.setOnAction(e -> {
-                    if (decomm)
-                        onReactivate(aircraft);
-                    else
-                        onDecommission(aircraft);
-                });
-                deleteBtn.setOnAction(e -> onDelete(aircraft));
-                setGraphic(box);
-            }
-        });
-        fleetTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+            });
+            final Button deleteBtn = new Button("Delete");
+            deleteBtn.getStyleClass().add("btn-danger");
+            deleteBtn.setOnAction(e -> onDelete(aircraft));
+
+            return Cards.card(header, Cards.meta(details),
+                    Cards.row(8, Cards.grow(), statusBtn, deleteBtn));
+        }));
         fleetTable.setItems(data);
         refreshTable();
     }

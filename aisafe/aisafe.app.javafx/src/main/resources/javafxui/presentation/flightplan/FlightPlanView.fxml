@@ -12,7 +12,7 @@
         <Button fx:id="btnNewFlightPlan" text="+ New Flight Plan" styleClass="btn-primary" onAction="#onShowNewForm"/>
     </HBox>
     <Label fx:id="pilotWarning" text="" wrapText="true"
-           style="-fx-text-fill:#ef9a9a;-fx-background-color:#3b1c1c;-fx-padding:8 16 8 16;-fx-font-size:12px;"
+           styleClass="banner-warning" maxWidth="Infinity"
            managed="false" visible="false"/>
     <SplitPane VBox.vgrow="ALWAYS" dividerPositions="0.42" orientation="HORIZONTAL">
 
@@ -20,14 +20,8 @@
         <VBox spacing="0">
             <Label styleClass="status-label" fx:id="tableStatus"
                    style="-fx-padding: 8 16 4 16;" text=""/>
-            <TableView fx:id="planTable" VBox.vgrow="ALWAYS" style="-fx-padding: 0 16 16 16;">
-                <columns>
-                    <TableColumn fx:id="colId"        text="Designator" prefWidth="110"/>
-                    <TableColumn fx:id="colAircraft"  text="Aircraft"   prefWidth="90"/>
-                    <TableColumn fx:id="colStatus"    text="Status"     prefWidth="90"/>
-                    <TableColumn fx:id="colDeparture" text="Departure"  prefWidth="140"/>
-                </columns>
-            </TableView>
+            <ListView fx:id="planTable" VBox.vgrow="ALWAYS" styleClass="card-list"
+                      style="-fx-padding: 0 8 8 8;"/>
         </VBox>
 
         <!-- Right: detail view OR new flight plan form -->
@@ -55,8 +49,7 @@
                     <VBox spacing="10" style="-fx-padding:0 16 16 16;">
 
                         <!-- Flight header -->
-                        <Label text="Flight Information"
-                               style="-fx-text-fill:#1565c0;-fx-font-weight:bold;-fx-padding:4 0 0 0;"/>
+                        <Label text="Flight Information" styleClass="form-section-title"/>
                         <HBox spacing="12">
                             <VBox spacing="4" HBox.hgrow="ALWAYS">
                                 <Label text="Flight Designator"/>

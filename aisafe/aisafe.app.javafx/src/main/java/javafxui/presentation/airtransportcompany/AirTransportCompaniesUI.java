@@ -6,27 +6,21 @@ import airtransportcompany.domain.AirTransportCompany;
 import auth.domain.AISafeRoles;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import infrastructure.persistence.PersistenceContext;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 
 import java.util.List;
 
 public class AirTransportCompaniesUI {
 
     @FXML
-    private TableView<AirTransportCompany> table;
-    @FXML
-    private TableColumn<AirTransportCompany, String> colName;
-    @FXML
-    private TableColumn<AirTransportCompany, String> colIata;
-    @FXML
-    private TableColumn<AirTransportCompany, String> colIcao;
-    @FXML
-    private TableColumn<AirTransportCompany, String> colAction;
+    private ListView<AirTransportCompany> table;
     @FXML
     private Label statusLabel;
 
@@ -45,23 +39,19 @@ public class AirTransportCompaniesUI {
 
     @FXML
     public void initialize() {
-        colName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().name()));
-        colIata.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().iataCode()));
-        colIcao.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().icaoCode()));
-        colAction.setCellFactory(col -> new TableCell<>() {
-            private final Button btn = new Button("Delete");
-            {
-                btn.getStyleClass().add("btn-danger");
-                btn.setOnAction(e -> onDelete(getTableView().getItems().get(getIndex())));
-            }
+        table.setCellFactory(lv -> new CardListCell<>(company -> {
+            final HBox header = Cards.row(8,
+                    Cards.title(company.name()),
+                    Cards.grow(),
+                    Cards.chip(company.iataCode()),
+                    Cards.chip(company.icaoCode(), "chip-neutral"));
 
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setGraphic(empty ? null : btn);
-            }
-        });
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+            final Button delete = new Button("Delete");
+            delete.getStyleClass().add("btn-danger");
+            delete.setOnAction(e -> onDelete(company));
+
+            return Cards.card(header, Cards.row(8, Cards.grow(), delete));
+        }));
         table.setItems(data);
         refresh();
     }

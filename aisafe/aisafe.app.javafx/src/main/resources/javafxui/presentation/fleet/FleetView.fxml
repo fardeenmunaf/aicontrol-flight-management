@@ -10,16 +10,7 @@
         <Button text="Register Aircraft" styleClass="btn-primary" onAction="#onRegister"/>
     </HBox>
     <Label fx:id="messageLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
-    <TableView fx:id="fleetTable" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
-        <columns>
-            <TableColumn fx:id="colReg"     text="Registration"    prefWidth="130"/>
-            <TableColumn fx:id="colModel"   text="Model"           prefWidth="160"/>
-            <TableColumn fx:id="colStatus"  text="Status"          prefWidth="120"/>
-            <TableColumn fx:id="colCabin"   text="Cabin Config"    prefWidth="160"/>
-            <TableColumn fx:id="colCountry" text="Country"         prefWidth="120"/>
-            <TableColumn fx:id="colAction"  text="Action"          prefWidth="200"/>
-        </columns>
-    </TableView>
+    <ListView fx:id="fleetTable" VBox.vgrow="ALWAYS" styleClass="card-list"/>
     <VBox fx:id="registerForm" managed="false" visible="false"
           styleClass="form-panel">
         <Label text="Register New Aircraft" styleClass="page-title" style="-fx-padding:0 0 8 0;"/>

@@ -29,15 +29,26 @@
 // Disabling any3d forces Leaflet to use left/top pixel offsets instead of translate3d.
 L.Browser.any3d = false;
 
-var map = L.map('map', { zoomControl: true, attributionControl: false })
+// World bounds: clamp panning to a single copy of the world so the user
+// cannot scroll laterally into repeated/empty territory.
+var worldBounds = L.latLngBounds([-85, -180], [85, 180]);
+
+var map = L.map('map', {
+            zoomControl: true,
+            attributionControl: false,
+            minZoom: 3,
+            maxBounds: worldBounds,
+            maxBoundsViscosity: 1.0
+          })
           .setView([48.0, 10.0], 4);
 
 window.addEventListener('resize', function() { map.invalidateSize(); });
 
-// Esri World Imagery — satellite/aerial tiles, no API key required
+// Esri World Imagery — satellite/aerial tiles, no API key required.
+// noWrap stops the world map from repeating horizontally.
 L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { maxZoom: 18 }
+  { maxZoom: 18, noWrap: true, bounds: worldBounds }
 ).addTo(map);
 
 var legendControl = null;
