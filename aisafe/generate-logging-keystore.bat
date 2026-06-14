@@ -13,7 +13,7 @@ set KEYSTORE=%2
 if "%KEYSTORE%"=="" set KEYSTORE=logging-keystore.p12
 
 set PASSWORD=%3
-if "%PASSWORD%"=="" set PASSWORD=changeit
+if "%PASSWORD%"=="" set PASSWORD=Teste1234!
 
 cd /d %~dp0
 
