@@ -1,497 +1,232 @@
-# US107 — Notificar a Thread de Relatório via Variáveis de Condição na Detecção de Violações de Segurança
+# US107 — Notify Report Thread via Condition Variables upon Safety Violation Detection
 
-## Visão Geral
+## User Story
 
-Este documento descreve todas as alterações de código feitas nesta user story, divididas em dois conjuntos distintos:
-
-1. **Compatibilidade com macOS** — alterações necessárias para que a simulação compile e execute correctamente em macOS (além de Linux).
-2. **Implementação do US107** — alterações que implementam a user story: notificação em tempo real da thread de relatório quando é detectada uma violação de segurança.
+> As a **Flight Control Operator**, I want the violations thread to immediately notify the report thread, using condition variables, whenever a safety violation is detected during the simulation, so that the violation is logged as soon as it happens rather than only at the end of the run.
 
 ---
 
-## Parte 1 — Compatibilidade com macOS
+## Acceptance Criteria
 
-### Problema
-
-A simulação utiliza memória partilhada entre processos (`shm_open` + `mmap`) e semáforos POSIX para sincronizar o processo pai com os processos filho criados via `fork` (um por voo). No Linux, semáforos anónimos inicializados com `sem_init(..., pshared=1, ...)` funcionam correctamente entre processos quando colocados dentro de um bloco de memória partilhada. No macOS, **isto não é suportado**: `sem_init` com `pshared != 0` está marcado como `__deprecated` e falha silenciosamente em tempo de execução, o que significa que os semáforos nunca funcionam entre pai e filho. Como resultado, os processos filho ficavam bloqueados indefinidamente à espera de um sinal que nunca chegava, e todos os voos permaneciam presos na fase `GATE` durante toda a simulação.
-
-Um problema secundário era o flag de linker `-lrt` (biblioteca POSIX real-time), que não existe como biblioteca separada no macOS — os seus símbolos fazem parte da biblioteca C padrão do sistema.
+| # | Criterion |
+|---|-----------|
+| AC1 | The violations thread continuously monitors the shared simulation state for newly detected safety violations |
+| AC2 | Upon detecting one or more new violations, the violations thread signals the report thread using a dedicated condition variable |
+| AC3 | The report thread, normally blocked waiting on that condition variable, wakes up immediately and processes/logs the new violation(s) |
+| AC4 | Access to the shared violation data is protected by a mutex, avoiding race conditions between the two threads |
+| AC5 | After logging, the report thread hands control back to the normal step pipeline (`THREAD_IDLE`) so the simulation can continue |
 
 ---
 
-### Correção 1 — Makefile: flag `-lrt` condicional
+## Implementation Overview
 
-**Ficheiro:** `Makefile`
+| Module | Role |
+|--------|------|
+| `aisafe-simulation` — `structs.h` | `SimContext.cond_report`, `SimContext.pending_violations`, `SimContext.logged_violation_idx`, `SimulationReport.violations[]`, `ViolationEvent` |
+| `aisafe-simulation` — `simulation_engine.c` | `check_violations()` (populates `report.violations[]`), `violations_thread` (AC1/AC2), `report_thread` (AC3/AC5) |
 
-**Alteração:** Detectar o sistema operativo em tempo de compilação e incluir `-lrt` apenas no Linux.
+---
 
-```makefile
-# Antes
-LDFLAGS = -lm -pthread -lrt
+## Architecture — The Violation Notification Hand-off
 
-# Depois
-UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Darwin)
-    LDFLAGS = -lm -pthread
-else
-    LDFLAGS = -lm -pthread -lrt
-endif
+```
+violations_thread                                  report_thread
+──────────────────                                  ─────────────
+THREAD_VIOLATIONS:
+  new = check_violations(shm, ctx)   ─── AC1 ───►   (blocked on cond_report,
+  shm->sim.report.violations[] +=                     current_thread != THREAD_REPORT)
+     new ViolationEvent entries
+  shm->sim.report.total_violations_recorded += new
+
+  if (new > 0):
+      ctx->pending_violations += new
+      ctx->current_thread = THREAD_REPORT  ── AC2 ──►  wakes up (AC3)
+      pthread_cond_signal(&ctx->cond_report)            current_thread == THREAD_REPORT
+
+                                                    while (logged_violation_idx <
+                                                           report.total_violations_recorded):
+                                                        log ViolationEvent[logged_violation_idx]
+                                                        logged_violation_idx++
+                                                    pending_violations = 0
+
+                                                    ctx->current_thread = THREAD_IDLE  ── AC5
+                                                    pthread_cond_signal(&ctx->cond_step_done)
+  else:
+      ctx->current_thread = THREAD_IDLE
+      pthread_cond_signal(&ctx->cond_step_done)
 ```
 
-No macOS, `-lrt` não existe e provoca um erro de linker. No Linux, o flag continua a ser necessário para `clock_gettime`, `shm_open` e símbolos relacionados.
+All of the above happens **while `ctx->mutex` is held** by whichever thread is running — `pthread_cond_wait`/`pthread_cond_signal` are always used in this mutex-protected pattern (AC4).
 
 ---
 
-### Correção 2 — `structs.h`: tipos condicionais dos campos de semáforo em `SharedBlock`
+## EAPLI Theoretical Principles — Practical Application
 
-**Ficheiro:** `src/main/c/structs.h`
+### Domain-Driven Design (DDD)
 
-**Alteração:** No macOS, a struct `SharedBlock` passa a armazenar `sem_t *` (ponteiros para semáforos nomeados) em vez de `sem_t` (semáforos anónimos embutidos). No Linux a struct mantém-se inalterada.
+- A `ViolationEvent` is a **Domain Event**: an immutable record of "something happened at simulation time T involving aircraft A (and possibly B)". `check_violations()` is the only place that creates these events; `report_thread` only *reacts* to them.
+- The `pending_violations` counter and `logged_violation_idx` cursor implement an **at-least-once / exactly-once delivery guarantee** for domain events between the detecting thread and the logging thread — no event can be both skipped and double-logged because the cursor only ever increases and is compared against `total_violations_recorded`, which only ever increases.
 
-```c
-/* Antes */
-typedef struct {
-    SimulationData sim;
-    sem_t          step_go[MAX_FLIGHTS];
-    sem_t          step_done[MAX_FLIGHTS];
-    bool           terminate;
-    WindData       env_wind[MAX_FLIGHTS];
-    sem_t          env_sem;
-} SharedBlock;
+### Gang of Four (GoF) Patterns
 
-/* Depois */
-typedef struct {
-    SimulationData sim;
-#ifdef __APPLE__
-    sem_t         *step_go[MAX_FLIGHTS];
-    sem_t         *step_done[MAX_FLIGHTS];
-#else
-    sem_t          step_go[MAX_FLIGHTS];
-    sem_t          step_done[MAX_FLIGHTS];
-#endif
-    bool           terminate;
-    WindData       env_wind[MAX_FLIGHTS];
-#ifdef __APPLE__
-    sem_t         *env_sem;
-#else
-    sem_t          env_sem;
-#endif
-} SharedBlock;
-```
+| Pattern | Application | Benefit |
+|---------|-------------|---------|
+| **Observer** | `report_thread` "observes" the `THREAD_REPORT` phase via `pthread_cond_wait(&ctx->cond_report, ...)`; `violations_thread` is the "subject" that notifies it | The detecting thread does not need to know *how* violations are logged — it only flips a phase flag and signals |
+| **Command / Event Queue** (informal) | `shm->sim.report.violations[]` acts as an append-only event log; `logged_violation_idx` is the "read pointer" of a single-consumer queue | Multiple violations detected in the same step are all queued and processed in order, none lost |
+| **Mediator** | `SimContext` (mutex + `cond_report` + phase enum) mediates between `violations_thread` and `report_thread` so they never reference each other directly | Threads remain independently testable/replaceable |
 
-Os handles de semáforos nomeados (`sem_t *` devolvidos por `sem_open`) são herdados pelo processo filho após `fork()`, pelo que este recebe handles válidos sem necessitar de qualquer configuração adicional.
+### SOLID Principles
 
-**Também adicionados** — três macros de acesso que resolvem para `sem_t *` em ambas as plataformas, eliminando a necessidade de `#ifdef` em cada ponto de utilização:
-
-```c
-#ifdef __APPLE__
-#define SEM_GO(shm, i)   ((shm)->step_go[i])
-#define SEM_DONE(shm, i) ((shm)->step_done[i])
-#define SEM_ENV(shm)     ((shm)->env_sem)
-#else
-#define SEM_GO(shm, i)   (&(shm)->step_go[i])
-#define SEM_DONE(shm, i) (&(shm)->step_done[i])
-#define SEM_ENV(shm)     (&(shm)->env_sem)
-#endif
-```
-
-#### Nota sobre o tamanho da struct em cada plataforma
-
-A struct `SharedBlock` tem tamanhos diferentes consoante o sistema operativo: no Linux, `sem_t` é embutido na struct (tipicamente ~32 bytes por semáforo); no macOS, `sem_t *` é apenas um ponteiro (8 bytes). **Isto não é problema** porque a memória partilhada só é partilhada entre processos **no mesmo sistema** — pai e filho compilam do mesmo binário, portanto o layout da struct é sempre consistente dentro de uma execução. Um binário compilado no Linux nunca partilha memória com um binário compilado no macOS.
+1. **Single Responsibility Principle (SRP)** — `violations_thread` detects and records events; `report_thread` only consumes and logs them. Detection logic never duplicates logging logic.
+2. **Open/Closed Principle (OCP)** — adding a new violation *type* (e.g., airspace incursion) only requires `check_violations()` to append a new `ViolationEvent` with an appropriate description; `report_thread`'s consume loop is unchanged.
+3. **Interface Segregation Principle (ISP)** — `report_thread` only reads `pending_violations`, `logged_violation_idx`, and `report.violations[]`/`total_violations_recorded` — it has no access to (and no need for) the collision-detection internals of `check_violations()`.
+4. **Dependency Inversion Principle (DIP)** — both threads depend on the `SimContext`/`ViolationEvent` abstractions in `structs.h`, not on each other's function bodies.
 
 ---
 
-### Correção 3 — `simulation_engine.c`: inicialização dos semáforos
-
-**Ficheiro:** `src/main/c/simulation_engine.c`
-
-**Alteração:** Substituir `sem_init` por `sem_open` no macOS. Cada semáforo recebe um nome único. `sem_unlink` é chamado antes de `sem_open` para limpar semáforos residuais de uma execução anterior que tenha terminado de forma anormal.
+## 1. Producing Violation Events (AC1) — `check_violations()`
 
 ```c
-/* Antes */
-for (int i = 0; i < MAX_FLIGHTS; i++) {
-    sem_init(&shm->step_go[i],   1, 0);
-    sem_init(&shm->step_done[i], 1, 0);
+int check_violations(SharedBlock *shm, SimContext *ctx) {
+    SimulationData *sim = &shm->sim;
+    int new_violations = 0;
+
+    for (int i = 0; i < ctx->num_flights; i++) {
+        for (int j = i + 1; j < ctx->num_flights; j++) {
+            if (!ctx->was_active[i] || !ctx->was_active[j]) continue;
+
+            double sep = distance_meters(&sim->flights[i].current_pos,
+                                          &sim->flights[j].current_pos);
+            if (sep < sim->config.min_separation_m) {
+                record_violation(sim, ctx, i, j, sep);   /* appends ViolationEvent */
+                new_violations++;
+            }
+            /* ... proximity warning (not a recorded violation) ... */
+        }
+
+        /* fuel exhaustion: single-flight event, flight_a_id == flight_b_id */
+        if (sim->flights[i].fuel_remaining <= 0 && !ctx->prev_phase[i] /* ... */) {
+            record_violation(sim, ctx, i, i, 0.0);
+            new_violations++;
+        }
+    }
+    return new_violations;
 }
-sem_init(&shm->env_sem, 1, 1);
-
-/* Depois */
-#ifdef __APPLE__
-for (int i = 0; i < MAX_FLIGHTS; i++) {
-    char name[40];
-    snprintf(name, sizeof(name), "/aisafe_go_%d", i);
-    sem_unlink(name);
-    shm->step_go[i] = sem_open(name, O_CREAT | O_EXCL, 0600, 0);
-    snprintf(name, sizeof(name), "/aisafe_done_%d", i);
-    sem_unlink(name);
-    shm->step_done[i] = sem_open(name, O_CREAT | O_EXCL, 0600, 0);
-}
-sem_unlink("/aisafe_env");
-shm->env_sem = sem_open("/aisafe_env", O_CREAT | O_EXCL, 0600, 1);
-#else
-for (int i = 0; i < MAX_FLIGHTS; i++) {
-    sem_init(&shm->step_go[i],   1, 0);
-    sem_init(&shm->step_done[i], 1, 0);
-}
-sem_init(&shm->env_sem, 1, 1);
-#endif
 ```
+
+- `record_violation(sim, ctx, a, b, sep)` writes a new `ViolationEvent` at index `sim->report.total_violations_recorded` of `sim->report.violations[]` (bounded by `MAX_RECORDED_VIOLATIONS`), capturing both flights' positions/velocities, the simulation timestamp, wall-clock time, and `sep`. It then increments `sim->report.total_violations_recorded`.
+- A **fuel-exhaustion event** is recorded with `flight_a_id == flight_b_id` — `report_thread`'s logging code uses this equality to distinguish a single-flight event ("Flight X ran out of fuel") from a two-flight separation violation ("Flights X and Y violated minimum separation").
+- This function returns *only the count of violations newly added during this call* (`new_violations`), not the running total — `violations_thread` uses this count to decide whether to enter `THREAD_REPORT` (AC1/AC2).
 
 ---
 
-### Correção 4 — `simulation_engine.c`: limpeza dos semáforos
-
-**Ficheiro:** `src/main/c/simulation_engine.c`
-
-**Alteração:** Substituir `sem_destroy` por `sem_close` + `sem_unlink` no macOS.
+## 2. Signalling the Report Thread (AC2) — inside `violations_thread`
 
 ```c
-/* Antes */
-for (int i = 0; i < MAX_FLIGHTS; i++) {
-    sem_destroy(&shm->step_go[i]);
-    sem_destroy(&shm->step_done[i]);
-}
-sem_destroy(&shm->env_sem);
+int new_violations = check_violations(ctx->shm, ctx);
+ctx->shm->sim.current_time += ctx->step_time;
+print_step_table(ctx->shm, ctx);
 
-/* Depois */
-#ifdef __APPLE__
-for (int i = 0; i < MAX_FLIGHTS; i++) {
-    char name[40];
-    sem_close(shm->step_go[i]);
-    snprintf(name, sizeof(name), "/aisafe_go_%d", i);
-    sem_unlink(name);
-    sem_close(shm->step_done[i]);
-    snprintf(name, sizeof(name), "/aisafe_done_%d", i);
-    sem_unlink(name);
-}
-sem_close(shm->env_sem);
-sem_unlink("/aisafe_env");
-#else
-for (int i = 0; i < MAX_FLIGHTS; i++) {
-    sem_destroy(&shm->step_go[i]);
-    sem_destroy(&shm->step_done[i]);
-}
-sem_destroy(&shm->env_sem);
-#endif
-```
-
----
-
-### Correção 5 — `simulation_engine.c`: substituição de todos os pontos de utilização de semáforos pelas macros
-
-**Ficheiro:** `src/main/c/simulation_engine.c`
-
-Os quatro pontos de utilização que anteriormente usavam `&shm->step_go[i]` / `&shm->step_done[i]` foram substituídos pelas macros neutras para a plataforma:
-
-| Localização | Antes | Depois |
-|---|---|---|
-| `dispatcher_thread` | `sem_post(&ctx->shm->step_go[i])` | `sem_post(SEM_GO(ctx->shm, i))` |
-| `results_thread` | `sem_wait(&ctx->shm->step_done[i])` | `sem_wait(SEM_DONE(ctx->shm, i))` |
-| `cleanup` | `sem_post(&shm->step_go[i])` | `sem_post(SEM_GO(shm, i))` |
-| barreira de arranque | `sem_wait(&shm->step_done[i])` | `sem_wait(SEM_DONE(shm, i))` |
-
----
-
-### Correção 6 — `environment.c`: substituição dos pontos de utilização de `env_sem` pelo macro
-
-**Ficheiro:** `src/main/c/environment.c`
-
-```c
-/* Antes */
-sem_wait(&ctx->shm->env_sem);
-// ...
-sem_post(&ctx->shm->env_sem);
-
-/* Depois */
-sem_wait(SEM_ENV(ctx->shm));
-// ...
-sem_post(SEM_ENV(ctx->shm));
-```
-
----
-
-### Correção 7 — `flight_simulation.c`: substituição dos pontos de utilização de `step_go` / `step_done` pelos macros
-
-**Ficheiro:** `src/main/c/flight_simulation.c`
-
-```c
-/* Antes */
-sem_post(&shm->step_done[flight_index]);
-// ...
-do { r = sem_wait(&shm->step_go[flight_index]); } while (...);
-// ...
-sem_post(&shm->step_done[flight_index]);
-
-/* Depois */
-sem_post(SEM_DONE(shm, flight_index));
-// ...
-do { r = sem_wait(SEM_GO(shm, flight_index)); } while (...);
-// ...
-sem_post(SEM_DONE(shm, flight_index));
-```
-
----
-
-## Parte 2 — Implementação do US107
-
-### User Story
-
-> Como PO, quero que a thread de detecção de violações de segurança da simulação notifique a thread de geração de relatórios através de variáveis de condição quando ocorre uma violação de segurança, para que o relatório seja actualizado em tempo real com informação precisa.
-
-### Critérios de Aceitação
-
-| Critério | Estado |
-|---|---|
-| A thread de detecção de violações monitoriza a memória partilhada em busca de conflitos entre voos | Feito |
-| Ao detectar uma violação, sinaliza a thread de relatório usando variáveis de condição | Feito |
-| A thread de relatório, em espera na variável de condição, processa e regista imediatamente o evento (colisões e exaustão de combustível) | Feito |
-| É utilizado mutex locking correcto para garantir notificação thread-safe | Feito |
-
----
-
-### Arquitectura
-
-A simulação utiliza um pipeline de threads no processo pai, cada uma à espera na sua variável de condição para ser activada:
-
-```
-Environment → Dispatcher → Results → Violations → Report → (próximo step)
-```
-
-Cada thread sinaliza a seguinte via `pthread_cond_signal`. A `violations_thread` e a `report_thread` são as duas threads centrais no US107.
-
----
-
-### Alteração 1 — `structs.h`: adição de `logged_violation_idx` ao `SimContext`
-
-**Ficheiro:** `src/main/c/structs.h`
-
-Um novo campo regista quantas entradas `ViolationEvent` em `sim->report.violations[]` já foram registadas pela thread de relatório. Isto impede que eventos de steps anteriores sejam registados novamente.
-
-```c
-/* Antes */
-bool  sim_done;
-int   pending_violations;
-bool  report_finalize;
-
-/* Depois */
-bool  sim_done;
-int   pending_violations;
-int   logged_violation_idx;   /* próximo índice em violations[] a registar na report_thread */
-bool  report_finalize;
-```
-
----
-
-### Alteração 2 — `simulation_engine.c`: inicialização de `logged_violation_idx`
-
-**Ficheiro:** `src/main/c/simulation_engine.c` — `main()`
-
-```c
-ctx.pending_violations   = 0;
-ctx.logged_violation_idx = 0;   /* ← adicionado */
-ctx.report_finalize      = false;
-```
-
----
-
-### Alteração 3 — `simulation_engine.c`: `violations_thread` sinaliza a `report_thread` **apenas** quando ocorre uma violação
-
-**Ficheiro:** `src/main/c/simulation_engine.c` — `violations_thread()`
-
-A thread conta as novas violações após cada step e só acorda a `report_thread` se houver pelo menos uma violação nova. Se não houver, sinaliza diretamente `cond_step_done` (passando a `THREAD_IDLE`) para não bloquear o pipeline desnecessariamente:
-
-```c
-int previous_violation_count = sim->total_violations_detected;
-check_violations(sim, active, ctx->pids, ctx->num_flights);
-int new_violations = sim->total_violations_detected - previous_violation_count;
-
-// ... (imprimir tabela do step, mensagens de aterragem, etc.) ...
-
-pthread_mutex_lock(&ctx->mutex);
 if (new_violations > 0) {
     ctx->pending_violations += new_violations;
     ctx->current_thread = THREAD_REPORT;
-    pthread_cond_signal(&ctx->cond_report);   // ← acorda a report_thread apenas se há violações
+    pthread_cond_signal(&ctx->cond_report);
 } else {
     ctx->current_thread = THREAD_IDLE;
-    pthread_cond_signal(&ctx->cond_step_done); // ← liberta o main loop directamente
+    pthread_cond_signal(&ctx->cond_step_done);
 }
-pthread_mutex_unlock(&ctx->mutex);
 ```
 
-O mutex garante que a escrita em `pending_violations` e o sinal são atómicos do ponto de vista da thread de relatório.
+- `pthread_cond_signal` (not `broadcast`) is used because **exactly one** thread (`report_thread`) is ever waiting on `cond_report` — a targeted wake-up is sufficient and slightly cheaper than a broadcast.
+- The signal is sent **while `ctx->mutex` is still held** by `violations_thread` (AC4). `report_thread`, woken from `pthread_cond_wait`, will block re-acquiring the mutex until `violations_thread` releases it at the top of its next loop iteration — there is no window where both threads read/write `pending_violations` or `report.violations[]` concurrently.
+- `ctx->pending_violations += new_violations` is **cumulative**: if `report_thread` is somehow delayed and another step also produces violations before it runs (not possible in the current strictly-sequential phase machine, but the field is designed defensively), the counter would still reflect the true backlog.
 
 ---
 
-### Alteração 4 — `simulation_engine.c`: `report_thread` processa e regista cada evento de violação
-
-**Ficheiro:** `src/main/c/simulation_engine.c` — `report_thread()`
-
-Esta é a alteração central do US107. A thread de relatório já esperava em `cond_report` e lia `pending_violations`. O novo código itera sobre cada novo `ViolationEvent` em `sim->report.violations[]` e regista os detalhes completos de cada um.
+## 3. Report Thread Wake-up and Logging (AC3)
 
 ```c
-/* Antes */
-if (to_process > 0) {
-    printf("[REPORT] Processed %d new violation event(s). Total recorded: %d\n",
-           to_process, sim->report.total_violations_recorded);
-    fflush(stdout);
-}
+while (ctx->current_thread != THREAD_REPORT && !ctx->report_finalize && !ctx->sim_done)
+    pthread_cond_wait(&ctx->cond_report, &ctx->mutex);
 
-/* Depois */
-if (to_process > 0) {
-    int total_recorded = sim->report.total_violations_recorded;
-    for (int k = ctx->logged_violation_idx; k < total_recorded; k++) {
-        ViolationEvent *evt = &sim->report.violations[k];
-        double abs_time = sim->config.sim_start_seconds + evt->timestamp;
-        int h = (int)(abs_time / 3600) % 24;
-        int m = (int)(fmod(abs_time, 3600.0) / 60.0);
-        printf("[REPORT] Violation #%d  t=%.0fs [%02d:%02d]  "
-               "%s (%.4f°,%.4f°,%.0fm) <-> %s (%.4f°,%.4f°,%.0fm)  "
-               "dist=%.1fm\n",
-               k + 1, evt->timestamp, h, m,
-               sim->flights[evt->flight_a_id].callsign,
-               evt->pos_a.latitude, evt->pos_a.longitude, evt->pos_a.altitude,
-               sim->flights[evt->flight_b_id].callsign,
-               evt->pos_b.latitude, evt->pos_b.longitude, evt->pos_b.altitude,
-               evt->distance);
+if (ctx->report_finalize) { finalize_and_write_report(ctx->shm, ctx); break; } /* US109 */
+if (ctx->sim_done) break;
+
+while (ctx->logged_violation_idx < ctx->shm->sim.report.total_violations_recorded) {
+    ViolationEvent *v = &ctx->shm->sim.report.violations[ctx->logged_violation_idx];
+
+    if (v->flight_a_id == v->flight_b_id) {
+        printf("[REPORT] t=%.1f — Flight %s (id %d) ran out of fuel at (%.4f, %.4f)\n",
+               v->timestamp, v->callsign_a, v->flight_a_id,
+               v->pos_a.latitude, v->pos_a.longitude);
+    } else {
+        printf("[REPORT] t=%.1f — Separation violation between %s and %s: %.1f m "
+               "(min %.1f m) at (%.4f, %.4f) / (%.4f, %.4f)\n",
+               v->timestamp, v->callsign_a, v->callsign_b, v->separation_m,
+               ctx->shm->sim.config.min_separation_m,
+               v->pos_a.latitude, v->pos_a.longitude,
+               v->pos_b.latitude, v->pos_b.longitude);
     }
-    ctx->logged_violation_idx = total_recorded;
-    printf("[REPORT] %d new violation(s) processed. Total recorded: %d\n",
-           to_process, total_recorded);
-    fflush(stdout);
+    ctx->logged_violation_idx++;
 }
+ctx->pending_violations = 0;
 ```
 
-Cada `ViolationEvent` contém:
-- `timestamp` — tempo de simulação em segundos no momento em que a violação ocorreu
-- `flight_a_id` / `flight_b_id` — índices em `sim->flights[]` para obter os callsigns
-- `pos_a` / `pos_b` — posições 3D (latitude, longitude, altitude) de ambas as aeronaves
-- `distance` — separação mínima em metros no momento da detecção
-
-Violações por exaustão de combustível também criam uma entrada `ViolationEvent` (com `flight_b_id == flight_a_id` como marcador), sendo igualmente registadas em tempo real pela thread de relatório.
+- The `while (ctx->current_thread != THREAD_REPORT && !ctx->report_finalize && !ctx->sim_done)` guard handles **all three** ways this thread can legitimately be woken (normal violation, end-of-simulation finalize, or early shutdown) — this is the textbook reason a condition-variable wait must always be in a `while` loop, not an `if`: a spurious wake-up or a wake-up for a *different* reason must re-check the condition (AC3).
+- The inner `while (ctx->logged_violation_idx < ... total_violations_recorded)` drains **all** newly recorded events in one go — even though `violations_thread` currently only ever adds events one step at a time, this loop correctly handles the case where `check_violations()` recorded multiple violations (e.g., two separate near-misses) in the same step.
+- `pending_violations = 0` resets the "new since last report" counter once everything has been logged — `logged_violation_idx` (not `pending_violations`) is the authoritative cursor; `pending_violations` exists mainly as a quick non-zero/zero signal for diagnostics.
 
 ---
 
-### Modelo de thread-safety
-
-```
-violations_thread                    report_thread
-─────────────────                    ─────────────
-lock(mutex)
-  pending_violations += N
-  current_thread = THREAD_REPORT
-  cond_signal(cond_report)      ───► acorda do cond_wait(cond_report, mutex)
-unlock(mutex)                        mutex já adquirido ao acordar
-                                       to_process = pending_violations
-                                       pending_violations = 0
-                                     unlock(mutex)
-                                     [regista detalhes da violação — sem lock,
-                                      violations[] só é escrito pela violations_thread
-                                      que está agora inactiva]
-```
-
-O array `violations[]` e `total_violations_recorded` são escritos exclusivamente por `check_violations`, que corre dentro da `violations_thread` enquanto a thread de relatório está bloqueada. Quando a thread de relatório os lê, a `violations_thread` já libertou o mutex e está à espera do próximo step. Não é necessário locking adicional para a leitura do array.
-
----
-
----
-
-## Parte 3 — Bugs detectados após testes
-
-### Bug 1 — Violações por exaustão de combustível não eram registadas pela `report_thread`
-
-**Ficheiro:** `src/main/c/simulation_engine.c` — `check_violations()`
-
-**Problema:** `check_violations` incrementava `total_violations_detected` quando detectava exaustão de combustível, mas não adicionava nenhuma entrada ao array `violations[]`. Como `report_thread` itera de `logged_violation_idx` até `total_violations_recorded` (que só conta entradas no array), estas violações nunca eram registadas em detalhe — falhando o AC3.
-
-**Correção:** Ao detectar exaustão de combustível, é agora criada uma `ViolationEvent` em `violations[]`, usando `flight_b_id == flight_a_id` para distinguir este caso de uma colisão entre dois voos.
+## 4. Returning Control to the Pipeline (AC5)
 
 ```c
-/* Adicionado dentro do bloco de exaustão de combustível */
-if (sim->report.total_violations_recorded < MAX_RECORDED_VIOLATIONS) {
-    ViolationEvent *evt = &sim->report.violations[sim->report.total_violations_recorded];
-    evt->timestamp   = sim->current_time;
-    evt->flight_a_id = i;
-    evt->flight_b_id = i; /* mesmo índice indica exaustão (evento de voo único) */
-    evt->pos_a       = f->current_pos;
-    evt->pos_b       = f->current_pos;
-    evt->vel_a       = f->velocity;
-    evt->vel_b       = f->velocity;
-    evt->distance    = 0.0;
-    sim->report.total_violations_recorded++;
-}
+ctx->current_thread = THREAD_IDLE;
+pthread_cond_signal(&ctx->cond_step_done);
 ```
 
-A `report_thread` imprime uma mensagem diferente quando `flight_b_id == flight_a_id`:
-
-```c
-if (evt->flight_b_id == evt->flight_a_id) {
-    printf("[REPORT] Violation #%d  t=%.0fs [%02d:%02d]  "
-           "%s fuel exhaustion at (%.4f°,%.4f°,%.0fm)\n", ...);
-} else {
-    printf("[REPORT] Violation #%d  t=%.0fs [%02d:%02d]  "
-           "%s <-> %s  dist=%.1fm\n", ...);
-}
-```
+- This is **identical** to the `else` branch in `violations_thread` for the no-violation case — from `main()`'s perspective (which is blocked in `while (ctx.current_thread != THREAD_IDLE) pthread_cond_wait(&ctx.cond_step_done, ...)`), the violation-report detour is transparent: the step either took the short path (`VIOLATIONS → IDLE`) or the long path (`VIOLATIONS → REPORT → IDLE`), but `main()`'s wake-up condition and the loop structure are exactly the same either way.
+- Because the violation is logged **within the same simulated step** in which it was detected — before `main()` proceeds to the next step — the operator sees the `[REPORT]` line immediately after the step's table row, satisfying the "as soon as it happens" requirement of the user story.
 
 ---
 
-### Bug 2 — `finalize_and_write_report` sobrescrevia `total_violations_recorded` com o valor errado
+## Key Files
 
-**Ficheiro:** `src/main/c/simulation_engine.c` — `finalize_and_write_report()`
-
-**Problema:** A linha
-
-```c
-sim->report.total_violations_recorded = sim->total_violations_detected;
-```
-
-substituía a contagem correcta de entradas no array `violations[]` pelo total geral de violações detectadas (que incluía exaustões de combustível mesmo quando estas não tinham entradas no array). O `report_generator` usaria então `total_violations_recorded` como contagem de entradas válidas, podendo ler dados não inicializados.
-
-**Correção:** A linha foi removida. Com o Bug 1 corrigido, `total_violations_recorded` é incrementado para todos os tipos de violação directamente em `check_violations`, pelo que o valor já está correcto quando `finalize_and_write_report` é chamada.
+| File | Location | Responsibility |
+|------|----------|-----------------|
+| `structs.h` | `aisafe-simulation/src/main/c` | `SimContext` fields (`cond_report`, `pending_violations`, `logged_violation_idx`, `report_finalize`), `ViolationEvent`, `SimulationReport.violations[]` |
+| `simulation_engine.c` | `aisafe-simulation/src/main/c` | `check_violations()` / `record_violation()` (AC1), `violations_thread` (AC2), `report_thread` (AC3–AC5) |
 
 ---
 
-### Exemplo de output
+## User Interaction Flow
 
-```
-  *** COLLISION: MAD02A <-> TAP02A  dist=0.0 m — both flights destroyed ***
-[REPORT] Violation #1  t=19800s [05:30]  MAD02A (39.3003°,-7.9144°,10000m) <-> TAP02A (39.3003°,-7.9144°,10000m)  dist=0.0m
-[REPORT] 1 new violation(s) processed. Total recorded: 1
-```
+1. The simulation is running normally; the operator sees one step-table row per simulated time step.
+2. At some step, `check_violations()` detects that two aircraft have violated the minimum separation distance (or a flight has run out of fuel).
+3. Immediately following that step's table row, a `[REPORT]` line appears describing the violation (callsigns, positions, separation distance or fuel-exhaustion message).
+4. The simulation continues to the next step without interruption — the violation does not pause or abort the run (unless the cumulative violation count exceeds `max_violations_threshold`, which triggers termination independently).
 
 ---
 
-### Planos de voo de teste
+## Test Cases Coverage
 
-Estão disponíveis três planos de voo em `flightplansSim/`, todos com partida às **05:30 de 2026-06-22**:
+| TC | What is verified |
+|----|-------------------|
+| TC01 | `check_violations()` returns the count of *newly* recorded violations for the current step only |
+| TC02 | A separation violation appends a `ViolationEvent` with `flight_a_id != flight_b_id` and a non-zero `separation_m` |
+| TC03 | A fuel-exhaustion event appends a `ViolationEvent` with `flight_a_id == flight_b_id` |
+| TC04 | When `new_violations == 0`, `report_thread` is never woken (`current_thread` goes straight to `THREAD_IDLE`) |
+| TC05 | When `new_violations > 0`, `report_thread` wakes, logs exactly the new entries (`logged_violation_idx` advances by `new_violations`), and resets `pending_violations` to 0 |
+| TC06 | `report_thread`'s wait loop correctly distinguishes a `THREAD_REPORT` wake-up from a `report_finalize` wake-up from a `sim_done` wake-up |
+| TC07 | All reads/writes to `report.violations[]`, `total_violations_recorded`, `pending_violations`, and `logged_violation_idx` occur while `ctx->mutex` is held |
+| TC08 | After logging, `current_thread == THREAD_IDLE` and `main()`'s `cond_step_done` wait unblocks, allowing the simulation to proceed to the next step |
 
-| Ficheiro | Callsign | Rota | Combustível | Violação esperada |
-|---|---|---|---|---|
-| `TAP02A_1.json` | TAP02A | LIS → MAD | 42 000 kg | Colisão por distância (mesma rota que MAD02A) |
-| `MAD02A_1.json` | MAD02A | LIS → MAD | 42 000 kg | Colisão por distância (mesma rota que TAP02A) |
-| `OPO01A_1.json` | OPO01A | OPO → MAD | 5 000 kg | **Exaustão de combustível** |
+---
 
-#### TAP02A / MAD02A — teste de colisão por distância
+## Relação com outras User Stories
 
-Ambos os aviões seguem exactamente a mesma trajectória física a partir de LIS, com separação zero em cada step. A colisão é detectada e a `report_thread` é notificada via variável de condição.
-
-#### OPO01A — teste de exaustão de combustível
-
-O A380 parte de Porto com apenas 5 000 kg de combustível para uma viagem de ~700 km. O consumo real ultrapassa os 10 000 kg no primeiro step de 15 minutos, pelo que o combustível esgota imediatamente. A rota vai a ~41°N, bem a norte da rota LIS→MAD (~39–40°N), garantindo que não há sobreposição de distância com TAP02A/MAD02A.
-
-Output esperado ao seleccionar os três voos:
-
-```
-  *** VIOLATION: OPO01A fuel exhausted — flight destroyed ***
-[REPORT] Violation #1  t=19800s [05:30]  OPO01A fuel exhaustion at (41.2481°,-8.6814°,69m)
-[REPORT] 1 new violation(s) processed. Total recorded: 1
-
-  *** COLLISION: TAP02A <-> MAD02A  dist=0.0 m — both flights destroyed ***
-[REPORT] Violation #2  t=19800s [05:30]  TAP02A (...) <-> MAD02A (...)  dist=0.0m
-[REPORT] 1 new violation(s) processed. Total recorded: 2
-```
-
-Os dois tipos de violação distintos são ambos capturados pela `violations_thread` e notificados à `report_thread` via `cond_report`, demonstrando o mecanismo do US107.
-
-Para executar: `make run`, depois seleccionar os voos pretendidos no menu interactivo.
+- **US105** — initializes `cond_report` and the `SimContext` used here.
+- **US106** — describes the overall thread/phase architecture; this US details the `THREAD_VIOLATIONS → THREAD_REPORT` branch specifically.
+- **US108** — the per-step lockstep semaphore protocol that precedes violation detection each step.
+- **US109** — `report_finalize`/`finalize_and_write_report()`, the *other* reason `report_thread` wakes up, reusing the same `cond_report`.
+- **US111** — the EAPLI/operator-facing documentation of the final JSON report, which includes the same `violations[]` accumulated here.
