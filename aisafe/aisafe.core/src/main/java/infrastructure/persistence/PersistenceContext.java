@@ -19,6 +19,7 @@ public final class PersistenceContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(PersistenceContext.class);
 
     private static volatile RepositoryFactory theFactory;
+    private static volatile boolean shutdownHookRegistered;
 
     private PersistenceContext() {
         // ensure utility
@@ -44,8 +45,46 @@ public final class PersistenceContext {
                 throw new IllegalStateException(
                         "Unable to dynamically load the Repository Factory: " + factoryClassName, ex);
             }
+            registerShutdownHook();
         }
         return theFactory;
+    }
+
+    /**
+     * Registers, exactly once, a JVM shutdown hook that releases persistence
+     * resources (see {@link #shutdown()}). Registering here means every
+     * application that touches the persistence layer gets graceful cleanup of
+     * the shared {@code EntityManagerFactory} and its database connections on
+     * normal exit or Ctrl+C, without each entry point having to remember to do
+     * so. It cannot help with {@code kill -9}.
+     */
+    private static void registerShutdownHook() {
+        if (shutdownHookRegistered) {
+            return;
+        }
+        try {
+            Runtime.getRuntime().addShutdownHook(new Thread(PersistenceContext::shutdown, "persistence-shutdown"));
+            shutdownHookRegistered = true;
+        } catch (final IllegalStateException alreadyShuttingDown) {
+            // JVM is already shutting down; nothing left to register.
+        }
+    }
+
+    /**
+     * Releases persistence resources held by the active factory (notably the
+     * shared {@code EntityManagerFactory} and its connection pool). Invoked
+     * automatically by a JVM shutdown hook, but also safe to call manually.
+     */
+    public static synchronized void shutdown() {
+        final RepositoryFactory factory = theFactory;
+        if (factory == null) {
+            return;
+        }
+        try {
+            factory.close();
+        } catch (final RuntimeException ex) {
+            LOGGER.warn("Error while closing the persistence layer on shutdown", ex);
+        }
     }
 
     /**

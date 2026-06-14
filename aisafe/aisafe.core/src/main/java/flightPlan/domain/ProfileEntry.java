@@ -13,7 +13,7 @@ import eapli.framework.validations.Preconditions;
 
 /**
  * One line of a flight leg's profile (a climb/cruise/descend point).
- * Cruise has no altitude and no rate; only descend has a (negative) rate.
+ * Cruise has no altitude and no rate; climb has a positive rate; descend has a negative rate.
  */
 @Entity
 public class ProfileEntry implements DomainEntity<Long> {
@@ -39,9 +39,10 @@ public class ProfileEntry implements DomainEntity<Long> {
                          final Double rate, final String rateUnit) {
         Preconditions.nonNull(phase, "phase must not be null");
         Preconditions.ensure(speed > 0, "Profile speed must be strictly positive");
-        if (rate != null) {
+        if (rate != null && phase == ProfilePhase.DESCEND)
             Preconditions.ensure(rate < 0, "Descend rate must be negative");
-        }
+        if (rate != null && phase == ProfilePhase.CLIMB)
+            Preconditions.ensure(rate > 0, "Climb rate must be positive");
         this.phase = phase;
         this.altitude = altitude;
         this.altitudeUnit = altitudeUnit;
@@ -58,6 +59,12 @@ public class ProfileEntry implements DomainEntity<Long> {
     public static ProfileEntry climb(final double altitude, final String altitudeUnit,
                                      final double speed, final String speedUnit) {
         return new ProfileEntry(ProfilePhase.CLIMB, altitude, altitudeUnit, speed, speedUnit, null, null);
+    }
+
+    public static ProfileEntry climb(final double altitude, final String altitudeUnit,
+                                     final double speed, final String speedUnit,
+                                     final double rate, final String rateUnit) {
+        return new ProfileEntry(ProfilePhase.CLIMB, altitude, altitudeUnit, speed, speedUnit, rate, rateUnit);
     }
 
     public static ProfileEntry cruise(final double speed, final String speedUnit) {

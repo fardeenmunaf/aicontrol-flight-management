@@ -1,44 +1,25 @@
 package airtransport.presentation.aircraft;
 
+import airtransport.AirTransportContext;
 import eapli.framework.presentation.console.AbstractUI;
-import eapli.framework.infrastructure.authz.application.AuthzRegistry;
-import aircraft.application.ListAircraftController;
-import airtransportcompany.domain.AirTransportCompany;
-import customercollaborator.domain.CustomerCollaborator;
-import customercollaborator.domain.CustomerType;
-import infrastructure.persistence.PersistenceContext;
-import shared.domain.UserId;
 
 public class ListAircraftUI extends AbstractUI {
-
-    private final ListAircraftController controller = new ListAircraftController(PersistenceContext.repositories().aircraft());
 
     @Override
     protected boolean doShow() {
         try {
-            final var session = AuthzRegistry.authorizationService().session().orElseThrow(IllegalStateException::new);
-            final var userId = UserId.valueOf(session.authenticatedUser().identity().toString());
-            final CustomerCollaborator collaborator = PersistenceContext.repositories().customerCollaborators()
-                    .findByUserId(userId)
-                    .orElseThrow(() -> new IllegalStateException("Current user is not a customer collaborator"));
-
-            if (collaborator.customerType() != CustomerType.AIR_TRANSPORT_COMPANY) {
-                System.out.println("You are not assigned to an air transport company.");
+            final String raw = AirTransportContext.service().listFleet();
+            if (raw.isBlank()) {
+                System.out.println("No aircraft registered for your company.");
                 return true;
             }
-
-            final AirTransportCompany company = PersistenceContext.repositories().airTransportCompanies()
-                    .ofIdentity(collaborator.airTransportCompanyId())
-                    .orElseThrow(() -> new IllegalStateException("Air transport company not found"));
-
-            System.out.println("Fleet for: " + company.name());
             System.out.println();
-
-            controller.listAll().forEach(a -> {
-                if (a.airTransportCompany() != null && a.airTransportCompany().identity().equals(company.identity())) {
-                    System.out.println("Registration: " + a.registrationNumber() + " | Country: " + a.registrationCountry() + " | Status: " + a.operationStatus());
-                }
-            });
+            // fleet CSV: reg;model;maker;status;econ;bus;first;country;aircraftId
+            for (final String line : raw.split("\n")) {
+                final String[] f = line.split(";", -1);
+                System.out.printf("Registration: %-12s | Country: %-5s | Model: %-25s | Status: %s%n",
+                        f[0], f[7], f[1], f[3]);
+            }
         } catch (final Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -46,7 +27,5 @@ public class ListAircraftUI extends AbstractUI {
     }
 
     @Override
-    public String headline() {
-        return "List Aircraft";
-    }
+    public String headline() { return "List Aircraft"; }
 }

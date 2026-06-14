@@ -15,6 +15,7 @@
     #include "flight_simulation.h"
     #include "position_tracker.h"
     #include "physics.h"
+    #include "environment.h"
 
     static const double LOOKAHEAD_M = 500000.0;
 
@@ -96,6 +97,20 @@
                 f->violation_detected       = true;
                 sim->total_violations_detected++;
                 printf("  *** VIOLATION: %s fuel exhausted — flight destroyed ***\n", f->callsign);
+
+                if (sim->report.total_violations_recorded < MAX_RECORDED_VIOLATIONS) {
+                    ViolationEvent *evt = &sim->report.violations[sim->report.total_violations_recorded];
+                    evt->timestamp   = sim->current_time;
+                    evt->flight_a_id = i;
+                    evt->flight_b_id = i; /* same index signals fuel exhaustion (single-flight event) */
+                    evt->pos_a       = f->current_pos;
+                    evt->pos_b       = f->current_pos;
+                    evt->vel_a       = f->velocity;
+                    evt->vel_b       = f->velocity;
+                    evt->distance    = 0.0;
+                    sim->report.total_violations_recorded++;
+                }
+
                 if (pids[i] > 0) {
                     kill(pids[i], SIGTERM);
                     f->is_active = false;
@@ -211,9 +226,9 @@
         wall_tm.tm_year = sim->config.sim_start_year - 1900;
         wall_tm.tm_mon  = sim->config.sim_start_month - 1;
         wall_tm.tm_mday = sim->config.sim_start_day + wall_s / 86400;
+        mktime(&wall_tm);
         wall_tm.tm_hour = (wall_s % 86400) / 3600;
         wall_tm.tm_min  = (wall_s % 3600) / 60;
-        mktime(&wall_tm);
         printf("\n╔══════════════════════════════════════════════════════════════════════"
                "════════════════════════════════════════════════════════════════════╗\n");
         printf("║  t=%7.0f s  [%02d/%02d/%04d %02d:%02d]  |  step %3d / %-3d  |  active=%2d  pending=%2d  |  violations=%3d"
@@ -291,7 +306,7 @@
             {
                 if (active[i])
                 {
-                    sem_post(&ctx->shm->step_go[i]);
+                    sem_post(SEM_GO(ctx->shm, i));
                 }
             }
 
@@ -333,7 +348,7 @@
             {
                 if (active[i])
                 {
-                    sem_wait(&ctx->shm->step_done[i]); // block until child posts step_done
+                    sem_wait(SEM_DONE(ctx->shm, i)); // block until child posts step_done
                 }
             }
 
@@ -465,9 +480,14 @@
                     sim->prev_pos[i] = sim->flights[i].current_pos;
 
             pthread_mutex_lock(&ctx->mutex);
-            ctx->pending_violations += new_violations;
-            ctx->current_thread = THREAD_REPORT;
-            pthread_cond_signal(&ctx->cond_report);
+            if (new_violations > 0) {
+                ctx->pending_violations += new_violations;
+                ctx->current_thread = THREAD_REPORT;
+                pthread_cond_signal(&ctx->cond_report);
+            } else {
+                ctx->current_thread = THREAD_IDLE;
+                pthread_cond_signal(&ctx->cond_step_done);
+            }
             pthread_mutex_unlock(&ctx->mutex);
         }
         return NULL;
@@ -500,10 +520,9 @@
                 status->had_violation      = f->violation_detected;
                 double fuel_rem = f->current_mass - f->properties.empty_weight - f->payload;
                 status->fuel_remaining     = (fuel_rem > 0) ? fuel_rem : 0.0;
-                status->num_legs_completed = f->current_leg;
+                status->num_legs_completed = f->current_leg + (f->is_active ? 0 : 1);
             }
             sim->report.total_flights = count;
-            sim->report.total_violations_recorded = sim->total_violations_detected;
 
             pid_t rpid = fork();
             if (rpid < 0) {
@@ -530,7 +549,7 @@
             /* Unblock children that are waiting on step_go. */
             for (int i = 0; i < n; i++)
                 if (pids[i] > 0)
-                    sem_post(&shm->step_go[i]);
+                    sem_post(SEM_GO(shm, i));
 
             for (int i = 0; i < n; i++)
                 if (pids[i] > 0)
@@ -564,9 +583,33 @@
 
             // Process violation events
             if (to_process > 0) {
-                printf("[REPORT] Processed %d new violation event(s). "
-                       "Total recorded: %d\n",
-                       to_process, sim->report.total_violations_recorded);
+                int total_recorded = sim->report.total_violations_recorded;
+                for (int k = ctx->logged_violation_idx; k < total_recorded; k++) {
+                    ViolationEvent *evt = &sim->report.violations[k];
+                    double abs_time = sim->config.sim_start_seconds + evt->timestamp;
+                    int h = (int)(abs_time / 3600) % 24;
+                    int m = (int)(fmod(abs_time, 3600.0) / 60.0);
+                    if (evt->flight_b_id == evt->flight_a_id) {
+                        printf("[REPORT] Violation #%d  t=%.0fs [%02d:%02d]  "
+                               "%s fuel exhaustion at (%.4f°,%.4f°,%.0fm)\n",
+                               k + 1, evt->timestamp, h, m,
+                               sim->flights[evt->flight_a_id].callsign,
+                               evt->pos_a.latitude, evt->pos_a.longitude, evt->pos_a.altitude);
+                    } else {
+                        printf("[REPORT] Violation #%d  t=%.0fs [%02d:%02d]  "
+                               "%s (%.4f°,%.4f°,%.0fm) <-> %s (%.4f°,%.4f°,%.0fm)  "
+                               "dist=%.1fm\n",
+                               k + 1, evt->timestamp, h, m,
+                               sim->flights[evt->flight_a_id].callsign,
+                               evt->pos_a.latitude, evt->pos_a.longitude, evt->pos_a.altitude,
+                               sim->flights[evt->flight_b_id].callsign,
+                               evt->pos_b.latitude, evt->pos_b.longitude, evt->pos_b.altitude,
+                               evt->distance);
+                    }
+                }
+                ctx->logged_violation_idx = total_recorded;
+                printf("[REPORT] %d new violation(s) processed. Total recorded: %d\n",
+                       to_process, total_recorded);
                 fflush(stdout);
             }
 
@@ -707,9 +750,17 @@
         memset(shm, 0, sizeof(SharedBlock));
 
         for (int i = 0; i < MAX_FLIGHTS; i++) {
-            sem_init(&shm->step_go[i],   1, 0);
-            sem_init(&shm->step_done[i], 1, 0);
+            char name[40];
+            snprintf(name, sizeof(name), "/aisafe_go_%d", i);
+            sem_unlink(name);
+            shm->step_go[i] = sem_open(name, O_CREAT | O_EXCL, 0600, 0);
+            snprintf(name, sizeof(name), "/aisafe_done_%d", i);
+            sem_unlink(name);
+            shm->step_done[i] = sem_open(name, O_CREAT | O_EXCL, 0600, 0);
         }
+        sem_unlink("/aisafe_env");
+        shm->env_sem = sem_open("/aisafe_env", O_CREAT | O_EXCL, 0600, 1);
+        memset(shm->env_wind, 0, sizeof(shm->env_wind));
 
         SimulationData *sim = &shm->sim;
 
@@ -735,6 +786,46 @@
         sim->report.wall_clock_start          = (double)wall_start;
 
         int num_forked = run_flight_selection_menu(sim);
+
+        /* Pre-fork wind feasibility check: load the weather DB and reject any
+         * selected flight whose route passes through an area with wind > 25 m/s. */
+        WeatherEntry pre_weather[MAX_WEATHER_DB];
+        int pre_weather_count = 0;
+        load_weather_db("weather_db.json", pre_weather, MAX_WEATHER_DB, &pre_weather_count);
+
+        if (pre_weather_count > 0) {
+            for (int i = 0; i < sim->num_flights; i++) {
+                Flight *f = &sim->flights[i];
+                if (!f->is_active) continue;
+
+                bool blocked = false;
+                for (int j = 0; j < f->flight_plan.num_waypoints && !blocked; j++) {
+                    Position *pos = &f->flight_plan.waypoints[j].pos;
+                    for (int k = 0; k < pre_weather_count && !blocked; k++) {
+                        WeatherEntry *e = &pre_weather[k];
+                        double min_lat = e->lat1 < e->lat2 ? e->lat1 : e->lat2;
+                        double max_lat = e->lat1 > e->lat2 ? e->lat1 : e->lat2;
+                        double min_lon = e->lon1 < e->lon2 ? e->lon1 : e->lon2;
+                        double max_lon = e->lon1 > e->lon2 ? e->lon1 : e->lon2;
+
+                        if (pos->latitude  >= min_lat && pos->latitude  <= max_lat &&
+                            pos->longitude >= min_lon && pos->longitude <= max_lon &&
+                            pos->altitude  >= e->alt_inf && pos->altitude <= e->alt_sup &&
+                            e->wind_speed_ms > 150.0) {
+
+                            printf("\n  [BLOCKED] Flight %s cannot fly: waypoint %d (%.4f°, %.4f°, %.0f m)\n"
+                                   "            is inside a weather area with wind %.1f m/s (%.0f kt) > 150 m/s.\n",
+                                   f->callsign, j,
+                                   pos->latitude, pos->longitude, pos->altitude,
+                                   e->wind_speed_ms, e->wind_speed_ms / 0.514444);
+                            f->is_active = false;
+                            num_forked--;
+                            blocked = true;
+                        }
+                    }
+                }
+            }
+        }
 
         printf("\n%d flight(s) selected — forking %d child processes.\n",
                num_forked, num_forked);
@@ -772,7 +863,7 @@
         /* ── Startup barrier: wait for all children to post step_done once ───── */
         for (int i = 0; i < sim->num_flights; i++)
             if (pids[i] > 0)
-                sem_wait(&shm->step_done[i]);
+                sem_wait(SEM_DONE(shm, i));
 
         /* Initialise prev_pos to each flight's departure position. */
         for (int i = 0; i < sim->num_flights; i++)
@@ -799,21 +890,26 @@
         ctx.sim_done    = false;
         memcpy(ctx.pids, pids, sizeof(pids));
         pthread_mutex_init(&ctx.mutex, NULL);
+        pthread_cond_init(&ctx.cond_environment, NULL);
         pthread_cond_init(&ctx.cond_dispatch,   NULL);
         pthread_cond_init(&ctx.cond_results,    NULL);
         pthread_cond_init(&ctx.cond_violations, NULL);
         pthread_cond_init(&ctx.cond_step_done,  NULL);
         pthread_cond_init(&ctx.cond_report, NULL);
-        ctx.pending_violations  = 0;
-        ctx.report_finalize     = false;
+        ctx.pending_violations      = 0;
+        ctx.logged_violation_idx    = 0;
+        ctx.report_finalize         = false;
         ctx.current_thread = THREAD_IDLE;
 
         for (int i = 0; i < MAX_FLIGHTS; i++)
             ctx.prev_phase[i] = PHASE_GATE;
 
+        pthread_t thr_environment;
         pthread_t thr_dispatcher, thr_results, thr_violations;
         pthread_t thr_report;
 
+        /* AC1: environment thread is spawned before the first time step. */
+        pthread_create(&thr_environment, NULL, environment_thread, &ctx);
         pthread_create(&thr_dispatcher,  NULL, dispatcher_thread,  &ctx);
         pthread_create(&thr_results,     NULL, results_thread,     &ctx);
         pthread_create(&thr_violations,  NULL, violations_thread,  &ctx);
@@ -827,9 +923,9 @@
             wall_tm0.tm_year = sim->config.sim_start_year - 1900;
             wall_tm0.tm_mon  = sim->config.sim_start_month - 1;
             wall_tm0.tm_mday = sim->config.sim_start_day;
+            mktime(&wall_tm0);
             wall_tm0.tm_hour = wall_s / 3600;
             wall_tm0.tm_min  = (wall_s % 3600) / 60;
-            mktime(&wall_tm0);
             printf("\n╔══════════════════════════════════════════════════════════════════════"
                    "════════════════════════════════════════════════════════════════════╗\n");
             printf("║  t=       0 s  [%02d/%02d/%04d %02d:%02d]  |  step   0 / %-3d  |  active= 0  pending=%2d  |  violations=  0"
@@ -903,8 +999,9 @@
             memcpy(ctx.was_active, was_active, sizeof(was_active));
             ctx.step_time      = step_time;
             ctx.step_num       = step_num;
-            ctx.current_thread = THREAD_DISPATCHER;
-            pthread_cond_signal(&ctx.cond_dispatch);
+            /* AC5: env thread writes wind before dispatcher wakes children. */
+            ctx.current_thread = THREAD_ENVIRONMENT;
+            pthread_cond_signal(&ctx.cond_environment);
             while (ctx.current_thread != THREAD_IDLE)
                 pthread_cond_wait(&ctx.cond_step_done, &ctx.mutex);
             pthread_mutex_unlock(&ctx.mutex);
@@ -918,11 +1015,14 @@
         /* ── Shutdown threads ────────────────────────────────────────────────── */
         pthread_mutex_lock(&ctx.mutex);
         ctx.sim_done = true;
+        pthread_cond_broadcast(&ctx.cond_environment);
         pthread_cond_broadcast(&ctx.cond_dispatch);
         pthread_cond_broadcast(&ctx.cond_results);
         pthread_cond_broadcast(&ctx.cond_violations);
         pthread_mutex_unlock(&ctx.mutex);
 
+        /* AC1: environment thread is properly joined before the parent exits. */
+        pthread_join(thr_environment, NULL);
         pthread_join(thr_dispatcher, NULL);
         pthread_join(thr_results,    NULL);
         pthread_join(thr_violations, NULL);
@@ -935,6 +1035,7 @@
         pthread_join(thr_report, NULL);
 
         pthread_mutex_destroy(&ctx.mutex);
+        pthread_cond_destroy(&ctx.cond_environment);
         pthread_cond_destroy(&ctx.cond_dispatch);
         pthread_cond_destroy(&ctx.cond_results);
         pthread_cond_destroy(&ctx.cond_violations);
@@ -975,9 +1076,16 @@
 
         /* ── Release shared memory ───────────────────────────────────────────── */
         for (int i = 0; i < MAX_FLIGHTS; i++) {
-            sem_destroy(&shm->step_go[i]);
-            sem_destroy(&shm->step_done[i]);
+            char name[40];
+            sem_close(shm->step_go[i]);
+            snprintf(name, sizeof(name), "/aisafe_go_%d", i);
+            sem_unlink(name);
+            sem_close(shm->step_done[i]);
+            snprintf(name, sizeof(name), "/aisafe_done_%d", i);
+            sem_unlink(name);
         }
+        sem_close(shm->env_sem);
+        sem_unlink("/aisafe_env");
         munmap(shm, sizeof(SharedBlock));
         shm_unlink("/aisafe_sim");
 

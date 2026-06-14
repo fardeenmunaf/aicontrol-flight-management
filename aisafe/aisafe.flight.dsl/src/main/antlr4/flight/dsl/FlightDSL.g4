@@ -90,7 +90,8 @@ cruiseEntry
 climbEntry
     : CLIMB LBRACKET
         ALTITUDE COLON positiveNumber unit COMMA
-        SPEED COLON positiveNumber unit
+        SPEED COLON positiveNumber unit COMMA
+        RATE COLON positiveNumber unit?
       RBRACKET SEMI
     ;
 

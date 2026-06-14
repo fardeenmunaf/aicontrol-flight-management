@@ -14,16 +14,7 @@
 
     <Label fx:id="messageLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
 
-    <TableView fx:id="routesTable" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
-        <columns>
-            <TableColumn fx:id="colDesignation" text="Designation"   prefWidth="110"/>
-            <TableColumn fx:id="colOrigin"      text="Origin"        prefWidth="80"/>
-            <TableColumn fx:id="colDestination" text="Destination"   prefWidth="100"/>
-            <TableColumn fx:id="colActiveFrom"  text="Active From"   prefWidth="120"/>
-            <TableColumn fx:id="colStatus"      text="Status"        prefWidth="120"/>
-            <TableColumn fx:id="colAction"      text="Action"        prefWidth="140"/>
-        </columns>
-    </TableView>
+    <ListView fx:id="routesTable" VBox.vgrow="ALWAYS" styleClass="card-list"/>
 
     <!-- Create Route Form -->
     <VBox fx:id="createForm" managed="false" visible="false" styleClass="form-panel">

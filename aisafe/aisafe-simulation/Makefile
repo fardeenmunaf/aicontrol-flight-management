@@ -1,11 +1,16 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g -Isrc/main/c -Isrc/main/c/libs -pthread
-LDFLAGS = -lm -pthread -lrt
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    LDFLAGS = -lm -pthread
+else
+    LDFLAGS = -lm -pthread -lrt
+endif
 
 all: simulation_engine report_generator flight_plan_validator
 
-simulation_engine: simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o
-	$(CC) $(CFLAGS) simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o -o simulation_engine $(LDFLAGS)
+simulation_engine: simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o environment.o
+	$(CC) $(CFLAGS) simulation_engine.o physics.o cJSON.o json_parser.o flight_simulation.o position_tracker.o environment.o -o simulation_engine $(LDFLAGS)
 
 report_generator: report_generator.o
 	$(CC) $(CFLAGS) report_generator.o -o report_generator $(LDFLAGS)
@@ -30,6 +35,9 @@ flight_simulation.o: src/main/c/flight_simulation.c
 
 position_tracker.o: src/main/c/position_tracker.c
 	$(CC) $(CFLAGS) -c src/main/c/position_tracker.c
+
+environment.o: src/main/c/environment.c
+	$(CC) $(CFLAGS) -c src/main/c/environment.c
 
 report_generator.o: src/main/c/report_generator.c
 	$(CC) $(CFLAGS) -c src/main/c/report_generator.c

@@ -70,7 +70,8 @@ public record SimulationFlightPlanDTO(
 
     public record ClimbEntryDTO(
         @JsonProperty("altitude") MeasureDTO altitude,
-        @JsonProperty("speed") MeasureDTO speed
+        @JsonProperty("speed") MeasureDTO speed,
+        @JsonProperty("rateClimb") MeasureDTO rateClimb
     ) {}
 
     public record CruiseEntryDTO(

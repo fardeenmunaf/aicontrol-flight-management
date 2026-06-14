@@ -6,27 +6,21 @@ import aircontrolarea.domain.AirControlArea;
 import auth.domain.AISafeRoles;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import infrastructure.persistence.PersistenceContext;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 
 import java.util.List;
 
 public class AirControlAreasUI {
 
     @FXML
-    private TableView<AirControlArea> table;
-    @FXML
-    private TableColumn<AirControlArea, String> colCode;
-    @FXML
-    private TableColumn<AirControlArea, String> colMinFuel;
-    @FXML
-    private TableColumn<AirControlArea, String> colBoundaries;
-    @FXML
-    private TableColumn<AirControlArea, String> colAction;
+    private ListView<AirControlArea> table;
     @FXML
     private Label statusLabel;
 
@@ -45,24 +39,19 @@ public class AirControlAreasUI {
 
     @FXML
     public void initialize() {
-        colCode.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().areaCode()));
-        colMinFuel.setCellValueFactory(c -> new SimpleStringProperty(
-                String.format("%.0f kg", c.getValue().minimumRequiredArrivalFuel())));
-        colBoundaries.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().geographicBoundaries()));
-        colAction.setCellFactory(col -> new TableCell<>() {
-            private final Button btn = new Button("Delete");
-            {
-                btn.getStyleClass().add("btn-danger");
-                btn.setOnAction(e -> onDelete(getTableView().getItems().get(getIndex())));
-            }
+        table.setCellFactory(lv -> new CardListCell<>(area -> {
+            final HBox header = Cards.row(8,
+                    Cards.title(area.areaCode()),
+                    Cards.grow(),
+                    Cards.chip(String.format("%.0f kg min fuel", area.minimumRequiredArrivalFuel())));
 
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setGraphic(empty ? null : btn);
-            }
-        });
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+            final Button delete = new Button("Delete");
+            delete.getStyleClass().add("btn-danger");
+            delete.setOnAction(e -> onDelete(area));
+
+            return Cards.card(header, Cards.meta(area.geographicBoundaries()),
+                    Cards.row(8, Cards.grow(), delete));
+        }));
         table.setItems(data);
         refresh();
     }

@@ -23,17 +23,17 @@ flight TP1234 {
         }
 
         profile {
-            climb   [ altitude: 69 m,   speed: 210 kts ];
-            climb   [ altitude: 1000 m, speed: 210 kts ];
-            climb   [ altitude: 2000 m, speed: 220 kts ];
-            climb   [ altitude: 3000 m, speed: 230 kts ];
-            climb   [ altitude: 4000 m, speed: 250 kts ];
-            climb   [ altitude: 5000 m, speed: 260 kts ];
-            climb   [ altitude: 6000 m, speed: 290 kts ];
-            climb   [ altitude: 7000 m, speed: 290 kts ];
-            climb   [ altitude: 8000 m, speed: 290 kts ];
-            climb   [ altitude: 9000 m, speed: 290 kts ];
-            climb   [ altitude: 9249 m, speed: 300 kts ];
+            climb   [ altitude: 69 m,   speed: 210 kts, rate: 10 m/s ];
+            climb   [ altitude: 1000 m, speed: 210 kts, rate: 10 m/s ];
+            climb   [ altitude: 2000 m, speed: 220 kts, rate: 10 m/s ];
+            climb   [ altitude: 3000 m, speed: 230 kts, rate: 10 m/s ];
+            climb   [ altitude: 4000 m, speed: 250 kts, rate: 10 m/s ];
+            climb   [ altitude: 5000 m, speed: 260 kts, rate: 10 m/s ];
+            climb   [ altitude: 6000 m, speed: 290 kts, rate: 10 m/s ];
+            climb   [ altitude: 7000 m, speed: 290 kts, rate: 10 m/s ];
+            climb   [ altitude: 8000 m, speed: 290 kts, rate: 10 m/s ];
+            climb   [ altitude: 9000 m, speed: 290 kts, rate: 10 m/s ];
+            climb   [ altitude: 9249 m, speed: 300 kts, rate: 10 m/s ];
 
             cruise  [ speed: 460 kts ];
 

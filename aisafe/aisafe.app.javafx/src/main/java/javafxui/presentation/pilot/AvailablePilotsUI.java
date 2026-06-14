@@ -2,11 +2,13 @@ package javafxui.presentation.pilot;
 
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import infrastructure.persistence.PersistenceContext;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 import jpa.JpaPilotCompanyAssignmentRepository;
 import pilot.domain.Pilot;
 import pilot.domain.PilotCompanyAssignment;
@@ -26,15 +28,7 @@ public class AvailablePilotsUI {
     @FXML
     private Label statusLabel;
     @FXML
-    private TableView<Pilot> table;
-    @FXML
-    private TableColumn<Pilot, String> colEmail;
-    @FXML
-    private TableColumn<Pilot, String> colStatus;
-    @FXML
-    private TableColumn<Pilot, String> colModels;
-    @FXML
-    private TableColumn<Pilot, String> colAction;
+    private ListView<Pilot> table;
 
     private AirTransportCompanyId myCompanyId;
     private final ObservableList<Pilot> data = FXCollections.observableArrayList();
@@ -45,28 +39,23 @@ public class AvailablePilotsUI {
 
     @FXML
     public void initialize() {
-        colEmail.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().userId().toString()));
-        colStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().status().name()));
-        colModels.setCellValueFactory(c -> {
-            final String models = c.getValue().certifiedAircraftModels().stream()
+        table.setCellFactory(lv -> new CardListCell<>(pilot -> {
+            final HBox header = Cards.row(8,
+                    Cards.title(pilot.userId().toString()),
+                    Cards.grow(),
+                    Cards.chip(pilot.status().name()));
+
+            final String models = pilot.certifiedAircraftModels().stream()
                     .map(m -> m.modelName()).sorted().collect(Collectors.joining(", "));
-            return new SimpleStringProperty(models.isEmpty() ? "—" : models);
-        });
-        colAction.setCellFactory(col -> new TableCell<>() {
-            private final Button btn = new Button("Assign to My Company");
-            {
-                btn.getStyleClass().add("btn-primary");
-                btn.setOnAction(e -> onAssign(getTableView().getItems().get(getIndex())));
-            }
 
-            @Override
-            protected void updateItem(final String item, final boolean empty) {
-                super.updateItem(item, empty);
-                setGraphic(empty ? null : btn);
-            }
-        });
+            final Button assign = new Button("Assign to My Company");
+            assign.getStyleClass().add("btn-primary");
+            assign.setOnAction(e -> onAssign(pilot));
 
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+            return Cards.card(header,
+                    Cards.meta("Certified: " + (models.isEmpty() ? "—" : models)),
+                    Cards.row(8, Cards.grow(), assign));
+        }));
         table.setItems(data);
 
         detectCompany();

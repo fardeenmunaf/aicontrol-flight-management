@@ -3,11 +3,6 @@ package javafxui.presentation.flightplan;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
-import flight.dsl.ast.FlightPlanAst;
-import flight.dsl.ast.LegAst;
-import flight.dsl.ast.SegmentAst;
-import flight.dsl.model.FlightDslProcessingResult;
-import flight.dsl.processing.FlightDslProcessor;
 import flight.dsl.mapping.CreationResult;
 import flight.dsl.mapping.FlightPlanCreationService;
 import flight.dsl.mapping.ValidateFlightPlanService;
@@ -21,7 +16,6 @@ import aircraft.domain.Aircraft;
 import aircraft.domain.AircraftOperationStatus;
 import flightRoute.domain.FlightRoute;
 import infrastructure.persistence.PersistenceContext;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -30,6 +24,8 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import javafx.util.StringConverter;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 import jpa.JpaPilotCompanyAssignmentRepository;
 import pilot.domain.Pilot;
 import pilot.domain.PilotStatus;
@@ -52,15 +48,7 @@ public class FlightPlanUI {
 
     // ── Table ──────────────────────────────────────────────────────────────────
     @FXML
-    private TableView<FlightPlanRow> planTable;
-    @FXML
-    private TableColumn<FlightPlanRow, String> colId;
-    @FXML
-    private TableColumn<FlightPlanRow, String> colAircraft;
-    @FXML
-    private TableColumn<FlightPlanRow, String> colStatus;
-    @FXML
-    private TableColumn<FlightPlanRow, String> colDeparture;
+    private ListView<FlightPlanRow> planTable;
     @FXML
     private Label tableStatus;
 
@@ -129,29 +117,7 @@ public class FlightPlanUI {
 
     @FXML
     public void initialize() {
-        colId.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().designator()));
-        colAircraft.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().aircraft()));
-        colStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().status()));
-        colDeparture.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().departure()));
-
-        colStatus.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("");
-                    return;
-                }
-                setText(item);
-                setStyle("FILE".equals(item)
-                        ? "-fx-text-fill:#42a5f5;"
-                        : "-fx-text-fill:#e0e0e0;");
-            }
-        });
-
-        planTable.getColumns().add(buildActionColumn());
-        planTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        planTable.setCellFactory(lv -> new CardListCell<>(this::buildPlanCard));
         planTable.setItems(data);
 
         planTable.setOnMouseClicked(e -> {
@@ -476,57 +442,59 @@ public class FlightPlanUI {
 
     private void addDetailSection(final String title) {
         final Label l = new Label(title);
-        l.setStyle("-fx-text-fill:#42a5f5;-fx-font-weight:bold;-fx-padding:8 0 2 0;");
+        l.setStyle("-fx-text-fill:#7dd3fc;-fx-font-weight:bold;-fx-padding:8 0 2 0;");
         detailContent.getChildren().add(l);
     }
 
     private void addDetailField(final String label, final String value) {
         final HBox row = new HBox(8);
         final Label lbl = new Label(label + ":");
-        lbl.setStyle("-fx-text-fill:#90caf9;-fx-min-width:120;-fx-font-size:11px;");
+        lbl.setStyle("-fx-text-fill:#8b96a5;-fx-min-width:120;-fx-font-size:11px;");
         final Label val = new Label(value);
-        val.setStyle("-fx-text-fill:#e0e0e0;");
+        val.setStyle("-fx-text-fill:#e6edf3;");
         val.setWrapText(true);
         row.getChildren().addAll(lbl, val);
         detailContent.getChildren().add(row);
     }
 
-    private TableColumn<FlightPlanRow, Void> buildActionColumn() {
-        final TableColumn<FlightPlanRow, Void> col = new TableColumn<>("Action");
-        col.setPrefWidth(240);
-        col.setCellFactory(c -> new TableCell<>() {
-            private final Button validateBtn = new Button("Validate");
-            private final Button weatherBtn  = new Button("Weather");
-            private final Button deleteBtn   = new Button("Delete");
-            private final HBox box = new HBox(4, validateBtn, weatherBtn, deleteBtn);
-            {
-                validateBtn.getStyleClass().add("btn-primary");
-                weatherBtn.getStyleClass().add("btn-primary");
-                deleteBtn.getStyleClass().add("btn-danger");
-            }
+    private VBox buildPlanCard(final FlightPlanRow row) {
+        final boolean isFile = "FILE".equals(row.status());
+        final String statusChipClass = switch (row.status()) {
+            case "VALIDATED" -> "chip-success";
+            case "REJECTED" -> "chip-danger";
+            case "FILE" -> "chip";
+            default -> "chip-neutral";
+        };
+        final HBox header = Cards.row(8,
+                Cards.title(row.designator()),
+                Cards.grow(),
+                Cards.chip(row.status(), statusChipClass));
 
-            @Override
-            protected void updateItem(Void item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                    return;
-                }
-                final FlightPlanRow row = getTableView().getItems().get(getIndex());
-                final boolean isDraftDb    = row.dbPlan() != null && "DRAFT".equals(row.status());
-                final boolean isEditableDb = row.dbPlan() != null
-                        && ("DRAFT".equals(row.status()) || "TESTED".equals(row.status()));
-                validateBtn.setVisible(isDraftDb);
-                validateBtn.setManaged(isDraftDb);
-                weatherBtn.setVisible(isEditableDb);
-                weatherBtn.setManaged(isEditableDb);
-                validateBtn.setOnAction(e -> onValidateRow(row));
-                weatherBtn.setOnAction(e -> onAddWeatherRow(row));
-                deleteBtn.setOnAction(e -> onDeleteRow(row));
-                setGraphic(box);
-            }
-        });
-        return col;
+        final String details = (isFile ? "File" : row.aircraft()) + "  ·  " + row.departure();
+
+        final boolean isDraftDb    = row.dbPlan() != null && "DRAFT".equals(row.status());
+        final boolean isEditableDb = row.dbPlan() != null
+                && ("DRAFT".equals(row.status()) || "TESTED".equals(row.status()));
+
+        final HBox actions = Cards.row(8, Cards.grow());
+        if (isDraftDb) {
+            final Button validateBtn = new Button("Validate");
+            validateBtn.getStyleClass().add("btn-primary");
+            validateBtn.setOnAction(e -> onValidateRow(row));
+            actions.getChildren().add(validateBtn);
+        }
+        if (isEditableDb) {
+            final Button weatherBtn = new Button("Weather");
+            weatherBtn.getStyleClass().add("btn-primary");
+            weatherBtn.setOnAction(e -> onAddWeatherRow(row));
+            actions.getChildren().add(weatherBtn);
+        }
+        final Button deleteBtn = new Button("Delete");
+        deleteBtn.getStyleClass().add("btn-danger");
+        deleteBtn.setOnAction(e -> onDeleteRow(row));
+        actions.getChildren().add(deleteBtn);
+
+        return Cards.card(header, Cards.meta(details), actions);
     }
 
     private void onValidateRow(final FlightPlanRow row) {
@@ -819,12 +787,15 @@ public class FlightPlanUI {
             sb.append("        }\n");
             sb.append("        profile {\n");
             for (int p = 0; p < 2; p++) {
-                final String pAlt = require(leg.profileClimbAlt[p],
+                final String pAlt  = require(leg.profileClimbAlt[p],
                         "Leg " + (i + 1) + " Climb Profile " + (p + 1) + " Altitude");
-                final String pSpd = require(leg.profileClimbSpeed[p],
+                final String pSpd  = require(leg.profileClimbSpeed[p],
                         "Leg " + (i + 1) + " Climb Profile " + (p + 1) + " Speed");
+                final String pRate = require(leg.profileClimbRate[p],
+                        "Leg " + (i + 1) + " Climb Profile " + (p + 1) + " Rate");
                 sb.append("            climb [ altitude: ").append(pAlt)
-                        .append(" m, speed: ").append(pSpd).append(" kts ];\n");
+                        .append(" m, speed: ").append(pSpd)
+                        .append(" kts, rate: ").append(pRate).append(" m/s ];\n");
             }
             final String cruiseSpd = require(leg.profileCruiseSpeed,
                     "Leg " + (i + 1) + " Cruise Profile Speed");
@@ -984,6 +955,7 @@ public class FlightPlanUI {
         final TextField[] windSpeed = new TextField[3];
         final TextField[] profileClimbAlt = new TextField[2];
         final TextField[] profileClimbSpeed = new TextField[2];
+        final TextField[] profileClimbRate = new TextField[2];
         TextField profileCruiseSpeed;
         final TextField[] profileDescendAlt = new TextField[2];
         final TextField[] profileDescendSpeed = new TextField[2];
@@ -991,10 +963,10 @@ public class FlightPlanUI {
 
         LegEntry(final int num) {
             panel = new VBox(8);
-            panel.setStyle("-fx-background-color:#0f3460;-fx-padding:12;-fx-border-radius:4;-fx-background-radius:4;");
+            panel.setStyle("-fx-background-color:#121821;-fx-border-color:#1f2733;-fx-border-width:1;-fx-padding:12;-fx-border-radius:12;-fx-background-radius:12;");
 
             final Label title = new Label("Leg " + num);
-            title.setStyle("-fx-text-fill:#42a5f5;-fx-font-weight:bold;");
+            title.setStyle("-fx-text-fill:#7dd3fc;-fx-font-weight:bold;");
 
             final DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             final DateTimeFormatter timeFmt = DateTimeFormatter.ofPattern("HH:mm");
@@ -1023,13 +995,15 @@ public class FlightPlanUI {
             final Label profileTitle = sectionLabel("Flight Profile (climb · cruise · descend)");
             final VBox profilePanel = new VBox(6);
             profilePanel.setStyle(
-                    "-fx-background-color:#0a2540;-fx-padding:8;-fx-border-radius:4;-fx-background-radius:4;");
+                    "-fx-background-color:#0d1117;-fx-border-color:#1f2733;-fx-border-width:1;-fx-padding:8;-fx-border-radius:8;-fx-background-radius:8;");
             for (int p = 0; p < 2; p++) {
-                profileClimbAlt[p] = fieldWithDefault("m", p == 0 ? "69" : "10000");
+                profileClimbAlt[p]   = fieldWithDefault("m", p == 0 ? "69" : "10000");
                 profileClimbSpeed[p] = fieldWithDefault("kts", p == 0 ? "210" : "300");
+                profileClimbRate[p]  = fieldWithDefault("m/s", p == 0 ? "10" : "8");
                 final HBox climbProfileRow = new HBox(8,
                         labeled("Climb " + (p + 1) + " Alt (m)", profileClimbAlt[p]),
-                        labeled("Speed (kts)", profileClimbSpeed[p]));
+                        labeled("Speed (kts)", profileClimbSpeed[p]),
+                        labeled("Rate (m/s)", profileClimbRate[p]));
                 setHGrow(climbProfileRow);
                 profilePanel.getChildren().add(climbProfileRow);
             }
@@ -1129,13 +1103,13 @@ public class FlightPlanUI {
 
         private Label sectionLabel(final String text) {
             final Label l = new Label(text);
-            l.setStyle("-fx-text-fill:#90caf9;-fx-font-size:11px;-fx-padding:4 0 0 0;");
+            l.setStyle("-fx-text-fill:#8b96a5;-fx-font-size:11px;-fx-padding:4 0 0 0;");
             return l;
         }
 
         private VBox labeled(final String lbl, final javafx.scene.Node ctrl) {
             final Label l = new Label(lbl);
-            l.setStyle("-fx-text-fill:#b0bec5;-fx-font-size:10px;");
+            l.setStyle("-fx-text-fill:#8b96a5;-fx-font-size:10px;");
             final VBox vb = new VBox(2, l, ctrl);
             HBox.setHgrow(vb, Priority.ALWAYS);
             if (ctrl instanceof TextField) {

@@ -3,6 +3,13 @@
 -- PostgreSQL
 -- ============================================================
 
+DROP SEQUENCE IF EXISTS AltitudeSlot_SEQ;
+DROP SEQUENCE IF EXISTS Segment_SEQ;
+DROP SEQUENCE IF EXISTS FlightLeg_SEQ;
+DROP SEQUENCE IF EXISTS ProfileEntry_SEQ;
+DROP SEQUENCE IF EXISTS SafetyViolation_SEQ;
+DROP SEQUENCE IF EXISTS AircraftPosition_SEQ;
+
 DROP TABLE IF EXISTS CustomerCollaborator CASCADE;
 DROP TABLE IF EXISTS PilotCompanyAssignment CASCADE;
 DROP TABLE IF EXISTS Pilot_AircraftModel CASCADE;
@@ -32,12 +39,16 @@ DROP TABLE IF EXISTS T_SYSTEMUSER CASCADE;
 DROP TABLE IF EXISTS user_roles CASCADE;
 DROP TABLE IF EXISTS AppUser CASCADE;
 
-DROP SEQUENCE IF EXISTS T_ROLESET_SEQ CASCADE;
-DROP SEQUENCE IF EXISTS T_ROLEASSIGNMENT_SEQ CASCADE;
-DROP SEQUENCE IF EXISTS FlightLeg_SEQ CASCADE;
-DROP SEQUENCE IF EXISTS Segment_SEQ CASCADE;
-DROP SEQUENCE IF EXISTS AltitudeSlot_SEQ CASCADE;
-DROP SEQUENCE IF EXISTS ProfileEntry_SEQ CASCADE;
+-- ============================================================
+-- SEQUENCES (required by Hibernate GenerationType.AUTO on PostgreSQL)
+-- ============================================================
+
+CREATE SEQUENCE AltitudeSlot_SEQ    START 1 INCREMENT 50;
+CREATE SEQUENCE Segment_SEQ         START 1 INCREMENT 50;
+CREATE SEQUENCE FlightLeg_SEQ       START 1 INCREMENT 50;
+CREATE SEQUENCE ProfileEntry_SEQ    START 1 INCREMENT 50;
+CREATE SEQUENCE SafetyViolation_SEQ START 1 INCREMENT 50;
+CREATE SEQUENCE AircraftPosition_SEQ START 1 INCREMENT 50;
 
 -- ============================================================
 -- IDENTITY & ACCESS
@@ -90,13 +101,6 @@ CREATE TABLE T_SYSTEMUSER (
                               roles_pk      BIGINT NOT NULL REFERENCES T_ROLESET(pk),
                               version       BIGINT
 );
-
-CREATE SEQUENCE T_ROLESET_SEQ START WITH 1 INCREMENT BY 50;
-CREATE SEQUENCE T_ROLEASSIGNMENT_SEQ START WITH 1 INCREMENT BY 50;
-CREATE SEQUENCE FlightLeg_SEQ START WITH 1 INCREMENT BY 50;
-CREATE SEQUENCE Segment_SEQ START WITH 1 INCREMENT BY 50;
-CREATE SEQUENCE AltitudeSlot_SEQ START WITH 1 INCREMENT BY 50;
-CREATE SEQUENCE ProfileEntry_SEQ START WITH 1 INCREMENT BY 50;
 
 -- ============================================================
 -- TOPOGRAPHY
@@ -280,12 +284,6 @@ CREATE TABLE FlightPlan (
                             version           BIGINT
 );
 
-CREATE TABLE SegmentWeatherData (
-    segment_id      BIGINT       NOT NULL REFERENCES Segment(id),
-    weather_data_id VARCHAR(255) NOT NULL,
-    PRIMARY KEY (segment_id, weather_data_id)
-);
-
 CREATE TABLE FlightLeg (
                            id BIGINT PRIMARY KEY,
                            sequenceNumber       INT,
@@ -304,6 +302,12 @@ CREATE TABLE Segment (
                          start_node_id VARCHAR(255),
                          end_node_id   VARCHAR(255),
                          flight_leg_id BIGINT REFERENCES FlightLeg(id)
+);
+
+CREATE TABLE SegmentWeatherData (
+    segment_id      BIGINT       NOT NULL REFERENCES Segment(id),
+    weather_data_id VARCHAR(255) NOT NULL,
+    PRIMARY KEY (segment_id, weather_data_id)
 );
 
 CREATE TABLE AltitudeSlot (

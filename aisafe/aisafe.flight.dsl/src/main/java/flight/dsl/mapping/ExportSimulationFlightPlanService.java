@@ -178,7 +178,8 @@ public class ExportSimulationFlightPlanService {
             for (ClimbEntryAst c : profile.climbEntries()) {
                 climbs.add(new ClimbEntryDTO(
                         new MeasureDTO(c.altitude(), c.altitudeUnit() != null ? c.altitudeUnit() : "m"),
-                        new MeasureDTO(c.speed(), c.speedUnit() != null ? c.speedUnit() : "kts")
+                        new MeasureDTO(c.speed(), c.speedUnit() != null ? c.speedUnit() : "kts"),
+                        new MeasureDTO(c.rate(), c.rateUnit() != null ? c.rateUnit() : "m/s")
                 ));
             }
         }

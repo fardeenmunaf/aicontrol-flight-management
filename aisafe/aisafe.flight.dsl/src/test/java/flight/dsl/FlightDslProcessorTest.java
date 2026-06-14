@@ -172,8 +172,8 @@ public class FlightDslProcessorTest {
                 "altslot [ min: 0 m, max: 9249 m, width: 50 m ]; wind { direction: 270; speed: 10 m/s; } mode: descend; } ";
         final String profile =
                 "profile { " +
-                "climb [ altitude: 69 m, speed: 210 kts ]; " +
-                "climb [ altitude: 9249 m, speed: 300 kts ]; " +
+                "climb [ altitude: 69 m, speed: 210 kts, rate: 10 m/s ]; " +
+                "climb [ altitude: 9249 m, speed: 300 kts, rate: 10 m/s ]; " +
                 "cruise [ speed: 460 kts ]; " +
                 "descend [ altitude: 9249 m, speed: 300 kts, rate: -10 m/s ]; " +
                 "descend [ altitude: 610 m, speed: 140 kts, rate: -5 m/s ]; " +

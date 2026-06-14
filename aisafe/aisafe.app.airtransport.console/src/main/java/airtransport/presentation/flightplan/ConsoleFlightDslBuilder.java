@@ -77,15 +77,15 @@ class ConsoleFlightDslBuilder {
             };
             
             leg.cruiseAlt = numWithDef("Cruise altitude (m)", 10000);
-            leg.b = pointLatLon("Climb end / cruise start point", leg.cruiseAlt, 40.0, -8.0);
-            leg.c = pointLatLon("Cruise end / descent start point", leg.cruiseAlt, 41.0, -7.0);
-            
+            leg.b = pointLatLon("Climb end / cruise start point", leg.cruiseAlt, 39.5, -8.0);
+            leg.c = pointLatLon("Cruise end / descent start point", leg.cruiseAlt, 40.0, -7.0);
+
             leg.d = new double[] {
                 selectedRoute.destinationAirport().coordinates().latitude(),
                 selectedRoute.destinationAirport().coordinates().longitude(),
                 selectedRoute.destinationAirport().elevation()
             };
-            
+
             legs.add(leg);
         }
 
@@ -153,29 +153,47 @@ class ConsoleFlightDslBuilder {
         final StringBuilder sb = new StringBuilder("    profile {\n");
         if (promptEverything) {
             System.out.println("  Enter profile lines. Climb altitudes must ascend, descend must descend.");
-            final int climbs = (int) numWithDef("Number of climb entries", 2);
+            final int climbs = (int) numWithDef("Number of climb entries", 7);
+            final String[] climbAltDefs = { fmt(depAlt), "1000", "2000", "3000", "5000", "7000", fmt(cruiseAlt) };
+            final String[] climbSpdDefs = { "210", "220", "230", "250", "270", "290", "300" };
+            final String[] climbRateDefs = { "10", "10", "10", "9", "9", "8.5", "8" };
             for (int i = 0; i < climbs; i++) {
-                final String altDef = i == 0 ? fmt(depAlt) : fmt(cruiseAlt);
-                final String spdDef = i == 0 ? "210" : "300";
+                final String altDef  = i < climbAltDefs.length  ? climbAltDefs[i]  : fmt(cruiseAlt);
+                final String spdDef  = i < climbSpdDefs.length  ? climbSpdDefs[i]  : "300";
+                final String rateDef = i < climbRateDefs.length ? climbRateDefs[i] : "8";
                 sb.append("      climb [ altitude: ").append(reqWithDef("  climb " + (i + 1) + " altitude (m)", altDef))
-                        .append(" m, speed: ").append(reqWithDef("  climb " + (i + 1) + " speed (kts)", spdDef)).append(" kts ];\n");
+                        .append(" m, speed: ").append(reqWithDef("  climb " + (i + 1) + " speed (kts)", spdDef))
+                        .append(" kts, rate: ").append(reqWithDef("  climb " + (i + 1) + " rate (m/s, positive)", rateDef)).append(" m/s ];\n");
             }
             sb.append("      cruise [ speed: ").append(reqWithDef("  cruise speed (kts)", "460")).append(" kts ];\n");
-            final int descs = (int) numWithDef("Number of descend entries", 2);
+            final int descs = (int) numWithDef("Number of descend entries", 7);
+            final String[] descAltDefs = { fmt(cruiseAlt), "8000", "6000", "4000", "3000", "1000", fmt(arrAlt) };
+            final String[] descSpdDefs = { "300", "290", "270", "240", "200", "180", "150" };
+            final String[] descRateDefs = { "-10", "-10", "-9", "-8", "-7", "-6", "-5" };
             for (int i = 0; i < descs; i++) {
-                final String altDef = i == 0 ? fmt(cruiseAlt) : fmt(arrAlt);
-                final String spdDef = i == 0 ? "300" : "150";
-                final String rateDef = i == 0 ? "-10" : "-5";
+                final String altDef  = i < descAltDefs.length  ? descAltDefs[i]  : fmt(arrAlt);
+                final String spdDef  = i < descSpdDefs.length  ? descSpdDefs[i]  : "150";
+                final String rateDef = i < descRateDefs.length ? descRateDefs[i] : "-5";
                 sb.append("      descend [ altitude: ").append(reqWithDef("  descend " + (i + 1) + " altitude (m)", altDef))
                         .append(" m, speed: ").append(reqWithDef("  descend " + (i + 1) + " speed (kts)", spdDef))
                         .append(" kts, rate: ").append(reqWithDef("  descend " + (i + 1) + " rate (m/s, negative)", rateDef)).append(" m/s ];\n");
             }
         } else {
-            // Template: a minimal valid ascending climb / cruise / descending descend.
-            sb.append("      climb [ altitude: ").append(fmt(depAlt)).append(" m, speed: 210 kts ];\n");
-            sb.append("      climb [ altitude: ").append(fmt(cruiseAlt)).append(" m, speed: 300 kts ];\n");
+            // Template: granular profile entries modelled after professor's reference format.
+            sb.append("      climb [ altitude: ").append(fmt(depAlt)).append(" m, speed: 210 kts, rate: 10 m/s ];\n");
+            sb.append("      climb [ altitude: 1000 m, speed: 220 kts, rate: 10 m/s ];\n");
+            sb.append("      climb [ altitude: 2000 m, speed: 230 kts, rate: 10 m/s ];\n");
+            sb.append("      climb [ altitude: 3000 m, speed: 250 kts, rate: 9 m/s ];\n");
+            sb.append("      climb [ altitude: 5000 m, speed: 270 kts, rate: 9 m/s ];\n");
+            sb.append("      climb [ altitude: 7000 m, speed: 290 kts, rate: 8.5 m/s ];\n");
+            sb.append("      climb [ altitude: ").append(fmt(cruiseAlt)).append(" m, speed: 300 kts, rate: 8 m/s ];\n");
             sb.append("      cruise [ speed: 460 kts ];\n");
             sb.append("      descend [ altitude: ").append(fmt(cruiseAlt)).append(" m, speed: 300 kts, rate: -10 m/s ];\n");
+            sb.append("      descend [ altitude: 8000 m, speed: 290 kts, rate: -10 m/s ];\n");
+            sb.append("      descend [ altitude: 6000 m, speed: 270 kts, rate: -9 m/s ];\n");
+            sb.append("      descend [ altitude: 4000 m, speed: 240 kts, rate: -8 m/s ];\n");
+            sb.append("      descend [ altitude: 3000 m, speed: 200 kts, rate: -7 m/s ];\n");
+            sb.append("      descend [ altitude: 1000 m, speed: 180 kts, rate: -6 m/s ];\n");
             sb.append("      descend [ altitude: ").append(fmt(arrAlt)).append(" m, speed: 150 kts, rate: -5 m/s ];\n");
         }
         return sb.append("    }\n").toString();

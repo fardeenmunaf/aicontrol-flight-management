@@ -156,11 +156,14 @@ public class FlightAstBuilderVisitor extends FlightDSLBaseVisitor<Object> {
 
     @Override
     public Object visitClimbEntry(final FlightDSLParser.ClimbEntryContext ctx) {
+        final String rateUnit = ctx.unit().size() > 2 ? ctx.unit(2).getText() : "m/s";
         final ClimbEntryAst climbEntryAst = new ClimbEntryAst(
                 Double.parseDouble(ctx.positiveNumber(0).getText()),
                 ctx.unit(0).getText(),
                 Double.parseDouble(ctx.positiveNumber(1).getText()),
-                ctx.unit(1).getText()
+                ctx.unit(1).getText(),
+                Double.parseDouble(ctx.positiveNumber(2).getText()),
+                rateUnit
         );
         register(climbEntryAst, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine());
         return climbEntryAst;

@@ -85,7 +85,7 @@ public class FlightPlanAstMapper {
         final ProfileAst profile = legAst.profile();
         if (profile != null) {
             for (final ClimbEntryAst c : profile.climbEntries()) {
-                leg.addProfileEntry(ProfileEntry.climb(c.altitude(), c.altitudeUnit(), c.speed(), c.speedUnit()));
+                leg.addProfileEntry(ProfileEntry.climb(c.altitude(), c.altitudeUnit(), c.speed(), c.speedUnit(), c.rate(), c.rateUnit() != null ? c.rateUnit() : "m/s"));
             }
             for (final CruiseEntryAst cr : profile.cruiseEntries()) {
                 leg.addProfileEntry(ProfileEntry.cruise(cr.speed(), cr.speedUnit()));

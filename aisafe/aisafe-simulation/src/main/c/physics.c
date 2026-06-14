@@ -280,6 +280,31 @@ double min_separation_m(const Position *a0, const Position *a1,
     return sqrt(dx*dx + dy*dy + dz*dz);
 }
 
+/**
+ * @brief Computes ground speed and ground track from horizontal TAS, heading, and wind.
+ *
+ * Ground velocity = TAS vector (along heading) + wind vector.
+ * Wind speed is capped at 150 m/s — the weather DB uses this as its hazard threshold,
+ * so anything above it is a blocked route, never a valid input here.
+ *
+ * @param h_tas         Horizontal true air speed in m/s.
+ * @param heading_rad   Aircraft heading in radians (north = 0, east = π/2).
+ * @param wind_speed_ms Wind speed in m/s (meteorological, FROM direction).
+ * @param wind_dir_deg  Direction the wind blows FROM, in degrees (0 = from north).
+ * @param gs_out        Output: ground speed in m/s (≥ 0).
+ * @param track_out     Output: ground track in radians (north = 0, east = π/2).
+ */
+void calculate_ground_velocity(double h_tas, double heading_rad,
+                                double wind_speed_ms, double wind_dir_deg,
+                                double *gs_out, double *track_out) {
+    double safe_wind   = wind_speed_ms < 150.0 ? wind_speed_ms : 150.0;
+    double wind_to_rad = (wind_dir_deg + 180.0) * M_PI / 180.0;
+    double gs_north    = h_tas * cos(heading_rad) + safe_wind * cos(wind_to_rad);
+    double gs_east     = h_tas * sin(heading_rad) + safe_wind * sin(wind_to_rad);
+    *gs_out    = sqrt(gs_north * gs_north + gs_east * gs_east);
+    *track_out = atan2(gs_east, gs_north);
+}
+
 Position advance_pos(Position p, double heading_deg, double dist_m) {
     const double R = 6371000.0;
     double hdg   = heading_deg * M_PI / 180.0;

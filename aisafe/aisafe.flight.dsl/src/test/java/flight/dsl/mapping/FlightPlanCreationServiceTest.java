@@ -82,9 +82,9 @@ class FlightPlanCreationServiceTest {
                         arrival   { airport: MAD; date: 2027-05-05; time: 09:30; }
                         fuel { quantity: 40200 kg; }
                         profile {
-                            climb   [ altitude: 69 m,   speed: 210 kts ];
-                            climb   [ altitude: 1000 m, speed: 210 kts ];
-                            climb   [ altitude: 9249 m, speed: 300 kts ];
+                            climb   [ altitude: 69 m,   speed: 210 kts, rate: 10 m/s ];
+                            climb   [ altitude: 1000 m, speed: 210 kts, rate: 10 m/s ];
+                            climb   [ altitude: 9249 m, speed: 300 kts, rate: 10 m/s ];
                             cruise  [ speed: 460 kts ];
                             descend [ altitude: 9249 m, speed: 300 kts, rate: -10 m/s ];
                             descend [ altitude: 1000 m, speed: 180 kts, rate: -7 m/s ];

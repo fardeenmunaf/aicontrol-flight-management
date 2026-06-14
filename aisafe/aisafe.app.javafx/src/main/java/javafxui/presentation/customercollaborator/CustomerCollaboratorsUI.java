@@ -9,13 +9,15 @@ import customercollaborator.application.UpdateCustomerCollaboratorController;
 import customercollaborator.domain.CustomerCollaborator;
 import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import infrastructure.persistence.PersistenceContext;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,21 +25,7 @@ import java.util.List;
 public class CustomerCollaboratorsUI {
 
     @FXML
-    private TableView<CustomerCollaborator> table;
-    @FXML
-    private TableColumn<CustomerCollaborator, String> colUser;
-    @FXML
-    private TableColumn<CustomerCollaborator, String> colType;
-    @FXML
-    private TableColumn<CustomerCollaborator, String> colPosition;
-    @FXML
-    private TableColumn<CustomerCollaborator, String> colCompany;
-    @FXML
-    private TableColumn<CustomerCollaborator, String> colArea;
-    @FXML
-    private TableColumn<CustomerCollaborator, String> colActive;
-    @FXML
-    private TableColumn<CustomerCollaborator, String> colActions;
+    private ListView<CustomerCollaborator> table;
     @FXML
     private Label statusLabel;
 
@@ -85,38 +73,32 @@ public class CustomerCollaboratorsUI {
 
     @FXML
     public void initialize() {
-        colUser.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().userId().toString()));
-        colType.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().customerType() != null ? c.getValue().customerType().name() : "—"));
-        colPosition.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().position()));
-        colCompany.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().airTransportCompanyId() != null
-                        ? c.getValue().airTransportCompanyId().toString()
-                        : "—"));
-        colArea.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().airControlAreaId() != null
-                        ? c.getValue().airControlAreaId().toString()
-                        : "—"));
-        colActive.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().isActive() ? "Active" : "Disabled"));
-        colActions.setCellFactory(col -> new TableCell<>() {
-            private final Button disableBtn = new Button("Disable");
-            private final Button updateBtn = new Button("Update");
-            private final javafx.scene.layout.HBox box = new javafx.scene.layout.HBox(6, disableBtn, updateBtn);
-            {
-                disableBtn.getStyleClass().add("btn-danger");
-                disableBtn.setOnAction(e -> onDisable(getTableView().getItems().get(getIndex())));
-                updateBtn.getStyleClass().add("btn-primary");
-                updateBtn.setOnAction(e -> onOpenUpdate(getTableView().getItems().get(getIndex())));
-            }
+        table.setCellFactory(lv -> new CardListCell<>(c -> {
+            final String type = c.customerType() != null ? c.customerType().name() : "—";
+            final boolean active = c.isActive();
+            final HBox header = Cards.row(8,
+                    Cards.title(c.userId().toString()),
+                    Cards.grow(),
+                    Cards.chip(type),
+                    Cards.chip(active ? "Active" : "Disabled", active ? "chip-success" : "chip-danger"));
 
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setGraphic(empty ? null : box);
-            }
-        });
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+            final String scope = c.airTransportCompanyId() != null
+                    ? "Company: " + c.airTransportCompanyId()
+                    : c.airControlAreaId() != null
+                            ? "Area: " + c.airControlAreaId()
+                            : "—";
+            final String details = c.position() + "  ·  " + scope;
+
+            final Button disable = new Button("Disable");
+            disable.getStyleClass().add("btn-danger");
+            disable.setOnAction(e -> onDisable(c));
+            final Button update = new Button("Update");
+            update.getStyleClass().add("btn-primary");
+            update.setOnAction(e -> onOpenUpdate(c));
+
+            return Cards.card(header, Cards.meta(details),
+                    Cards.row(8, Cards.grow(), update, disable));
+        }));
         table.setItems(data);
 
         fCollabType.setItems(FXCollections.observableArrayList("Air Transport Company", "Air Control Area"));

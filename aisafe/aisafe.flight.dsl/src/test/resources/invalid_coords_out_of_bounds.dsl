@@ -11,8 +11,8 @@ flight TP1234 {
         arrival   { airport: MAD; date: 2026-05-05; time: 09:30; }
         fuel { quantity: 40200 kg; }
         profile {
-            climb   [ altitude: 69 m,   speed: 210 kts ];
-            climb   [ altitude: 9249 m, speed: 300 kts ];
+            climb   [ altitude: 69 m,   speed: 210 kts, rate: 10 m/s ];
+            climb   [ altitude: 9249 m, speed: 300 kts, rate: 10 m/s ];
             cruise  [ speed: 460 kts ];
             descend [ altitude: 9249 m, speed: 300 kts, rate: -10 m/s ];
             descend [ altitude: 610 m,  speed: 140 kts, rate: -5 m/s  ];

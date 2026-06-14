@@ -7,7 +7,6 @@ import customercollaborator.domain.CustomerType;
 import infrastructure.persistence.PersistenceContext;
 import javafx.util.StringConverter;
 import shared.domain.AirTransportCompanyId;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -15,6 +14,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafxui.presentation.common.CardListCell;
+import javafxui.presentation.common.Cards;
 import pilot.domain.Pilot;
 import pilot.domain.PilotStatus;
 import shared.domain.UserId;
@@ -32,19 +33,7 @@ import java.util.stream.Collectors;
 public class UsersManagementUI {
 
     @FXML
-    private TableView<User> table;
-    @FXML
-    private TableColumn<User, String> colEmail;
-    @FXML
-    private TableColumn<User, String> colName;
-    @FXML
-    private TableColumn<User, String> colPhone;
-    @FXML
-    private TableColumn<User, String> colRoles;
-    @FXML
-    private TableColumn<User, String> colStatus;
-    @FXML
-    private TableColumn<User, String> colActions;
+    private ListView<User> table;
     @FXML
     private Label statusLabel;
 
@@ -118,47 +107,36 @@ public class UsersManagementUI {
 
     @FXML
     public void initialize() {
-        colEmail.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().email()));
-        colName.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().name()));
-        colPhone.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().phoneNumber()));
-        colRoles.setCellValueFactory(c -> new SimpleStringProperty(
-                c.getValue().roles().stream()
-                        .map(Role::designation)
-                        .sorted()
-                        .collect(Collectors.joining(", "))));
-        colStatus.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().status()));
+        table.setCellFactory(lv -> new CardListCell<>(user -> {
+            final boolean active = user.isActive();
+            final HBox header = Cards.row(8,
+                    Cards.title(user.name()),
+                    Cards.grow(),
+                    Cards.chip(active ? "Active" : "Disabled", active ? "chip-success" : "chip-danger"));
 
-        colActions.setCellFactory(col -> new TableCell<>() {
-            private final Button disableBtn = new Button("Disable");
-            private final Button enableBtn = new Button("Enable");
-            private final Button editBtn = new Button("Edit");
-            private final HBox box = new HBox(6, disableBtn, enableBtn, editBtn);
-            {
-                disableBtn.getStyleClass().add("btn-danger");
-                enableBtn.getStyleClass().add("btn-success");
-                editBtn.getStyleClass().add("btn-primary");
-                disableBtn.setOnAction(e -> onDisable(getTableView().getItems().get(getIndex())));
-                enableBtn.setOnAction(e -> onEnable(getTableView().getItems().get(getIndex())));
-                editBtn.setOnAction(e -> onOpenEdit(getTableView().getItems().get(getIndex())));
+            final String roles = user.roles().stream()
+                    .map(Role::designation).sorted().collect(Collectors.joining(", "));
+            final String details = user.email() + "  ·  " + user.phoneNumber()
+                    + (roles.isEmpty() ? "" : "  ·  " + roles);
+
+            final Button editBtn = new Button("Edit");
+            editBtn.getStyleClass().add("btn-primary");
+            editBtn.setOnAction(e -> onOpenEdit(user));
+
+            final Button toggleBtn;
+            if (active) {
+                toggleBtn = new Button("Disable");
+                toggleBtn.getStyleClass().add("btn-danger");
+                toggleBtn.setOnAction(e -> onDisable(user));
+            } else {
+                toggleBtn = new Button("Enable");
+                toggleBtn.getStyleClass().add("btn-success");
+                toggleBtn.setOnAction(e -> onEnable(user));
             }
 
-            @Override
-            protected void updateItem(final String item, final boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || getIndex() >= getTableView().getItems().size()) {
-                    setGraphic(null);
-                    return;
-                }
-                final User user = getTableView().getItems().get(getIndex());
-                disableBtn.setVisible(user.isActive());
-                disableBtn.setManaged(user.isActive());
-                enableBtn.setVisible(!user.isActive());
-                enableBtn.setManaged(!user.isActive());
-                setGraphic(box);
-            }
-        });
-
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+            return Cards.card(header, Cards.meta(details),
+                    Cards.row(8, Cards.grow(), editBtn, toggleBtn));
+        }));
         table.setItems(data);
 
         final StringConverter<AirTransportCompany> companyConverter = new StringConverter<>() {

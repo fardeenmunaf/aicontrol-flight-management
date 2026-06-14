@@ -10,17 +10,7 @@
         <Button text="Register Collaborator" styleClass="btn-primary" onAction="#onRegister"/>
     </HBox>
     <Label fx:id="statusLabel" styleClass="status-label" style="-fx-padding: 8 16 0 16;" text=""/>
-    <TableView fx:id="table" VBox.vgrow="ALWAYS" style="-fx-padding: 16;">
-        <columns>
-            <TableColumn fx:id="colUser"     text="User"     prefWidth="160"/>
-            <TableColumn fx:id="colType"     text="Type"     prefWidth="140"/>
-            <TableColumn fx:id="colPosition" text="Position" prefWidth="120"/>
-            <TableColumn fx:id="colCompany"  text="Company"  prefWidth="120"/>
-            <TableColumn fx:id="colArea"     text="Area"     prefWidth="100"/>
-            <TableColumn fx:id="colActive"   text="Status"   prefWidth="80"/>
-            <TableColumn fx:id="colActions"  text="Actions"  prefWidth="150"/>
-        </columns>
-    </TableView>
+    <ListView fx:id="table" VBox.vgrow="ALWAYS" styleClass="card-list"/>
 
     <!-- Register Form -->
     <VBox fx:id="registerForm" managed="false" visible="false"

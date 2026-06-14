@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.control.*?>
-<BorderPane xmlns:fx="http://javafx.com/fxml"
-            fx:controller="javafxui.presentation.dashboard.DashboardUI"
-            styleClass="root">
-    <left>
-        <VBox fx:id="sidebar" styleClass="sidebar">
-            <!-- Brand header injected by DashboardUI.initialize() -->
-        </VBox>
-    </left>
-    <center>
-        <StackPane fx:id="contentArea" styleClass="content-area"/>
-    </center>
-</BorderPane>
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:id="contentArea"
+           fx:controller="javafxui.presentation.dashboard.DashboardUI"
+           styleClass="root"/>

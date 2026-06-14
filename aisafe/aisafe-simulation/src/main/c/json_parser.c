@@ -185,7 +185,7 @@ int load_simulation_settings(const char* filename, SimulationConfig* config) {
 
 #define MAX_PROFILE_ENTRIES 10
 
-typedef struct { double alt_m; double spd_kts; } ProfileEntry;
+typedef struct { double alt_m; double spd_kts; double rate_mps; } ProfileEntry;
 
 /* Returns the speed (kts) from the profile for the given phase and altitude.
  * Returns 0.0 when no profile data is available for that phase so the caller
@@ -477,6 +477,9 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
                         if (cJSON_IsNumber(av) && cJSON_IsNumber(sv)) {
                             climb_prof[n_climb].alt_m   = av->valuedouble;
                             climb_prof[n_climb].spd_kts = sv->valuedouble;
+                            cJSON *rc  = cJSON_GetObjectItemCaseSensitive(e, "rateClimb");
+                            cJSON *rcv = rc ? cJSON_GetObjectItemCaseSensitive(rc, "value") : NULL;
+                            climb_prof[n_climb].rate_mps = cJSON_IsNumber(rcv) ? rcv->valuedouble : 0.0;
                             n_climb++;
                         }
                     }
@@ -499,11 +502,25 @@ static int parse_flight_plan(const char* filepath, SimulationData* shm) {
                         if (cJSON_IsNumber(av) && cJSON_IsNumber(sv)) {
                             desc_prof[n_desc].alt_m   = av->valuedouble;
                             desc_prof[n_desc].spd_kts = sv->valuedouble;
+                            cJSON *rd  = cJSON_GetObjectItemCaseSensitive(e, "rateDescent");
+                            cJSON *rdv = rd ? cJSON_GetObjectItemCaseSensitive(rd, "value") : NULL;
+                            desc_prof[n_desc].rate_mps = cJSON_IsNumber(rdv) ? rdv->valuedouble : 0.0;
                             n_desc++;
                         }
                     }
                 }
             }
+
+            /* Aggregate climb/descent rate caps and store on Flight. */
+            double max_climb = 0.0, min_desc = 0.0;
+            for (int pi = 0; pi < n_climb; pi++)
+                if (climb_prof[pi].rate_mps > max_climb)
+                    max_climb = climb_prof[pi].rate_mps;
+            for (int pi = 0; pi < n_desc; pi++)
+                if (desc_prof[pi].rate_mps < 0.0 && desc_prof[pi].rate_mps < min_desc)
+                    min_desc = desc_prof[pi].rate_mps;
+            flight->max_climb_rate_mps   = max_climb;
+            flight->max_descent_rate_mps = min_desc;
 
             // waypoint_start_index for leg 0 is 1: skip the ground departure waypoint at index 0.
             int leg_wp_start_before = wp_index;
@@ -664,4 +681,53 @@ int load_all_flight_plans(const char* directory_path, SimulationData* shm) {
     free(entries);
 
     return all_valid;
+}
+
+int load_weather_db(const char *path, WeatherEntry *db, int max_entries, int *count) {
+    *count = 0;
+
+    char *buf = read_file(path);
+    if (!buf) {
+        printf("[ENV] weather_db.json not found at '%s' — using flight-plan defaults.\n", path);
+        return 1;
+    }
+
+    cJSON *root = cJSON_Parse(buf);
+    free(buf);
+    if (!root || !cJSON_IsArray(root)) {
+        printf("[ENV] weather_db.json parse error — using flight-plan defaults.\n");
+        cJSON_Delete(root);
+        return 1;
+    }
+
+    int n = cJSON_GetArraySize(root);
+    for (int i = 0; i < n && *count < max_entries; i++) {
+        cJSON *e      = cJSON_GetArrayItem(root, i);
+        cJSON *lat1   = cJSON_GetObjectItemCaseSensitive(e, "lat1");
+        cJSON *lon1   = cJSON_GetObjectItemCaseSensitive(e, "lon1");
+        cJSON *lat2   = cJSON_GetObjectItemCaseSensitive(e, "lat2");
+        cJSON *lon2   = cJSON_GetObjectItemCaseSensitive(e, "lon2");
+        cJSON *altInf = cJSON_GetObjectItemCaseSensitive(e, "altitudeInf");
+        cJSON *altSup = cJSON_GetObjectItemCaseSensitive(e, "altitudeSup");
+        cJSON *dir    = cJSON_GetObjectItemCaseSensitive(e, "windDirection");
+        cJSON *spd    = cJSON_GetObjectItemCaseSensitive(e, "windSpeed");
+
+        if (!cJSON_IsNumber(lat1) || !cJSON_IsNumber(lon1) ||
+            !cJSON_IsNumber(lat2) || !cJSON_IsNumber(lon2) ||
+            !cJSON_IsNumber(dir)  || !cJSON_IsNumber(spd))
+            continue;
+
+        WeatherEntry *we       = &db[(*count)++];
+        we->lat1               = lat1->valuedouble;
+        we->lon1               = lon1->valuedouble;
+        we->lat2               = lat2->valuedouble;
+        we->lon2               = lon2->valuedouble;
+        we->alt_inf            = cJSON_IsNumber(altInf) ? altInf->valuedouble : 0.0;
+        we->alt_sup            = cJSON_IsNumber(altSup) ? altSup->valuedouble : 20000.0;
+        we->wind_direction_deg = dir->valuedouble;
+        we->wind_speed_ms      = spd->valuedouble;
+    }
+    cJSON_Delete(root);
+    printf("[ENV] Loaded %d weather record(s) from weather_db.json.\n", *count);
+    return 1;
 }
