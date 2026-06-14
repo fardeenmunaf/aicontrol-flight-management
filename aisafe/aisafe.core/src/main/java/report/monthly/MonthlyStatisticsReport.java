@@ -4,11 +4,16 @@ import report.framework.Report;
 import report.framework.ReportSection;
 import report.framework.render.*;
 
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.Month;
 import java.time.format.TextStyle;
 import java.util.*;
 
 public class MonthlyStatisticsReport extends Report {
+
+    private static final DateTimeFormatter TS_FMT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'").withZone(ZoneOffset.UTC);
 
     private final MonthlyStatistics stats;
 
@@ -50,6 +55,35 @@ public class MonthlyStatisticsReport extends Report {
         stats.perArea().forEach((area, s) ->
                 rows.add(List.of(area, String.valueOf(s.flights()), String.valueOf(s.violations()))));
         sections.add(new TableSection(List.of("Air Control Area", "Flights", "Violations"), rows));
+
+        // ── Safety Violations Detail ──────────────────────────────────────────────
+        sections.add(new ParagraphSection("Safety Violations Detail", true));
+        final List<List<String>> vRows = new ArrayList<>();
+        if (stats.violationDetails().isEmpty()) {
+            vRows.add(List.of("—", "No violations recorded this month.", "—", "—", "—"));
+        } else {
+            for (final MonthlyStatistics.ViolationDetail d : stats.violationDetails()) {
+                vRows.add(List.of(
+                        TS_FMT.format(d.timestamp()),
+                        d.flightCallsign(),
+                        formatType(d.violationType()),
+                        d.involvedCallsigns(),
+                        d.area()));
+            }
+        }
+        sections.add(new TableSection(
+                List.of("Timestamp (UTC)", "Flight", "Type", "Involved Aircraft", "Area"),
+                vRows));
+
         return sections;
+    }
+
+    private static String formatType(final String raw) {
+        if (raw == null || raw.isBlank() || "—".equals(raw)) return "—";
+        // Convert SNAKE_CASE enum name to "Title Case" for readability.
+        return Arrays.stream(raw.split("_"))
+                .map(w -> w.isEmpty() ? w : Character.toUpperCase(w.charAt(0)) + w.substring(1).toLowerCase())
+                .reduce((a, b) -> a + " " + b)
+                .orElse(raw);
     }
 }

@@ -37,7 +37,10 @@ public class MonthlyReportUI {
         // Built lazily (on click) so opening the screen never depends on the DB.
         final GenerateMonthlyStatisticsReportController controller =
                 new GenerateMonthlyStatisticsReportController(
-                        new MonthlyStatisticsCollector(PersistenceContext.repositories().simulations()),
+                        new MonthlyStatisticsCollector(
+                                PersistenceContext.repositories().simulations(),
+                                PersistenceContext.repositories().flightPlans(),
+                                PersistenceContext.repositories().aircraft()),
                         OUTPUT_DIR);
         try {
             final Path file = controller.generate(year, month);
