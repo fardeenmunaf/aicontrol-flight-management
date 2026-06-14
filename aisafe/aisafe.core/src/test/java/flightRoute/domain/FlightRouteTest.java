@@ -154,6 +154,23 @@ class FlightRouteTest {
                 () -> route.deactivateFrom(ACTIVE_FROM.plusMonths(3)));
     }
 
+    // --- reactivate ---
+
+    @Test
+    void ensureDeactivatedRouteCanBeReactivated() {
+        final FlightRoute route = validRoute();
+        route.deactivateFrom(ACTIVE_FROM.plusMonths(6));
+        route.reactivate();
+        assertNull(route.activeUntil());
+        assertTrue(route.isActiveOn(ACTIVE_FROM.plusYears(10)));
+    }
+
+    @Test
+    void ensureReactivatingAlreadyActiveRouteIsRejected() {
+        final FlightRoute route = validRoute();
+        assertThrows(IllegalStateException.class, route::reactivate);
+    }
+
     // --- equals / hashCode ---
 
     @Test

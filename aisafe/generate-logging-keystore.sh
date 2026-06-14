@@ -8,7 +8,7 @@
 
 HOSTNAME="${1:-localhost}"
 KEYSTORE="${2:-logging-keystore.p12}"
-PASSWORD="${3:-changeit}"
+PASSWORD="${3:-Teste1234!}"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 case "$KEYSTORE" in
