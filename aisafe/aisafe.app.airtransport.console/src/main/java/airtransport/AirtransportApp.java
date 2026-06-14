@@ -8,7 +8,7 @@ import auth.infrastructure.AuthzConfigurator;
 import eapli.framework.infrastructure.authz.repositories.impl.jpa.JpaAutoTxUserRepository;
 import infrastructure.persistence.PersistenceContext;
 import jpa.PersistenceSettings;
-import simulation.application.FlightPlanAreaResolver;
+import simulation.application.DbFlightPlanResolver;
 import simulation.application.RecordSimulationResultService;
 import simulation.application.SimulationResultParser;
 import simulation.domain.Simulation;
@@ -85,8 +85,8 @@ public final class AirtransportApp {
 
             System.out.println("Recording report: " + report.getFileName());
 
-            final FlightPlanAreaResolver resolver = new FlightPlanAreaResolver(
-                    flightPlansDir,
+            final DbFlightPlanResolver resolver = new DbFlightPlanResolver(
+                    PersistenceContext.repositories().flightPlans(),
                     PersistenceContext.repositories().airports());
 
             final RecordSimulationResultService recorder = new RecordSimulationResultService(

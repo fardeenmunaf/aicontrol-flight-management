@@ -3,7 +3,7 @@ package javafxui.presentation.simulation;
 import airport.application.ListAirportsController;
 import airport.domain.Airport;
 import infrastructure.persistence.PersistenceContext;
-import simulation.application.FlightPlanAreaResolver;
+import simulation.application.DbFlightPlanResolver;
 import simulation.application.RecordSimulationResultService;
 import simulation.application.SimulationResultParser;
 import weatherData.application.ExportWeatherDataService;
@@ -374,8 +374,8 @@ public class SimulationUI {
                 return;
             }
             final String json = Files.readString(newest);
-            final FlightPlanAreaResolver resolver = new FlightPlanAreaResolver(
-                    SIM_DIR.resolve("flightplansSim"),
+            final DbFlightPlanResolver resolver = new DbFlightPlanResolver(
+                    PersistenceContext.repositories().flightPlans(),
                     PersistenceContext.repositories().airports());
             final RecordSimulationResultService recorder = new RecordSimulationResultService(
                     PersistenceContext.repositories().simulations(),

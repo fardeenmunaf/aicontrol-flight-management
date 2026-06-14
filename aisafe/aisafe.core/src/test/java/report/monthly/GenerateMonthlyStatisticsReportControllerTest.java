@@ -46,7 +46,7 @@ class GenerateMonthlyStatisticsReportControllerTest {
 
     private GenerateMonthlyStatisticsReportController controller(final Path dir) {
         return new GenerateMonthlyStatisticsReportController(
-                new MonthlyStatisticsCollector(repo), dir);
+                new MonthlyStatisticsCollector(repo, null, null), dir);
     }
 
     @Test

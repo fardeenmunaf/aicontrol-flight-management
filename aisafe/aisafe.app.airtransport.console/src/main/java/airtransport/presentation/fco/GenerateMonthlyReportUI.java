@@ -17,7 +17,10 @@ public class GenerateMonthlyReportUI extends AbstractUI {
 
     private final GenerateMonthlyStatisticsReportController controller =
             new GenerateMonthlyStatisticsReportController(
-                    new MonthlyStatisticsCollector(PersistenceContext.repositories().simulations()),
+                    new MonthlyStatisticsCollector(
+                            PersistenceContext.repositories().simulations(),
+                            PersistenceContext.repositories().flightPlans(),
+                            PersistenceContext.repositories().aircraft()),
                     Path.of("reports"));
 
     @Override

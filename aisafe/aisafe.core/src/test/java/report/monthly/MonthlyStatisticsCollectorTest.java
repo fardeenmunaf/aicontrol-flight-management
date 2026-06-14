@@ -59,7 +59,7 @@ class MonthlyStatisticsCollectorTest {
     void aggregatesCountsRateAndPassFail() {
         repo.save(june(true, false));
         repo.save(june(false, true));
-        final MonthlyStatistics st = new MonthlyStatisticsCollector(repo).collect(2026, 6);
+        final MonthlyStatistics st = new MonthlyStatisticsCollector(repo, null, null) /* aircraft resolution not exercised: violations here have no callsigns */.collect(2026, 6);
         assertEquals(2, st.simulationCount());
         assertEquals(2, st.flightCount());
         assertEquals(1, st.violationCount());
@@ -71,8 +71,41 @@ class MonthlyStatisticsCollectorTest {
 
     @Test
     void emptyMonthYieldsEmptyStats() {
-        final MonthlyStatistics st = new MonthlyStatisticsCollector(repo).collect(2025, 1);
+        final MonthlyStatistics st = new MonthlyStatisticsCollector(repo, null, null) /* aircraft resolution not exercised: violations here have no callsigns */.collect(2025, 1);
         assertTrue(st.isEmpty());
         assertEquals(0, st.flightCount());
+    }
+
+    /**
+     * Records count toward the month of their OWN date, not the simulation's start.
+     * A run started 2026-06-30 whose flight + violation occur on 2026-07-01 must
+     * appear in the JULY report (and contribute nothing to June). This guards the
+     * cross-month case of a single long run.
+     */
+    @Test
+    void recordsCountTowardTheMonthOfTheirOwnDate() {
+        final Simulation s = new Simulation(
+                Instant.parse("2026-06-30T22:00:00Z"),
+                Instant.parse("2026-07-01T06:00:00Z"),
+                SimulationStatus.COMPLETED);
+        s.addFlight(new SimulationFlight("OUT", Instant.parse("2026-07-01T01:00:00Z"),
+                true, true, null));
+        s.addViolation(new SafetyViolation(s,
+                Instant.parse("2026-07-01T02:00:00Z"),
+                simulation.domain.ViolationType.COLLISION, null));
+        repo.save(s);
+
+        // June: no June activity → contributes nothing.
+        final MonthlyStatistics june = new MonthlyStatisticsCollector(repo, null, null).collect(2026, 6);
+        assertEquals(0, june.simulationCount(), "no June activity");
+        assertEquals(0, june.flightCount());
+        assertEquals(0, june.violationCount());
+        assertTrue(june.isEmpty());
+
+        // July: flight + violation fall in July even though the run started in June.
+        final MonthlyStatistics july = new MonthlyStatisticsCollector(repo, null, null).collect(2026, 7);
+        assertEquals(1, july.simulationCount(), "run contributes to July");
+        assertEquals(1, july.flightCount());
+        assertEquals(1, july.violationCount());
     }
 }

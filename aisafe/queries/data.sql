@@ -270,3 +270,43 @@ VALUES
     ('pilot-003', 'am-A380'),
     ('pilot-004', 'am-777'),
     ('pilot-004', 'am-A380');
+
+-- ============================================================
+-- FLEET — MISSING A380 FOR SIMULATION FLIGHTS
+-- ============================================================
+
+INSERT INTO Aircraft (aircraft_id, registrationNumber, registrationCountry, operationStatus, flightCrewCount, aircraftModel_aircraft_model_id, airTransportCompany_air_transport_company_id, engineModel_engine_model_id, economyClassSeats, businessClassSeats, firstClassSeats, version)
+VALUES
+    ('ac-AFR-A380', 'F-HPJA', 'France', 'IN_SERVICE', 2, 'am-A380', 'atc-005', 'eng-008', 399, 14, 80, 0),
+    ('ac-BAW-A380', 'G-XLEA', 'UK', 'IN_SERVICE', 2, 'am-A380', 'atc-006', 'eng-008', 399, 14, 80, 0),
+    ('ac-DLH-A380', 'D-AIMA', 'Germany', 'IN_SERVICE', 2, 'am-A380', 'atc-004', 'eng-008', 399, 14, 80, 0),
+    ('ac-RYR-A380', 'EI-RYR', 'Ireland', 'IN_SERVICE', 2, 'am-A380', 'atc-002', 'eng-008', 399, 14, 80, 0);
+
+-- ============================================================
+-- FLIGHT PLANS FROM SIMULATION JSONS
+-- (designator -> company A380 aircraft + real route/departure; used by the
+--  monthly report to resolve per-flight area, date and aircraft)
+-- ============================================================
+
+INSERT INTO FlightPlan (flight_plan_id, status, flightDesignator, type, aircraftId, pilotRef, route_reference, route_origin, route_destination, departure_time, dsl_text, version)
+VALUES
+    ('fp-AFR0702A', 'TESTED', 'AFR0702A', 'REGULAR', 'ac-AFR-A380', 'sim', 'AF02', 'CDG', 'OPO', '2026-07-02 10:20:00.000000+00', NULL, 0),
+    ('fp-AFR0712C', 'TESTED', 'AFR0712C', 'REGULAR', 'ac-AFR-A380', 'sim', 'AF01', 'CDG', 'LIS', '2026-07-12 08:00:00.000000+00', NULL, 0),
+    ('fp-AFR0728A', 'TESTED', 'AFR0728A', 'REGULAR', 'ac-AFR-A380', 'sim', 'AF01', 'CDG', 'LIS', '2026-07-28 12:00:00.000000+00', NULL, 0),
+    ('fp-AFR0808X', 'TESTED', 'AFR0808X', 'REGULAR', 'ac-AFR-A380', 'sim', 'AF01', 'CDG', 'LIS', '2026-08-08 09:15:00.000000+00', NULL, 0),
+    ('fp-BAW0812A', 'TESTED', 'BAW0812A', 'REGULAR', 'ac-BAW-A380', 'sim', 'BA02', 'LHR', 'OPO', '2026-08-12 13:50:00.000000+00', NULL, 0),
+    ('fp-DLH0710A', 'TESTED', 'DLH0710A', 'REGULAR', 'ac-DLH-A380', 'sim', 'LH02', 'FRA', 'OPO', '2026-07-10 09:05:00.000000+00', NULL, 0),
+    ('fp-DLH0723X', 'TESTED', 'DLH0723X', 'REGULAR', 'ac-DLH-A380', 'sim', 'LH01', 'FRA', 'LIS', '2026-07-23 07:40:00.000000+00', NULL, 0),
+    ('fp-RYR0625A', 'TESTED', 'RYR0625A', 'REGULAR', 'ac-RYR-A380', 'sim', 'FR01', 'OPO', 'MAD', '2026-06-25 09:40:00.000000+00', NULL, 0),
+    ('fp-RYR0708A', 'TESTED', 'RYR0708A', 'REGULAR', 'ac-RYR-A380', 'sim', 'FR03', 'OPO', 'PMI', '2026-07-08 11:10:00.000000+00', NULL, 0),
+    ('fp-RYR0805A', 'TESTED', 'RYR0805A', 'REGULAR', 'ac-RYR-A380', 'sim', 'FR01', 'OPO', 'MAD', '2026-08-05 10:35:00.000000+00', NULL, 0),
+    ('fp-RYR0819A', 'TESTED', 'RYR0819A', 'REGULAR', 'ac-RYR-A380', 'sim', 'FR03', 'OPO', 'PMI', '2026-08-19 11:30:00.000000+00', NULL, 0),
+    ('fp-TAP0622A', 'TESTED', 'TAP0622A', 'REGULAR', 'ac-003', 'sim', 'TP02', 'LIS', 'MAD', '2026-06-22 05:30:00.000000+00', NULL, 0),
+    ('fp-TAP0623A', 'TESTED', 'TAP0623A', 'REGULAR', 'ac-003', 'sim', 'TP01', 'LIS', 'OPO', '2026-06-23 07:15:00.000000+00', NULL, 0),
+    ('fp-TAP0627A', 'TESTED', 'TAP0627A', 'REGULAR', 'ac-003', 'sim', 'TP03', 'LIS', 'CDG', '2026-06-27 06:50:00.000000+00', NULL, 0),
+    ('fp-TAP0629X', 'TESTED', 'TAP0629X', 'REGULAR', 'ac-003', 'sim', 'TP05', 'OPO', 'FRA', '2026-06-29 08:00:00.000000+00', NULL, 0),
+    ('fp-TAP0705A', 'TESTED', 'TAP0705A', 'REGULAR', 'ac-003', 'sim', 'TP04', 'LIS', 'LHR', '2026-07-05 06:30:00.000000+00', NULL, 0),
+    ('fp-TAP0712C', 'TESTED', 'TAP0712C', 'REGULAR', 'ac-003', 'sim', 'TP03', 'LIS', 'CDG', '2026-07-12 08:00:00.000000+00', NULL, 0),
+    ('fp-TAP0718A', 'TESTED', 'TAP0718A', 'REGULAR', 'ac-003', 'sim', 'TP02', 'LIS', 'MAD', '2026-07-18 14:25:00.000000+00', NULL, 0),
+    ('fp-TAP0802A', 'TESTED', 'TAP0802A', 'REGULAR', 'ac-003', 'sim', 'TP01', 'LIS', 'OPO', '2026-08-02 06:10:00.000000+00', NULL, 0),
+    ('fp-TAP0816A', 'TESTED', 'TAP0816A', 'REGULAR', 'ac-003', 'sim', 'TP03', 'LIS', 'CDG', '2026-08-16 06:45:00.000000+00', NULL, 0);
