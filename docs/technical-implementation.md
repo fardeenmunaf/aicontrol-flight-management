@@ -4,7 +4,7 @@
 
 AISafe is an air traffic safety management system built for multiple operator roles: backoffice operators, airline (air transport) operators, and air control operators. The system manages aircraft, flight plans, routes, simulations, weather data, and safety validations.
 
-The project is structured as a multi-module Maven project composed of ten modules, each with a clearly bounded responsibility. The architecture follows Domain-Driven Design (DDD), Clean Architecture, and enforces SOLID principles throughout.
+The project is structured as a multi-module Maven project composed of twelve modules (plus a standalone C engine), each with a clearly bounded responsibility. The architecture follows Domain-Driven Design (DDD), Clean Architecture, and enforces SOLID principles throughout.
 
 ---
 
@@ -19,16 +19,21 @@ The project is structured as a multi-module Maven project composed of ten module
 | `aisafe.persistence.impl` | Repository implementations (JPA and In-Memory) + factory |
 | `aisafe.flight.dsl` | ANTLR-based DSL for flight plan parsing and semantic validation |
 | `aisafe.app.backoffice.console` | UI entry point for backoffice operators |
-| `aisafe.app.airtransport.console` | UI entry point for airline operators |
-| `aisafe.app.aircontrol.console` | UI entry point for air control operators |
+| `aisafe.app.airtransport.console` | UI entry point for airline operators; also acts as TCP server for pilot remote access (US086) and weather data ingestion (US041–US044) |
 | `aisafe.app.bootstrap` | Database seeding and initial data loading |
-| `aisafe.app.weather.client` | External weather API integration |
-| `aisafe-simulation` | Flight simulation engine |
+| `aisafe.app.weather.client` | TCP client for weather persons to upload atmospheric data to the server |
+| `aisafe.app.pilot.client` | TCP client and server for pilots to remotely review and test flight plans (US086) |
+| `aisafe.logging` | Standalone remote-accesses logging server with HTTP/HTTPS status page (US090–US091) |
+| `aisafe.app.javafx` | JavaFX graphical dashboard for real-time visualization of simulation and weather data |
+| `aisafe-simulation` | Multi-process C simulation engine with ISA physics, POSIX IPC, and signal-based safety violation handling (US100–US103) |
 
 ### 2.2 Dependency Direction
 
 ```
-aisafe.app.*.console
+aisafe.app.backoffice.console
+aisafe.app.airtransport.console  ◄── aisafe.app.pilot.client (TCP)
+aisafe.app.weather.client        ──► aisafe.app.airtransport.console (TCP)
+aisafe.app.javafx
         │
         ▼
   aisafe.core  ◄──────────────────────────────────────────
@@ -38,9 +43,14 @@ aisafe.infrastructure.application        aisafe.persistence.impl
                                                     │
                                                     ▼
                                         eapli.framework / Jakarta JPA
+
+aisafe.logging          (standalone — no dependency on aisafe.core)
+aisafe-simulation       (standalone C engine — communicates via JSON files)
 ```
 
 The key architectural constraint is that `aisafe.core` defines repository *interfaces* and `aisafe.persistence.impl` provides the *implementations*. Core never depends on persistence — only the reverse. This is the Dependency Inversion Principle applied at module level.
+
+The `aisafe.logging` and `aisafe-simulation` modules are fully standalone: the logging server has no dependency on the domain model (it receives structured log messages over TCP), and the simulation engine is written in C and exchanges data with the Java layer exclusively through JSON files on disk.
 
 ---
 
@@ -105,9 +115,15 @@ Aggregates reference each other exclusively by identity (ID value objects), foll
 
 The project implements a four-layer clean architecture:
 
-### 4.1 Presentation Layer (`aisafe.app.*.console`)
+### 4.1 Presentation Layer
 
 Console-based entry points for each operator role. These classes wire together controllers and repository factories and delegate all logic to the application layer. They contain no business rules.
+
+- `aisafe.app.backoffice.console` — backoffice operators (aircraft models, airports, companies, etc.)
+- `aisafe.app.airtransport.console` — airline company collaborators and, in server mode, the TCP endpoint for pilot remote access and weather data ingestion
+- `aisafe.app.weather.client` — weather persons connecting over TCP to upload atmospheric data
+- `aisafe.app.pilot.client` — pilots connecting remotely over TCP to review and test flight plans
+- `aisafe.app.javafx` — graphical dashboard for simulation and weather visualization
 
 ### 4.2 Application Layer (Controllers in `aisafe.core`)
 
@@ -127,6 +143,16 @@ Pure domain objects: aggregates, entities, value objects, enumerations, and repo
 ### 4.4 Infrastructure Layer (`aisafe.persistence.impl`)
 
 Concrete repository implementations and the factory that creates them. The infrastructure layer depends on the domain layer (not the reverse). It provides two full sets of implementations: JPA-backed for production, and in-memory for development and testing.
+
+### 4.5 Network Layer (TCP / standalone modules)
+
+Three modules exist outside the standard four-layer stack because their primary concern is network communication rather than domain logic:
+
+**`aisafe.app.pilot.client`** — implements a custom binary TCP protocol (`PilotProtocolCodec`) for pilots to remotely query and test flight plans. The server side (`PilotTcpServer`) runs inside the same JVM as the Air Transport console; the client side (`PilotClientApp`) runs on the pilot's machine.
+
+**`aisafe.app.weather.client`** — implements a TCP client (`WeatherTcpClient`) that connects to the Air Transport/Air Control server to submit weather data entries and bulk imports. The weather TCP server is integrated into `aisafe.app.airtransport.console`.
+
+**`aisafe.logging`** — a fully standalone logging server (`RemoteAccessesLoggingServer`) that accepts structured log messages over TCP and exposes an HTTP (or HTTPS with TLS) status page showing aggregated access statistics. It has no dependency on `aisafe.core` or any repository — it operates entirely on raw network streams and file I/O.
 
 ---
 
@@ -376,9 +402,50 @@ The DSL is implemented with ANTLR (Another Tool for Language Recognition). The g
 
 ---
 
-## 8. Authorization and Security
+## 8. C Simulation Engine (`aisafe-simulation`)
 
-### 8.1 Role Definitions
+### 8.1 Purpose and Architecture
+
+The simulation engine is a standalone C program that runs entirely outside the Java module system. It reads flight plan data and simulation settings from JSON files, executes the physics simulation, detects safety violations, and writes a `simulation_report_*.json` that the Java layer persists to the database via `run-simulation-and-record.sh`.
+
+The engine is developed as the SCOMP component of the project (US100–US103) and requires a POSIX-compliant OS (Linux).
+
+### 8.2 Process Model
+
+The parent process forks one child process per active flight plan (US100). Each child simulates its own flight independently: it advances in fixed time steps, computing ISA atmosphere, IAS schedule, aerodynamic forces, thrust, and fuel burn. All children synchronise with the parent via:
+
+- **Named POSIX semaphores** — per-flight `step_sems[i]` (parent signals child to run a step) and a shared `main_sem` (each child signals the parent when its step is done).
+- **POSIX pipes** — each child writes a `PipeMessage` struct with its updated position and 25 physics values; the parent drains the pipes after all children complete each step.
+- **POSIX shared memory** — stores per-flight state (position, fuel, phase, active flag) that the parent reads for violation detection and the step table.
+
+### 8.3 Safety Violation Handling (US102)
+
+After every step, the parent checks two violation categories:
+
+- **Proximity violation** — 3D distance between any two active flights below `safety_distance_threshold`. Both flights receive `SIGUSR1`.
+- **Fuel exhaustion** — remaining fuel drops to zero or below.
+
+If `total_violations_detected` exceeds `max_violations_threshold`, the parent sends `SIGTERM` to all active children and sets a termination flag in shared memory.
+
+Signal handlers in child processes use only async-signal-safe calls (`write()`). `SIGUSR1` is installed with `SA_RESTART` so that a signal arriving during `sem_wait()` restarts the call transparently (US102).
+
+### 8.4 Position History (US101)
+
+The parent maintains a per-flight position history buffer (up to 200 entries). Each position is validated (latitude ∈ [−90, 90], longitude ∈ [−180, 180], altitude ≥ 0) before being stored. The departure-gate position is seeded before the main loop; the full gate-to-gate route is captured and printed at end of simulation.
+
+### 8.5 Physics Model
+
+Each step computes (in order): ISA atmosphere (temperature, pressure, density, speed of sound) → IAS schedule (altitude-dependent, with the 250 kt ATC below-10 000 ft rule) → Mach and TAS → lift/drag coefficients → aerodynamic forces → thrust (Mach- and altitude-corrected, phase-dependent) → climb rate → fuel burn → horizontal distance → position advance. All geodesic calculations use spherical-Earth haversine formulas with R = 6 371 000 m.
+
+### 8.6 Java Integration
+
+After the C simulation exits, `run-simulation-and-record.sh` invokes the Java recorder (`AirtransportApp --record`), which reads the newest `simulation_report_*.json` from the `aisafe-simulation/` directory and persists a `SimulationReport` aggregate to the database.
+
+---
+
+## 9. Authorization and Security
+
+### 9.1 Role Definitions
 
 Roles are defined as constants in `AISafeRoles` (in `aisafe.infrastructure.application`):
 
@@ -391,7 +458,7 @@ Roles are defined as constants in `AISafeRoles` (in `aisafe.infrastructure.appli
 | `FLIGHT_CONTROL_OPERATOR` | `FCO` | Air control operators |
 | `WEATHER_PERSON` | `WEATHER_PERSON` | Weather data providers |
 
-### 8.2 Enforcement
+### 9.2 Enforcement
 
 Authorization is enforced at the start of every controller method via the eapli.framework authorization service:
 
@@ -401,15 +468,15 @@ authz.ensureAuthenticatedUserHasAnyOf(AISafeRoles.AIR_TRANSPORT_COMPANY_COLLABOR
 
 This call throws an `UnauthorizedException` if the current user does not hold the required role. The check occurs before any repository access or domain modification.
 
-### 8.3 Password Policy
+### 9.3 Password Policy
 
 `AISafePasswordPolicy` extends `AbstractPasswordPolicy` from eapli.framework with project-specific password validation rules. This is wired into the authentication infrastructure in `AuthzConfigurator`.
 
 ---
 
-## 9. Persistence Strategy
+## 10. Persistence Strategy
 
-### 9.1 JPA Repository Implementation
+### 10.1 JPA Repository Implementation
 
 JPA repositories extend `BaseJpaRepositoryBase`, which itself extends eapli.framework's `JpaAutoTxRepository`. This provides:
 
@@ -419,11 +486,11 @@ JPA repositories extend `BaseJpaRepositoryBase`, which itself extends eapli.fram
 
 Each concrete JPA repository implements only its domain-specific query methods.
 
-### 9.2 In-Memory Repository Implementation
+### 10.2 In-Memory Repository Implementation
 
 In-memory repositories maintain a `HashMap<Id, Aggregate>` and implement all query methods with Java stream operations. They share the same interface as JPA repositories and are used for bootstrapping tests and development without a database.
 
-### 9.3 Transactional Context
+### 10.3 Transactional Context
 
 When a controller needs to coordinate multiple repository writes in a single transaction, it acquires a `TransactionalContext` from the factory and passes it to each repository constructor. The context wraps the JPA `EntityTransaction` and ensures atomicity.
 
@@ -436,7 +503,7 @@ tx.commit();
 
 ---
 
-## 10. Validation Strategy
+## 11. Validation Strategy
 
 Validation is applied at three levels, each with a distinct responsibility:
 
@@ -448,7 +515,7 @@ Validation is applied at three levels, each with a distinct responsibility:
 
 ---
 
-## 11. Summary of Patterns Applied
+## 12. Summary of Patterns Applied
 
 | Pattern | Category | Location |
 |---|---|---|
@@ -466,11 +533,11 @@ Validation is applied at three levels, each with a distinct responsibility:
 
 ---
 
-## 12. GRASP Patterns
+## 13. GRASP Patterns
 
 GRASP (General Responsibility Assignment Software Patterns) provides nine principles for deciding which class should hold which responsibility. The following documents where each applicable principle is realised in this codebase.
 
-### 12.1 Information Expert
+### 13.1 Information Expert
 
 **Principle:** Assign responsibility to the class that has the information needed to fulfil it.
 
@@ -481,7 +548,7 @@ GRASP (General Responsibility Assignment Software Patterns) provides nine princi
 - `FlightPlan` checks leg connectivity on `addLeg()` — it holds all current legs and is the only class that can verify the arrival-departure continuity invariant.
 - `AirControlArea` performs point-in-polygon containment checks — it holds the boundary polygon and is the natural expert on whether a coordinate falls within it.
 
-### 12.2 Creator
+### 13.2 Creator
 
 **Principle:** Assign class B the responsibility to create instances of class A if B contains, aggregates, records, or closely uses A.
 
@@ -493,7 +560,7 @@ GRASP (General Responsibility Assignment Software Patterns) provides nine princi
 - `FlightDslProcessor` creates `FlightDslDocument` and `FlightDslProcessingResult` — it orchestrates the entire pipeline that produces these objects.
 - `FlightAstBuilderVisitor` creates all AST node types (`FlightPlanAst`, `LegAst`, `SegmentAst`, etc.) — the visitor traverses and directly constructs these representations.
 
-### 12.3 Controller
+### 13.3 Controller
 
 **Principle:** Assign responsibility for handling system operations to a class that represents the overall system, a use-case scenario, or a root object in a façade.
 
@@ -503,23 +570,23 @@ Every application-layer controller in `aisafe.core` is a GRASP Controller: it re
 
 Examples: `RegisterAircraftController`, `ImportFlightPlanController`, `DecommissionAircraftController`.
 
-### 12.4 Low Coupling
+### 13.4 Low Coupling
 
 **Principle:** Assign responsibilities so that coupling remains low. Prefer designs where a change in one class forces fewer changes in others.
 
 **Where it appears:**
 
-- The repository interface layer and constructor injection (section 5.5 DIP) are the primary mechanism: controllers depend on interfaces, so a backend swap requires no controller changes.
+- The repository interface layer and constructor injection (section 6.5 DIP) are the primary mechanism: controllers depend on interfaces, so a backend swap requires no controller changes.
 - Aggregates reference each other by identity value objects only (e.g., `FlightPlan` stores `aircraftId` as a string, not an `Aircraft` reference). This prevents inter-aggregate coupling at the object level and keeps each aggregate independently loadable.
 - The DSL module (`aisafe.flight.dsl`) has no dependency on `aisafe.core` domain classes during parsing — it produces an intermediate `FlightDslDocument`, and only `ImportFlightPlanController` maps that to domain objects. This isolates the DSL pipeline from domain model evolution.
 
-### 12.5 High Cohesion
+### 13.5 High Cohesion
 
 **Principle:** Assign responsibilities so that cohesion remains high. A class should have a focused, related set of responsibilities.
 
-**Where it appears:** The examples in section 5.1 (SRP) describe the same principle from a SOLID angle — `Aircraft` vs. `AircraftModel`, per-aggregate repository interfaces, and single-purpose DSL pipeline stages are all direct applications of High Cohesion. GRASP names the goal (cohesion); SRP names the heuristic (one reason to change); both point to the same design decisions in this codebase.
+**Where it appears:** The examples in section 6.1 (SRP) describe the same principle from a SOLID angle — `Aircraft` vs. `AircraftModel`, per-aggregate repository interfaces, and single-purpose DSL pipeline stages are all direct applications of High Cohesion. GRASP names the goal (cohesion); SRP names the heuristic (one reason to change); both point to the same design decisions in this codebase.
 
-### 12.6 Polymorphism
+### 13.6 Polymorphism
 
 **Principle:** When behaviour varies by type, assign responsibility for the variation to the types that exhibit it, using polymorphic operations rather than explicit type checks.
 
@@ -529,17 +596,17 @@ Examples: `RegisterAircraftController`, `ImportFlightPlanController`, `Decommiss
 - `JpaRepositoryFactory` and `InMemoryRepositoryFactory` both implement `RepositoryFactory`. The application entry point selects one; everything downstream is polymorphic.
 - The ANTLR-generated visitor and listener interfaces (`FlightDSLVisitor`, `FlightDSLListener`) define polymorphic traversal — concrete implementations (`FlightAstBuilderVisitor`, `FlightStructureListener`) handle specific node types through method override rather than `instanceof` chains.
 
-### 12.7 Pure Fabrication
+### 13.7 Pure Fabrication
 
 **Principle:** Assign a cohesive set of responsibilities to an artificial class (one that does not represent a domain concept) when doing so achieves low coupling and high cohesion that would otherwise be violated.
 
 **Where it appears:**
 
-- `BaseJpaRepositoryBase<T, K, I>` (section 6.3) is a textbook Pure Fabrication: it represents no air traffic concept and exists solely to absorb JPA boilerplate so concrete repositories stay lean.
+- `BaseJpaRepositoryBase<T, K, I>` (section 7.3) is a textbook Pure Fabrication: it represents no air traffic concept and exists solely to absorb JPA boilerplate so concrete repositories stay lean.
 - `InMemoryRepositoryFactory` is a fabrication — there is no real-world "in-memory factory" concept — created to allow the system to run without a database during development and testing.
 - `AuthzConfigurator` and `AISafePasswordPolicy` are fabrications that exist to integrate the eapli.framework authentication infrastructure with the project's specific rules, with no domain meaning of their own.
 
-### 12.8 Indirection
+### 13.8 Indirection
 
 **Principle:** Assign responsibility to an intermediate object to mediate between components to avoid direct coupling.
 
@@ -549,7 +616,7 @@ Examples: `RegisterAircraftController`, `ImportFlightPlanController`, `Decommiss
 - `FlightDslProcessor` introduces indirection between `ImportFlightPlanController` and the raw ANTLR lexer/parser. The controller is decoupled from ANTLR's API entirely.
 - `AuthzRegistry` (eapli.framework) acts as indirection between controllers and the authentication/authorisation infrastructure — controllers call `authz.ensureAuthenticatedUserHasAnyOf(...)` without knowing the underlying session or token mechanism.
 
-### 12.9 Protected Variations
+### 13.9 Protected Variations
 
 **Principle:** Identify points of predicted variation or instability and assign responsibilities to create a stable interface around them.
 
@@ -560,7 +627,7 @@ Examples: `RegisterAircraftController`, `ImportFlightPlanController`, `Decommiss
 - The DSL `FlightDslDocument` / `FlightDslProcessingResult` intermediate representation protects `ImportFlightPlanController` from variation in the ANTLR grammar. If the grammar is extended, only the DSL module changes; the controller's `import(...)` method signature is stable.
 - The `AISafeRoles` constants protect all controllers from variation in role string values — no controller embeds a raw role string literal.
 
-### 12.10 GRASP Summary
+### 13.10 GRASP Summary
 
 | GRASP Pattern | Primary Location |
 |---|---|
