@@ -1,11 +1,15 @@
 package airtransport.presentation;
 
+import airtransport.presentation.fco.FcoMenuAction;
 import airtransport.presentation.fleet.FleetMenuAction;
 import airtransport.presentation.flightplan.AddWeatherDataAction;
 import airtransport.presentation.flightplan.CreateFlightPlanAction;
 import airtransport.presentation.flightplan.ValidateFlightPlanAction;
 import airtransport.presentation.flightroute.FlightRouteMenuAction;
 import airtransport.presentation.pilot.PilotManagementMenuAction;
+import auth.domain.AISafeRoles;
+import eapli.framework.infrastructure.authz.application.AuthorizationService;
+import eapli.framework.infrastructure.authz.application.AuthzRegistry;
 import eapli.framework.presentation.console.AbstractUI;
 import eapli.framework.actions.menu.Menu;
 import eapli.framework.presentation.console.menu.MenuItemRenderer;
@@ -21,6 +25,7 @@ public class MainMenu extends AbstractUI {
     private static final int FLIGHT_ROUTE_OPTION      = 4;
     private static final int PILOT_MGMT_OPTION        = 5;
     private static final int ADD_WEATHER_OPTION       = 6;
+    private static final int FCO_OPTION               = 7;
 
     /**
      * When true, pilot-only options (flight plan creation, validation and
@@ -45,6 +50,7 @@ public class MainMenu extends AbstractUI {
     }
 
     private Menu buildLocalMenu() {
+        final AuthorizationService authz = AuthzRegistry.authorizationService();
         final Menu menu = new Menu();
         menu.addItem(FLEET_OPTION, "Fleet Management", new FleetMenuAction());
         menu.addItem(FLIGHT_PLAN_OPTION, "Create Flight Plan", new CreateFlightPlanAction());
@@ -52,6 +58,9 @@ public class MainMenu extends AbstractUI {
         menu.addItem(FLIGHT_ROUTE_OPTION, "Flight Route Management", new FlightRouteMenuAction());
         menu.addItem(PILOT_MGMT_OPTION, "Pilot Management", new PilotManagementMenuAction());
         menu.addItem(ADD_WEATHER_OPTION, "Add Weather Data to Flight Plan", new AddWeatherDataAction());
+        if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.FLIGHT_CONTROL_OPERATOR)) {
+            menu.addItem(FCO_OPTION, "FCO Operations (Simulation & Reports)", new FcoMenuAction());
+        }
         menu.addItem(EXIT_OPTION, "Exit", () -> true);
         return menu;
     }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="javafxui.presentation.report.MonthlyReportUI"
+      styleClass="root" spacing="16">
+    <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+
+    <Label text="Monthly Statistics Report" styleClass="page-title"/>
+    <Label text="Generate a PDF of simulation statistics for a given calendar month."
+           styleClass="hub-sub"/>
+
+    <HBox spacing="12" alignment="CENTER_LEFT">
+        <Label text="Year"/>
+        <TextField fx:id="yearField" promptText="2026" prefWidth="100"/>
+        <Label text="Month"/>
+        <TextField fx:id="monthField" promptText="6" prefWidth="80"/>
+        <Button text="Generate Report" onAction="#onGenerate" styleClass="btn-primary"/>
+    </HBox>
+
+    <Label fx:id="resultLabel" styleClass="status-label" wrapText="true"/>
+</VBox>

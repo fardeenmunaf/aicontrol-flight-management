@@ -36,4 +36,11 @@ public class InMemorySimulationRepository extends InMemoryDomainRepository<Simul
 		match(s -> s.trackedFlights().contains(flight)).forEach(result::add);
 		return result;
 	}
+
+	@Override
+	public List<Simulation> findByStartDateTimeBetween(final java.time.Instant from, final java.time.Instant to) {
+		final List<Simulation> result = new ArrayList<>();
+		match(s -> !s.startDateTime().isBefore(from) && s.startDateTime().isBefore(to)).forEach(result::add);
+		return result;
+	}
 }

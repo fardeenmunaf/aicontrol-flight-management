@@ -217,6 +217,9 @@ typedef struct {
     double alt_inf, alt_sup;
     double wind_direction_deg;
     double wind_speed_ms;
+    int    year, month, day;     /* record date */
+    int    start_seconds;        /* start hour, in seconds since midnight */
+    int    end_seconds;          /* end hour,   in seconds since midnight */
 } WeatherEntry;
 
 /* Inter-process shared memory block.

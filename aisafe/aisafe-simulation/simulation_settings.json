@@ -1,10 +1,10 @@
 {
   "sim_start": "2026-06-22T00:00:00",
   "start_time": 0.0,
-  "end_time": 2.0,
+  "end_time": 60.0,
   "time_step": 15,
   "safety_distance_threshold": 2000.0,
   "collision_distance_threshold": 150.0,
   "max_violations_threshold": 100,
-  "reroute": true
+  "reroute": false
 }

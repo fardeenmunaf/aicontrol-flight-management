@@ -231,9 +231,8 @@
         wall_tm.tm_min  = (wall_s % 3600) / 60;
         printf("\n╔══════════════════════════════════════════════════════════════════════"
                "════════════════════════════════════════════════════════════════════╗\n");
-        printf("║  t=%7.0f s  [%02d/%02d/%04d %02d:%02d]  |  step %3d / %-3d  |  active=%2d  pending=%2d  |  violations=%3d"
-               "                              ║\n",
-               sim_time,
+        printf("║  [%02d/%02d/%04d %02d:%02d]  |  step %3d / %-3d  |  active=%2d  pending=%2d  |  violations=%3d"
+               "                                       ║\n",
                wall_tm.tm_mday, wall_tm.tm_mon + 1, wall_tm.tm_year + 1900,
                wall_tm.tm_hour, wall_tm.tm_min,
                step_num, total_steps, active, pending, sim->total_violations_detected);
@@ -928,8 +927,8 @@
             wall_tm0.tm_min  = (wall_s % 3600) / 60;
             printf("\n╔══════════════════════════════════════════════════════════════════════"
                    "════════════════════════════════════════════════════════════════════╗\n");
-            printf("║  t=       0 s  [%02d/%02d/%04d %02d:%02d]  |  step   0 / %-3d  |  active= 0  pending=%2d  |  violations=  0"
-                   "                              ║\n",
+            printf("║  [%02d/%02d/%04d %02d:%02d]  |  step   0 / %-3d  |  active= 0  pending=%2d  |  violations=  0"
+                   "                                       ║\n",
                    wall_tm0.tm_mday, wall_tm0.tm_mon + 1, wall_tm0.tm_year + 1900,
                    wall_tm0.tm_hour, wall_tm0.tm_min,
                    (int)((sim->config.end_time - sim->config.start_time) / sim->config.time_step),

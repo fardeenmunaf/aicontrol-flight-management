@@ -32,7 +32,7 @@ public class Simulation implements AggregateRoot<SimulationId> {
     private SimulationStatus status;
 
     @ManyToOne
-    @JoinColumn(name = "airControlArea_id")
+    @JoinColumn(name = "air_control_area_id")
     private AirControlArea airControlArea;
 
     @ManyToMany
@@ -46,6 +46,10 @@ public class Simulation implements AggregateRoot<SimulationId> {
 
     @OneToMany(mappedBy = "simulation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<SafetyViolation> safetyViolations = new HashSet<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "simulation_id")
+    private Set<SimulationFlight> simulationFlights = new HashSet<>();
 
     public Simulation(final Instant startDateTime, final Instant endDateTime, final SimulationStatus status) {
         Preconditions.noneNull(status, startDateTime, endDateTime);
@@ -98,5 +102,23 @@ public class Simulation implements AggregateRoot<SimulationId> {
 
     public Set<WeatherData> capturedWeatherData() {
         return new HashSet<>(capturedWeatherData);
+    }
+
+    public void addFlight(final SimulationFlight flight) {
+        Preconditions.nonNull(flight);
+        this.simulationFlights.add(flight);
+    }
+
+    public void addViolation(final SafetyViolation violation) {
+        Preconditions.nonNull(violation);
+        this.safetyViolations.add(violation);
+    }
+
+    public Set<SimulationFlight> simulationFlights() {
+        return new HashSet<>(simulationFlights);
+    }
+
+    public Set<SafetyViolation> safetyViolations() {
+        return new HashSet<>(safetyViolations);
     }
 }

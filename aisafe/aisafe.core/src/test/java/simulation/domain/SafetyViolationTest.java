@@ -22,8 +22,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class SafetyViolationTest {
 
     private static final Instant START = Instant.parse("2026-01-01T08:00:00Z");
-    private static final Instant END = Instant.parse("2026-01-01T10:00:00Z");
-    private static final Instant TS = Instant.parse("2026-01-01T09:00:00Z");
+    private static final Instant END   = Instant.parse("2026-01-01T10:00:00Z");
+    private static final Instant TS    = Instant.parse("2026-01-01T09:00:00Z");
+    private static final aircontrolarea.domain.AirControlArea AREA = null; // area is optional; null allowed
 
     private static final AircraftModel MODEL = new AircraftModel(
             AircraftType.PASSENGER,
@@ -55,8 +56,12 @@ class SafetyViolationTest {
     private Set<Aircraft> twoAircraft() {
         return Set.of(
                 new Aircraft("CS-SV1", "Portugal", AircraftOperationStatus.IN_SERVICE, 2, MODEL, ENGINE, CABIN, COMPANY),
-                new Aircraft("CS-SV2", "Spain", AircraftOperationStatus.IN_SERVICE, 2, MODEL, ENGINE, CABIN, COMPANY)
+                new Aircraft("CS-SV2", "Spain",    AircraftOperationStatus.IN_SERVICE, 2, MODEL, ENGINE, CABIN, COMPANY)
         );
+    }
+
+    private Aircraft anAircraft() {
+        return new Aircraft("CS-SV1", "Portugal", AircraftOperationStatus.IN_SERVICE, 2, MODEL, ENGINE, CABIN, COMPANY);
     }
 
     // --- Construction: happy path ---
@@ -67,14 +72,40 @@ class SafetyViolationTest {
         final Set<VelocityVector> vectors = twoVectors();
         final Set<Aircraft> aircraft = twoAircraft();
 
-        final SafetyViolation sv = new SafetyViolation(sim, TS, "HIGH", vectors, aircraft);
+        final SafetyViolation sv = new SafetyViolation(sim, TS, ViolationType.COLLISION, AREA, vectors, aircraft);
         assertAll(
                 () -> assertEquals(sim, sv.simulation()),
                 () -> assertEquals(TS, sv.timestamp()),
-                () -> assertEquals("HIGH", sv.severity()),
+                () -> assertEquals(ViolationType.COLLISION, sv.violationType()),
                 () -> assertEquals(2, sv.recordedVectors().size()),
                 () -> assertEquals(2, sv.involvedAircraft().size())
         );
+    }
+
+    // --- Relaxed invariants ---
+
+    @Test
+    void ensureViolationWithNoVectorsOrAircraftIsAccepted() {
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.FUEL_EXHAUSTION, AREA);
+        assertAll(
+                () -> assertEquals(0, sv.recordedVectors().size()),
+                () -> assertEquals(0, sv.involvedAircraft().size()),
+                () -> assertEquals(AREA, sv.airControlArea()),
+                () -> assertEquals(ViolationType.FUEL_EXHAUSTION, sv.violationType()));
+    }
+
+    @Test
+    void ensureSingleAircraftViolationIsAccepted() {
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA,
+                Set.of(new VelocityVector(250.0, 90.0)), Set.of(anAircraft()));
+        assertEquals(1, sv.involvedAircraft().size());
+    }
+
+    @Test
+    void ensureCallsignsConvenienceConstructorStoresCallsigns() {
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA,
+                Set.of("TAP0623A", "AFR0702A"));
+        assertEquals(Set.of("TAP0623A", "AFR0702A"), sv.involvedCallsigns());
     }
 
     // --- Construction: invalid arguments ---
@@ -82,47 +113,26 @@ class SafetyViolationTest {
     @Test
     void ensureNullSimulationIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> new SafetyViolation(null, TS, "HIGH", twoVectors(), twoAircraft()));
+                () -> new SafetyViolation(null, TS, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft()));
     }
 
     @Test
     void ensureNullTimestampIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> new SafetyViolation(simulation(), null, "HIGH", twoVectors(), twoAircraft()));
+                () -> new SafetyViolation(simulation(), null, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft()));
     }
 
     @Test
-    void ensureNullSeverityIsRejected() {
+    void ensureNullViolationTypeIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> new SafetyViolation(simulation(), TS, null, twoVectors(), twoAircraft()));
-    }
-
-    @Test
-    void ensureSingleVectorIsRejected() {
-        final Set<VelocityVector> oneVector = Set.of(new VelocityVector(100.0, 90.0));
-        assertThrows(IllegalArgumentException.class,
-                () -> new SafetyViolation(simulation(), TS, "HIGH", oneVector, twoAircraft()));
-    }
-
-    @Test
-    void ensureEmptyVectorsIsRejected() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new SafetyViolation(simulation(), TS, "HIGH", Set.of(), twoAircraft()));
-    }
-
-    @Test
-    void ensureSingleAircraftIsRejected() {
-        final Set<Aircraft> oneAircraft = Set.of(
-                new Aircraft("CS-ONE", "Portugal", AircraftOperationStatus.IN_SERVICE, 2, MODEL, ENGINE, CABIN, COMPANY));
-        assertThrows(IllegalArgumentException.class,
-                () -> new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), oneAircraft));
+                () -> new SafetyViolation(simulation(), TS, null, AREA, twoVectors(), twoAircraft()));
     }
 
     // --- Defensive copies ---
 
     @Test
     void ensureRecordedVectorsIsDefensiveCopy() {
-        final SafetyViolation sv = new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), twoAircraft());
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft());
         final Set<VelocityVector> vectors = sv.recordedVectors();
         vectors.clear();
         assertEquals(2, sv.recordedVectors().size());
@@ -132,43 +142,43 @@ class SafetyViolationTest {
 
     @Test
     void ensureSafetyViolationIsEqualToItself() {
-        final SafetyViolation sv = new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), twoAircraft());
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft());
         assertEquals(sv, sv);
     }
 
     @Test
     void ensureSafetyViolationIsNotEqualToNull() {
-        final SafetyViolation sv = new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), twoAircraft());
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft());
         assertNotEquals(sv, null);
     }
 
     @Test
     void ensureSafetyViolationHashCodeIsConsistent() {
-        final SafetyViolation sv = new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), twoAircraft());
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft());
         assertEquals(sv.hashCode(), sv.hashCode());
     }
 
     @Test
     void ensureSafetyViolationIdentityIsNullBeforePersistence() {
-        final SafetyViolation sv = new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), twoAircraft());
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft());
         assertNull(sv.identity());
     }
 
     @Test
     void ensureSafetyViolationSameAsItself() {
-        final SafetyViolation sv = new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), twoAircraft());
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft());
         assertTrue(sv.sameAs(sv));
     }
 
     @Test
     void ensureSafetyViolationSameAsNullIsFalse() {
-        final SafetyViolation sv = new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), twoAircraft());
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft());
         assertFalse(sv.sameAs(null));
     }
 
     @Test
     void ensureInvolvedAircraftIsDefensiveCopy() {
-        final SafetyViolation sv = new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), twoAircraft());
+        final SafetyViolation sv = new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, twoVectors(), twoAircraft());
         final Set<Aircraft> aircraft = sv.involvedAircraft();
         aircraft.clear();
         assertEquals(2, sv.involvedAircraft().size());
@@ -177,12 +187,12 @@ class SafetyViolationTest {
     @Test
     void ensureNullVectorsIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> new SafetyViolation(simulation(), TS, "HIGH", null, twoAircraft()));
+                () -> new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, null, twoAircraft()));
     }
 
     @Test
     void ensureNullAircraftIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> new SafetyViolation(simulation(), TS, "HIGH", twoVectors(), null));
+                () -> new SafetyViolation(simulation(), TS, ViolationType.COLLISION, AREA, twoVectors(), null));
     }
 }

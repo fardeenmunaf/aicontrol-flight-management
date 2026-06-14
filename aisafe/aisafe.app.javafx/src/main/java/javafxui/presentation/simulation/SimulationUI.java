@@ -3,6 +3,9 @@ package javafxui.presentation.simulation;
 import airport.application.ListAirportsController;
 import airport.domain.Airport;
 import infrastructure.persistence.PersistenceContext;
+import simulation.application.FlightPlanAreaResolver;
+import simulation.application.RecordSimulationResultService;
+import simulation.application.SimulationResultParser;
 import weatherData.application.ExportWeatherDataService;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
@@ -18,8 +21,11 @@ import javafx.scene.web.WebView;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,18 +56,22 @@ public class SimulationUI {
     @FXML private HBox  violationBanner;
     @FXML private Button runButton;
 
+    private static final Path SIM_DIR = Paths.get("aisafe-simulation").toAbsolutePath();
+
     private final ListAirportsController airportsController = new ListAirportsController(
             PersistenceContext.repositories().airports());
     private final SimulationStepParser    parser       = new SimulationStepParser();
     private final SimulationReportParser  reportParser = new SimulationReportParser();
 
     // Bundles one full timestep's banner info + flight positions + violations together.
-    private record StepFrame(SimulationStepParser.StepBanner banner, List<SimStep> steps, List<String> violations) {}
+    private record StepFrame(SimulationStepParser.StepBanner banner, List<SimStep> steps,
+                            List<String> violations, List<String> landed) {}
 
     private final Queue<StepFrame> stepFrames      = new ConcurrentLinkedQueue<>();
     // Accumulates rows for the current timestep on the reader thread.
     private final List<SimStep>    pendingBatch     = new ArrayList<>();
     private final List<String>     pendingViolations = new ArrayList<>();
+    private final List<String>     pendingLanded     = new ArrayList<>();
     private SimulationStepParser.StepBanner pendingBanner = null;
 
     private volatile boolean simProcessDone = false;
@@ -116,6 +126,7 @@ public class SimulationUI {
         stepFrames.clear();
         pendingBatch.clear();
         pendingViolations.clear();
+        pendingLanded.clear();
         pendingBanner = null;
         simProcessDone = false;
         simExitCode    = 0;
@@ -207,6 +218,10 @@ public class SimulationUI {
                         final String safe = callsign.replace("\\", "\\\\").replace("'", "\\'");
                         mapView.getEngine().executeScript("flagViolation('" + safe + "')");
                     });
+                    frame.landed().forEach(callsign -> {
+                        final String safe = callsign.replace("\\", "\\\\").replace("'", "\\'");
+                        mapView.getEngine().executeScript("landFlight('" + safe + "')");
+                    });
                 });
             } else if (simProcessDone) {
                 // Queue drained and process finished — wrap up.
@@ -272,10 +287,12 @@ public class SimulationUI {
                 }
 
                 // Flush any remaining rows after the last banner.
-                if (!pendingBatch.isEmpty() || !pendingViolations.isEmpty()) {
-                    stepFrames.add(new StepFrame(pendingBanner, new ArrayList<>(pendingBatch), new ArrayList<>(pendingViolations)));
+                if (!pendingBatch.isEmpty() || !pendingViolations.isEmpty() || !pendingLanded.isEmpty()) {
+                    stepFrames.add(new StepFrame(pendingBanner, new ArrayList<>(pendingBatch),
+                            new ArrayList<>(pendingViolations), new ArrayList<>(pendingLanded)));
                     pendingBatch.clear();
                     pendingViolations.clear();
+                    pendingLanded.clear();
                 }
 
                 simExitCode    = process.waitFor();
@@ -299,9 +316,11 @@ public class SimulationUI {
         parser.parseStepBanner(line).ifPresent(banner -> {
             // A new timestep starts — commit the previous batch as a queued frame.
             if (pendingBanner != null || !pendingBatch.isEmpty()) {
-                stepFrames.add(new StepFrame(pendingBanner, new ArrayList<>(pendingBatch), new ArrayList<>(pendingViolations)));
+                stepFrames.add(new StepFrame(pendingBanner, new ArrayList<>(pendingBatch),
+                        new ArrayList<>(pendingViolations), new ArrayList<>(pendingLanded)));
                 pendingBatch.clear();
                 pendingViolations.clear();
+                pendingLanded.clear();
             }
             pendingBanner = banner;
         });
@@ -317,10 +336,9 @@ public class SimulationUI {
             pendingViolations.add(pair[1]);
         });
 
-        parser.parseLanded(line).ifPresent(callsign -> Platform.runLater(() -> {
-            final String safe = callsign.replace("\\", "\\\\").replace("'", "\\'");
-            mapView.getEngine().executeScript("landFlight('" + safe + "')");
-        }));
+        // Queue landings with the current step so the icon/trace is removed in sync
+        // with the replay (not at read-time, which would remove it too early).
+        parser.parseLanded(line).ifPresent(pendingLanded::add);
     }
 
     private void finalizeSimulation(final int exitCode) {
@@ -331,7 +349,45 @@ public class SimulationUI {
         }
         stepLabel.setText("Step: complete");
         clockLabel.setText("⏱ done");
+        recordLatestSimulationResult();
         showReportDialog();
+    }
+
+    /**
+     * Finds the newest simulation_report_*.json and records it via
+     * {@link RecordSimulationResultService}. Failures are swallowed so a
+     * recording problem never crashes the UI.
+     */
+    private void recordLatestSimulationResult() {
+        try {
+            Path newest = null;
+            try (final var stream = Files.newDirectoryStream(SIM_DIR, "simulation_report_*.json")) {
+                for (final Path p : stream) {
+                    if (newest == null
+                            || Files.getLastModifiedTime(p).compareTo(Files.getLastModifiedTime(newest)) > 0) {
+                        newest = p;
+                    }
+                }
+            }
+            if (newest == null) {
+                System.err.println("[SIM] No simulation_report_*.json found — skipping recording.");
+                return;
+            }
+            final String json = Files.readString(newest);
+            final FlightPlanAreaResolver resolver = new FlightPlanAreaResolver(
+                    SIM_DIR.resolve("flightplansSim"),
+                    PersistenceContext.repositories().airports());
+            final RecordSimulationResultService recorder = new RecordSimulationResultService(
+                    PersistenceContext.repositories().simulations(),
+                    resolver,
+                    resolver);
+            recorder.record(new SimulationResultParser().parse(json));
+            System.out.println("[SIM] Simulation result recorded successfully.");
+        } catch (final IOException e) {
+            System.err.println("[SIM] Could not read simulation report for recording: " + e.getMessage());
+        } catch (final Exception e) {
+            System.err.println("[SIM] Failed to record simulation result: " + e.getMessage());
+        }
     }
 
     private void showReportDialog() {
@@ -346,16 +402,18 @@ public class SimulationUI {
             sb.append(String.format("%-22s %d%n%n","Total flights:",     report.totalFlights()));
 
             if (!report.violations().isEmpty()) {
-                sb.append(String.format("%-4s  %-10s  %-10s  %-10s  %s%n",
-                        "#", "Sim time", "Flight A", "Flight B", "Separation"));
-                sb.append("─".repeat(54)).append("\n");
+                sb.append(String.format("%-4s  %-10s  %-16s  %-10s  %-10s  %s%n",
+                        "#", "Sim time", "Type", "Flight A", "Flight B", "Separation"));
+                sb.append("─".repeat(70)).append("\n");
                 for (final SimulationReportParser.ViolationEvent v : report.violations()) {
                     final long secs  = (long) v.timestamp();
                     final long h     = secs / 3600;
                     final long m     = (secs % 3600) / 60;
                     final long s     = secs % 60;
-                    sb.append(String.format("%-4d  %02d:%02d:%02d    %-10s  %-10s  %.0f m%n",
-                            v.id(), h, m, s, v.callsignA(), v.callsignB(), v.separationMeters()));
+                    // The C engine encodes a fuel-exhaustion event as the same flight on both sides.
+                    final String type = v.callsignA().equals(v.callsignB()) ? "Fuel exhaustion" : "Collision";
+                    sb.append(String.format("%-4d  %02d:%02d:%02d    %-16s  %-10s  %-10s  %.0f m%n",
+                            v.id(), h, m, s, type, v.callsignA(), v.callsignB(), v.separationMeters()));
                 }
             }
         }, () -> sb.append("(report file not found)"));

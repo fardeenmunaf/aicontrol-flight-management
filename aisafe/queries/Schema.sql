@@ -8,6 +8,7 @@ DROP SEQUENCE IF EXISTS Segment_SEQ;
 DROP SEQUENCE IF EXISTS FlightLeg_SEQ;
 DROP SEQUENCE IF EXISTS ProfileEntry_SEQ;
 DROP SEQUENCE IF EXISTS SafetyViolation_SEQ;
+DROP SEQUENCE IF EXISTS SimulationFlight_SEQ;
 DROP SEQUENCE IF EXISTS AircraftPosition_SEQ;
 
 DROP TABLE IF EXISTS CustomerCollaborator CASCADE;
@@ -22,6 +23,10 @@ DROP TABLE IF EXISTS FlightLeg CASCADE;
 DROP TABLE IF EXISTS FlightPlan CASCADE;
 DROP TABLE IF EXISTS Flight CASCADE;
 DROP TABLE IF EXISTS FlightRoute CASCADE;
+DROP TABLE IF EXISTS SafetyViolation_involvedCallsigns CASCADE;
+DROP TABLE IF EXISTS SafetyViolation CASCADE;
+DROP TABLE IF EXISTS SimulationFlight CASCADE;
+DROP TABLE IF EXISTS Simulation CASCADE;
 DROP TABLE IF EXISTS SimulationReport CASCADE;
 DROP TABLE IF EXISTS WeatherData CASCADE;
 DROP TABLE IF EXISTS Aircraft CASCADE;
@@ -48,6 +53,7 @@ CREATE SEQUENCE Segment_SEQ         START 1 INCREMENT 50;
 CREATE SEQUENCE FlightLeg_SEQ       START 1 INCREMENT 50;
 CREATE SEQUENCE ProfileEntry_SEQ    START 1 INCREMENT 50;
 CREATE SEQUENCE SafetyViolation_SEQ START 1 INCREMENT 50;
+CREATE SEQUENCE SimulationFlight_SEQ START 1 INCREMENT 50;
 CREATE SEQUENCE AircraftPosition_SEQ START 1 INCREMENT 50;
 
 -- ============================================================
@@ -362,4 +368,40 @@ CREATE TABLE SimulationReport (
                                   generatedAt          TIMESTAMP,
                                   simulation_id        VARCHAR(255),
                                   version              BIGINT
+);
+
+CREATE TABLE Simulation (
+    simulation_id        VARCHAR(255) NOT NULL,
+    version              BIGINT,
+    startDateTime        TIMESTAMP,
+    endDateTime          TIMESTAMP,
+    status               VARCHAR(50),
+    air_control_area_id  VARCHAR(255),
+    PRIMARY KEY (simulation_id)
+);
+
+CREATE TABLE SimulationFlight (
+    id                   BIGINT NOT NULL,
+    callsign             VARCHAR(255),
+    departureDate        TIMESTAMP,
+    completed            BOOLEAN,
+    hadViolation         BOOLEAN,
+    air_control_area_id  VARCHAR(255),
+    simulation_id        VARCHAR(255),
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE SafetyViolation (
+    id                   BIGINT NOT NULL,
+    simulation_id        VARCHAR(255) NOT NULL,
+    timestamp            TIMESTAMP,
+    violation_type       VARCHAR(50),
+    air_control_area_id  VARCHAR(255),
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE SafetyViolation_involvedCallsigns (
+    safety_violation_id  BIGINT       NOT NULL REFERENCES SafetyViolation(id),
+    callsign             VARCHAR(255) NOT NULL,
+    PRIMARY KEY (safety_violation_id, callsign)
 );

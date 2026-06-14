@@ -711,10 +711,20 @@ int load_weather_db(const char *path, WeatherEntry *db, int max_entries, int *co
         cJSON *altSup = cJSON_GetObjectItemCaseSensitive(e, "altitudeSup");
         cJSON *dir    = cJSON_GetObjectItemCaseSensitive(e, "windDirection");
         cJSON *spd    = cJSON_GetObjectItemCaseSensitive(e, "windSpeed");
+        cJSON *date   = cJSON_GetObjectItemCaseSensitive(e, "date");
+        cJSON *start  = cJSON_GetObjectItemCaseSensitive(e, "startHour");
+        cJSON *end    = cJSON_GetObjectItemCaseSensitive(e, "endHour");
 
+        /* Time window: "date" (yyyy-mm-dd) + "startHour"/"endHour" (HH:MM). Every
+           record carries one; a record without a valid window is malformed. */
+        int yy, mo, dd, sh, sm, eh, em;
         if (!cJSON_IsNumber(lat1) || !cJSON_IsNumber(lon1) ||
             !cJSON_IsNumber(lat2) || !cJSON_IsNumber(lon2) ||
-            !cJSON_IsNumber(dir)  || !cJSON_IsNumber(spd))
+            !cJSON_IsNumber(dir)  || !cJSON_IsNumber(spd)  ||
+            !cJSON_IsString(date) || !cJSON_IsString(start) || !cJSON_IsString(end) ||
+            sscanf(date->valuestring,  "%d-%d-%d", &yy, &mo, &dd) != 3 ||
+            sscanf(start->valuestring, "%d:%d", &sh, &sm) != 2 ||
+            sscanf(end->valuestring,   "%d:%d", &eh, &em) != 2)
             continue;
 
         WeatherEntry *we       = &db[(*count)++];
@@ -726,6 +736,11 @@ int load_weather_db(const char *path, WeatherEntry *db, int max_entries, int *co
         we->alt_sup            = cJSON_IsNumber(altSup) ? altSup->valuedouble : 20000.0;
         we->wind_direction_deg = dir->valuedouble;
         we->wind_speed_ms      = spd->valuedouble;
+        we->year               = yy;
+        we->month              = mo;
+        we->day                = dd;
+        we->start_seconds      = sh * 3600 + sm * 60;
+        we->end_seconds        = eh * 3600 + em * 60;
     }
     cJSON_Delete(root);
     printf("[ENV] Loaded %d weather record(s) from weather_db.json.\n", *count);

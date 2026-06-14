@@ -43,4 +43,7 @@ public interface SimulationRepository extends DomainRepository<SimulationId, Sim
      * @return list of simulations tracking the given flight, never null
      */
     List<Simulation> findByTrackedFlight(Flight flight);
+
+    /** Simulations whose start time is in [from, to). */
+    java.util.List<Simulation> findByStartDateTimeBetween(java.time.Instant from, java.time.Instant to);
 }

@@ -78,6 +78,10 @@ public class DashboardUI {
             modules.add(new Module("📋", "Flight Plans", "Create & validate plans",
                     "/javafxui/presentation/flightplan/FlightPlanView.fxml"));
         }
+        if (authz.isAuthenticatedUserAuthorizedTo(AISafeRoles.FLIGHT_CONTROL_OPERATOR)) {
+            modules.add(new Module("📊", "Monthly Report", "Generate monthly statistics",
+                    "/javafxui/presentation/report/MonthlyReportView.fxml"));
+        }
         if (SessionContext.isWeatherClient()) {
             modules.add(new Module("🌦", "Weather Client", "Weather data feed",
                     "/javafxui/presentation/weather/WeatherClientView.fxml"));

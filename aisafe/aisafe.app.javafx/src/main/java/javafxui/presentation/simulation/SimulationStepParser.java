@@ -22,7 +22,7 @@ public class SimulationStepParser {
             "^\\[([A-Z0-9]+)\\]\\s+Landed\\.");
 
     private static final Pattern STEP_BANNER = Pattern.compile(
-            "t=\\s*[\\d.]+\\s+s\\s+\\[(?<time>\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2})\\].*step\\s+(?<step>\\d+)\\s*/\\s*\\d+.*active=\\s*(?<active>\\d+)\\s+pending=\\s*(?<pending>\\d+).*violations=\\s*(?<violations>\\d+)");
+            "\\[(?<time>\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2})\\].*step\\s+(?<step>\\d+)\\s*/\\s*\\d+.*active=\\s*(?<active>\\d+)\\s+pending=\\s*(?<pending>\\d+).*violations=\\s*(?<violations>\\d+)");
 
     public Optional<SimStep> parsePhysicsRow(final String line) {
         final Matcher m = PHYSICS_ROW.matcher(line.trim());

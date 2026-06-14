@@ -104,4 +104,18 @@ class SimulationTest {
         final Simulation sim = validSimulation();
         assertFalse(sim.sameAs(null));
     }
+
+    @Test
+    void recordsFlightsAndViolations() {
+        final Simulation sim = new Simulation(
+                java.time.Instant.parse("2026-06-22T00:00:00Z"),
+                java.time.Instant.parse("2026-06-22T10:00:00Z"),
+                SimulationStatus.COMPLETED);
+        sim.addFlight(new SimulationFlight("TAP0622A",
+                java.time.Instant.parse("2026-06-22T05:30:00Z"), true, false, null));
+        sim.addViolation(new SafetyViolation(sim,
+                java.time.Instant.parse("2026-06-22T06:00:00Z"), ViolationType.COLLISION, null));
+        assertEquals(1, sim.simulationFlights().size());
+        assertEquals(1, sim.safetyViolations().size());
+    }
 }

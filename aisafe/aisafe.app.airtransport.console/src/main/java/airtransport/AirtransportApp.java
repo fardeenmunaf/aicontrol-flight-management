@@ -6,7 +6,17 @@ import airtransport.presentation.authz.TcpLoginUI;
 import airtransport.tcp.AirTransportTcpServer;
 import auth.infrastructure.AuthzConfigurator;
 import eapli.framework.infrastructure.authz.repositories.impl.jpa.JpaAutoTxUserRepository;
+import infrastructure.persistence.PersistenceContext;
 import jpa.PersistenceSettings;
+import simulation.application.FlightPlanAreaResolver;
+import simulation.application.RecordSimulationResultService;
+import simulation.application.SimulationResultParser;
+import simulation.domain.Simulation;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
 
 public final class AirtransportApp {
 
@@ -34,13 +44,67 @@ public final class AirtransportApp {
             return;
         }
 
-        // Local mode
+        // Headless recorder mode: no login required.
+        // Reads the newest simulation_report_*.json from aisafe-simulation/ and
+        // persists it to the database.  Invoked by run-simulation-and-record.sh.
+        if (args.length >= 1 && "--record".equals(args[0])) {
+            // JPA requires AuthzConfigurator even for headless operation.
+            AuthzConfigurator.configure(new JpaAutoTxUserRepository(
+                    PersistenceSettings.getPersistenceUnitName(),
+                    PersistenceSettings.getExtendedPersistenceProperties()));
+            headlessRecord();
+            return;
+        }
+
+        // Local interactive mode
         AuthzConfigurator.configure(new JpaAutoTxUserRepository(
                 PersistenceSettings.getPersistenceUnitName(),
                 PersistenceSettings.getExtendedPersistenceProperties()));
         System.out.println("=== AISafe Air Transport Company Console ===");
         if (new LoginUI().show()) {
             new MainMenu().mainLoop();
+        }
+    }
+
+    /**
+     * Finds the newest simulation_report_*.json produced by the C engine,
+     * parses it and persists the result via {@link RecordSimulationResultService}.
+     * No user authentication is required — this is a trusted local invocation.
+     */
+    private static void headlessRecord() {
+        try {
+            final Path simDir = Paths.get("aisafe-simulation").toAbsolutePath();
+            final Path flightPlansDir = simDir.resolve("flightplansSim");
+
+            // Find newest report file
+            final Path report = Files.list(simDir)
+                    .filter(p -> p.getFileName().toString().matches("simulation_report_.*\\.json"))
+                    .max(Comparator.comparingLong(p -> p.toFile().lastModified()))
+                    .orElseThrow(() -> new IllegalStateException(
+                            "No simulation_report_*.json found in " + simDir));
+
+            System.out.println("Recording report: " + report.getFileName());
+
+            final FlightPlanAreaResolver resolver = new FlightPlanAreaResolver(
+                    flightPlansDir,
+                    PersistenceContext.repositories().airports());
+
+            final RecordSimulationResultService recorder = new RecordSimulationResultService(
+                    PersistenceContext.repositories().simulations(),
+                    resolver,
+                    resolver);
+
+            final Simulation sim = recorder.record(
+                    new SimulationResultParser().parse(Files.readString(report)));
+
+            System.out.println("Simulation recorded successfully.");
+            System.out.println("  Flights  : " + sim.simulationFlights().size());
+            System.out.println("  Violations: " + sim.safetyViolations().size());
+
+        } catch (final Exception e) {
+            System.err.println("ERROR recording simulation: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
         }
     }
 }

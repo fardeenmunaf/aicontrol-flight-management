@@ -36,4 +36,10 @@ public class JpaSimulationRepository extends BaseJpaRepositoryBase<Simulation, S
 	public List<Simulation> findByTrackedFlight(final Flight flight) {
 		return match("?1 MEMBER OF e.trackedFlights", Map.of(1, flight));
 	}
+
+	@Override
+	public List<Simulation> findByStartDateTimeBetween(final java.time.Instant from, final java.time.Instant to) {
+		return match("e.startDateTime >= :from AND e.startDateTime < :to",
+				Map.of("from", from, "to", to));
+	}
 }
