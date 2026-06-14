@@ -67,7 +67,8 @@ Flight
     ├── FlightProfile [1..1]  (mandatory)
     │   ├── Climb [1..*]
     │   │   ├── Altitude
-    │   │   └── Speed
+    │   │   ├── Speed
+    │   │   └── RateClimb    (rate of climb)
     │   ├── Cruise [1..*]
     │   │   └── Speed
     │   └── Descend [1..*]
@@ -102,7 +103,7 @@ Flight
 | **Departure** | The origin point of a leg: airport code, date, and scheduled time of departure. The date and time must not be in the past. |
 | **Arrival** | The destination point of a leg: airport code, date, and scheduled time of arrival. Must be strictly after the departure date/time of the same leg. |
 | **Fuel** | The fuel load assigned to a leg, expressed as a strictly positive quantity with a unit (kg or l). |
-| **FlightProfile** | Mandatory climb, cruise, and descent profiles, describing altitude/speed tables used for simulation. Climb entries must be in ascending altitude order; descent entries must be in descending altitude order. Descent entries also include a rate of descent (must be negative). |
+| **FlightProfile** | Mandatory climb, cruise, and descent profiles, describing altitude/speed tables used for simulation. Climb entries must be in ascending altitude order and include a rate of climb; descent entries must be in descending altitude order and include a rate of descent (must be negative). |
 | **Segment** | A linear path within a leg. Every leg must contain exactly three segments in fixed order: `climb`, `cruise`, `descend`. Each segment has a start/end 3D coordinate pair, one or more altitude slots, and a wind block. The mode is determined by position and enforced syntactically. Segment end coordinates must match the start coordinates of the next segment. |
 | **AltitudeSlot** | Defines the usable vertical band for a segment: minimum altitude, maximum altitude, and slot width. Used by the simulation to assign altitude clearances. |
 | **Wind** | Wind conditions at the segment: direction in degrees (0–359) and speed in m/s (strictly positive, maximum 25 m/s). |
@@ -185,7 +186,7 @@ Reserved words that define the structure of the language. They may not be used a
 | `to` | Introduces the route destination airport or a segment end coordinate |
 | `altitude` | Introduces an altitude field |
 | `speed` | Introduces a speed field |
-| `rate` | Introduces a rate of descent field |
+| `rate` | Introduces a rate of climb or rate of descent field |
 | `mode` | Introduces a segment mode field |
 | `direction` | Introduces a wind direction field |
 | `min` | Introduces the minimum altitude of an altitude slot |
@@ -376,13 +377,13 @@ The quantity must be strictly greater than zero. A value of `0` is syntactically
 
 ```
 profile {
-    climb   [ altitude: <number> <unit>, speed: <number> <unit> ];          // 1 or more
-    cruise  [ speed: <number> <unit> ];                                      // 1 or more
-    descend [ altitude: <number> <unit>, speed: <number> <unit>, rate: <signed-number> ];  // 1 or more
+    climb   [ altitude: <number> <unit>, speed: <number> <unit>, rate: <positive-number> <unit>? ];  // 1 or more
+    cruise  [ speed: <number> <unit> ];                                                                // 1 or more
+    descend [ altitude: <number> <unit>, speed: <number> <unit>, rate: <signed-number> <unit>? ];     // 1 or more
 }
 ```
 
-The profile block is **mandatory** in every leg. All three entry types (`climb`, `cruise`, `descend`) must have at least one entry each. Climb entries must appear in ascending altitude order; descend entries in descending altitude order. The rate of descent must be negative.
+The profile block is **mandatory** in every leg. All three entry types (`climb`, `cruise`, `descend`) must have at least one entry each. Climb entries must appear in ascending altitude order; descend entries in descending altitude order. The rate of climb is a positive number (the unit is optional); the rate of descent must be negative (the unit is optional).
 
 ### 4.6 Segment Blocks
 
@@ -448,7 +449,7 @@ flight
     ├── fuel
     │   └── quantity <unit>   (> 0)
     ├── profile [1..1]  (mandatory)
-    │   ├── climb [1..*]   → altitude (ascending), speed
+    │   ├── climb [1..*]   → altitude (ascending), speed, rate (rate of climb, positive)
     │   ├── cruise [1..*]  → speed
     │   └── descend [1..*] → altitude (descending), speed, rate (negative)
     ├── segment (climb)   [exactly 1, first]
@@ -517,7 +518,7 @@ A condensed reference of every block and its mandatory vs. optional fields.
 | `cruise` | entry list | Yes (1+) | One or more cruise profile entries |
 | `descend` | entry list | Yes (1+) | One or more descend profile entries in descending altitude order |
 
-Each `climb` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0).  
+Each `climb` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0), `rate` (rate of climb, positive number; unit optional).  
 Each `cruise` entry: `speed` (number + unit, must be > 0).  
 Each `descend` entry: `altitude` (number + unit), `speed` (number + unit, must be > 0), `rate` (must be negative; unit optional).
 
@@ -594,12 +595,12 @@ flight TP1234 {
         }
 
         profile {
-            climb   [ altitude: 69 m,    speed: 210 kts ];
-            climb   [ altitude: 1000 m,  speed: 210 kts ];
-            climb   [ altitude: 2000 m,  speed: 220 kts ];
-            climb   [ altitude: 5000 m,  speed: 260 kts ];
-            climb   [ altitude: 10000 m, speed: 300 kts ];
-            climb   [ altitude: 9249 m,  speed: 300 kts ];
+            climb   [ altitude: 69 m,    speed: 210 kts, rate: 10 m/s ];
+            climb   [ altitude: 1000 m,  speed: 210 kts, rate: 10 m/s ];
+            climb   [ altitude: 2000 m,  speed: 220 kts, rate: 10 m/s ];
+            climb   [ altitude: 5000 m,  speed: 260 kts, rate: 10 m/s ];
+            climb   [ altitude: 10000 m, speed: 300 kts, rate: 10 m/s ];
+            climb   [ altitude: 9249 m,  speed: 300 kts, rate: 10 m/s ];
 
             cruise  [ speed: 300 kts ];
 

@@ -2,10 +2,16 @@ package logging;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsConfigurator;
+import com.sun.net.httpserver.HttpsServer;
 import remotelogging.domain.RemoteAccessEvent;
 import remotelogging.domain.RemoteAccessEventType;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -15,6 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.security.KeyStore;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
@@ -37,6 +44,14 @@ import java.util.concurrent.Executors;
  *
  * HTTP configuration:
  *   aisafe.logging.http.port / AISAFE_LOGGING_HTTP_PORT  (default: 8080)
+ *
+ * TLS configuration (optional — turns the status server into HTTPS, as required
+ * for an administrator-facing service running on a dedicated cloud node, US90):
+ *   aisafe.logging.tls.keystore          / AISAFE_LOGGING_TLS_KEYSTORE
+ *   aisafe.logging.tls.keystore.password / AISAFE_LOGGING_TLS_KEYSTORE_PASSWORD
+ * The keystore is a PKCS12 file holding a self-signed certificate and its
+ * private key (see generate-logging-keystore.sh). If not set, the status
+ * server falls back to plain HTTP.
  *
  * Log file: logs/remote-access-YYYY-MM-DD.log (one file per day).
  */
@@ -149,7 +164,7 @@ public class RemoteAccessesLoggingServer {
 
     private void startHttpServer() {
         try {
-            final HttpServer http = HttpServer.create(new InetSocketAddress(httpPort), 0);
+            final HttpServer http = createHttpServer();
             http.createContext("/", this::handleRoot);
             http.createContext("/events", this::handleEventsPage);
             http.createContext("/active-users", this::handleActiveUsersPage);
@@ -157,12 +172,48 @@ public class RemoteAccessesLoggingServer {
             http.createContext("/api/active-users", this::handleApiActiveUsers);
             http.setExecutor(Executors.newFixedThreadPool(4));
             http.start();
-            System.out.printf("HTTP status server started on http://localhost:%d%n", httpPort);
-            System.out.printf("  → Last events:    http://localhost:%d/events%n", httpPort);
-            System.out.printf("  → Active users:   http://localhost:%d/active-users%n", httpPort);
-        } catch (final IOException e) {
+            final String scheme = (http instanceof HttpsServer) ? "https" : "http";
+            System.out.printf("HTTP status server started on %s://localhost:%d%n", scheme, httpPort);
+            System.out.printf("  → Last events:    %s://localhost:%d/events%n", scheme, httpPort);
+            System.out.printf("  → Active users:   %s://localhost:%d/active-users%n", scheme, httpPort);
+        } catch (final Exception e) {
             System.err.println("Could not start HTTP server on port " + httpPort + ": " + e.getMessage());
         }
+    }
+
+    /**
+     * Creates the status HTTP server. If a TLS keystore is configured, an
+     * {@link HttpsServer} secured with a self-signed certificate is created
+     * (TP11 — SSL/TLS network programming), otherwise a plain HTTP server.
+     */
+    private HttpServer createHttpServer() throws Exception {
+        final String keystorePath = resolveKeystorePath();
+        if (keystorePath == null || keystorePath.isBlank()) {
+            return HttpServer.create(new InetSocketAddress(httpPort), 0);
+        }
+
+        final SSLContext sslContext = buildSslContext(Paths.get(keystorePath), resolveKeystorePassword());
+        final HttpsServer https = HttpsServer.create(new InetSocketAddress(httpPort), 0);
+        https.setHttpsConfigurator(new HttpsConfigurator(sslContext));
+        return https;
+    }
+
+    /** Loads a self-signed certificate + private key (PKCS12) into an SSLContext. */
+    private static SSLContext buildSslContext(final Path keystorePath, final char[] password) throws Exception {
+        final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        try (InputStream in = Files.newInputStream(keystorePath)) {
+            keyStore.load(in, password);
+        }
+
+        final KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        keyManagerFactory.init(keyStore, password);
+
+        final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        trustManagerFactory.init(keyStore);
+
+        final SSLContext sslContext = SSLContext.getInstance("TLS");
+        sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+        return sslContext;
     }
 
     private void handleRoot(final HttpExchange ex) throws IOException {
@@ -341,5 +392,21 @@ public class RemoteAccessesLoggingServer {
         v = System.getenv("AISAFE_LOGGING_DIR");
         if (v != null && !v.isBlank()) return v;
         return DEFAULT_LOG_DIR;
+    }
+
+    private static String resolveKeystorePath() {
+        String v = System.getProperty("aisafe.logging.tls.keystore");
+        if (v != null && !v.isBlank()) return v;
+        v = System.getenv("AISAFE_LOGGING_TLS_KEYSTORE");
+        if (v != null && !v.isBlank()) return v;
+        return null;
+    }
+
+    private static char[] resolveKeystorePassword() {
+        String v = System.getProperty("aisafe.logging.tls.keystore.password");
+        if (v != null && !v.isBlank()) return v.toCharArray();
+        v = System.getenv("AISAFE_LOGGING_TLS_KEYSTORE_PASSWORD");
+        if (v != null && !v.isBlank()) return v.toCharArray();
+        return "changeit".toCharArray();
     }
 }
