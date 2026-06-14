@@ -48,6 +48,21 @@ test_physics: src/main/c/test_physics.c src/main/c/physics.c
 test_position_tracker: src/main/c/test_position_tracker.c src/main/c/position_tracker.c
 	$(CC) $(CFLAGS) src/main/c/test_position_tracker.c src/main/c/position_tracker.c -o test_position_tracker $(LDFLAGS)
 
+test_violations: src/main/c/test_violations.c src/main/c/physics.c src/main/c/libs/cJSON.c src/main/c/json_parser.c src/main/c/flight_simulation.c src/main/c/position_tracker.c src/main/c/environment.c
+	$(CC) $(CFLAGS) src/main/c/test_violations.c src/main/c/physics.c src/main/c/libs/cJSON.c src/main/c/json_parser.c src/main/c/flight_simulation.c src/main/c/position_tracker.c src/main/c/environment.c -o test_violations $(LDFLAGS)
+
+test_sem_sync: src/main/c/test_sem_sync.c
+	$(CC) $(CFLAGS) src/main/c/test_sem_sync.c -o test_sem_sync $(LDFLAGS)
+
+test_shared_memory: src/main/c/test_shared_memory.c
+	$(CC) $(CFLAGS) src/main/c/test_shared_memory.c -o test_shared_memory $(LDFLAGS)
+
+test_thread_phases: src/main/c/test_thread_phases.c src/main/c/physics.c src/main/c/libs/cJSON.c src/main/c/json_parser.c src/main/c/flight_simulation.c src/main/c/position_tracker.c src/main/c/environment.c
+	$(CC) $(CFLAGS) src/main/c/test_thread_phases.c src/main/c/physics.c src/main/c/libs/cJSON.c src/main/c/json_parser.c src/main/c/flight_simulation.c src/main/c/position_tracker.c src/main/c/environment.c -o test_thread_phases $(LDFLAGS)
+
+test_report: src/main/c/test_report.c src/main/c/physics.c src/main/c/libs/cJSON.c src/main/c/json_parser.c src/main/c/flight_simulation.c src/main/c/position_tracker.c src/main/c/environment.c
+	$(CC) $(CFLAGS) src/main/c/test_report.c src/main/c/physics.c src/main/c/libs/cJSON.c src/main/c/json_parser.c src/main/c/flight_simulation.c src/main/c/position_tracker.c src/main/c/environment.c -o test_report $(LDFLAGS)
+
 run: all
 	./simulation_engine
 
@@ -55,11 +70,16 @@ run_log: all
 	./simulation_engine > simulation_output.txt 2>&1
 	@echo "Simulation complete. Output written to simulation_output.txt"
 
-test: test_physics test_position_tracker
+test: test_physics test_position_tracker test_violations test_sem_sync test_shared_memory test_thread_phases test_report
 	./test_physics
 	./test_position_tracker
+	./test_violations
+	./test_sem_sync
+	./test_shared_memory
+	./test_thread_phases
+	./test_report
 
 clean:
-	rm -f *.o simulation_engine report_generator flight_plan_validator test_physics test_position_tracker simulation_report_*.json
+	rm -f *.o simulation_engine report_generator flight_plan_validator test_physics test_position_tracker test_violations test_sem_sync test_shared_memory test_thread_phases test_report simulation_report_*.json
 
 .PHONY: all run test clean
