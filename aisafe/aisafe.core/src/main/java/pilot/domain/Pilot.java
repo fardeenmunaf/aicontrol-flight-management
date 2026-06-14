@@ -8,6 +8,7 @@ import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Version;
 
@@ -37,7 +38,7 @@ public class Pilot implements AggregateRoot<PilotId> {
     @Enumerated(EnumType.STRING)
     private PilotStatus status;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.MERGE)
     private Set<AircraftModel> certifiedAircraftModels = new HashSet<>();
 
     public Pilot(final UserId userId, final PilotStatus status, final Set<AircraftModel> certifiedAircraftModels) {
