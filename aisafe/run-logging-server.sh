@@ -6,7 +6,7 @@
 #   AISAFE_LOGGING_HTTP_PORT  (default: 8080)
 #   AISAFE_LOGGING_DIR        (default: logs/)
 #   AISAFE_LOGGING_TLS_KEYSTORE           (optional, enables HTTPS — see generate-logging-keystore.sh)
-#   AISAFE_LOGGING_TLS_KEYSTORE_PASSWORD  (default: changeit)
+#   AISAFE_LOGGING_TLS_KEYSTORE_PASSWORD  (default: Teste1234!)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BASE_CP="$SCRIPT_DIR/aisafe.logging/target/aisafe.logging-1.0.0-SNAPSHOT.jar:$SCRIPT_DIR/aisafe.logging/target/dependency/*"

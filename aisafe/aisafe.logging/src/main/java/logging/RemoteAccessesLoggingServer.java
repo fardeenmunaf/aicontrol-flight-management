@@ -407,6 +407,6 @@ public class RemoteAccessesLoggingServer {
         if (v != null && !v.isBlank()) return v.toCharArray();
         v = System.getenv("AISAFE_LOGGING_TLS_KEYSTORE_PASSWORD");
         if (v != null && !v.isBlank()) return v.toCharArray();
-        return "changeit".toCharArray();
+        return "Teste1234!".toCharArray();
     }
 }
