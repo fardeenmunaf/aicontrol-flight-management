@@ -11,7 +11,8 @@ This module implements the **air control simulation engine entirely in C**, as r
 - Simulate flight progression (position, altitude, fuel burn) in each child using a full ISA physics model
 - Use **POSIX shared memory** to share flight state between processes
 - Use **named POSIX semaphores** for step-by-step synchronisation between parent and children
-- Use **pipes** for child → parent data communication each step
+- Use **POSIX shared memory** and parent-side **threads** (Dispatcher, Results, Violations, Report) for coordination
+- Apply historical weather data (wind direction/speed) via an **Environment Thread**
 - Detect **safety violations** (proximity between aircraft, fuel exhaustion)
 - Notify involved flight processes of violations via **POSIX signals** (US102)
 - Maintain a per-flight **position history** with validation (US101)
@@ -35,39 +36,41 @@ Legs within a single flight are strictly sequential — leg 2 can only start aft
 
 ## Synchronisation Model (Step-Lock)
 
-The simulation advances in fixed time steps. The parent and all child processes synchronise on every step using two types of named POSIX semaphores:
+The simulation advances in fixed time steps. The parent and all child processes synchronise on every step using two sets of named POSIX semaphores:
 
-### Per-flight semaphores — `step_sems[i]`
+### `step_go[i]` (Parent → Child)
 
-One semaphore per flight, created before `fork()` and inherited by the child. All start at 0.
+One semaphore per flight. All start at 0.
 
-- At the start of each step, the **parent posts** to `step_sems[i]` for every active flight — this unblocks each child and tells it to run its step.
-- Each **child blocks** on `sem_wait(step_sems[i])` at the top of its loop, waiting for the parent's signal.
+- At the start of each step, the parent's **Dispatcher thread** posts to `step_go[i]` for every active flight — this unblocks the child and tells it to run its step.
+- Each **child blocks** on `sem_wait(step_go[i])` at the top of its loop, waiting for the parent's signal.
 
 This gives the parent **selective control**: it only wakes flights that are active in the current step. Flights that have not yet departed or have already landed stay blocked.
 
-### Shared semaphore — `main_sem`
+### `step_done[i]` (Child → Parent)
 
-One semaphore shared by all children, also created before `fork()`, starts at 0.
+One semaphore per flight.
 
-- When a child finishes its step (physics computed, pipe message written), it calls `sem_post(main_sem)`.
-- The parent calls `sem_wait(main_sem)` once for every active flight it woke up — it only continues when all active children have finished.
+- When a child finishes its step (physics computed, shared memory updated), it calls `sem_post(step_done[i])`.
+- The parent's **Results thread** calls `sem_wait(step_done[i])` for every active flight it woke up.
+
+There is also an **`env_sem`** semaphore used to safely distribute wind data from the Environment Thread to the children.
 
 ### Full step sequence
 
 ```
-Parent                          Child i
-  │                               │
-  ├─ sem_post(step_sems[i]) ────► unblocks
-  │                               ├─ compute physics
-  │                               ├─ write to pipe
-  │                               └─ sem_post(main_sem) ──► parent counts
+Parent (Threads)                           Child i
+  │                                          │
+  ├─ [Environment] update wind data          │
+  ├─ [Dispatcher] sem_post(step_go) ─────────► unblocks
+  │                                          ├─ read wind data
+  │                                          ├─ compute physics
+  │                                          ├─ write to shared memory
+  │                                          └─ sem_post(step_done) ──► Parent Results thread
   │
-  ├─ sem_wait(main_sem) × N   (blocks until all N children finish)
-  ├─ drain pipes (validate + store position history)
-  ├─ advance clock
-  ├─ check violations + send signals
-  ├─ print table
+  ├─ [Results] sem_wait(step_done)
+  ├─ [Violations] advance clock & check violations
+  ├─ [Report] print violations if any
   └─ next step
 ```
 
@@ -77,15 +80,11 @@ Before the main loop begins, the parent calls `sem_wait(main_sem)` once per fork
 
 ---
 
-## IPC — Pipes
+## IPC — Shared Memory
 
-One pipe per flight is created before `fork()`:
-- `pipe_fds[i][0]` — read end, used by the parent
-- `pipe_fds[i][1]` — write end, used by child `i`
+The parent creates a single POSIX shared memory block (`/aisafe_sim`) mapped by both parent and children. This structure contains all simulation data, including flight parameters, phase history, and weather information. 
 
-After `fork()`, each side closes the ends it does not use. The child writes a `PipeMessage` struct containing its updated position and all 25 physics values. The parent reads it after all children finish their step, validates the received position, stores it in the per-flight history, and uses the physics data to print the per-step table.
-
-The parent closes all write ends after forking so that `read()` returns correctly when a child exits.
+After waking up, the child reads environment data, computes physics, updates its `Flight` block directly in shared memory, and posts its `step_done` semaphore. The parent Results thread then reads this data to validate the received position and print the per-step table.
 
 ---
 
@@ -114,7 +113,7 @@ Sent by the parent to **all active flights** when total violations exceed `max_v
 
 ## Position History & Validation (US101)
 
-The parent maintains a `PositionHistory` buffer for every flight. After reading each pipe message, it validates the received position before storing it.
+The parent maintains a `PositionHistory` buffer for every flight. After the children update the shared memory, the parent validates the received position before storing it.
 
 ### Validation (`is_valid_position`)
 
@@ -256,6 +255,15 @@ Phase-dependent total thrust:
 - **Fuel burn**: dW = T_total × TSFC × dt / g (kg/step)
 - **Horizontal distance**: dist = TAS × cos(asin(climb_rate / TAS)) × dt
 - **Mass floor**: current_mass ≥ empty_weight + payload (fuel cannot go negative)
+
+---
+
+## Weather Integration
+
+An **Environment Thread** reads historical weather data from `weather_db.json`. 
+- Before starting, flights whose routes pass through zones with severe wind (> 25 m/s) are dynamically blocked.
+- During simulation, the Environment thread maps the aircraft's current position to a weather zone and writes wind speed and direction into shared memory.
+- Aircraft read this data (protected by `env_sem`) and apply it during the physics computation step.
 
 ---
 
