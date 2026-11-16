@@ -1,17 +1,49 @@
-# Project AIControl
+# AIControl – Flight Management & Air Traffic Simulation
+
+![Java](https://img.shields.io/badge/Java-ED8B00?logo=openjdk&logoColor=white)
+![C](https://img.shields.io/badge/C-A8B9CC?logo=c&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![ANTLR](https://img.shields.io/badge/ANTLR-DSL-red)
+![JavaFX](https://img.shields.io/badge/JavaFX-UI-blue)
+![Maven](https://img.shields.io/badge/Maven-C71A36?logo=apachemaven&logoColor=white)
+
+> Group project for the **Integrative Project (Sem4PI)** of the Informatics Engineering degree (LEI) at **ISEP**, 2025/26.
 
 ## 1. Description of the Project
 
-Project AIControl is a prototype software solution designed for flight management and air traffic control simulation. The system manages complex aviation operations, validates flight plans, and simulates air traffic to ensure safety and prevent mid-air collisions.
+AIControl is a prototype system for flight management and air traffic control simulation. It validates flight plans, simulates air traffic and detects safety risks such as possible mid-air collisions.
 
-This integrated system is composed of several core modules:
-* **Backoffice Configuration:** Management of aviation assets, including aircraft models, engine models, airports, air transport companies, and flight control areas.
-* **Flight Management & DSL:** Creation, parsing, and semantic validation of flight plans using a custom Domain Specific Language (Core Flight DSL) processed via ANTLR.
-* **Air Traffic Simulation:** A highly scalable, multi-process, and multi-threaded simulation engine developed in C. It tracks aircraft trajectories, applies aerodynamic physics (Lift and Drag), and detects safety violations in real-time.
-* **Weather Integration:** A TCP-based weather data service that allows weather persons to upload atmospheric conditions affecting air control areas.
-* **Pilot Remote Access:** A TCP server/client pair that allows pilots to remotely review and test flight plans.
-* **Remote Accesses Logging:** A standalone logging server (with optional HTTPS status page) that records remote access events.
-* **JavaFX Dashboard:** A graphical dashboard for real-time visualization of simulation and weather data.
+The system has several modules that work together:
+
+| Module | What it does |
+|---|---|
+| **Backoffice** | Manages aircraft and engine models, airports, airlines and flight control areas |
+| **Flight plan DSL** | Flight plans are written in a custom language (Core Flight DSL), parsed with ANTLR and validated |
+| **Air traffic simulation** | Multi-process, multi-threaded engine in C that computes trajectories with lift and drag and flags safety violations in real time |
+| **Weather service** | TCP service where weather staff upload atmospheric data that affects control areas |
+| **Pilot remote access** | TCP server and client so pilots can review and test flight plans remotely |
+| **Remote access logging** | Standalone logging server with an optional HTTPS status page |
+| **JavaFX dashboard** | Shows the simulation and weather data live |
+
+### Tech stack
+
+- **Backend:** Java, JPA/Hibernate, Domain-Driven Design (EAPLI framework)
+- **Databases:** PostgreSQL, in-memory H2
+- **Language processing:** ANTLR
+- **Simulation:** C with processes, pthreads, condition variables and IPC
+- **Networking:** TCP sockets, HTTPS
+- **UI:** JavaFX and console apps
+- **Build and quality:** Maven, JUnit, GitHub Actions, PlantUML
+
+### Team
+
+| Name | GitHub |
+|---|---|
+| Diogo Remelgado | [@Dremel123](https://github.com/Dremel123) |
+| Eduardo Pacheco | [@eduardo-pacheco7](https://github.com/eduardo-pacheco7) |
+| Fardeen Munaf | [@fardeenmunaf](https://github.com/fardeenmunaf) |
+| Tiago Sousa | [@Tiagofpsousa](https://github.com/Tiagofpsousa) |
+| Tomás Barbosa | [@Tomasbarbosa33](https://github.com/Tomasbarbosa33) |
 
 ## 2. Planning and Technical Documentation
 
